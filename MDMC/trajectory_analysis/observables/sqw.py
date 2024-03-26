@@ -16,11 +16,11 @@ from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
-from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.obs import Observable, PlotTypes
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
-#from mpl_toolkits import mplot3d
+# from mpl_toolkits import mplot3d
 
 
 class SQwMixins:
@@ -793,11 +793,13 @@ class AbstractSQw(SQwMixins, Observable):
         return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
     def heatmap_plot(self, *,
-              dependent_variable: np.ndarray = None,
-              noshow: bool = False,
-              ax: plt.axes = None)-> None:
+                     dependent_variable: np.ndarray = None,
+                     noshow: bool = False,
+                     ax: plt.axes = None) -> None:
         """
-        Heatmap of SQw where:
+        Draw heatmap of SQw
+
+        Where:
 
         independent x-axis - Momentum Q
         independent y-axis - Energy E (w/omega)
@@ -811,7 +813,7 @@ class AbstractSQw(SQwMixins, Observable):
         noshow : bool
           Optional parameter so users can choose if the plot is shown. Default
           value is False, the plot will be shown.
-        ax: plt.axes
+        ax : plt.axes
           Optional parameter to input an existing axes object for example when
           plotting a subplot or plots over one another.
         """
@@ -824,7 +826,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         extent = self.Q[0], self.Q[-1], self.E[0], self.E[-1]
 
-        im=ax.imshow(dependent_variable[0,:,:], extent = extent, aspect='auto')
+        im = ax.imshow(dependent_variable[0, :, :], extent=extent, aspect='auto')
 
         cbar = ax.figure.colorbar(im, ax=ax, **{})
         cbar.ax.set_ylabel(r"Scattering, S(Q,$\omega$)", rotation=-90, va="bottom")
@@ -839,10 +841,13 @@ class AbstractSQw(SQwMixins, Observable):
             plt.show()
 
     def default_plot(self, *,
-              dependent_variable: np.ndarray = None,
-              noshow: bool = False,
-              ax: plt.axes = None)-> None:
-        """3D plot of SQw Where:
+                     dependent_variable: np.ndarray = None,
+                     noshow: bool = False,
+                     ax: plt.axes = None) -> None:
+        """
+        Draw 3D plot of SQw.
+
+        Where:
 
         independent x-axis - Momentum Q
         independent y-axis - Energy E (w/omega)
@@ -856,19 +861,19 @@ class AbstractSQw(SQwMixins, Observable):
         noshow : bool
           Optional parameter so users can choose if the plot is shown. Default
           value is False, the plot will be shown.
-        ax: plt.axes
+        ax : plt.axes
           Optional parameter to input an existing axes object for example when
           plotting a subplot or plots over one another.
         """
 
         if ax is None:
-            ax = plt.axes(projection ='3d')
+            ax = plt.axes(projection='3d')
 
         if dependent_variable is None:
             dependent_variable = self.SQw
 
         E, Q = np.meshgrid(self.E, self.Q)
-        ax.plot_surface(Q, E, dependent_variable[0,:,:])
+        ax.plot_surface(Q, E, dependent_variable[0, :, :])
         ax.set_title(r'3D Plot of Scattering Factor S(Q,$\omega$)')
         ax.set_xlabel(r'Momentum, Q, ($\AA^{-1}$)')
         ax.set_ylabel(r'Energy, $\omega$, (meV)')
@@ -880,8 +885,8 @@ class AbstractSQw(SQwMixins, Observable):
             plt.show()
 
     def slider_plot(self, *,
-                other_dependent_variable: Optional[np.ndarray] = None,
-                figax: Optional[Tuple[plt.Figure, plt.Axes]]=None) -> None:
+                    other_dependent_variable: Optional[np.ndarray] = None,
+                    figax: Optional[Tuple[plt.Figure, plt.Axes]] = None) -> None:
         '''
         Slider Plot of an Experimental and Simulated Oberservable
 
@@ -889,12 +894,12 @@ class AbstractSQw(SQwMixins, Observable):
 
         Parameters
         ----------
-        other_dependent_variable : np.ndarray
-          Optional parameter allows users to input the dependent variable from
-          another observable so they can be compared in the plot.
-        figax: Tuple[plt.Figure, plt.Axes]
-          Optional parameter to input an existing axes and figure object, for
-          example when overlaying plots over one another.
+        other_dependent_variable : np.ndarray, optional
+            Optional parameter allows users to input the dependent variable from
+            another observable so they can be compared in the plot.
+        figax : Tuple[plt.Figure, plt.Axes], optional
+            Optional parameter to input an existing axes and figure object, for
+            example when overlaying plots over one another.
         '''
 
         if figax is None:
@@ -913,45 +918,47 @@ class AbstractSQw(SQwMixins, Observable):
         ax.set_ylabel(fr'S(Q,$\omega$) ({dependent_variable.unit})')
 
         # Add Lines to Axes
-        self._add_line(ax,fixed_variable,
-                       dependent_variable[0,0,:],fixed_variable_name)
+        self._add_line(ax, fixed_variable,
+                       dependent_variable[0, 0, :], fixed_variable_name)
 
         dependent_variable_list = [dependent_variable]
 
         # Add Experimental Observable Line
         if other_dependent_variable is not None:
-            self._add_line(ax,fixed_variable,
-                           other_dependent_variable[0,0,:],fixed_variable_name)
+            self._add_line(ax, fixed_variable,
+                           other_dependent_variable[0, 0, :], fixed_variable_name)
             dependent_variable_list.append(other_dependent_variable)
 
         # Add the Slider
-        self._add_slider((fig,ax),slider_variable,slider_variable_name,
+        self._add_slider((fig, ax), slider_variable, slider_variable_name,
                          dependent_variable_list)
 
     @staticmethod
-    def _add_line(ax: plt.Axes,independent_variable: np.ndarray,
+    def _add_line(ax: plt.Axes,
+                  independent_variable: np.ndarray,
                   dependent_variable: np.ndarray,
-                  independent_variable_name: str = None)-> None:
-        '''Add lines to plt.axes.
+                  independent_variable_name: Optional[str] = None) -> None:
+        '''
+        Add lines to plt.axes.
 
         Parameters
         ----------
         ax : plt.Axes
-          Optional parameter to input an existing axes object for example when
-          plotting a subplot or plots over one another.
-        independent_variable: np.ndarray
-          Data for x-axis of plot.
-        dependent_variable: np.ndarray
-          Data for y-axis of plot.
-        independent_variable_name: str
-          Name of the independent variable for axis label
+            Optional parameter to input an existing axes object for example when
+            plotting a subplot or plots over one another.
+        independent_variable : np.ndarray
+            Data for x-axis of plot.
+        dependent_variable : np.ndarray
+            Data for y-axis of plot.
+        independent_variable_name : str
+            Name of the independent variable for axis label
         '''
 
         # Plot obs line
         ax.plot(independent_variable, dependent_variable, linewidth=1)
 
         if independent_variable_name is not None:
-            label=independent_variable_name+', '+ independent_variable.unit
+            label = f"{independent_variable_name}, {independent_variable.unit}"
             ax.set_xlabel(label)
         else:
             ax.set_xlabel(independent_variable.unit)
@@ -961,63 +968,81 @@ class AbstractSQw(SQwMixins, Observable):
                     independent_variable: np.ndarray,
                     independent_variable_name: str,
                     dependent_variable_list: list[np.ndarray]):
-        ''' Add a slider widget to plot
+        '''
+        Add a slider widget to plot
 
         Parameters
         ----------
-        figax: Tuple[plt.Figure, plt.Axes]
-          Input an existing axes and figure object, for
-          example when overlaying plots over one another.
-        independent_variable: np.ndarray
-          Variable to be used on the slider widget.
-        dependent_variable_list: list[np.ndarray]
-          List of dependent variable for y-axis of plot to be updated when the
-          slider is changed.
-        independent_variable_name: str
-          Name of the independent variable for slider label
+        figax : Tuple[plt.Figure, plt.Axes]
+            Input an existing axes and figure object, for
+            example when overlaying plots over one another.
+        independent_variable : np.ndarray
+            Variable to be used on the slider widget.
+        independent_variable_name : str
+            Name of the independent variable for slider label
+        dependent_variable_list : list[np.ndarray]
+            List of dependent variable for y-axis of plot to be updated when the
+            slider is changed.
         '''
 
         fig, ax = figax
         fig.subplots_adjust(left=0.25, bottom=0.3)
-        slider_ax  = fig.add_axes([0.25, 0.15, 0.65, 0.03],
-                                       facecolor='lightgoldenrodyellow')
+        slider_ax = fig.add_axes([0.25, 0.15, 0.65, 0.03],
+                                 facecolor='lightgoldenrodyellow')
         slider = Slider(slider_ax, independent_variable_name+' index', 0,
                         len(independent_variable)-1, valinit=1, valstep=1)
-        slider_label=plt.text(1,1.7,f'{independent_variable_name}='
-                                    f'{round(independent_variable[1],2)},'
-                                    f' {independent_variable.unit}')
+        slider_label = plt.text(1,
+                                1.7,
+                                f'{independent_variable_name}='
+                                f'{round(independent_variable[1],2)},'
+                                f' {independent_variable.unit}')
 
-        def Q_on_changed(val):
+        def Q_on_changed(val: int):
+            """
+            Callback for adjusting graph based on slider.
+
+            Parameters
+            ----------
+            val : int
+                Current value of slider.
+            """
             for i, dependent_variable in enumerate(dependent_variable_list):
-                ax.get_lines()[i].set_ydata(dependent_variable[0,val])
+                ax.get_lines()[i].set_ydata(dependent_variable[0, val])
 
             slider_label.set_text(f'{independent_variable_name}='
                                   f'{round(independent_variable[val],2)},'
                                   f' {independent_variable.unit}')
             fig.canvas.draw_idle()
-            ax.set_ylim(0,max(np.max(dependent_variable_list[0][0,val])+0.1,1e-5))
+            ax.set_ylim(0,
+                        max(np.max(dependent_variable_list[0][0, val]) + 0.1, 1e-5)
+                        )
 
         slider.on_changed(Q_on_changed)
 
         plt.show()
 
-    def plot(self,plot_type: Literal["slider", "heatmap", None]=None) -> None:
+    def plot(self, plot_type: PlotTypes = PlotTypes.DEFAULT) -> None:
         '''
-        Plot of Experimental and Simulation for a given Oberservable
+        Plot of experimental and simulation for a given oberservable
 
         Parameters
         ----------
-        plot_type : string
+        plot_type : PlotTypes
             The ``type`` of figure to be plot
         '''
+        # Parse from str
+        if not isinstance(plot_type, PlotTypes):
+            plot_type = PlotTypes[plot_type.upper()]
 
-        if plot_type is None:
-            # Default
+        if plot_type is PlotTypes.DEFAULT:
             self.default_plot()
-        elif plot_type == 'slider':
+        elif plot_type is PlotTypes.SLIDER:
             self.slider_plot()
-        elif plot_type == 'heatmap':
+        elif plot_type is PlotTypes.HEATMAP:
             self.heatmap_plot()
+        else:
+            raise NotImplementedError(f"Unsupported plot type ({plot_type.name}) for "
+                                      f"{type(self).__name__}")
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))

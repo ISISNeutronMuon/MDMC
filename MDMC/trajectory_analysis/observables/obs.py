@@ -10,6 +10,15 @@ from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
+class PlotTypes(Enum):
+    """
+    Supported plot types.
+    """
+    DEFAULT = auto()
+    HEATMAP = auto()
+    SLIDER = auto()
+
+
 @repr_decorator('origin', 'data')
 class Observable(ABC):
     """
@@ -275,9 +284,6 @@ class Observable(ABC):
 
     def plot(self) -> None:
         '''
-        A dummy method to be overwritten.
-
-        plot will plot the experimental and simulated datasets side by side.
+        Plot experimental and simulated datasets side-by-side.
         '''
-
-        print("Sorry I don't know how to plot this")
+        raise NotImplementedError(f"No plot method implemented for {type(self).__name__}.")
