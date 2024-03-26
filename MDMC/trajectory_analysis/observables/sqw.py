@@ -192,6 +192,10 @@ class AbstractSQw(SQwMixins, Observable):
         """
         return self._dependent_variables
 
+    @dependent_variables.setter
+    def dependent_variables(self, value: dict) -> None:
+        self._dependent_variables = value
+
     @property
     def errors(self) -> dict:
         """
