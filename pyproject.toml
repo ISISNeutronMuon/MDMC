@@ -1,0 +1,44 @@
+# MDMC install config
+
+# For full functionality MDMC requires one or more molecular dynamics (MD)
+# engines to be installed. See 'optional-dependencies' for the currently
+# supported engines.
+
+[build-system]
+requires = ["setuptools>=40.8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MDMC"
+version = "0.2"
+description = "A package for optimising classical molecular dynamics parameters by refining against experimental data."
+authors = [{name = "MDMC developers", email = "support@mdmcproject.org"}]
+requires-python = ">=3.9"
+dynamic = ["dependencies"]
+readme = "README.md"
+keywords = ["neutron scattering", "molecular dynamics"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Typing :: Typed"
+  ]
+
+[project.urls]
+Homepage = "https://mdmcproject.org/"
+Repository = "https://github.com/MDMCproject/MDMCv0.2_pilot.git"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+# Note that these optional dependencies do not install the requisite molecular
+# dynamics engine.
+[project.optional-dependencies]
+LAMMPS = ["pylammps"]
+DLPOLY = ["dlpoly-py==0.3.12"]
+testing = ["pytest", "pytest-profiling"]
+docs = ["sphinx", "sphinx-rtd-theme", "pandoc", "nbsphinx"]
+
+[project.scripts]
+MDMC = "MDMC.utilities.cli:main"
