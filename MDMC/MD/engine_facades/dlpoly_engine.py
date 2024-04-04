@@ -505,6 +505,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly_universe.set_config(self.saved_config)
 
+    def eval(self, variable: str) -> None:
+        """
+        Dummy eval to satisfy Abstract specification
+        """
+        raise NotImplementedError("DLPolyEngine does not support eval")
+
 
 @repr_decorator('universe')
 class DLPOLYUniverse(DLPOLYAttribute):
