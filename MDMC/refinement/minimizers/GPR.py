@@ -42,7 +42,7 @@ class GPR(Minimizer):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, \
-        previous_history: 'Path' = None,**settings: dict):
+        previous_history: Optional[Path] = None,**settings: dict):
 
         super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests

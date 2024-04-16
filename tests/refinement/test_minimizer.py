@@ -164,7 +164,6 @@ def test_load_history(mockcontrol, parameters,column_names, previous_history):
     
     minim = Minimizer(mockcontrol, parameters)
     df = pd.DataFrame(previous_history, columns=column_names)
-    print(df)
     temp_file = NamedTemporaryFile()
     df.to_csv(temp_file.name)
     

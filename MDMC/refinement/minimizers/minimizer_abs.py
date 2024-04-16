@@ -1,6 +1,6 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
 
 import csv
@@ -45,19 +45,17 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, previous_history: Path = None):
+    def __init__(self, control: 'Control', parameters: Parameters, previous_history: Union[str,Path] = None):
 
         self.control = control
-        self.results_filename = None
         self.previous_history = previous_history
-        self.previous_steps = 0
-        self.compatible = False
+        self.FoM = None
 
         if isinstance(parameters, list):
             parameters = Parameters(parameters)
 
         self.parameters = parameters
-        if previous_history:
+        if self.previous_history:
             if isinstance(previous_history, str):
                 self.previous_history = Path(self.previous_history)
 
@@ -65,8 +63,8 @@ class Minimizer(ABC):
             self.load_history(self.previous_history)
             self.previous_steps = len(self._history)
             self.FoM_old = self._history[-1][0]
-            self.FoM = None
-            self.different_minimizer_compatibility(self.history_columns, self._history)
+            self.compatible = False
+            self.enforcing_minimizer_compatibility(self.history_columns, self._history)
             self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
             self.parameters_old_values = self.get_parameters_old_values(parameters, \
                 self.column_names, self._history)
@@ -74,9 +72,10 @@ class Minimizer(ABC):
             self._history = []
             self.FoM_old = float('inf')
             self.parameters_old_values = None
+            self.previous_steps = 0
 
         self._check_parameters(parameters)
-        self.FoM = None
+ 
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -160,7 +159,7 @@ class Minimizer(ABC):
         ------
         ValueError
             If any ``Parameter`` is fixed
-            If there is mismatch with previous value in history.
+            If any ``Parameter is tied to another parameter
         """
 
         for parameter in parameters.values():
@@ -263,12 +262,11 @@ class Minimizer(ABC):
 
         # remove empty index and separate column names
         file_content = [row[1:] for row in file_content]
-        column_names = file_content[0]
-        del file_content[0]
+        column_names = file_content.pop(0)
         file_content = ([[float(x) if x.isdigit() or x.replace(".","").isnumeric() \
             else x for x in row] for row in file_content])
 
-        return column_names , file_content
+        return column_names, file_content
 
 
     def _check_parameters_fit_with_history(self, parameters: Parameters,
@@ -300,15 +298,13 @@ class Minimizer(ABC):
                 raise ValueError(f'A history of {len(history.columns) -2}'\
                     ' is incompatible with the current setup.')
 
-            split_param_list = [parameter.split(" ")[0] for parameter in parameters]
-            split_column_list = [column.split(" ")[0] for column in column_names[1:]]
+            split_param_list = [parameter.split()[0] for parameter in parameters]
+            split_column_list = [column.split()[0] for column in column_names[1:]]
             if split_param_list != split_column_list:
                 raise ValueError("The parameters in the minimizer history are not \
                                       the same as those specified for refining in the current\
                                       universe setup.")
-            param_list = list(parameters)
-            param_list.insert(0, 'Fom')
-            self.column_names = param_list
+            self.column_names = ['FoM', *list(parameters)]
 
 
     def get_parameters_old_values(self, parameters: Parameters, column_names: list, history):
@@ -331,7 +327,7 @@ class Minimizer(ABC):
         Returns
         ----------
 
-        dict (if there is a history file loaded:)
+        dict (if there is a history file loaded)
             dictionary of parameter values from the last step.
 
         None (if there is no history file loaded)
@@ -348,9 +344,9 @@ class Minimizer(ABC):
             return parameters
         return None
 
-    def different_minimizer_compatibility(self, column_names, _history) -> None:
+    def enforcing_minimizer_compatibility(self, column_names, history) -> None:
         """
-        Checks that the refinement file has the correct set up to be used with the current minizer,
+        Checks that the refinement file has the correct set up to be used with the current minimizer,
         and makes the necessary changes for this compatibility.
 
         Parameters
@@ -368,17 +364,17 @@ class Minimizer(ABC):
             If changing _history for minimizer compatibility fails.
 
         """
-        if _history and self.compatible is False:
+        if history and self.compatible is False:
             try:
                 if 'Change state' in column_names and \
-                    ('Accepted' not in _history[0] or 'Rejected' not in _history[0]):
-                    for row in _history:
+                    ('Accepted' not in history[0] or 'Rejected' not in history[0]):
+                    for row in history:
                         pos = column_names.index('Change state')
                         row.insert(pos,'Accepted')
 
                 elif 'Change state' not in column_names and \
-                    ('Accepted' in _history[0] or 'Rejected' in _history[0]):
-                    for row in _history:
+                    ('Accepted' in history[0] or 'Rejected' in history[0]):
+                    for row in history:
                         try:
                             row.remove('Accepted')
                         except ValueError:
@@ -386,6 +382,6 @@ class Minimizer(ABC):
 
                 self.compatible = True
             except Exception as err:
-                raise Exception("Failed to make the data compatible with the different minimizers \
-                            used between refinements.") from err
-        self._history = _history
+                raise Exception("Failed to make the data compatible with the different minimizers"
+                            "used between refinements.") from err
+        self._history = history

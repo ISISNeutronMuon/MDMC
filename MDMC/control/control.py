@@ -1,7 +1,7 @@
 """A module for performing the refinement"""
 import statistics
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, Union
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
@@ -183,7 +183,7 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
-                 previous_history: Path = None,
+                 previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
                  **settings: dict):
