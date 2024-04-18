@@ -396,9 +396,15 @@ class FigureOfMerit(ABC):
         """
 
         total_weight = sum(obs_pair.weight for obs_pair in self.obs_pairs)
+        dum = [obs_pair.weight for obs_pair in self.obs_pairs]
+        print(dum)
         value_unreduced = sum(self.calculate_single_FoM(obs_pair)
                                   for obs_pair in self.obs_pairs)
         self.value = value_unreduced / total_weight
+        
+        # print(total_weight)
+        # print(value_unreduced)
+        # print(self.value)
 
         assert self.value >= 0.
         return self.value
