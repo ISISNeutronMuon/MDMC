@@ -1,5 +1,6 @@
 """The Metropolis-Hastings minimizer class"""
 from typing import TYPE_CHECKING, Optional
+from pathlib import Path
 
 import numpy as np
 
@@ -8,8 +9,6 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 if TYPE_CHECKING:
     from MDMC.MD import Parameters
     from MDMC.control import Control
-
-    from pathlib import Path
 
 class MMC(Minimizer):
 

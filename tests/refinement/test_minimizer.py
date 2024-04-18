@@ -172,6 +172,7 @@ def test_load_history(mockcontrol, parameters,column_names, previous_history):
 
  
 @patch.multiple(Minimizer, __abstractmethods__=set())    
+@pytest.mark.parametrize("parameters", [Parameters([Parameter(1.0, 'param'), Parameter(2.0, 'param')])])
 @pytest.mark.parametrize("column_names,history",
                         [(['FoM','dummy (#1)', 'dummy (#2)'],[[1,2],[3,4]])
                          ,(['FoM','param1 (#2)', 'param1 (#3)'], [[1,2],[3,4]]) 
@@ -180,12 +181,9 @@ def test_check_parameters_fit_with_history(mockcontrol, parameters,column_names,
     """Test that an Exception is raised when the parameters, or data type, in the previous refinement file
     are not compatible with the ones currently defined in the control object 
     (for example, different name, different number of parameters)."""
-    
-    
-    parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
-    parameters = Parameters(parameters)
-    minim = Minimizer(mockcontrol, parameters)
 
+
+    minim = Minimizer(mockcontrol, parameters)
     with pytest.raises(Exception):
         minim._check_parameters_fit_with_history(parameters, column_names, history)
 
@@ -216,4 +214,5 @@ def test_different_minimizer_compatibility(mockcontrol, column_names, history):
         column_names.append(str(param))
     
     minim = Minimizer(mockcontrol,parameters)
-    minim.different_minimizer_compatibility(column_names, history)
+    Minimizer.compatible = False
+    minim.enforcing_minimizer_compatibility(column_names, history)

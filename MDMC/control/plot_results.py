@@ -145,7 +145,7 @@ class PlotResults():
             _, _, y_random, coords = \
             self._expected_minimum_random_sampling()
         except IndexError:
-            msg = (f"\n \n Your data file, {self.filename} appears not to have any points in, please check you have "
+            msg = (f"\n \n Your data file, {self.filename}, appears not to have any points in, please check you have "
                    "run the refinement and it saved correctly. \n")
             print(msg)
 

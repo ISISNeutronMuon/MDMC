@@ -65,6 +65,7 @@ class Minimizer(ABC):
             self.FoM_old = self._history[-1][0]
             self.compatible = False
             self.enforcing_minimizer_compatibility(self.history_columns, self._history)
+            print(type(self._history))
             self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
             self.parameters_old_values = self.get_parameters_old_values(parameters, \
                 self.column_names, self._history)
@@ -263,14 +264,14 @@ class Minimizer(ABC):
         # remove empty index and separate column names
         file_content = [row[1:] for row in file_content]
         column_names = file_content.pop(0)
-        file_content = ([[float(x) if x.isdigit() or x.replace(".","").isnumeric() \
-            else x for x in row] for row in file_content])
+        file_content = [[float(x) if x.isdigit() or x.replace(".","").isnumeric()
+            else x for x in row] for row in file_content]
 
         return column_names, file_content
 
 
     def _check_parameters_fit_with_history(self, parameters: Parameters,
-                                           column_names: list, history):
+                                           column_names: list, history: Path):
         """Checks that the parameters loaded in from the file of previous refinement steps are
          compatible with those already defined in the control object. If the parameters are the same
          but with different numbers (arbitrary), then this is changed to be consistent.
@@ -307,7 +308,7 @@ class Minimizer(ABC):
             self.column_names = ['FoM', *list(parameters)]
 
 
-    def get_parameters_old_values(self, parameters: Parameters, column_names: list, history):
+    def get_parameters_old_values(self, parameters: Parameters, column_names: list, history: list):
         """Retrieves the last set of parameters from a file containing data of previous
         refinement steps.
 
@@ -365,7 +366,6 @@ class Minimizer(ABC):
 
         """
         if history and self.compatible is False:
-            try:
                 if 'Change state' in column_names and \
                     ('Accepted' not in history[0] or 'Rejected' not in history[0]):
                     for row in history:
@@ -381,7 +381,4 @@ class Minimizer(ABC):
                             row.remove('Rejected')
 
                 self.compatible = True
-            except Exception as err:
-                raise Exception("Failed to make the data compatible with the different minimizers"
-                            "used between refinements.") from err
         self._history = history
