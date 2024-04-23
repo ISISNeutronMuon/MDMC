@@ -165,7 +165,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self.dlpoly_simulation.temperature = value
 
     @property
@@ -1005,13 +1004,11 @@ class DLPOLYSimulation(DLPOLYAttribute):
         `float`
             Temperature in ``K``
         """
-
         return self.ensemble.temperature
 
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self.ensemble.temperature = value
 
     @property
@@ -1145,7 +1142,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def temperature(self, value: float) -> None:
 
         self._temperature = value
-        # Set the temperature in the DL_POLY wrapper
+        # Set the initial temperature in the DL_POLY wrapper
         if value is not None:
             self.dlpoly.control['temperature'] = (
                 convert_unit(self._temperature), 'K')

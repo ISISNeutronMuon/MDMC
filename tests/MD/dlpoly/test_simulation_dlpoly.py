@@ -1,4 +1,6 @@
-"""Tests for setting up and running MDMC using DLPOLY infrastructure"""
+"""
+Tests for setting up and running MDMC using DLPOLY infrastructure.
+"""
 
 # pylint: disable=redefined-outer-name
 
@@ -439,7 +441,7 @@ Ne               2      2.000000      0.000000      0.000000
                               "Error with convert trajectory for two steps."])
 def test_convert_trajectory(tmp_path, dlpoly_eng, traj_hist_n_steps, n_steps, position):
     """
-    Test trajectory converter handles this correctly
+    Test trajectory converter handles this correctly.
     """
 
     traj_file = tmp_path / "traj"
