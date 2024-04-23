@@ -159,7 +159,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self.dlpoly_simulation.temperature = value
 
     @property
@@ -402,7 +401,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         def read_line_as(f, typ):
             return list(map(typ, f.readline().split()))
 
-        def create_atom(f, level_of_detail, element_dict = None):
+        def create_atom(f, level_of_detail, element_dict=None):
             # level_of_detail of information in the file, 0, indicates only positions,
             # 1 positions and velocities, 2 positions, velocities and forces
             # the first line gives the symbol, mass and atom_ID of the atom
@@ -436,12 +435,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
 
-            end = stop or frames + 1
+            end = stop or frames
 
             take = range(start, end, step)
 
-            traj.preAllocate(n_steps = len(take), n_atoms = n_atoms,
-                useVelocity = level_of_detail >=1)
+            traj.preAllocate(n_steps=len(take), n_atoms=n_atoms,
+                             useVelocity=level_of_detail >= 1)
             traj_step = 0
             dlpoly_time_unit = SYSTEM['TIME']
             time_conv = dlpoly_time_unit.conversion_factor
@@ -460,9 +459,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                     element_dict=element_dictionary)
                                             for _ in range(n_atoms)])
                     if level_of_detail:
-                        traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])
+                        traj.writeOneStep(traj_step, time, tempdata[:, 0:3], tempdata[:, 3:6])
                     else:
-                        traj.writeOneStep(traj_step, time, tempdata[:,0:3])
+                        traj.writeOneStep(traj_step, time, tempdata[:, 0:3])
                     mass_dictionary = {}
                     for ind in range(len(tempdata)):
                         mass_dictionary[int(tempdata[ind, -1])] = tempdata[ind, -3]
@@ -507,6 +506,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
 
         self.dlpoly_universe.set_config(self.saved_config)
+
+    def eval(self, variable: str) -> None:
+        """
+        Dummy eval to satisfy Abstract specification
+        """
+        raise NotImplementedError("DLPolyEngine does not support eval")
 
 
 @repr_decorator('universe')
@@ -715,12 +720,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
             out.add_molecule(mols[structure.name])
 
         for disp in self.disps:
-            currAtm = [spec[atm] for parm in disp.atom_types for atm in parm]
-            pot = Potential('vdw', [*currAtm,
+            curr_atom = [spec[atm] for parm in disp.atom_types for atm in parm]
+            pot = Potential('vdw', [*curr_atom,
                                     POTENTIAL_REF[disp.function.name],
                                     *map(lambda x: str(x.value.real), disp.parameters.values())
                                     ])
-            out.add_potential(currAtm, pot)
+            out.add_potential(curr_atom, pot)
 
         return out
 
@@ -742,10 +747,10 @@ class DLPOLYUniverse(DLPOLYAttribute):
         new_molecule.name = structure.name
         species = structure.name
         MDMC_spec = universe.element_dict[species]
-        newSpec = Species(species, 0,
+        new_spec = Species(species, 0,
                           charge=MDMC_spec.charge, mass=MDMC_spec.mass)
-        new_molecule.nAtoms = 1
-        new_molecule.species = {1: newSpec}
+        new_molecule.n_atoms = 1
+        new_molecule.species = {1: new_spec}
         return new_molecule
 
     @staticmethod
@@ -778,7 +783,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             new_species = Species(atm.element, ind,
                                   MDMC_spec.charge, MDMC_spec.mass)
             new_molecule.species[ind] = new_species
-            new_molecule.nAtoms += 1
+            new_molecule.n_atoms += 1
             mapping[atm.ID] = ind
 
         for bond, atms in structure.bonded_interaction_pairs:
@@ -833,7 +838,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
                             for parm in disp.atom_types
                             for atm in parm]
             current_pot = next(self.dlpoly.field.get_pot(species=current_atom,
-                                                         potType='lj'))
+                                                         pot_type='lj'))
             current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters.values())]
 
     def _update_bonded_interactions(self) -> None:
@@ -960,20 +965,12 @@ class DLPOLYSimulation(DLPOLYAttribute):
         `float`
             Temperature in ``K``
         """
-
-        return self._temperature
+        return self.ensemble.temperature
 
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
-        self._temperature = value
-        try:
-            # Set the initial temperature in the DL_POLY wrapper
-            self.dlpoly.control['temperature'] = (
-                convert_unit(self._temperature), 'K')
-        except ValueError:
-            pass
+        self.ensemble.temperature = value
 
     @property
     def pressure(self) -> float:
@@ -1106,6 +1103,10 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def temperature(self, value: float) -> None:
 
         self._temperature = value
+        # Set the initial temperature in the DL_POLY wrapper
+        if value is not None:
+            self.dlpoly.control['temperature'] = (
+                convert_unit(self._temperature), 'K')
 
     @property
     def pressure(self) -> float:
