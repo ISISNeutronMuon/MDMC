@@ -49,6 +49,7 @@ class AbstractFQt(SQwMixins, Observable):
         self.n_Q_vectors = None
         self.Q_values = None
         self.weights = None
+        self.recreated_Q = []
 
     @property
     def independent_variables(self) -> dict:
@@ -208,16 +209,16 @@ class AbstractFQt(SQwMixins, Observable):
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
 
-        for value in self.Q_values:
-            print(value)
-            print(np.where(self.Q==value))
-        print(self.Q)
+        q_values_unequal = False
+        print(self.Q, self.Q_values)
+        if len(self.Q) != len(self.Q_values):
+            q_values_unequal = True
+            for value in self.Q_values:
+                print(np.where(self.Q==value)[0][0])
+                self.recreated_Q.append(np.where(self.Q==value)[0][0])
         
         self.Q = [val for val in self.Q if val in self.Q_values]
-        print(self.Q)
-        
 
-        # print(FQt_array)
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
         # FQt_size is the number of Q values if specified, and otherwise we

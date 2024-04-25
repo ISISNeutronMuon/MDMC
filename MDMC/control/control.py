@@ -23,6 +23,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.fqt import AbstractFQt
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -275,7 +276,6 @@ class Control:
             FoM_norm = 'data_points'
         else:
             FoM_norm = FoM_options.get('norm')
-
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
@@ -634,11 +634,9 @@ class Control:
         FQt_size = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
 
         if len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]) != FQt_size:
-
-            removes = [2,4,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]
-
-            self.observable_pairs[0].exp_obs.errors['SQw'][0] = [self.observable_pairs[0].exp_obs.errors['SQw'][0][num] for num in removes]
-            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = [self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][num] for num in removes]
+            print(self.observable_pairs[0].exp_obs.errors['SQw'][0])
+            self.observable_pairs[0].exp_obs.errors['SQw'][0] = [self.observable_pairs[0].exp_obs.errors['SQw'][0][num] for num in self.recreated_Q_values]
+            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = [self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][num] for num in self.recreated_Q_values]
 
             logging.warning(" The specified box size was not able to recreate the lowest q"
                             " values of the experimental data and so this data has been trimmed.")
@@ -751,6 +749,8 @@ class Control:
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            if pair.MD_obs.name =='SQw':
+                self.recreated_Q_values = pair.MD_obs.get_recreated_Q()
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:

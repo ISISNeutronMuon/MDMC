@@ -427,6 +427,7 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
             trj_sliced = False
 
+        obtained_recreated_q = False
         # Perform calculations for each trajectory
         for trajectory in trajectories:
             self.trajectory = trajectory
@@ -457,7 +458,10 @@ class AbstractSQw(SQwMixins, Observable):
             FQt.Q = self.Q
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
-
+            self.Q = FQt.Q
+            if not obtained_recreated_q:
+                self.recreated_Q = FQt.recreated_Q
+                obtained_recreated_q = True
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
 
             # Cleanup the trajectory to reduce memory usage
@@ -469,6 +473,9 @@ class AbstractSQw(SQwMixins, Observable):
 
         self._dependent_variables = {'SQw': SQw_output}
         self._errors = {'SQw': errors_output}
+
+    def get_recreated_Q(self):
+        return self.recreated_Q     
 
     def _get_fqt_type(self) -> str:
         """
