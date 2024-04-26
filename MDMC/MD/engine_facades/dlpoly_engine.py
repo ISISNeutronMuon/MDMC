@@ -4,34 +4,33 @@ This is a facade to the DL_POLY MD engine and
 the Python wrapper dlpoly-py that can interface with it.
 
 """
-# pylint: disable=import-error
-# as it flags up dlpoly import errors outside of container
 from __future__ import annotations
 
-from typing import Union, TYPE_CHECKING
+import logging
 from abc import ABC
 from copy import copy
-import logging
+from pathlib import Path
+from typing import TYPE_CHECKING, Union
 
 import dlpoly.control
-
-from dlpoly import DLPoly
-from dlpoly.species import Species
-from dlpoly.field import Field, Bond, Potential, Molecule
-from dlpoly.new_control import NewControl as DLPControl
-from dlpoly.config import Config
 import numpy as np
-
-from ase import Atoms, Atom
+from ase import Atom, Atoms
 from ase.io import write
 
+from dlpoly import DLPoly
+from dlpoly.config import Config
+from dlpoly.field import Bond, Field, Molecule, Potential
+from dlpoly.new_control import NewControl as DLPControl
+from dlpoly.species import Species
+from dlpoly.utility import next_file
+
 from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, repr_decorator
-from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structures import (Atom as MAtom,
-                                Molecule as MMolecule)
-from MDMC.MD.interactions import Bond as MBond
+from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.common.units import Unit
+from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.interactions import Bond as MBond
+from MDMC.MD.structures import Atom as MAtom
+from MDMC.MD.structures import Molecule as MMolecule
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition_interactions
 
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
     from MDMC.MD import Universe
 
 LOGGER = logging.getLogger(__name__)
+
 
 # mapping from the MDMC class names to names within DLPOLY
 POTENTIAL_REF = {
@@ -115,6 +115,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     """
 
+    # List of parameters handled explicitly during setup
+    # This is for filtering which params are passed directly
+    # to the DLP Control
+    HANDLED_PARAMS = {"temperature", "pressure", "ensemble",
+                      "timestep", "t_damp", "p_damp", "t_window",
+                      "t_fraction", "rescale_step", "thermostat",
+                      "barostat", "field"}
+
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
                  statis: str = None, output: str = None, dest_config: str = None,
@@ -159,6 +167,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
+
         self.dlpoly_simulation.temperature = value
 
     @property
@@ -278,6 +287,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   dlpoly=self.dlpoly,
                                                   **settings)
 
+        self._pass_settings_to_control(settings, self.dlpoly_simulation.dlpoly.control)
+
     def minimize(self, n_steps: int,
                  minimize_every: int = 10, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
@@ -364,11 +375,31 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
+
+        self._pass_settings_to_control(settings, self.dlpoly.control)
+
+        if output_log is None:
+            output_log = next_file(self.dlpoly.control.io_file_output)
+
+        output_log = Path(output_log).resolve()
+
         # pylint: disable=c-extension-no-member, too-many-lines
-        self.dlpoly.run(numProcs=settings.get('numprocs',1), outputFile=output_log,
-                        mpi="mpirun --allow-run-as-root -n")
-        print("update coordinates from ", self.dlpoly.control['io_file_revcon'])
-        self.dlpoly.dest_config = 'minim.config'
+        err_code = self.dlpoly.run(numProcs=settings.get('numprocs', 1),
+                                   outputFile=output_log,
+                                   mpi="mpirun --allow-run-as-root -n",
+                                   debug=True)
+
+        if err_code != 0:
+            raise MDEngineError(f"Non-zero exit code ({err_code}), DLPoly run failed, "
+                                f"see {output_log} for details")
+
+        if not output_log.exists():
+            raise MDEngineError("No output, DLPoly run may have failed, "
+                                f"see {output_log} for details")
+
+        LOGGER.info("updating coordinates from %s",
+                    self.dlpoly.control['io_file_revcon'])
+
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
@@ -444,6 +475,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             traj_step = 0
             dlpoly_time_unit = SYSTEM['TIME']
             time_conv = dlpoly_time_unit.conversion_factor
+
             for iframe in range(frames):
                 if iframe in take:
                     timestep_line = f.readline().split()
@@ -512,6 +544,21 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Dummy eval to satisfy Abstract specification
         """
         raise NotImplementedError("DLPolyEngine does not support eval")
+
+    def _pass_settings_to_control(self, settings: dict,
+                                  control: dlpoly.control.Control) -> None:
+        """Pass excess settings through to dlpoly control object.
+
+        Parameters
+        ----------
+        settings : dict
+            Dictionary containing settings passed through as kwargs
+        control : dlpoly.control.Control
+            DLPoly control object to set
+
+        """
+        for key in (settings.keys() & control.keys) - self.HANDLED_PARAMS:
+            control[key] = settings[key]
 
 
 @repr_decorator('universe')
@@ -661,7 +708,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     self.__class__)
 
         self.dlpoly.field = self._create_field(universe)
-        self.dlpoly.field.write(settings.get('field', 'FIELD'))
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
@@ -748,7 +794,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         species = structure.name
         MDMC_spec = universe.element_dict[species]
         new_spec = Species(species, 0,
-                          charge=MDMC_spec.charge, mass=MDMC_spec.mass)
+                           charge=MDMC_spec.charge, mass=MDMC_spec.mass)
         new_molecule.n_atoms = 1
         new_molecule.species = {1: new_spec}
         return new_molecule
@@ -792,8 +838,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
                 if not isinstance(bond, MBond):
                     raise NotImplementedError(f'{type(bond).__name__} constraints '
                                               'not supported in DLPOLY')
-                # print(bond.parameters)
-                # print(bond.parameters['equilibrium_state (#21)'])
+
                 pot = Bond('constraints',
                            ['',
                             *map(str, current_atom),
@@ -822,8 +867,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
 
         for atom in self.universe.top_level_structure_list:
-            currAtom = self.dlpoly.field.molecules[atom.name]
-            currAtom.charge = atom.charge
+            curr_atom = self.dlpoly.field.molecules[atom.name]
+            curr_atom.charge = atom.charge
 
     def _update_dispersions(self) -> None:
 
@@ -850,8 +895,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         mols = self.dlpoly.field.molecules
 
-        for structure in (x for x in self.universe.top_level_structure_list
-                          if isinstance(x, MMolecule)):
+        for structure in filter(lambda x: isinstance(x, MMolecule),
+                                self.universe.top_level_structure_list):
             mapping = {atm.ID: str(ind) for ind, atm in enumerate(structure.atoms, 1)}
             mol = mols[structure.name]
 
@@ -965,11 +1010,13 @@ class DLPOLYSimulation(DLPOLYAttribute):
         `float`
             Temperature in ``K``
         """
+
         return self.ensemble.temperature
 
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
+
         self.ensemble.temperature = value
 
     @property
@@ -1103,7 +1150,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def temperature(self, value: float) -> None:
 
         self._temperature = value
-        # Set the initial temperature in the DL_POLY wrapper
+        # Set the temperature in the DL_POLY wrapper
         if value is not None:
             self.dlpoly.control['temperature'] = (
                 convert_unit(self._temperature), 'K')
@@ -1119,7 +1166,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
-    def pressure(self, value:float) -> None:
+    def pressure(self, value: float) -> None:
 
         self._pressure = value
 

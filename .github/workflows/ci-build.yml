@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        testset: ["not lammps"]
+        testset: ["not lammps and not dlpoly"]
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -74,7 +74,7 @@ jobs:
       - name: pip3 install
         run: |
           sudo pip3 install --upgrade pip
-          sudo pip3 install .[lint]
+          sudo pip3 install .[lint,DLPOLY,LAMMPS]
       - name: pylint
         run: |
           pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
