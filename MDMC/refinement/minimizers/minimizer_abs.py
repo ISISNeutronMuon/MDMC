@@ -65,10 +65,10 @@ class Minimizer(ABC):
             self.FoM_old = self._history[-1][0]
             self.compatible = False
             self.enforcing_minimizer_compatibility(self.history_columns, self._history)
-            print(type(self._history))
             self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
             self.parameters_old_values = self.get_parameters_old_values(parameters, \
-                self.column_names, self._history)
+            self.column_names, self._history)
+            self._history.pop(-1)
         else:
             self._history = []
             self.FoM_old = float('inf')
