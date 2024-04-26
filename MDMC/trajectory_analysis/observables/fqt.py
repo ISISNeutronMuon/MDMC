@@ -209,10 +209,7 @@ class AbstractFQt(SQwMixins, Observable):
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
 
-        q_values_unequal = False
-        print(self.Q, self.Q_values)
         if len(self.Q) != len(self.Q_values):
-            q_values_unequal = True
             for value in self.Q_values:
                 print(np.where(self.Q==value)[0][0])
                 self.recreated_Q.append(np.where(self.Q==value)[0][0])

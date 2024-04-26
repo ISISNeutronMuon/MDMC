@@ -15,7 +15,8 @@ from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
-
+from MDMC.control import Control
+from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
 # before initialising Control so store these as a global variable
@@ -88,6 +89,51 @@ def mock_update_engine_parameters(self):
 
 def mock_equilibrate(self, *extras):
     pass
+
+@pytest.mark.skip(reason="used for other tests")
+def control_object_from_Argon_script(exp_datasets,file):
+    """
+    Returns
+    -------
+    control : object
+        control object from setting up a universe identical to that of the Argon tutorial
+    fit_parameters : dict
+        dictionary of force field parameters
+    """
+
+    density = 0.0176
+    universe = Universe(dimensions=23.0668)
+    Ar = Atom('Ar', charge=0., mass=36.0)
+
+    n_ar_atoms = int(density * np.product(universe.dimensions))
+    print(f'Number of argon atoms = {n_ar_atoms}')
+    universe.fill(Ar, num_struc_units=(n_ar_atoms))
+
+    Ar_dispersion = Dispersion(universe,
+                            (Ar.atom_type, Ar.atom_type),
+                            cutoff=8.,
+                            function=LennardJones(epsilon=1.02, sigma=3.36))
+
+    simulation = Simulation(universe,
+                            engine="lammps",
+                            time_step=10.18893,
+                            temperature=120.,
+                            traj_step=15)
+
+    dataset = exp_datasets(file_name=file)
+    fit_parameters = universe.parameters
+    fit_parameters['sigma'].constraints = [1.0,20.0]
+    fit_parameters['epsilon'].constraints = [0.5, 20]
+
+    control = Control(simulation=simulation,
+                exp_datasets=dataset,
+                fit_parameters=fit_parameters,
+                minimizer_type="GPO",
+                reset_config=True,
+                MD_steps=4000, 
+                equilibration_steps=4000,
+                data_printer='ipython')
+    return control, fit_parameters
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:
@@ -795,3 +841,9 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     
     ctrl.equilibrate(steps)
     mock_simulation_run.assert_called()
+
+def test_control_q_value_trimming(exp_datasets):
+    """
+    
+    """
+    ctrl,fit_paremeters = control_object_from_Argon_script(exp_datasets,'')
