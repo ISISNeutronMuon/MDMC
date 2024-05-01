@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
+import logging
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -458,6 +459,9 @@ class AbstractSQw(SQwMixins, Observable):
             FQt.Q = self.Q
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
+            if len(FQt.Q) != len(self.Q):
+                logging.warning(" The specified box size was not able to recreate the lowest q"
+                        " values of the experimental data and so this data has been trimmed accordingly.")
             self.Q = FQt.Q
             if not obtained_recreated_q:
                 self.recreated_Q = FQt.recreated_Q

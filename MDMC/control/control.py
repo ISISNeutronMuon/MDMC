@@ -5,7 +5,6 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 import logging
 import numpy as np
 import pandas as pd
@@ -634,22 +633,9 @@ class Control:
         FQt_size = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
 
         if len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]) != FQt_size:
-            print(self.observable_pairs[0].exp_obs.errors['SQw'][0])
             self.observable_pairs[0].exp_obs.errors['SQw'][0] = [self.observable_pairs[0].exp_obs.errors['SQw'][0][num] for num in self.recreated_Q_values]
             self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = [self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][num] for num in self.recreated_Q_values]
 
-            logging.warning(" The specified box size was not able to recreate the lowest q"
-                            " values of the experimental data and so this data has been trimmed.")
-
-        # print(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0])
-        # print(" ")
-        # print(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
-        # plt.title("SQw dependent_var only arrays for altered data")
-        # plt.plot(np.linspace(0,37,37),self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0][6])
-        # plt.show()
-        # plt.plot(np.linspace(0,37,37),self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0][9])
-        # plt.show()
-            
         FoM_value = self.FoM_calculator.calculate()
 
         return FoM_value
