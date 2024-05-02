@@ -2,10 +2,10 @@
 
 from typing import Optional
 
+import logging
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
-import logging
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -134,6 +134,7 @@ class AbstractSQw(SQwMixins, Observable):
         self.resolution = None
         # Use FFT by default
         self._use_FFT = True
+        self.recreated_Q = None
 
     @property
     def independent_variables(self) -> dict:
@@ -428,7 +429,7 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
             trj_sliced = False
 
-        obtained_recreated_q = False
+        obtained_recreated_Q = False
         # Perform calculations for each trajectory
         for trajectory in trajectories:
             self.trajectory = trajectory
@@ -459,13 +460,15 @@ class AbstractSQw(SQwMixins, Observable):
             FQt.Q = self.Q
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
+
             if len(FQt.Q) != len(self.Q):
                 logging.warning(" The specified box size was not able to recreate the lowest q"
-                        " values of the experimental data and so this data has been trimmed accordingly.")
+                        " values of the experimental data and so this data has been"
+                        " trimmed accordingly.")
             self.Q = FQt.Q
-            if not obtained_recreated_q:
+            if not obtained_recreated_Q:
                 self.recreated_Q = FQt.recreated_Q
-                obtained_recreated_q = True
+                obtained_recreated_Q = True
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
 
             # Cleanup the trajectory to reduce memory usage
@@ -479,7 +482,11 @@ class AbstractSQw(SQwMixins, Observable):
         self._errors = {'SQw': errors_output}
 
     def get_recreated_Q(self):
-        return self.recreated_Q     
+        """
+        Returns the indices of the recreated Q_values.
+
+        """
+        return self.recreated_Q
 
     def _get_fqt_type(self) -> str:
         """

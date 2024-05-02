@@ -213,7 +213,7 @@ class AbstractFQt(SQwMixins, Observable):
             for value in self.Q_values:
                 print(np.where(self.Q==value)[0][0])
                 self.recreated_Q.append(np.where(self.Q==value)[0][0])
-        
+
         self.Q = [val for val in self.Q if val in self.Q_values]
 
         # Remove the padded elements at the end of FQt which will be filled

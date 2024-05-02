@@ -5,7 +5,6 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
-import logging
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
@@ -22,7 +21,6 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from MDMC.trajectory_analysis.observables.fqt import AbstractFQt
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -260,6 +258,7 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            self.recreated_Q_values = None
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -275,6 +274,7 @@ class Control:
             FoM_norm = 'data_points'
         else:
             FoM_norm = FoM_options.get('norm')
+
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
@@ -633,8 +633,12 @@ class Control:
         FQt_size = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
 
         if len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]) != FQt_size:
-            self.observable_pairs[0].exp_obs.errors['SQw'][0] = [self.observable_pairs[0].exp_obs.errors['SQw'][0][num] for num in self.recreated_Q_values]
-            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = [self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][num] for num in self.recreated_Q_values]
+            self.observable_pairs[0].exp_obs.errors['SQw'][0] = \
+            [self.observable_pairs[0].exp_obs.errors['SQw'][0][num]
+             for num in self.recreated_Q_values]
+            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = \
+            [self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][num]
+             for num in self.recreated_Q_values]
 
         FoM_value = self.FoM_calculator.calculate()
 
