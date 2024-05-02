@@ -7,7 +7,6 @@ import pytest
 import re
 from typing import List
 from unittest.mock import Mock
-from unittest import TestCase
 import logging
 
 from MDMC.control import control
@@ -19,6 +18,7 @@ from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
 from MDMC.control import Control
 from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
+
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
 # before initialising Control so store these as a global variable
@@ -90,9 +90,6 @@ def mock_update_engine_parameters(self):
     pass
 
 def mock_equilibrate(self, *extras):
-    pass
-
-def mock_refine(self):
     pass
 
 @pytest.mark.skip(reason="used for other tests")
