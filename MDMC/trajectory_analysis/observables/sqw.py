@@ -484,7 +484,6 @@ class AbstractSQw(SQwMixins, Observable):
     def get_recreated_Q(self):
         """
         Returns the indices of the recreated Q_values.
-
         """
         return self.recreated_Q
 

@@ -630,9 +630,12 @@ class Control:
         """
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
-        FQt_size = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
+        exp_obs_length = len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0])
+        MD_obs_length = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
 
-        if len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]) != FQt_size:
+        if exp_obs_length != \
+            MD_obs_length:
+
             self.observable_pairs[0].exp_obs.errors['SQw'][0] = \
             [self.observable_pairs[0].exp_obs.errors['SQw'][0][num]
              for num in self.recreated_Q_values]

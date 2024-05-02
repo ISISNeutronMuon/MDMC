@@ -121,7 +121,7 @@ def control_object_from_Argon_script(exp_datasets):
                             time_step=10.18893,
                             temperature=120.,
                             traj_step=15)
-    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Argon_test_data.xml',
+    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/tests/test_data/experimental_data/Argon_test_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
                  'weight':1.,
@@ -849,7 +849,8 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
 
 def test_control_q_value_trimming(exp_datasets):
     """
-    Tests that the q_value trimming is done, by using a script which 
+    Tests that the q_value trimming is done correctly. This uses modified experimental Argon data 
+    with reduced Q_values.
     """
     ctrl,fit_parameters = control_object_from_Argon_script(exp_datasets)
     
@@ -871,7 +872,8 @@ def test_control_q_value_trimming(exp_datasets):
     
 def test_control_q_value_trimming_warning(exp_datasets, caplog):
     """
-    
+    Tests that the correct warning is given when some experimental Q_values cant be recreated. 
+    This uses modified experimental Argon data with reduced Q_values.
     """
     ctrl,fit_parameters = control_object_from_Argon_script(exp_datasets)
     
