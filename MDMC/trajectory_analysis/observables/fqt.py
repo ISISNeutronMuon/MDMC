@@ -208,8 +208,9 @@ class AbstractFQt(SQwMixins, Observable):
         # 'Q_v' is a list of Q_vectors corresponding to a single Q
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
+
         # Get the positions of the recreated_q_values
-        if len(self.Q) != len(self.Q_values):
+        if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
             for value in self.Q_values:
                 self.recreated_Q.append(np.where(self.Q==value)[0][0])
         self.Q = [val for val in self.Q if val in self.Q_values]

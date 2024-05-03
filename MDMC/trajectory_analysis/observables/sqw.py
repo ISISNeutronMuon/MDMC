@@ -134,7 +134,7 @@ class AbstractSQw(SQwMixins, Observable):
         self.resolution = None
         # Use FFT by default
         self._use_FFT = True
-        self.recreated_Q = None
+        self._recreated_Q = None
 
     @property
     def independent_variables(self) -> dict:
@@ -250,6 +250,17 @@ class AbstractSQw(SQwMixins, Observable):
             return self.errors['SQw']
         except KeyError:
             return None
+
+    @property
+    def recreated_Q(self):
+        """
+        Get the indices of the recreated Q_values.
+        """
+        return self._recreated_Q
+
+    @recreated_Q.setter
+    def recreated_Q(self, Q_values_pos):
+        self._recreated_Q = Q_values_pos
 
     def validate_energy(self, dt: float) -> None:
         """
@@ -467,7 +478,7 @@ class AbstractSQw(SQwMixins, Observable):
                         " trimmed accordingly.")
             self.Q = FQt.Q
             if not obtained_recreated_Q:
-                self.recreated_Q = FQt.recreated_Q
+                self._recreated_Q = FQt.recreated_Q
                 obtained_recreated_Q = True
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
 
@@ -480,12 +491,6 @@ class AbstractSQw(SQwMixins, Observable):
 
         self._dependent_variables = {'SQw': SQw_output}
         self._errors = {'SQw': errors_output}
-
-    def get_recreated_Q(self):
-        """
-        Returns the indices of the recreated Q_values.
-        """
-        return self.recreated_Q
 
     def _get_fqt_type(self) -> str:
         """

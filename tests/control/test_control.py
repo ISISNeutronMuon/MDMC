@@ -92,7 +92,7 @@ def mock_update_engine_parameters(self):
 def mock_equilibrate(self, *extras):
     pass
 
-@pytest.mark.skip(reason="used for other tests")
+@pytest.fixture(scope="module")
 def control_object_from_Argon_script(exp_datasets):
     """
     Returns
@@ -102,43 +102,47 @@ def control_object_from_Argon_script(exp_datasets):
     fit_parameters : dict
         dictionary of force field parameters
     """
+    def _control_object_from_Argon_script():
+        density = 0.0176
+        universe = Universe(dimensions=23.0668)
+        Ar = Atom('Ar', charge=0., mass=36.0)
 
-    density = 0.0176
-    universe = Universe(dimensions=23.0668)
-    Ar = Atom('Ar', charge=0., mass=36.0)
+        n_ar_atoms = int(density * np.product(universe.dimensions))
+        print(f'Number of argon atoms = {n_ar_atoms}')
+        universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
-    n_ar_atoms = int(density * np.product(universe.dimensions))
-    print(f'Number of argon atoms = {n_ar_atoms}')
-    universe.fill(Ar, num_struc_units=(n_ar_atoms))
+        Ar_dispersion = Dispersion(universe,
+                                (Ar.atom_type, Ar.atom_type),
+                                cutoff=8.,
+                                function=LennardJones(epsilon=1.02, sigma=3.36))
 
-    Ar_dispersion = Dispersion(universe,
-                            (Ar.atom_type, Ar.atom_type),
-                            cutoff=8.,
-                            function=LennardJones(epsilon=1.02, sigma=3.36))
+        simulation = Simulation(universe,
+                                engine="lammps",
+                                time_step=10.18893,
+                                temperature=120.,
+                                traj_step=15)
+        exp_datasets = [{'file_name':'tests/test_data/experimental_data/Argon_test_data.xml',
+                    'type':'SQw',
+                    'reader':'xml_SQw',
+                    'weight':1.,
+                    'auto_scale':True,
+                    'resolution':800}]
 
-    simulation = Simulation(universe,
-                            engine="lammps",
-                            time_step=10.18893,
-                            temperature=120.,
-                            traj_step=15)
-    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/tests/test_data/experimental_data/Argon_test_data.xml',
-                 'type':'SQw',
-                 'reader':'xml_SQw',
-                 'weight':1.,
-                 'auto_scale':True,
-                 'resolution':800}]
+        fit_parameters = universe.parameters
 
-    fit_parameters = universe.parameters
+        fit_parameters['sigma'].constraints = [2.0,3.8]
+        fit_parameters['epsilon'].constraints = [0.5, 1.5]
 
-    control = Control(simulation=simulation,
-                exp_datasets=exp_datasets,
-                fit_parameters=fit_parameters,
-                minimizer_type="GPO",
-                reset_config=True,
-                MD_steps=4000, 
-                equilibration_steps=4000,
-                data_printer='ipython')
-    return control, fit_parameters
+        control = Control(simulation=simulation,
+                    exp_datasets=exp_datasets,
+                    fit_parameters=fit_parameters,
+                    minimizer_type="GPO",
+                    reset_config=True,
+                    MD_steps=4000, 
+                    equilibration_steps=4000,
+                    data_printer='ipython')
+        return control, fit_parameters
+    return _control_object_from_Argon_script
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:
@@ -847,46 +851,38 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     ctrl.equilibrate(steps)
     mock_simulation_run.assert_called()
 
-def test_control_q_value_trimming(exp_datasets):
+def test_control_q_value_trimming(control_object_from_Argon_script):
     """
     Tests that the q_value trimming is done correctly. This uses modified experimental Argon data 
     with reduced Q_values.
     """
-    ctrl,fit_parameters = control_object_from_Argon_script(exp_datasets)
-    
-    fit_parameters['epsilon'].value = 1.02
-    fit_parameters['sigma'].value = 3.36
-    
-    fit_parameters['sigma'].constraints = [2.0,3.8]
-    fit_parameters['epsilon'].constraints = [0.5, 1.5]
-    
+    ctrl, fit_parameters = control_object_from_Argon_script()
     ctrl.equilibrate(n_steps=1000)
 
     recreated_q_values_pos = [6,9]
-    manually_trimmed_arrays = [ctrl.observable_pairs[0].exp_obs.errors['SQw'][0][pos] 
+    manually_trimmed_obs_arrays = [ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][pos] 
                                for pos in recreated_q_values_pos]
+    manually_trimmed_errors_arrays = [ctrl.observable_pairs[0].exp_obs.errors['SQw'][0][pos] 
+                               for pos in recreated_q_values_pos]
+
     ctrl.refine(n_steps=1)
-    auto_trimmed_arrays = ctrl.observable_pairs[0].exp_obs.errors['SQw'][0]
+    auto_trimmed_obs_arrays = ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]
+    auto_trimmed_errors_arrays = ctrl.observable_pairs[0].exp_obs.errors['SQw'][0]
+
+    assert np.array_equal(manually_trimmed_obs_arrays,auto_trimmed_obs_arrays)
+    assert np.array_equal(manually_trimmed_errors_arrays,auto_trimmed_errors_arrays)
     
-    assert np.array_equal(manually_trimmed_arrays,auto_trimmed_arrays)
-    
-def test_control_q_value_trimming_warning(exp_datasets, caplog):
+def test_control_q_value_trimming_warning(control_object_from_Argon_script, caplog):
     """
     Tests that the correct warning is given when some experimental Q_values cant be recreated. 
     This uses modified experimental Argon data with reduced Q_values.
     """
-    ctrl,fit_parameters = control_object_from_Argon_script(exp_datasets)
-    
-    fit_parameters['epsilon'].value = 1.02
-    fit_parameters['sigma'].value = 3.36
-    
-    fit_parameters['sigma'].constraints = [2.0,3.8]
-    fit_parameters['epsilon'].constraints = [0.5, 1.5]
-    
+    ctrl, fit_parameters = control_object_from_Argon_script()
     ctrl.equilibrate(n_steps=1000)
 
     caplog.set_level(logging.WARNING)
     ctrl.refine(n_steps=1)
+
     assert " The specified box size was not able to recreate the lowest q " 
     " values of the experimental data and so this data has been " 
     " trimmed accordingly." in caplog.text

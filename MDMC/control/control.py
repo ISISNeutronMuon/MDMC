@@ -630,18 +630,14 @@ class Control:
         """
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
-        exp_obs_length = len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0])
-        MD_obs_length = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
 
-        if exp_obs_length != \
-            MD_obs_length:
-
-            self.observable_pairs[0].exp_obs.errors['SQw'][0] = \
-            [self.observable_pairs[0].exp_obs.errors['SQw'][0][num]
-             for num in self.recreated_Q_values]
-            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = \
-            [self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][num]
-             for num in self.recreated_Q_values]
+        exp_obs = self.observable_pairs[0].exp_obs
+        md_obs = self.observable_pairs[0].MD_obs
+        if len(exp_obs.dependent_variables['SQw'][0]) != len(md_obs.dependent_variables['SQw'][0]):
+            exp_obs.errors['SQw'][0] = [exp_obs.errors['SQw'][0][num]
+                                        for num in self.recreated_Q_values]
+            exp_obs.dependent_variables['SQw'][0] = [exp_obs.dependent_variables['SQw'][0][num]
+                                                     for num in self.recreated_Q_values]
 
         FoM_value = self.FoM_calculator.calculate()
 
@@ -743,7 +739,9 @@ class Control:
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if pair.MD_obs.name =='SQw':
-                self.recreated_Q_values = pair.MD_obs.get_recreated_Q()
+                self.recreated_Q_values = pair.MD_obs.recreated_Q
+                print(self.recreated_Q_values)
+                # self.recreated_Q_values = pair.MD_obs.get_recreated_Q()
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
