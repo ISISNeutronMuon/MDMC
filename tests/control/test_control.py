@@ -93,7 +93,7 @@ def mock_equilibrate(self, *extras):
     pass
 
 @pytest.fixture(scope="module")
-def control_object_from_Argon_script(exp_datasets):
+def control_object_from_Argon_script(exp_datasets) -> callable:
     """
     Returns
     -------
@@ -121,20 +121,15 @@ def control_object_from_Argon_script(exp_datasets):
                                 time_step=10.18893,
                                 temperature=120.,
                                 traj_step=15)
-        exp_datasets = [{'file_name':'tests/test_data/experimental_data/Argon_test_data.xml',
-                    'type':'SQw',
-                    'reader':'xml_SQw',
-                    'weight':1.,
-                    'auto_scale':True,
-                    'resolution':800}]
+
+        dataset = exp_datasets(file_name = 'Argon_test_data.xml')
 
         fit_parameters = universe.parameters
-
         fit_parameters['sigma'].constraints = [2.0,3.8]
         fit_parameters['epsilon'].constraints = [0.5, 1.5]
 
         control = Control(simulation=simulation,
-                    exp_datasets=exp_datasets,
+                    exp_datasets=dataset,
                     fit_parameters=fit_parameters,
                     minimizer_type="GPO",
                     reset_config=True,
@@ -185,7 +180,7 @@ def exp_datasets() -> callable:
         datasets = []
         for k, v in data.READER_DATA.items():
             # 'XML_SQw' is the reader Class, but we want the module 'xml_SQw'
-            if k == 'XML_SQw':
+            if k == 'XML_SQw' or k == 'xml_SQw_2':
                 k = 'xml_SQw'
 
             if (file_name is not None
@@ -856,7 +851,7 @@ def test_control_q_value_trimming(control_object_from_Argon_script):
     Tests that the q_value trimming is done correctly. This uses modified experimental Argon data 
     with reduced Q_values.
     """
-    ctrl, fit_parameters = control_object_from_Argon_script()
+    ctrl, _ = control_object_from_Argon_script()
     ctrl.equilibrate(n_steps=1000)
 
     recreated_q_values_pos = [6,9]
@@ -877,7 +872,7 @@ def test_control_q_value_trimming_warning(control_object_from_Argon_script, capl
     Tests that the correct warning is given when some experimental Q_values cant be recreated. 
     This uses modified experimental Argon data with reduced Q_values.
     """
-    ctrl, fit_parameters = control_object_from_Argon_script()
+    ctrl, _ = control_object_from_Argon_script()
     ctrl.equilibrate(n_steps=1000)
 
     caplog.set_level(logging.WARNING)

@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-import logging
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
@@ -472,10 +471,6 @@ class AbstractSQw(SQwMixins, Observable):
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
 
-            if len(FQt.Q) != len(self.Q):
-                logging.warning(" The specified box size was not able to recreate the lowest q"
-                        " values of the experimental data and so this data has been"
-                        " trimmed accordingly.")
             self.Q = FQt.Q
             if not obtained_recreated_Q:
                 self._recreated_Q = FQt.recreated_Q

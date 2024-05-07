@@ -3,6 +3,7 @@ from abc import abstractmethod
 from itertools import product
 from typing import TYPE_CHECKING, Generator
 
+import logging
 import numpy as np
 
 from MDMC.common import units
@@ -213,7 +214,11 @@ class AbstractFQt(SQwMixins, Observable):
         if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
             for value in self.Q_values:
                 self.recreated_Q.append(np.where(self.Q==value)[0][0])
-        self.Q = [val for val in self.Q if val in self.Q_values]
+            self.Q = [val for val in self.Q if val in self.Q_values]
+
+            logging.warning(" The specified box size was not able to recreate the lowest q"
+            " values of the experimental data and so this data has been"
+            " trimmed accordingly.")
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's

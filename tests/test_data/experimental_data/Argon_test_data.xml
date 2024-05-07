@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s-q-omega S-unit="0.1ps" n-omega-points="37" n-q-points="10" omega-unit="1/[10^-13 s]" q-unit="AA^-1">
-   <description>Copy of data from A. A. Van Well thesis. Table V page 41-2. Ag S(Q,Omega) data.</description>
+   <description>Copy of data from A. A. Van Well thesis. Table V page 41-2. Ag S(Q,Omega) data, altered to give artificially lower Q values.</description>
    <SQomega S="0.694" error="0.0270" omega="0" q="0.042"/>
    <SQomega S="0.298" error="0.0090" omega="0" q="0.084"/>
    <SQomega S="0.427" error="0.0070" omega="0" q="0.126"/>
