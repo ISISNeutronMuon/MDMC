@@ -460,15 +460,12 @@ class CompositeStructure(Structure, AtomContainer):
                     struct_map[atom] = new_atom
 
                 # Create interactions
-                new_interactions = []
                 for inter, pair in self.bonded_interaction_pairs:
                     # try/except accounts for interactions associated with atoms
                     # that are in a composite subunit
                     try:
                         new_pair = [struct_map[atom] for atom in pair]
-                        # Instead of adding atoms, replace the interaction with new one in copy
-                        bond_type = type(inter)
-                        new_interactions.append(bond_type(tuple(new_pair), **vars(inter)))
+                        inter.add_atoms(*new_pair)
                     except KeyError:
                         pass
 
@@ -479,7 +476,6 @@ class CompositeStructure(Structure, AtomContainer):
                 # List comprehension ensures order of structures in new
                 # structure is the same as in original
                 setattr(unit, k, [struct_map[s] for s in self._structure_list])
-                setattr (unit, "_bonded_interactions", new_interactions)
             else:
                 setattr(unit, k, deepcopy(v, memo))
         return unit
@@ -1185,25 +1181,6 @@ class Atom(Structure):
                         zip(self.bonded_interactions, structure.bonded_interactions)),
                     all(a.is_equivalent(b) for a, b in
                         zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
-
-
-class _Group(CompositeStructure):
-    """
-    Two or more `Atom` objects that form a subset of a ``Molecule``
-
-    THIS CLASS HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
-
-    Raises
-    ------
-    NotImplementedError
-        THIS CLASS HAS NOT BEEN IMPLEMENTED
-    """
-    # pylint: disable=super-init-not-called
-    # as this is not implemented yet
-
-    def __init__(self):
-
-        raise NotImplementedError
 
 
 class Molecule(CompositeStructure):

@@ -64,9 +64,6 @@ simulation = Simulation(universe,
                         traj_step=15,
                         numprocs=4)
 
-# Energy Minimization and equilibration
-simulation.minimize(n_steps=10,output_log='minim.log',work_dir='minim')
-simulation.run(n_steps=1000, equilibration=True,output_log='equilibration.log',work_dir='equil')
 #simulation.run(n_steps=10000, equilibration=False)
 #print(simulation.trajectory)
 ## dataset
@@ -84,6 +81,10 @@ control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
                   MD_steps=570)
+
+# Energy Minimization and equilibration
+control.minimize(n_steps=10,output_log='minim.log',work_dir='minim')
+control.equilibrate(n_steps=1000,output_log='equilibration.log',work_dir='equil')
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script

@@ -208,7 +208,6 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.settings = settings
         self.n_steps = settings.get('n_steps')
-
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
@@ -231,6 +230,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
+            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -432,8 +433,8 @@ class Control:
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
-                if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate()
+                if count >= 0:
+                    self.equilibrate(self.equilibration_steps)
 
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
@@ -444,8 +445,8 @@ class Control:
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
-                if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate()
+                if count >= 0:
+                    self.equilibrate(self.equilibration_steps)
                 self.step()  # advance the refinement by one step
                 count += 1
 
@@ -486,13 +487,70 @@ class Control:
 
         verbose_manager.finish("Refinement")
 
-    def equilibrate(self) -> None:
+    def minimize(self, n_steps: int,
+                 minimize_every: int = 10,
+                 verbose: bool = False, output_log: str = None,
+                 work_dir: str = None, **settings: dict) -> None:
         """
-        Run molecular dynamics to equilibrate the ``Universe``.
+        Performs an MD run intertwined with periodic structure relaxation.
+        This way after a local minimum is found, the system is taken
+        out of the minimum to explore a larger volume of the parameter
+        space.
+
+        Parameters
+        ----------
+        n_steps : int
+            Total number of the MD run steps
+        minimize_every: int, optional
+            Number of MD steps between two consecutive minimizations
+        verbose: bool, optional
+            Whether to print statements when the minimization has been started and completed
+            (including the number of minimization steps and time taken). Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
+        **settings
+            ``etol`` (`float`)
+                If the energy change between iterations is less than ``etol``,
+                minimization is stopped. Default depends on engine used.
+            ``ftol`` (`float`)
+                If the magnitude of the global force is less than ``ftol``,
+                minimization is stopped. Default depends on engine used.
+            ``maxiter`` (`int`)
+                Maximum number of iterations of a single structure
+                relaxation procedure. Default depends on engine used.
+            ``maxeval`` (`int`)
+                Maximum number of force evaluations to perform. Default depends
+                on engine used.
         """
 
-        self.simulation.run(self.equilibration_steps, equilibration=True,
-                            verbose=False)
+        self.simulation.minimize(n_steps,minimize_every,verbose,
+                                 output_log,work_dir, **settings)
+
+    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
+            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
+
+        """
+        Run molecular dynamics to equilibrate the ``Universe``.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+            Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
+        """
+        if not n_steps:
+            self.simulation.auto_equilibrate()
+        else:
+            self.simulation.run(n_steps,equilibration, verbose,
+                                output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
@@ -924,5 +982,33 @@ class Control:
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
+
         with suppress(AttributeError):
             obs.validate_energy(dt)
+
+    def _input_check(self, general_set, inputs) -> None:
+        """
+
+        Handles error for retrieving data from a set where the input is not found.
+        This was made in a general way to be used for any dataset or set of inputs.
+
+        Parameters
+        ----------
+        general_set : A general dataset
+            A variable that contains a set of information for input checking against,
+            for example 'dset' contains the observable type, file_name and reader type,
+            for checking inputs.
+
+        Returns
+        -------
+        None
+        """
+
+        for input_check in inputs:
+            try:
+                general_set[input_check]
+            except KeyError as error:
+                raise KeyError("There was an issue retrieving the input: "
+                               f" {input_check} "
+                                "from the dataset, please check your inputs again.") from error
+            
