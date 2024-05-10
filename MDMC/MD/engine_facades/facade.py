@@ -233,5 +233,13 @@ class MDEngine(ABC):
 
         raise NotImplementedError
 
+    @abstractmethod
+    def generate_auto_equil_data(self, vals_dict: dict, eq_step: int, window_size: int):
+        """
+        Generate the initial data for auto_equilibration data
+        """
+
+        raise NotImplementedError
+
 class MDEngineError(Exception):
     "Raised when MD engine raises an exception from a run command"

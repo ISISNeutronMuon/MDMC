@@ -45,7 +45,7 @@ def simulation(universe):
                       time_step=10.18893/2,
                       temperature=120.,
                       traj_step=30,
-                      numprocs=4,
+                      numprocs=1,
                       density_variance=1.4)
 
 
@@ -71,50 +71,69 @@ def control(simulation, universe, exp_datasets):
                    MD_steps=1140)
 
 
-def test_minimize(control):
+def test_minimize(tmp_path, control):
     """ Test that minimize runs and minimises the energy """
 
     orig_conf = control.simulation.engine.dlpoly.config.atoms
-    print(control.simulation.engine.dlpoly.control.temperature)
 
-    with TemporaryDirectory() as tempdir:
-        pth = Path(tempdir)
-        control.minimize(n_steps=10,
-                         output_log=pth / 'minim.log',
-                         work_dir=pth)
+    control.minimize(n_steps=10,
+                     output_log=tmp_path / 'minim.log',
+                     work_dir=tmp_path)
 
-        new_conf = control.simulation.engine.dlpoly.config.atoms
+    new_conf = control.simulation.engine.dlpoly.config.atoms
 
     assert orig_conf != new_conf
 
 
-def test_run(control):
+def test_run(tmp_path, control):
     """ Test that refine starts a DLP calculation """
 
     orig_conf = control.simulation.engine.dlpoly.config.atoms
 
-    with TemporaryDirectory() as tempdir:
-        pth = Path(tempdir)
-        control.simulation.engine.dlpoly.workdir = pth
-        control.simulation.engine.dlpoly.control.io_file_output = pth / "run.log"
-        control.refine(n_steps=1)
+    control.simulation.engine.dlpoly.workdir = tmp_path
+    control.simulation.engine.dlpoly.control.io_file_output = tmp_path / "run.log"
+    control.refine(n_steps=1)
 
-        new_conf = control.simulation.engine.dlpoly.config.atoms
+    new_conf = control.simulation.engine.dlpoly.config.atoms
 
     assert orig_conf != new_conf
 
 
-def test_equil(control):
+def test_equil(tmp_path, control):
     """ Test that equilibrate runs an equilibration phase """
 
     orig_conf = control.simulation.engine.dlpoly.config.atoms
 
-    with TemporaryDirectory() as tempdir:
-        pth = Path(tempdir)
-        control.equilibrate(n_steps=10,
-                            output_log=pth / 'equilibration.log',
-                            work_dir=pth)
+    control.equilibrate(n_steps=10,
+                        output_log=tmp_path / 'equilibration.log',
+                        work_dir=tmp_path,
+                        debug=True)
 
-        new_conf = control.simulation.engine.dlpoly.config.atoms
+    new_conf = control.simulation.engine.dlpoly.config.atoms
 
     assert orig_conf != new_conf
+
+
+@pytest.mark.mpi
+def test_minimize_mpi(tmp_path, control):
+    """ Test that minimize runs in MPI and minimises the energy """
+
+    orig_conf = control.simulation.engine.dlpoly
+
+    control.minimize(n_steps=10,
+                     output_log=tmp_path / 'minim.log',
+                     work_dir=tmp_path,
+                     numProcs=4)
+
+    new_conf = control.simulation.engine.dlpoly.config.atoms
+
+    assert orig_conf != new_conf
+
+
+def test_auto_equil(tmp_path, capsys, control):
+    """ Test that equilibrate runs an auto-equilibration phase """
+
+    control.equilibrate(output_log=tmp_path / 'equilibration.log',
+                        work_dir=tmp_path)
+    captured = capsys.readouterr()
+    assert "Auto-equilibration has detected stability " in captured.out

@@ -136,6 +136,12 @@ class MockEngine:
     def run(self, n_steps, **ignored):
         self.current_steps += n_steps
 
+    def generate_auto_equil_data(self, vals_dict, eq_step, window_size):
+        for _ in range(window_size):
+            self.run(eq_step)
+            for var in vals_dict:
+                vals_dict[var].append(self.eval(var))
+
     def eval(self, var):
         def pe_func(x):
             if x < self.pe_stability_point:

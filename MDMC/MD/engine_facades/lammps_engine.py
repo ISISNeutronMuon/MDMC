@@ -726,6 +726,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def eval(self, variable: str) -> Any:
         return self.lmp.eval(variable)
 
+    def generate_auto_equil_data(self, vals_dict: dict, eq_step: int, window_size: int):
+        for _ in range(window_size):
+            self.run(eq_step, equilibration=True, work_dir="auto-equil")
+            for var in vals_dict:
+                vals_dict[var].append(self.eval(var))
 
 
 @repr_decorator('universe')

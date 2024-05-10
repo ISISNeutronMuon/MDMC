@@ -9,11 +9,10 @@ from __future__ import annotations
 import logging
 from copy import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterator, Literal, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 import dlpoly.control
 import numpy as np
-
 from ase import Atom, Atoms
 from ase.io import write
 from dlpoly import DLPoly
@@ -21,7 +20,7 @@ from dlpoly.config import Config
 from dlpoly.field import Bond, Field, Molecule, Potential
 from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.species import Species
-
+from dlpoly.utility import next_file
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.common.units import Unit
@@ -374,15 +373,18 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
 
-        self._pass_settings_to_control(settings, self.dlpoly_simulation.dlpoly.control)
+        self._pass_settings_to_control(settings, self.dlpoly.control)
 
-        if output_log is not None:
-            output_log = Path(output_log).resolve()
+        if output_log is None:
+            output_log = next_file(self.dlpoly.control.io_file_output)
+
+        output_log = Path(output_log).resolve()
 
         # pylint: disable=c-extension-no-member, too-many-lines
         err_code = self.dlpoly.run(numProcs=settings.get('numprocs', 1),
                                    outputFile=output_log,
-                                   mpi="mpirun --allow-run-as-root -n")
+                                   mpi="mpirun --allow-run-as-root -n",
+                                   load_outputs=True)
 
         if err_code != 0:
             raise MDEngineError(f"Non-zero exit code ({err_code}), DLPoly run failed, "
@@ -531,11 +533,37 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly_universe.set_config(self.saved_config)
 
+    LAMMPS_TO_DLP = {
+        'temp': 'System Temperature',
+        'pe': 'Total Extended System Energy',
+    }
+
     def eval(self, variable: str) -> None:
+        """Return a value determined from a DLPoly Run.
+
+        Parameters
+        ----------
+        variable : str
+            Variable to extract. Must be a valid DLPoly statis key.
+
         """
-        Dummy eval to satisfy Abstract specification
-        """
-        raise NotImplementedError("DLPolyEngine does not support eval")
+        dlp = self.dlpoly_simulation.dlpoly
+
+        return dlp.statis[self.LAMMPS_TO_DLP.get(variable, variable)]
+
+    def generate_auto_equil_data(self, vals_dict: dict, eq_step: int, window_size: int):
+        outp = Path("auto_equil")
+        self.run(n_steps=window_size * eq_step,
+                 equilibration=True,
+                 work_dir=outp,
+                 output_log=outp / "auto_equil.log",
+                 record_equilibration=True,
+                 rescale_frequency=(eq_step, "steps"),
+                 stats_frequency=(1, "steps"),
+                 )
+
+        for var in vals_dict:
+            vals_dict[var] = list(self.dlpoly.statis[var][1::eq_step])
 
     def _pass_settings_to_control(self, settings: dict,
                                   control: dlpoly.control.Control) -> None:
@@ -551,7 +579,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         for key in (settings.keys() & control.keys) - self.HANDLED_PARAMS:
             control[key] = settings[key]
-
 
 
 @repr_decorator('universe')
@@ -1143,7 +1170,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def temperature(self, value: float) -> None:
 
         self._temperature = value
-        # Set the initial temperature in the DL_POLY wrapper
+        # Set the temperature in the DL_POLY wrapper
         if value is not None:
             self.dlpoly.control['temperature'] = (
                 convert_unit(self._temperature), 'K')
