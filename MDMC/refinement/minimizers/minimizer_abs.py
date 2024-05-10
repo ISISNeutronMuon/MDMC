@@ -3,7 +3,6 @@ parameters"""
 from typing import TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
 
-import csv
 from pathlib import Path
 import pandas as pd
 
@@ -45,7 +44,8 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, previous_history: Union[str,Path] = None):
+    def __init__(self, control: 'Control', parameters: Parameters,
+                 previous_history: Union[str,Path] = None):
 
         self.control = control
         self.previous_history = previous_history
@@ -76,7 +76,7 @@ class Minimizer(ABC):
             self.previous_steps = 0
 
         self._check_parameters(parameters)
- 
+
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -255,17 +255,12 @@ class Minimizer(ABC):
         tuple
             list of columns names, and a list containing a list for each refinement step
              from the loaded history file."""
-        try:
-            with open(history, 'r', encoding='utf-8') as file:
-                file_content = list(csv.reader(file))
-        except ValueError as err:
-            raise ValueError("Can not find file or path.") from err
 
-        # remove empty index and separate column names
-        file_content = [row[1:] for row in file_content]
-        column_names = file_content.pop(0)
-        file_content = [[float(x) if x.isdigit() or x.replace(".","").isnumeric()
-            else x for x in row] for row in file_content]
+        with open(history, 'r', encoding='utf-8') as file:
+            file_content = pd.read_csv(file)
+            file_content = file_content.drop(file_content.columns[0],axis=1)
+            column_names = file_content.columns.tolist()
+            file_content = file_content.values.tolist()
 
         return column_names, file_content
 
@@ -347,7 +342,7 @@ class Minimizer(ABC):
 
     def enforcing_minimizer_compatibility(self, column_names, history) -> None:
         """
-        Checks that the refinement file has the correct set up to be used with the current minimizer,
+        Checks that the refinement file has the correct set up to be used with the current minimizer
         and makes the necessary changes for this compatibility.
 
         Parameters
@@ -366,19 +361,19 @@ class Minimizer(ABC):
 
         """
         if history and self.compatible is False:
-                if 'Change state' in column_names and \
-                    ('Accepted' not in history[0] or 'Rejected' not in history[0]):
-                    for row in history:
-                        pos = column_names.index('Change state')
-                        row.insert(pos,'Accepted')
+            if 'Change state' in column_names and \
+                ('Accepted' not in history[0] or 'Rejected' not in history[0]):
+                for row in history:
+                    pos = column_names.index('Change state')
+                    row.insert(pos,'Accepted')
 
-                elif 'Change state' not in column_names and \
-                    ('Accepted' in history[0] or 'Rejected' in history[0]):
-                    for row in history:
-                        try:
-                            row.remove('Accepted')
-                        except ValueError:
-                            row.remove('Rejected')
+            elif 'Change state' not in column_names and \
+                ('Accepted' in history[0] or 'Rejected' in history[0]):
+                for row in history:
+                    try:
+                        row.remove('Accepted')
+                    except ValueError:
+                        row.remove('Rejected')
 
-                self.compatible = True
+            self.compatible = True
         self._history = history
