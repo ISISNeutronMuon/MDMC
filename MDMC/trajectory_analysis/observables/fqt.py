@@ -212,8 +212,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # Get the positions of the recreated_q_values
         if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
-            for value in self.Q_values:
-                self.recreated_Q.append(np.where(self.Q==value)[0][0])
+            self.recreated_Q.extend(np.where(self.Q==value)[0][0] for value in self.Q_values)
             self.Q = [val for val in self.Q if val in self.Q_values]
 
             logging.warning(" The specified box size was not able to recreate the lowest q"

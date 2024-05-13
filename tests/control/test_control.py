@@ -180,7 +180,7 @@ def exp_datasets() -> callable:
         datasets = []
         for k, v in data.READER_DATA.items():
             # 'XML_SQw' is the reader Class, but we want the module 'xml_SQw'
-            if k == 'XML_SQw' or k == 'xml_SQw_2':
+            if k in ('XML_SQw','xml_SQw_2'):
                 k = 'xml_SQw'
 
             if (file_name is not None

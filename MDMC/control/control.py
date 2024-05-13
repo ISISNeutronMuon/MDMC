@@ -740,8 +740,6 @@ class Control:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if pair.MD_obs.name =='SQw':
                 self.recreated_Q_values = pair.MD_obs.recreated_Q
-                print(self.recreated_Q_values)
-                # self.recreated_Q_values = pair.MD_obs.get_recreated_Q()
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:

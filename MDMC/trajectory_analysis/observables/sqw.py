@@ -258,8 +258,8 @@ class AbstractSQw(SQwMixins, Observable):
         return self._recreated_Q
 
     @recreated_Q.setter
-    def recreated_Q(self, Q_values_pos):
-        self._recreated_Q = Q_values_pos
+    def recreated_Q(self, recreated_Q_pos: list):
+        self._recreated_Q = recreated_Q_pos
 
     def validate_energy(self, dt: float) -> None:
         """
