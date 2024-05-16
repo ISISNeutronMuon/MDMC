@@ -21,6 +21,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.MD.engine_facades.lammps_engine import MDEngineError
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -223,6 +224,7 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
+        # creating an empty observable to be used later for artificially generating a large FoM
         self.empty_observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
@@ -565,25 +567,21 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-
-        try:
-            if not n_steps:
-                self.simulation.auto_equilibrate()
-            else:
-                self.simulation.run(n_steps,equilibration, verbose,
-                                    output_log, work_dir,**settings)
-        # pylint: disable=broad-except
-        # in this case it isnt 'broad', its handling an exception thrown by lammps
-        except Exception:
+        for count in range(2):
             try:
-                self.find_good_params(from_equil=True)
+                if count > 0:
+                    self.recovery_from_engine_failure(from_equil=True)
                 if not n_steps:
                     self.simulation.auto_equilibrate()
                 else:
                     self.simulation.run(n_steps,equilibration, verbose,
                                         output_log, work_dir,**settings)
-            except Exception as exc:
-                raise Exception('Equilibration failed, please check inputs such as parameter\
+
+            # pylint: disable=broad-except
+            # in this case it isnt 'broad', its handling an exception thrown by the MD engine
+            # resulting from bad parameter values
+            except MDEngineError as exc:
+                raise MDEngineError('Equilibration failed, please check inputs such as parameter\
                     values and constraints.') from exc
 
     def step(self) -> None:
@@ -679,8 +677,8 @@ class Control:
             self.simulation.run(self.MD_steps, verbose=False)
         # pylint: disable=broad-except
         # in this case it isnt 'broad', its handling an exception thrown by lammps
-        except Exception:
-            self.find_good_params()
+        except MDEngineError:
+            self.recovery_from_engine_failure()
 
     def _update_engine_parameters(self) -> None:
         """
@@ -1051,7 +1049,7 @@ class Control:
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
 
-    def find_good_params(self, from_equil: bool=False) -> None:
+    def recovery_from_engine_failure(self, from_equil: bool=False) -> None:
         """
         Perform clears and re-sets of the MD engine when there is an error thrown by the
         equilibration or production methods, and generates a high FoM to find new, better
@@ -1078,11 +1076,12 @@ class Control:
             # it is necessary to reset and setup the MD engine again
             self.simulation._setup()
             try:
-                self.simulation.run(100, verbose=False)
+                # making sure an equilibration runs by testing it with fewer steps
+                self.simulation.run(100, verbose=False, equilibration=True)
                 good_params = True
             # pylint: disable=broad-except
             # in this case it isnt 'broad', its handling an exception thrown by lammps
-            except Exception:
+            except MDEngineError:
                 good_params = False
 
         # Main loop for finding better params
@@ -1098,11 +1097,12 @@ class Control:
 
             # does a small run to make sure no error is thrown.
             try:
+                # making sure engine runs by testing it with fewer steps
                 self.simulation.run(100, verbose=False)
                 good_params = True
             # pylint: disable=broad-except
             # in this case it isnt 'broad', its handling an exception thrown by lammps
-            except Exception:
+            except MDEngineError:
                 good_params = False
                 # pylint: disable=protected-access
                 # it is necessary to delete the failed params that were added to the history

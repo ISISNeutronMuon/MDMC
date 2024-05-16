@@ -89,7 +89,8 @@ def mock_update_engine_parameters(self):
 def mock_equilibrate(self, *extras):
     pass
 
-@pytest.mark.skip(reason="used for other tests")
+
+@pytest.fixture(scope="module")
 def control_object_from_Argon_script(exp_datasets):
     """
     Returns
@@ -100,40 +101,42 @@ def control_object_from_Argon_script(exp_datasets):
         dictionary of force field parameters
 
     """
+    def _control_object_from_Argon_script():
+        density = 0.0176
+        universe = Universe(dimensions=23.0668)
+        Ar = Atom('Ar', charge=0., mass=36.0)
 
-    density = 0.0176
-    universe = Universe(dimensions=23.0668)
-    Ar = Atom('Ar', charge=0., mass=36.0)
+        n_ar_atoms = int(density * np.product(universe.dimensions))
+        print(f'Number of argon atoms = {n_ar_atoms}')
+        universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
-    n_ar_atoms = int(density * np.product(universe.dimensions))
-    print(f'Number of argon atoms = {n_ar_atoms}')
-    universe.fill(Ar, num_struc_units=(n_ar_atoms))
+        Ar_dispersion = Dispersion(universe,
+                                (Ar.atom_type, Ar.atom_type),
+                                cutoff=8.,
+                                function=LennardJones(epsilon=1.02, sigma=3.36))
 
-    Ar_dispersion = Dispersion(universe,
-                            (Ar.atom_type, Ar.atom_type),
-                            cutoff=8.,
-                            function=LennardJones(epsilon=1.02, sigma=3.36))
+        simulation = Simulation(universe,
+                                engine="lammps",
+                                time_step=10.18893,
+                                temperature=120.,
+                                traj_step=15)
 
-    simulation = Simulation(universe,
-                            engine="lammps",
-                            time_step=10.18893,
-                            temperature=120.,
-                            traj_step=15)
+        dataset = exp_datasets(file_name='Well_s_q_omega_Ar_data.xml')
+        fit_parameters = universe.parameters
+        fit_parameters['sigma'].constraints = [1.0,20.0]
+        fit_parameters['epsilon'].constraints = [0.5, 20]
+        
+        control = Control(simulation=simulation,
+                    exp_datasets=dataset,
+                    fit_parameters=fit_parameters,
+                    minimizer_type="GPO",
+                    reset_config=True,
+                    MD_steps=4000, 
+                    equilibration_steps=4000,
+                    data_printer='ipython')
+        return control, fit_parameters
+    return _control_object_from_Argon_script
 
-    dataset = exp_datasets(file_name='Well_s_q_omega_Ar_data.xml')
-    fit_parameters = universe.parameters
-    fit_parameters['sigma'].constraints = [1.0,20.0]
-    fit_parameters['epsilon'].constraints = [0.5, 20]
-    
-    control = Control(simulation=simulation,
-                exp_datasets=dataset,
-                fit_parameters=fit_parameters,
-                minimizer_type="GPO",
-                reset_config=True,
-                MD_steps=4000, 
-                equilibration_steps=4000,
-                data_printer='ipython')
-    return control, fit_parameters
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:

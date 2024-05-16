@@ -458,7 +458,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     self.__class__,
                     n_steps,
                     equilibration)
-        self.lmp.run(n_steps)
+        try:
+            self.lmp.run(n_steps)
+        except Exception:
+            raise MDEngineError("There has been an error running the LAMMPS simulation.")
 
         if equilibration and reset_to_nve:
             self.thermostat = None
@@ -680,6 +683,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe.update_parameters()
 
     def clear(self) -> None:
+        """
+        Deletes all atoms of the MD engine, restores all settings to their default values,
+        and frees all memory in LAMMPS.
+        """
         self.lmp.clear()
 
     def save_config(self) -> None:
@@ -2896,3 +2903,7 @@ def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
                     if angle.constrained]
 
     return lmp_str
+
+class MDEngineError(Exception):
+    "Raised when lammps raises an exception from a run command"
+    pass
