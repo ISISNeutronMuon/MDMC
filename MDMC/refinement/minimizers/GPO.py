@@ -1,6 +1,7 @@
 """The Gaussian-Process-Optimizer minimizer class"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, Optional
 import numpy as np
+from pathlib import Path
 
 from skopt import Optimizer
 
@@ -10,7 +11,6 @@ from MDMC.refinement.minimizers.GPR import GPR
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
     from MDMC.control import Control
-    from pathlib import Path
 
 
 class GPO(Minimizer):
@@ -55,7 +55,7 @@ class GPO(Minimizer):
     """
 
     def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: 'Path' = None, **settings: dict):
+        previous_history: Optional[Union[Path, str]] = None, **settings: dict):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters

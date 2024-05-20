@@ -219,12 +219,9 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
-                                                           self.fit_parameters, previous_history, **settings)
-        if previous_history:
-            self.first_loaded_step = True
-        else:
-            self.first_loaded_step = False
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
+                                                           previous_history, **settings)
+        self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD

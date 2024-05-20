@@ -1,6 +1,6 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Union, Optional
 
 import numpy as np
 import scipy.stats as st
@@ -42,7 +42,7 @@ class GPR(Minimizer):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, \
-        previous_history: Optional['Path'] = None,**settings: dict):
+        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
 
         super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests

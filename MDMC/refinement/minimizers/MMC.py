@@ -1,5 +1,5 @@
 """The Metropolis-Hastings minimizer class"""
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
 
 import numpy as np
@@ -42,7 +42,7 @@ class MMC(Minimizer):
     DISTRIBUTION = {'uniform': np.random.uniform}
 
     def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: Optional[Path] = None,**settings: dict):
+        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
         super().__init__(control, parameters, previous_history)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
