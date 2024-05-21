@@ -2,10 +2,12 @@
 
  Classes for the simulation box, minimizer and integrator."""
 
+import logging
+import warnings
 from collections import defaultdict
 from itertools import count, filterfalse, product
-import logging
 from typing import Union, Tuple, TYPE_CHECKING
+
 from statsmodels.tsa.stattools import kpss
 
 import numpy as np
@@ -1546,6 +1548,11 @@ class Simulation:
         # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
         verbose_manager.step(f"Running {process} for {n_steps} steps")
+
+        if n_steps < self.traj_step:
+            warnings.warn(f"Run length ({n_steps}) less than dump frequency ({self.traj_step}), "
+                          "run may not produce usable output.")
+
         self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
                         work_dir=work_dir, **self.settings)
 
