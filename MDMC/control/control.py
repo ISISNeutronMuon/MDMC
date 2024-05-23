@@ -274,7 +274,8 @@ class Control:
             self.empty_observable_pairs.append(self.empty_observable_pair)
             self.empty_observable_pairs[0].MD_obs._dependent_variables = {}
             self.empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
-
+            self.production_time_step = None
+            self.production_traj_step = None
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -568,11 +569,12 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
+        
         try:
             # This if check is to prevent an infinite loop of: 'equilibration fails, alter
-            # time_step (up to 5 times), fine a time_step where the test run is successful,
-            # main equilibration fails again, and repeat'.
-            if self.equilibrate_attempt > 5:
+            # time_step, find a time_step where the small test run is successful, then
+            # main equilibration still fails again, and repeat'.
+            if self.equilibrate_attempt > 1:
                 raise MDEngineError('MD engine failed to perform an equilibration.' 
                                     'Either use different parameters or reduce the time_step')
             if not n_steps:
@@ -583,7 +585,10 @@ class Control:
         except:
             self.equilibrate_attempt += 1
             self.engine_recovery_from_equil()
+
         self.equilibrate_attempt = 0
+        self.simulation.engine.time_step = self.production_time_step
+        self.simulation.engine.traj_step = self.production_traj_step
 
     def step(self) -> None:
         """
@@ -679,7 +684,7 @@ class Control:
         # pylint: disable=broad-except
         # in this case it isnt 'broad', its handling an exception thrown by lammps
         except MDEngineError:
-            self.engine_recovery_from_prod()
+            self.engine_recovery_from_bad_params()
 
     def _update_engine_parameters(self) -> None:
         """
@@ -1052,7 +1057,8 @@ class Control:
 
     def engine_recovery_from_equil(self) -> None:
         """
-        Handles when an equilibration run throws an MDEngineError. It clears and sets system, and
+        Handles an MDEngineError thrown by the MD engine.
+        It clears and sets system, and
         then performs a test equilibration using a small number of steps. If this is unsuccessful, 
         then the time_step is reduced (and the traj_step changed in line with this) and then method 
         repeats until the limit is reached or until the equilibration test run is successful.
@@ -1065,7 +1071,7 @@ class Control:
         counter = 0
         equil_works = False
         # 5 attempts was arbitrarily chosen
-        while not equil_works and counter < 5:
+        while not equil_works and counter < 2:
             equil_works = self.testing_engine_runs(equil=True)
             
             if equil_works:
@@ -1078,14 +1084,15 @@ class Control:
             raise MDEngineError('MD engine failed to perform an equilibration.' 
                             'Either use different parameters or reduce the time_step')
 
-    def engine_recovery_from_prod(self) -> None:
+    def engine_recovery_from_bad_params(self) -> None:
         """
-        Handles when a production run throws an MDEngineError. It clears and sets up the system,
-        and changes the parameters if the test run (using a small number of steps) was unsuccessful.
-        When a good set of parameters if found, it equilibrates, and runs the production run as
-        before. The minimizer history is kept clean, and any bad parameters from these changes are
-        removed. This repeats until the test production run is successful, or until the limit is
-        reached.
+        Handles an MDEngineError thrown by the MD engine.
+        Tries to find a better set of parameters by comparing the calculated observable to an empty 
+        observable. It clears and sets up the system, and changes the parameters if the test run 
+        (using a small number of steps) was unsuccessful. When a good set of parameters if found, 
+        it equilibrates, and runs the production run as expected. The minimizer history is kept 
+        clean, and any bad parameters from these changes are removed. This repeats until the test 
+        production run is successful, or until the limit is reached.
 
         Returns
         -------
@@ -1097,7 +1104,9 @@ class Control:
         # 20 attempts was arbitrarily chosen
         while not prod_works and counter < 50:
             prod_works = self.testing_engine_runs()
+
             if not prod_works:
+                # remove bad params from minimizer and generate new values
                 del self.minimizer._history[-1]
                 FoM = self.empty_FoM_calculator.calculate()
                 self.minimizer.step(FoM)
@@ -1113,9 +1122,12 @@ class Control:
 
     def  testing_engine_runs(self, equil: bool=False):
         """
-        Perform clears and re-sets of the MD engine when there is an error thrown by the
-        equilibration or production methods, resets the engine, and then tests it by running the
-        simulation with a small number of steps.
+        Clears and resets the MD engine when there is an error thrown by the
+        equilibration or production methods. After the reset, it then tests it by running the
+        simulation with a small number of steps. Sometimes, without changing any universe
+        parameters, this reset fixes the issue that raised the error. This is assumed to be because
+        LAMMPS holds some meta data which a standard configuration reset does not remove.
+        
         
         Parameters
         ----------
@@ -1142,16 +1154,18 @@ class Control:
     def varying_time_step(self) -> None:
         """
         Reduces the time_step, and then changes the traj_step in line with this in order to keep 
-        these values consistent with the data.
+        these values consistent with the data (energy separation).
 
         Returns
         -------
         None
         """
+        self.production_time_step = self.simulation.engine.time_step
+        self.production_traj_step = self.simulation.engine.traj_step
 
         dt_required = self.simulation.engine.time_step * self.simulation.engine.traj_step
         # 0.9 was chosen arbitrarily
-        self.simulation.engine.time_step *= 0.9
+        self.simulation.engine.time_step *= 0.6
         self.simulation.engine.traj_step = \
         int(np.ndarray.round(dt_required/self.simulation.engine.time_step))
 
