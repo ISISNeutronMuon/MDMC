@@ -1050,8 +1050,16 @@ class Control:
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
 
-    def engine_recovery_from_equil(self):
+    def engine_recovery_from_equil(self) -> None:
         """
+        Handles when an equilibration run throws an MDEngineError. It clears and sets system, and
+        then performs a test equilibration using a small number of steps. If this is unsuccessful, 
+        then the time_step is reduced (and the traj_step changed in line with this) and then method 
+        repeats until the limit is reached or until the equilibration test run is successful.
+
+        Returns
+        -------
+        None
         """
 
         counter = 0
@@ -1063,20 +1071,25 @@ class Control:
             if equil_works:
                 self.equilibrate(self.equilibration_steps)
             else:
-                dt_required = self.simulation.engine.time_step * self.simulation.engine.traj_step
-                self.simulation.engine.time_step *= 0.9
-                self.simulation.engine.traj_step = int(np.ndarray.round(dt_required/self.simulation.engine.time_step))
-                if self.simulation.engine.traj_step == 0:
-                    self.simulation.engine.traj_step += 1
-                self.simulation.engine.time_step = dt_required/self.simulation.engine.traj_step
+                self.varying_time_step()
             counter += 1
 
         if not equil_works:
             raise MDEngineError('MD engine failed to perform an equilibration.' 
                             'Either use different parameters or reduce the time_step')
 
-    def engine_recovery_from_prod(self):
+    def engine_recovery_from_prod(self) -> None:
         """
+        Handles when a production run throws an MDEngineError. It clears and sets up the system,
+        and changes the parameters if the test run (using a small number of steps) was unsuccessful.
+        When a good set of parameters if found, it equilibrates, and runs the production run as
+        before. The minimizer history is kept clean, and any bad parameters from these changes are
+        removed. This repeats until the test production run is successful, or until the limit is
+        reached.
+
+        Returns
+        -------
+        None
         """
 
         counter = 0
@@ -1100,6 +1113,19 @@ class Control:
 
     def  testing_engine_runs(self, equil: bool=False):
         """
+        Perform clears and re-sets of the MD engine when there is an error thrown by the
+        equilibration or production methods, resets the engine, and then tests it by running the
+        simulation with a small number of steps.
+        
+        Parameters
+        ----------
+        equil : bool
+            information on whether this method is to test an equilibration or not
+
+        Returns
+        -------
+        test_worked : bool
+            represents whether the test run was successful or if the engine threw an error again
         """
 
         self.simulation.engine.clear()
@@ -1112,3 +1138,23 @@ class Control:
         except MDEngineError:
             test_worked = False
         return test_worked
+
+    def varying_time_step(self) -> None:
+        """
+        Reduces the time_step, and then changes the traj_step in line with this in order to keep 
+        these values consistent with the data.
+
+        Returns
+        -------
+        None
+        """
+
+        dt_required = self.simulation.engine.time_step * self.simulation.engine.traj_step
+        # 0.9 was chosen arbitrarily
+        self.simulation.engine.time_step *= 0.9
+        self.simulation.engine.traj_step = \
+        int(np.ndarray.round(dt_required/self.simulation.engine.time_step))
+
+        if self.simulation.engine.traj_step == 0:
+            self.simulation.engine.traj_step += 1
+        self.simulation.engine.time_step = dt_required/self.simulation.engine.traj_step
