@@ -320,6 +320,7 @@ class Control:
                                  'calculate observables') from error
         else:
             self.MD_steps = minimum_MD_steps
+        self.equilibrate_attempt = 0
 
         # read in resolutions for experimental datasets
         for i, dset in enumerate(exp_datasets):
@@ -567,22 +568,22 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        for count in range(2):
-            try:
-                if count > 0:
-                    self.recovery_from_engine_failure(from_equil=True)
-                if not n_steps:
-                    self.simulation.auto_equilibrate()
-                else:
-                    self.simulation.run(n_steps,equilibration, verbose,
-                                        output_log, work_dir,**settings)
-
-            # pylint: disable=broad-except
-            # in this case it isnt 'broad', its handling an exception thrown by the MD engine
-            # resulting from bad parameter values
-            except MDEngineError as exc:
-                raise MDEngineError('Equilibration failed, please check inputs such as parameter\
-                    values and constraints.') from exc
+        try:
+            # This if check is to prevent an infinite loop of: 'equilibration fails, alter
+            # time_step (up to 5 times), fine a time_step where the test run is successful,
+            # main equilibration fails again, and repeat'.
+            if self.equilibrate_attempt > 5:
+                raise MDEngineError('MD engine failed to perform an equilibration.' 
+                                    'Either use different parameters or reduce the time_step')
+            if not n_steps:
+                self.simulation.auto_equilibrate()
+            else:
+                self.simulation.run(n_steps,equilibration, verbose,
+                                    output_log, work_dir,**settings)
+        except:
+            self.equilibrate_attempt += 1
+            self.engine_recovery_from_equil()
+        self.equilibrate_attempt = 0
 
     def step(self) -> None:
         """
@@ -678,7 +679,7 @@ class Control:
         # pylint: disable=broad-except
         # in this case it isnt 'broad', its handling an exception thrown by lammps
         except MDEngineError:
-            self.recovery_from_engine_failure()
+            self.engine_recovery_from_prod()
 
     def _update_engine_parameters(self) -> None:
         """
@@ -1049,70 +1050,65 @@ class Control:
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
 
-    def recovery_from_engine_failure(self, from_equil: bool=False) -> None:
+    def engine_recovery_from_equil(self):
         """
-        Perform clears and re-sets of the MD engine when there is an error thrown by the
-        equilibration or production methods, and generates a high FoM to find new, better
-        parameters where necessary.
-
-        Parameters
-        ----------
-        from_equil : bool
-            information on whether this method was called from the equilibration method or not
-
-        Returns
-        -------
-        None
         """
 
-        good_params = False
         counter = 0
-        limit = 50
+        equil_works = False
+        # 5 attempts was arbitrarily chosen
+        while not equil_works and counter < 5:
+            equil_works = self.testing_engine_runs(equil=True)
+            
+            if equil_works:
+                self.equilibrate(self.equilibration_steps)
+            else:
+                dt_required = self.simulation.engine.time_step * self.simulation.engine.traj_step
+                self.simulation.engine.time_step *= 0.9
+                self.simulation.engine.traj_step = int(np.ndarray.round(dt_required/self.simulation.engine.time_step))
+                if self.simulation.engine.traj_step == 0:
+                    self.simulation.engine.traj_step += 1
+                self.simulation.engine.time_step = dt_required/self.simulation.engine.traj_step
+            counter += 1
 
-        # Sometimes the equilibration fails and a reset without changing params fixes this.
-        if from_equil:
-            self.simulation.engine.clear()
-            # pylint: disable=protected-access
-            # it is necessary to reset and setup the MD engine again
-            self.simulation._setup()
-            try:
-                # making sure an equilibration runs by testing it with fewer steps
-                self.simulation.run(100, verbose=False, equilibration=True)
-                good_params = True
-            # pylint: disable=broad-except
-            # in this case it isnt 'broad', its handling an exception thrown by lammps
-            except MDEngineError:
-                good_params = False
+        if not equil_works:
+            raise MDEngineError('MD engine failed to perform an equilibration.' 
+                            'Either use different parameters or reduce the time_step')
 
-        # Main loop for finding better params
-        while not good_params and counter < limit:
-            self.simulation.engine.clear()
-            # pylint: disable=protected-access
-            # it is necessary to reset and setup the MD engine again
-            self.simulation._setup()
+    def engine_recovery_from_prod(self):
+        """
+        """
 
-            FoM = self.empty_FoM_calculator.calculate()
-            self.minimizer.step(FoM)
-            self._update_engine_parameters()
-
-            # does a small run to make sure no error is thrown.
-            try:
-                # making sure engine runs by testing it with fewer steps
-                self.simulation.run(100, verbose=False)
-                good_params = True
-            # pylint: disable=broad-except
-            # in this case it isnt 'broad', its handling an exception thrown by lammps
-            except MDEngineError:
-                good_params = False
-                # pylint: disable=protected-access
-                # it is necessary to delete the failed params that were added to the history
+        counter = 0
+        prod_works = False
+        # 20 attempts was arbitrarily chosen
+        while not prod_works and counter < 50:
+            prod_works = self.testing_engine_runs()
+            if not prod_works:
                 del self.minimizer._history[-1]
-
-            if good_params and not from_equil:
+                FoM = self.empty_FoM_calculator.calculate()
+                self.minimizer.step(FoM)
+                self._update_engine_parameters()
+            elif prod_works:
                 self.equilibrate(self.equilibration_steps)
                 self.simulation.run(self.MD_steps, verbose=False)
-                counter += 1
+            counter += 1
 
-        if not good_params:
+        if not prod_works:
             raise Exception('Failed to find good parameters during refinement.\
             Please check inputs such as parameter values and constraints.')
+
+    def  testing_engine_runs(self, equil: bool=False):
+        """
+        """
+
+        self.simulation.engine.clear()
+        # pylint: disable=protected-access
+        # it is necessary to reset and setup the MD engine again
+        self.simulation._setup()
+        try:
+            test_worked = True
+            self.simulation.run(100, verbose=False, equilibration=equil)
+        except MDEngineError:
+            test_worked = False
+        return test_worked
