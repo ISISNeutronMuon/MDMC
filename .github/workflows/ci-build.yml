@@ -48,7 +48,7 @@ jobs:
           TESTSET: ${{ matrix.testset }}
         run: |
           docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
-          exit 0 
+          exit 0
 
       - name: Copy coverage
         run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -74,8 +74,7 @@ jobs:
       - name: pip3 install
         run: |
           sudo pip3 install --upgrade pip
-          sudo pip3 install -r requirements.txt
-          sudo pip3 install --upgrade $(cat .dev_requirements.txt | grep pylint)
+          sudo pip3 install .[lint]
       - name: pylint
         run: |
           pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
@@ -103,7 +102,7 @@ jobs:
         run: |
           echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
       - name: Install Requirements
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt"
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "apt-get install pandoc -y && pip install .[docs]"
       - name: Convert Notebooks
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/tutorials/notebook-test-config.py"
       - name: Test Notebooks
@@ -122,7 +121,7 @@ jobs:
     - name: pip3 install
       run: |
         sudo pip3 install --upgrade pip
-        sudo pip3 install -r requirements.txt
+        sudo pip3 install .[typecheck]
     - name: mypy
       run: |
         cd MDMC

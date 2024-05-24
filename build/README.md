@@ -66,14 +66,11 @@ as follows.
     to `docker build` will use the image `mdmc/engines:TAG` as a base
     instead.
 
-2.  Python requirements. These are installed from two requirements
-    files; the requirements file `requirements.txt` and the dev
-    requirements `.dev_requirements.txt`. The former contains packages
-    actually used by MDMC's source code itself (e.g. numpy, pandas etc.)
-    and the latter contains packages used for MDMC's infrastructre (e.g.
-    pytest, sphinx-build). Using files like this allows us to
-    version-control both regular and development packages within our
-    Docker image via Dependabot.
+2.  Python requirements. These are installed from a requirements
+    files; the requirements file `dependencies.txt` is generated from
+    the `pyproject.toml` and `requirements.txt` by `piptools`. Using
+    files like this allows us to version-control both regular and
+    development packages within our Docker image via Dependabot.
 
 3.  `TIMESTAMP`; we create a file in the base directory of the image
     called TIMESTAMP. This contains the time and date that the image was

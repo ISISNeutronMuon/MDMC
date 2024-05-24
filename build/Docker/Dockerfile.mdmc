@@ -1,4 +1,4 @@
-### This Dockerfile contains the image for the frontend image mdmc/mdmc, 
+### This Dockerfile contains the image for the frontend image mdmc/mdmc,
 ### which is the Python environment used to run MDMC.
 
 # use the arg 'BASE_IMAGE' to get dev branch base images
@@ -8,18 +8,14 @@ FROM $BASE_IMAGE
 # Install any packages required for container which are not specifically for
 # running MDMC (i.e. not in requirements.txt)
 RUN pip3 install --upgrade pip
-RUN pip3 install setuptools --upgrade
-COPY .dev_requirements.txt .dev_requirements.txt 
-RUN pip3 install -r .dev_requirements.txt
-RUN rm .dev_requirements.txt
-
-# Install dependencies
-# [if this fails, you may be running Docker from the wrong directory. Go to
-# the main directory and build the image with
-# "docker build -f $(pwd)/build/Docker/Dockerfile ."]
+# Until --only-deps becomes an option:
+# https://github.com/pypa/pip/issues/11440
+RUN pip3 install setuptools pip-tools --upgrade
+COPY pyproject.toml pyproject.toml
 COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
-RUN rm requirements.txt
+RUN pip-compile --extra LAMMPS,DLPOLY,test,docs -o dependencies.txt pyproject.toml
+RUN pip3 install -r dependencies.txt
+RUN rm -r pyproject.toml requirements.txt dependencies.txt
 
 # create a file in root directory called TIMESTAMP, containing
 # the time and date the image was created, as well as its dependency versions.
