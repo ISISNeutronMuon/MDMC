@@ -570,13 +570,13 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        
+
         try:
             # This if check is to prevent an infinite loop of: 'equilibration fails, alter
             # time_step, find a time_step where the small test run is successful, then
             # main equilibration still fails again, and repeat'.
             if self.equilibrate_attempt > 1:
-                raise MDEngineError('MD engine failed to perform an equilibration.' 
+                raise MDEngineError('MD engine failed to perform an equilibration.'
                                     'Either use different parameters or reduce the time_step')
             if not n_steps:
                 self.simulation.auto_equilibrate()
@@ -1061,7 +1061,7 @@ class Control:
         """
         Handles an MDEngineError thrown by the MD engine. Currently this error can only
         be raised for LAMMPS.
-        
+
         It clears and sets system, and then performs a test equilibration using a small number of
         steps. If this is unsuccessful, then the time_step is reduced (and the traj_step changed in
         line with this) and then method repeats until the limit is reached or until the
@@ -1077,26 +1077,26 @@ class Control:
         # 2 attempts was arbitrarily chosen
         while not equil_works and counter < 2:
             equil_works = self.testing_engine_runs(equil=True)
-            
+
             if equil_works:
                 self.equilibrate(self.equilibration_steps)
             else:
                 self.varying_time_step()
             counter += 1
 
-        raise MDEngineError('MD engine failed to perform an equilibration.' 
+        raise MDEngineError('MD engine failed to perform an equilibration.'
                             'Either use different parameters or reduce the time_step')
 
     def engine_recovery_from_bad_params(self) -> None:
         """
         Handles an MDEngineError thrown by the MD engine. Currently this error can only
         be raised for LAMMPS.
-        
-        Tries to find a better set of parameters by comparing the calculated observable to an empty 
-        observable. It clears and sets up the system, and changes the parameters if the test run 
-        (using a small number of steps) was unsuccessful. When a good set of parameters if found, 
-        it equilibrates, and runs the production run as expected. The minimizer history is kept 
-        clean, and any bad parameters from these changes are removed. This repeats until the test 
+
+        Tries to find a better set of parameters by comparing the calculated observable to an empty
+        observable. It clears and sets up the system, and changes the parameters if the test run
+        (using a small number of steps) was unsuccessful. When a good set of parameters if found,
+        it equilibrates, and runs the production run as expected. The minimizer history is kept
+        clean, and any bad parameters from these changes are removed. This repeats until the test
         production run is successful, or until the limit is reached.
 
         Returns
@@ -1112,6 +1112,8 @@ class Control:
 
             if not prod_works:
                 # remove bad params from minimizer and generate new values
+                # pylint: disable=protected-access
+                # it is necessary to update the minimizer history
                 del self.minimizer._history[-1]
                 FoM = self.empty_FoM_calculator.calculate()
                 self.minimizer.step(FoM)
@@ -1129,13 +1131,13 @@ class Control:
         """
         Clears and resets the MD engine when there is an error thrown by the
         equilibration or production methods. Currently this is only applicable to LAMMPS.
-        
-        After the reset, it then tests it by running the simulation with a small number of steps. 
+
+        After the reset, it then tests it by running the simulation with a small number of steps.
         Sometimes, without changing any universe parameters, this reset fixes the issue that raised
         the error. This is assumed to be because the engine can hold some meta data which a normal
         configuration reset does not remove.
-        
-        
+
+
         Parameters
         ----------
         equil : bool
@@ -1160,8 +1162,8 @@ class Control:
 
     def varying_time_step(self) -> None:
         """
-        Reduces the time_step, and then changes the traj_step in line with this in order to keep 
-        these values consistent with the data (energy separation). 
+        Reduces the time_step, and then changes the traj_step in line with this in order to keep
+        these values consistent with the data (energy separation).
         This is only applicable to LAMMPS.
 
         Returns
@@ -1174,7 +1176,6 @@ class Control:
         self.temporary_step_changes = True
 
         dt_required = self.simulation.time_step * self.simulation.traj_step
-        # 0.9 was chosen arbitrarily
         self.simulation.time_step *= 0.6
         self.simulation.traj_step = \
         int(np.round(dt_required/self.simulation.time_step))

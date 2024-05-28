@@ -460,8 +460,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     equilibration)
         try:
             self.lmp.run(n_steps)
-        except Exception:
-            raise MDEngineError("There has been an error running the LAMMPS simulation.")
+        except Exception as exc:
+            raise MDEngineError("There has been an error running the LAMMPS simulation.") from exc
 
         if equilibration and reset_to_nve:
             self.thermostat = None
@@ -2906,4 +2906,3 @@ def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
 
 class MDEngineError(Exception):
     "Raised when lammps raises an exception from a run command"
-    pass
