@@ -880,3 +880,18 @@ def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, s
     
     ctrl.equilibrate(n_steps=1000)
     ctrl._run_MD()
+
+def test_control_varying_time_step(control_object_from_Argon_script):
+    """
+    Tests that the method for varying time_step (upon a failed equilibration), changes the
+    time_step and traj_step accurately.
+    """
+    
+    ctrl, _ = control_object_from_Argon_script()
+    original_time_step = ctrl.simulation.time_step
+    original_traj_step = ctrl.simulation.traj_step
+    dt_required = original_time_step * original_traj_step
+    ctrl.varying_time_step()
+    assert ctrl.simulation.time_step != original_time_step
+    assert ctrl.simulation.time_step == dt_required/ctrl.simulation.traj_step
+    assert ctrl.simulation.traj_step == int(np.round(dt_required/(original_time_step*0.6)))

@@ -276,6 +276,7 @@ class Control:
             self.empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
             self.production_time_step = None
             self.production_traj_step = None
+            self.temporary_step_changes = False
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -582,13 +583,14 @@ class Control:
             else:
                 self.simulation.run(n_steps,equilibration, verbose,
                                     output_log, work_dir,**settings)
-        except:
+        except MDEngineError:
             self.equilibrate_attempt += 1
             self.engine_recovery_from_equil()
 
         self.equilibrate_attempt = 0
-        self.simulation.engine.time_step = self.production_time_step
-        self.simulation.engine.traj_step = self.production_traj_step
+        if self.temporary_step_changes:
+            self.simulation.time_step = self.production_time_step
+            self.simulation.traj_step = self.production_traj_step
 
     def step(self) -> None:
         """
@@ -1057,11 +1059,13 @@ class Control:
 
     def engine_recovery_from_equil(self) -> None:
         """
-        Handles an MDEngineError thrown by the MD engine.
-        It clears and sets system, and
-        then performs a test equilibration using a small number of steps. If this is unsuccessful, 
-        then the time_step is reduced (and the traj_step changed in line with this) and then method 
-        repeats until the limit is reached or until the equilibration test run is successful.
+        Handles an MDEngineError thrown by the MD engine. Currently this error can only
+        be raised for LAMMPS.
+        
+        It clears and sets system, and then performs a test equilibration using a small number of
+        steps. If this is unsuccessful, then the time_step is reduced (and the traj_step changed in
+        line with this) and then method repeats until the limit is reached or until the
+        equilibration test run is successful.
 
         Returns
         -------
@@ -1070,7 +1074,7 @@ class Control:
 
         counter = 0
         equil_works = False
-        # 5 attempts was arbitrarily chosen
+        # 2 attempts was arbitrarily chosen
         while not equil_works and counter < 2:
             equil_works = self.testing_engine_runs(equil=True)
             
@@ -1080,13 +1084,14 @@ class Control:
                 self.varying_time_step()
             counter += 1
 
-        if not equil_works:
-            raise MDEngineError('MD engine failed to perform an equilibration.' 
+        raise MDEngineError('MD engine failed to perform an equilibration.' 
                             'Either use different parameters or reduce the time_step')
 
     def engine_recovery_from_bad_params(self) -> None:
         """
-        Handles an MDEngineError thrown by the MD engine.
+        Handles an MDEngineError thrown by the MD engine. Currently this error can only
+        be raised for LAMMPS.
+        
         Tries to find a better set of parameters by comparing the calculated observable to an empty 
         observable. It clears and sets up the system, and changes the parameters if the test run 
         (using a small number of steps) was unsuccessful. When a good set of parameters if found, 
@@ -1117,16 +1122,18 @@ class Control:
             counter += 1
 
         if not prod_works:
-            raise Exception('Failed to find good parameters during refinement.\
-            Please check inputs such as parameter values and constraints.')
+            raise MDEngineError("Failed to find good parameters during refinement."
+            "Please check inputs such as parameter values and constraints.")
 
     def  testing_engine_runs(self, equil: bool=False):
         """
         Clears and resets the MD engine when there is an error thrown by the
-        equilibration or production methods. After the reset, it then tests it by running the
-        simulation with a small number of steps. Sometimes, without changing any universe
-        parameters, this reset fixes the issue that raised the error. This is assumed to be because
-        LAMMPS holds some meta data which a standard configuration reset does not remove.
+        equilibration or production methods. Currently this is only applicable to LAMMPS.
+        
+        After the reset, it then tests it by running the simulation with a small number of steps. 
+        Sometimes, without changing any universe parameters, this reset fixes the issue that raised
+        the error. This is assumed to be because the engine can hold some meta data which a normal
+        configuration reset does not remove.
         
         
         Parameters
@@ -1154,21 +1161,24 @@ class Control:
     def varying_time_step(self) -> None:
         """
         Reduces the time_step, and then changes the traj_step in line with this in order to keep 
-        these values consistent with the data (energy separation).
+        these values consistent with the data (energy separation). 
+        This is only applicable to LAMMPS.
 
         Returns
         -------
         None
         """
-        self.production_time_step = self.simulation.engine.time_step
-        self.production_traj_step = self.simulation.engine.traj_step
 
-        dt_required = self.simulation.engine.time_step * self.simulation.engine.traj_step
+        self.production_time_step = self.simulation.time_step
+        self.production_traj_step = self.simulation.traj_step
+        self.temporary_step_changes = True
+
+        dt_required = self.simulation.time_step * self.simulation.traj_step
         # 0.9 was chosen arbitrarily
-        self.simulation.engine.time_step *= 0.6
-        self.simulation.engine.traj_step = \
-        int(np.ndarray.round(dt_required/self.simulation.engine.time_step))
+        self.simulation.time_step *= 0.6
+        self.simulation.traj_step = \
+        int(np.round(dt_required/self.simulation.time_step))
 
-        if self.simulation.engine.traj_step == 0:
-            self.simulation.engine.traj_step += 1
-        self.simulation.engine.time_step = dt_required/self.simulation.engine.traj_step
+        if self.simulation.traj_step == 0:
+            self.simulation.traj_step += 1
+        self.simulation.time_step = dt_required/self.simulation.traj_step
