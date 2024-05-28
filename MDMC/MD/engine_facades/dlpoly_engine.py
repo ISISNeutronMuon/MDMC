@@ -9,10 +9,11 @@ from __future__ import annotations
 import logging
 from copy import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Dict, Iterator, Literal, Optional, Union
 
 import dlpoly.control
 import numpy as np
+
 from ase import Atom, Atoms
 from ase.io import write
 from dlpoly import DLPoly
@@ -20,7 +21,6 @@ from dlpoly.config import Config
 from dlpoly.field import Bond, Field, Molecule, Potential
 from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.species import Species
-from dlpoly.utility import next_file
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
@@ -374,18 +374,15 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
 
-        self._pass_settings_to_control(settings, self.dlpoly.control)
+        self._pass_settings_to_control(settings, self.dlpoly_simulation.dlpoly.control)
 
-        if output_log is None:
-            output_log = next_file(self.dlpoly.control.io_file_output)
-
-        output_log = Path(output_log).resolve()
+        if output_log is not None:
+            output_log = Path(output_log).resolve()
 
         # pylint: disable=c-extension-no-member, too-many-lines
         err_code = self.dlpoly.run(numProcs=settings.get('numprocs', 1),
                                    outputFile=output_log,
-                                   mpi="mpirun --allow-run-as-root -n",
-                                   debug=True)
+                                   mpi="mpirun --allow-run-as-root -n")
 
         if err_code != 0:
             raise MDEngineError(f"Non-zero exit code ({err_code}), DLPoly run failed, "
@@ -554,6 +551,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         for key in (settings.keys() & control.keys) - self.HANDLED_PARAMS:
             control[key] = settings[key]
+
 
 
 @repr_decorator('universe')
@@ -1145,7 +1143,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def temperature(self, value: float) -> None:
 
         self._temperature = value
-        # Set the temperature in the DL_POLY wrapper
+        # Set the initial temperature in the DL_POLY wrapper
         if value is not None:
             self.dlpoly.control['temperature'] = (
                 convert_unit(self._temperature), 'K')

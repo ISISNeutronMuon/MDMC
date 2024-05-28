@@ -26,6 +26,28 @@ UNIVERSE_DIM = UnitNDArray((3, ), "Ang")
 UNIVERSE_DIM[:] = 50.0
 CONST = units.CODATA[units.CODATA_VERSION]
 
+# @pytest.fixture
+# def atoms_dummy():
+
+#     """
+#     Returns:
+#     Dummy 2 atom test case
+#     """
+
+#     symbols = ['Ar', 'Ne']
+#     masses = [1.000, 2.000]
+#     elements = symbols
+
+#     atom_types = {symbol: n+1 for n, symbol in enumerate(symbols)}
+#     atom_masses = {symbol: mass for symbol, mass in zip(symbols, masses)}
+
+#     return [Atom(elements[0], position=np.array(1.0, 2.0, 3.0),
+#                  atom_type=atom_types[elements[0]],
+#                  mass=atom_masses[elements[0]]), \
+#             Atom(elements[1], position=np.array(4.0, 5.0, 6.0),
+#                  atom_type=atom_types[elements[1]],
+#                  mass=atom_masses[elements[1]])]
+
 ############
 # Fixtures #
 ############
@@ -439,26 +461,28 @@ Ne               2      2.000000      0.000000      0.000000
                                                     [[1., 2., 3.], [4., 5., 6.]]])],
                          ids=["Error with convert trajectory for one step.",
                               "Error with convert trajectory for two steps."])
-def test_convert_trajectory(tmp_path, dlpoly_eng, traj_hist_n_steps, n_steps, position):
+def test_convert_trajectory(dlpoly_eng, traj_hist_n_steps, n_steps, position):
     """
     Test trajectory converter handles this correctly.
     """
 
-    traj_file = tmp_path / "traj"
-    traj_file.write_text(traj_hist_n_steps)
+    with tempfile.NamedTemporaryFile('w+', encoding='utf-8') as traj_file:
+        traj_file.write(traj_hist_n_steps)
+        traj_file.flush()
+        traj_file.seek(0)
 
-    dlpoly_eng.dlpoly.control['io_file_history'] = traj_file
+        dlpoly_eng.dlpoly.control['io_file_history'] = traj_file.name
 
-    dlpoly_eng.universe = None
+        dlpoly_eng.universe = None
 
-    traj = dlpoly_eng.convert_trajectory()
+        traj = dlpoly_eng.convert_trajectory()
 
-    for attr, value, err in [("n_atoms", 2, "Incorrect n_atoms."),
-                             ("n_steps", n_steps, "Incorrect n_steps."),
-                             ("atom_types", [1, 2], "Incorrect atom_types."),
-                             ("atom_masses", [1., 2.], "Incorrect atom_masses."),
-                             ("atom_charges", [0., 0.], "Incorrect atom_charges."),
-                             ("position", position, "Incorrect position.")]:
-        assert np.all(getattr(traj, attr) == value), err
+        for attr, value, err in [("n_atoms", 2, "Incorrect n_atoms."),
+                                 ("n_steps", n_steps, "Incorrect n_steps."),
+                                 ("atom_types", [1, 2], "Incorrect atom_types."),
+                                 ("atom_masses", [1., 2.], "Incorrect atom_masses."),
+                                 ("atom_charges", [0., 0.], "Incorrect atom_charges."),
+                                 ("position", position, "Incorrect position.")]:
+            assert np.all(getattr(traj, attr) == value), err
 
 # TODO: setup_universe, setup_simulation, update_parameter, save_config, reset_config
