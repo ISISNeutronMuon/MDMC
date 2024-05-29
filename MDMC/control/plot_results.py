@@ -43,7 +43,7 @@ class PlotResults():
         try:
             # The optimizer had a default minimum of 10 points which has since been changed to 2.
             # We are still using this '10' value here because we are assuming it is a good minimum
-            # for 'meaningful' plots, but technioally anything with 2 points can be minimised and
+            # for 'meaningful' plots, but technically anything with 2 points can be minimised and
             # shouldn't cause an error.
             old_optimizer_min = 10
             self.optimizer = Optimizer(self.minmax_coords,"GP",
@@ -158,8 +158,7 @@ class PlotResults():
             A plot displaying every parameter combination with their variances and covariances
         """
 
-        _, _, y_random, coords = \
-        self._expected_minimum_random_sampling()
+        _, _, y_random, coords = self._expected_minimum_random_sampling()
         _, reduced_coordinate_list = self._remove_points(y_random, coords)
 
         data = np.empty(shape=np.array(reduced_coordinate_list).shape)
