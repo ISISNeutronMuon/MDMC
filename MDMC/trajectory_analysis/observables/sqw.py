@@ -282,38 +282,11 @@ class AbstractSQw(SQwMixins, Observable):
         if time_step is not None:
             # Changing the time and traj step to fit the required dt value
             # by finding the highest traj_step that can fit into the dt_required
-            traj_step = int(np.ndarray.round(dt_required/time_step))
+            traj_step = int(np.round(dt_required/time_step))
             if traj_step == 0:
                 traj_step += 1
 
             time_step = dt_required/traj_step
-            dt = traj_step * time_step
-
-        if self.use_FFT:
-            # When using FFT, require all experimental/simulated energies
-            # to match
-            energy = self.E
-            msg = ("Experimental E values are not consistent with the "
-                   "`Simulation`. For the experimental data provided, the "
-                   f"product of `time_step` and `traj_step` must be {dt_required}, "
-                   f"but it was {dt}")
-            assert_allclose(self.calculate_E(len(energy), dt),
-                            energy,
-                            rtol=1e-5,
-                            err_msg=msg)
-        else:
-            # When not using FFT, there is not a hard requirement to match
-            # the energies, instead impose a requirement that our frame
-            # separation is small enough to capture the highest frequencies
-            msg = ("In order to capture the maximum experimental energy "
-                   "(frequency) value, the frame separation must be at least "
-                   "as small as the time period for oscillations at that "
-                   "frequency. The frame separation is given by the product of"
-                   f" `time_step` and `traj_step` and must be less than {dt_required}, "
-                   f"but it was {dt}")
-            # Allow for rounding errors by using isclose
-            isclose = np.isclose(dt, dt_required, rtol=1e-5)
-            assert isclose or dt <= dt_required, msg
 
         if traj_step is not None and time_step is not None:
             return True, traj_step, time_step, dt_required
