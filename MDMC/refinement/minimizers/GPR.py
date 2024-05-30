@@ -2,6 +2,7 @@
 import itertools
 from typing import TYPE_CHECKING, Union, Optional
 
+from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
@@ -15,7 +16,6 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
     from MDMC.control import Control
-    from pathlib import Path
 
 
 class GPR(Minimizer):

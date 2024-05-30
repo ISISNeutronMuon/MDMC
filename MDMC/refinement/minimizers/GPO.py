@@ -1,7 +1,7 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from typing import TYPE_CHECKING, Union, Optional
-import numpy as np
 from pathlib import Path
+import numpy as np
 
 from skopt import Optimizer
 
