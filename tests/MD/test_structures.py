@@ -532,5 +532,5 @@ def test_periodictable_properties(atom_type, element, isotope_num):
     
     assert test_atom.mass == actual_atom.mass
     assert test_atom.element.number == actual_atom.number
-    assert test_atom.element.neutron== actual_atom.neutron
+    assert test_atom.element.neutron == actual_atom.neutron
     assert test_atom.element.density == actual_atom.density
