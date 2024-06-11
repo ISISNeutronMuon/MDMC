@@ -101,41 +101,40 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         dictionary of force field parameters
 
     """
-    def _control_object_from_Argon_script():
-        density = 0.0176
-        universe = Universe(dimensions=23.0668)
-        Ar = Atom('Ar', charge=0., mass=36.0)
 
-        n_ar_atoms = int(density * np.product(universe.dimensions))
-        print(f'Number of argon atoms = {n_ar_atoms}')
-        universe.fill(Ar, num_struc_units=(n_ar_atoms))
+    density = 0.0176
+    universe = Universe(dimensions=23.0668)
+    Ar = Atom('Ar', charge=0., mass=36.0)
 
-        Ar_dispersion = Dispersion(universe,
-                                (Ar.atom_type, Ar.atom_type),
-                                cutoff=8.,
-                                function=LennardJones(epsilon=1.02, sigma=3.36))
+    n_ar_atoms = int(density * np.product(universe.dimensions))
+    print(f'Number of argon atoms = {n_ar_atoms}')
+    universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
-        simulation = Simulation(universe,
-                                engine="lammps",
-                                time_step=10.18893,
-                                temperature=120.,
-                                traj_step=15)
+    Ar_dispersion = Dispersion(universe,
+                            (Ar.atom_type, Ar.atom_type),
+                            cutoff=8.,
+                            function=LennardJones(epsilon=1.02, sigma=3.36))
 
-        dataset = exp_datasets(file_name='Well_s_q_omega_Ar_data.xml')
-        fit_parameters = universe.parameters
-        fit_parameters['sigma'].constraints = [1.0,20.0]
-        fit_parameters['epsilon'].constraints = [0.5, 20]
-        
-        control = Control(simulation=simulation,
-                    exp_datasets=dataset,
-                    fit_parameters=fit_parameters,
-                    minimizer_type="GPO",
-                    reset_config=True,
-                    MD_steps=4000, 
-                    equilibration_steps=4000,
-                    data_printer='ipython')
-        return control, fit_parameters
-    return _control_object_from_Argon_script
+    simulation = Simulation(universe,
+                            engine="lammps",
+                            time_step=10.18893,
+                            temperature=120.,
+                            traj_step=15)
+
+    dataset = exp_datasets(file_name='Well_s_q_omega_Ar_data.xml')
+    fit_parameters = universe.parameters
+    fit_parameters['sigma'].constraints = [1.0,20.0]
+    fit_parameters['epsilon'].constraints = [0.5, 20]
+    
+    control = Control(simulation=simulation,
+                exp_datasets=dataset,
+                fit_parameters=fit_parameters,
+                minimizer_type="GPO",
+                reset_config=True,
+                MD_steps=4000, 
+                equilibration_steps=4000,
+                data_printer='ipython')
+    return control, fit_parameters
 
 
 @pytest.fixture(scope="module")
@@ -853,7 +852,9 @@ def test_control_bad_params(control_object_from_Argon_script, eps, sig):
     and production runs handle this and find a new set of better parameters to continue.
     """
 
-    ctrl, fit_parameters = control_object_from_Argon_script()
+    ctrl, fit_parameters = control_object_from_Argon_script
+    fit_parameters['sigma'].constraints = [1.0,20.0]
+    fit_parameters['epsilon'].constraints = [0.5, 20]
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
     
@@ -872,7 +873,7 @@ def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, s
     the refinement), the equilibration and production runs handle this and continue refining.
     """
     
-    ctrl, fit_parameters = control_object_from_Argon_script()
+    ctrl, fit_parameters = control_object_from_Argon_script
     fit_parameters['epsilon'].constraints = eps_constr
     fit_parameters['sigma'].constraints = sig_constr
     fit_parameters['epsilon'].value = 1.02
@@ -881,17 +882,14 @@ def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, s
     ctrl.equilibrate(n_steps=1000)
     ctrl._run_MD()
 
-def test_control_varying_time_step(control_object_from_Argon_script):
+def test_control_trial_reduce_time_step(control_object_from_Argon_script):
     """
     Tests that the method for varying time_step (upon a failed equilibration), changes the
     time_step and traj_step accurately.
     """
     
-    ctrl, _ = control_object_from_Argon_script()
+    ctrl, _ = control_object_from_Argon_script
     original_time_step = ctrl.simulation.time_step
-    original_traj_step = ctrl.simulation.traj_step
-    dt_required = original_time_step * original_traj_step
-    ctrl.varying_time_step()
-    assert ctrl.simulation.time_step != original_time_step
-    assert ctrl.simulation.time_step == dt_required/ctrl.simulation.traj_step
-    assert ctrl.simulation.traj_step == int(np.round(dt_required/(original_time_step*0.6)))
+    reduction_factor = 0.6
+    ctrl.trial_reduce_time_step(reduction_factor = 0.6)
+    assert ctrl.simulation.time_step == original_time_step * reduction_factor

@@ -264,18 +264,9 @@ class Control:
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
-            self.empty_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
-            self.empty_observable_pair = ObservablePair(exp_observable,
-                                             self.empty_MD_obs,
-                                             dset['weight'],
-                                             rescale_factor=rescale_factor,
-                                             auto_scale=auto_scale)
-            self.empty_observable_pairs = []
-            self.empty_observable_pairs.append(self.empty_observable_pair)
-            self.empty_observable_pairs[0].MD_obs._dependent_variables = {}
-            self.empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+            self.empty_observable_pairs = self.empty_observable_pair(exp_observable,dset, 
+                                                                     rescale_factor,auto_scale)
             self.production_time_step = None
-            self.production_traj_step = None
             self.temporary_step_changes = False
 
             # Take the largest minimum number of MD_steps needed by any dataset
@@ -590,7 +581,6 @@ class Control:
         self.equilibrate_attempt = 0
         if self.temporary_step_changes:
             self.simulation.time_step = self.production_time_step
-            self.simulation.traj_step = self.production_traj_step
 
     def step(self) -> None:
         """
@@ -683,8 +673,6 @@ class Control:
 
         try:
             self.simulation.run(self.MD_steps, verbose=False)
-        # pylint: disable=broad-except
-        # in this case it isnt 'broad', its handling an exception thrown by lammps
         except MDEngineError:
             self.engine_recovery_from_bad_params()
 
@@ -1081,7 +1069,7 @@ class Control:
             if equil_works:
                 self.equilibrate(self.equilibration_steps)
             else:
-                self.varying_time_step()
+                self.trial_reduce_time_step(reduction_factor=0.6)
             counter += 1
 
         raise MDEngineError('MD engine failed to perform an equilibration.'
@@ -1106,8 +1094,9 @@ class Control:
 
         counter = 0
         prod_works = False
-        # 20 attempts was arbitrarily chosen
-        while not prod_works and counter < 50:
+        # number of attempts was arbitrarily chosen
+        num_attempts = 20
+        for attempt in range(num_attempts):
             prod_works = self.testing_engine_runs()
 
             if not prod_works:
@@ -1121,9 +1110,10 @@ class Control:
             elif prod_works:
                 self.equilibrate(self.equilibration_steps)
                 self.simulation.run(self.MD_steps, verbose=False)
+                break
             counter += 1
 
-        if not prod_works:
+        else:
             raise MDEngineError("Failed to find good parameters during refinement."
             "Please check inputs such as parameter values and constraints.")
 
@@ -1160,11 +1150,15 @@ class Control:
             test_worked = False
         return test_worked
 
-    def varying_time_step(self) -> None:
+    def trial_reduce_time_step(self,reduction_factor) -> None:
         """
         Reduces the time_step, and then changes the traj_step in line with this in order to keep
         these values consistent with the data (energy separation).
-        This is only applicable to LAMMPS.
+        
+        Parameters
+        ----------
+        reduction_factor : float
+            represents the value which will be multiplied with the time_step in order to reduce it
 
         Returns
         -------
@@ -1172,14 +1166,47 @@ class Control:
         """
 
         self.production_time_step = self.simulation.time_step
-        self.production_traj_step = self.simulation.traj_step
+        self.simulation.time_step *= reduction_factor
         self.temporary_step_changes = True
+        
+    def empty_observable_pair(self, exp_observable, dset, rescale_factor, auto_scale):
+        """
+        Creates a list holding just one empty observable pair (meaning full of values close to 0).
+        This is used for creating an artificially high FoM by comparing this empty observable pair
+        to a calculated one.
+        
+        Parameters
+        ----------
+        exp_observable : Observable
+            An ``Observable`` with ``Observable.origin == 'experiment'``.
+        weight : float
+            The relative weight of this pair on a total FoM.
+        rescale_factor: float, optional
+            Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
+            on the same scale as ``MD_obs``. Default is `1.`.
+        auto_scale: bool, optional
+            If `True`, ``rescale_factor`` is set automatically to minimise the FoM
+            for each step of the refinement, overriding a user specified value if
+            set. Note that this process is purely statistical and does not account
+            for physical effects that might impact the scaling. Default is `False`.
+        
+        Returns
+        -------
+        empty_observable_pairs : list
+            List containing one empty observable pair, with all values close to zero.
+        
+        """
 
-        dt_required = self.simulation.time_step * self.simulation.traj_step
-        self.simulation.time_step *= 0.6
-        self.simulation.traj_step = \
-        int(np.round(dt_required/self.simulation.time_step))
-
-        if self.simulation.traj_step == 0:
-            self.simulation.traj_step += 1
-        self.simulation.time_step = dt_required/self.simulation.traj_step
+        empty_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
+        empty_observable_pair = ObservablePair(exp_observable,
+                                            empty_MD_obs,
+                                            dset['weight'],
+                                            rescale_factor=rescale_factor,
+                                            auto_scale=auto_scale)
+        empty_observable_pairs = []
+        empty_observable_pairs.append(empty_observable_pair)
+        empty_observable_pairs[0].MD_obs._dependent_variables = {}
+        empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+        
+        return empty_observable_pairs
+    
