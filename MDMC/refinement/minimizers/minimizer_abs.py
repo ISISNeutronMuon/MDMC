@@ -171,6 +171,21 @@ class Minimizer(ABC):
                 raise ValueError(f'Parameter {parameter.name} is tied to the value of '
                                  'another parameter and so cannot be refined')
 
+    def is_best_FoM(self) -> bool:
+        """
+        Checks if the current FoM is the better FoM
+
+        Returns
+        -------
+        bool
+            Representation of if the last FoM is better than the last
+        """
+
+        if len(self._history) > 1:
+            return self._history[-1] < min(self._history[:-1])
+        else:
+            return True
+
     def write_history(self, filename) -> None:
         """
         Write the minimizer history to a csv file

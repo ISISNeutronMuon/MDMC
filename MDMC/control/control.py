@@ -16,6 +16,7 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameters
+from MDMC.writers import H5MD_build
 from MDMC.MD.simulation import Simulation
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
@@ -196,6 +197,7 @@ class Control:
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
+        self.best_trj = []
         self.verbose = verbose
         self.timings: dict = {'equilibrate': [],
                         '_run_MD': [],
@@ -512,6 +514,8 @@ class Control:
 
         verbose_manager.finish("Refinement")
 
+        H5MD_build.build_full(self.best_trj)
+
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
                  verbose: bool = False, output_log: str = None,
@@ -629,7 +633,7 @@ class Control:
             self.first_loaded_step = False
         elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
-            fom = self._generate_FoM()
+            fom, trj = self._generate_FoM()
         else:
             # assuming params are bad so use max FoM available
             fom = self.max_FoM
@@ -637,6 +641,10 @@ class Control:
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
+
+        if self.minimizer.is_best_FoM():
+            self.best_trj = trj
+
         # Update the MD engine with new parameters
         self._update_engine_parameters()
         # When reset_config=true reset the MD (phasespace) back if the
@@ -706,7 +714,7 @@ class Control:
         except MDEngineError:
             FoM_value = self.max_FoM
 
-        return FoM_value
+        return FoM_value, trj
 
     def _run_MD(self) -> None:
         """
@@ -800,6 +808,8 @@ class Control:
         verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
 
+        H5MD_build.build_full(trj)
+
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
@@ -811,6 +821,7 @@ class Control:
                         self.timings[key] = []
                     self.timings[key] += value
         verbose_manager.finish("Calculating observables")
+        return trj
 
     def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
         """
