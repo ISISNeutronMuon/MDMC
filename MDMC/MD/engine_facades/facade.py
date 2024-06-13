@@ -234,4 +234,4 @@ class MDEngine(ABC):
         raise NotImplementedError
 
 class MDEngineError(Exception):
-    "Raised when lammps raises an exception from a run command"
+    "Raised when MD engine raises an exception from a run command"

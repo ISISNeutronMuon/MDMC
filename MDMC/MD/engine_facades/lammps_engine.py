@@ -47,8 +47,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
-from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.engine_facades.facade import MDEngineError
+from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction, Interaction, \
     NonBondedInteraction, Bond, BondAngle

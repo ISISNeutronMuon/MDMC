@@ -90,7 +90,7 @@ def mock_equilibrate(self, *extras):
     pass
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def control_object_from_Argon_script(exp_datasets) -> callable:
     """
     Returns
@@ -853,8 +853,6 @@ def test_control_bad_params(control_object_from_Argon_script, eps, sig):
     """
 
     ctrl, fit_parameters = control_object_from_Argon_script
-    fit_parameters['sigma'].constraints = [1.0,20.0]
-    fit_parameters['epsilon'].constraints = [0.5, 20]
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
     
@@ -891,5 +889,5 @@ def test_control_trial_reduce_time_step(control_object_from_Argon_script):
     ctrl, _ = control_object_from_Argon_script
     original_time_step = ctrl.simulation.time_step
     reduction_factor = 0.6
-    ctrl.trial_reduce_time_step(reduction_factor = 0.6)
+    ctrl.trial_reduce_time_step(reduction_factor=reduction_factor)
     assert ctrl.simulation.time_step == original_time_step * reduction_factor
