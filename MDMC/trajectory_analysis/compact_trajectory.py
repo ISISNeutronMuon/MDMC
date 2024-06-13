@@ -18,9 +18,10 @@ limits of performance that we can achieve within Python.
 # by numpy.
 
 import numpy as np
-
+import h5py
 from MDMC.common import units
 from MDMC.MD.structures import Atom
+from MDMC.readers import H5MD_reader
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 
 
@@ -165,6 +166,34 @@ class CompactTrajectory:
         if bpn > 2:
             return np.float32
         return np.float16
+
+    @staticmethod
+    def create_from_file(file_name: str):
+        """
+        Creates a CompactTrajectory from a file
+
+        Parameters
+        ----------
+        file_name : str
+            Name of file CompactTrajectory is being built from
+        """
+        new_ct = CompactTrajectory()
+        with h5py.File(file_name, 'r') as file:
+            all_data = H5MD_reader.read_all_data(file)
+        n_atoms = len(all_data['specie'])
+        n_steps = all_data['no_steps']
+        new_ct.preAllocate(n_atoms=n_atoms,
+                           n_steps=n_steps,
+                           useVelocity=True)
+        new_ct.time = all_data['time']
+        new_ct.setCharge(all_data["charge"])
+        new_ct.setDimensions(all_data["box_dimension"])
+        new_ct.position = all_data['possition']
+        new_ct.velocity = all_data['velocity']
+        new_ct.atom_masses = all_data['mass']
+        new_ct.atom_types = all_data['specie']
+        new_ct.element_list = all_data['atom_symbol']
+        new_ct.element_set = list(set(all_data['atom_symbol']))
 
     def setBytesPerNumber(self, bytes_per_number: int = 8):
         """
