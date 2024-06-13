@@ -48,6 +48,7 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.MD.engine_facades.facade import MDEngine
+from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction, Interaction, \
     NonBondedInteraction, Bond, BondAngle
@@ -2903,6 +2904,3 @@ def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
                     if angle.constrained]
 
     return lmp_str
-
-class MDEngineError(Exception):
-    "Raised when lammps raises an exception from a run command"

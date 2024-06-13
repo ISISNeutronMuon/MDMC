@@ -21,7 +21,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from MDMC.MD.engine_facades.lammps_engine import MDEngineError
+from MDMC.MD.engine_facades.facade import MDEngineError
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -264,7 +264,7 @@ class Control:
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
-            self.empty_observable_pairs = self.empty_observable_pair(exp_observable,dset, 
+            self.empty_observable_pairs = self.empty_observable_pair(exp_observable,dset,
                                                                      rescale_factor,auto_scale)
             self.production_time_step = None
             self.temporary_step_changes = False
@@ -1096,7 +1096,7 @@ class Control:
         prod_works = False
         # number of attempts was arbitrarily chosen
         num_attempts = 20
-        for attempt in range(num_attempts):
+        for _ in range(num_attempts):
             prod_works = self.testing_engine_runs()
 
             if not prod_works:
@@ -1154,7 +1154,7 @@ class Control:
         """
         Reduces the time_step, and then changes the traj_step in line with this in order to keep
         these values consistent with the data (energy separation).
-        
+
         Parameters
         ----------
         reduction_factor : float
@@ -1168,13 +1168,13 @@ class Control:
         self.production_time_step = self.simulation.time_step
         self.simulation.time_step *= reduction_factor
         self.temporary_step_changes = True
-        
+
     def empty_observable_pair(self, exp_observable, dset, rescale_factor, auto_scale):
         """
         Creates a list holding just one empty observable pair (meaning full of values close to 0).
         This is used for creating an artificially high FoM by comparing this empty observable pair
         to a calculated one.
-        
+
         Parameters
         ----------
         exp_observable : Observable
@@ -1189,12 +1189,12 @@ class Control:
             for each step of the refinement, overriding a user specified value if
             set. Note that this process is purely statistical and does not account
             for physical effects that might impact the scaling. Default is `False`.
-        
+
         Returns
         -------
         empty_observable_pairs : list
             List containing one empty observable pair, with all values close to zero.
-        
+
         """
 
         empty_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
@@ -1205,8 +1205,9 @@ class Control:
                                             auto_scale=auto_scale)
         empty_observable_pairs = []
         empty_observable_pairs.append(empty_observable_pair)
+        # pylint: disable=protected-access
+        # the purpose of method is to create this empty observable so accessing is necessary
         empty_observable_pairs[0].MD_obs._dependent_variables = {}
         empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
-        
+
         return empty_observable_pairs
-    
