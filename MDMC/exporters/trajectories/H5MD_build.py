@@ -64,10 +64,10 @@ def create_metadata_group(open_file: h5py.File, *, creator_name: str, creator_em
     ----------
     open_file : h5py.File
         A pre-opened file that the data is being written into
-    creator_name : str
-        Name of person running the MDMC simulation.
-    creator_email : str
-        Email of the person running the MDMC simulation.
+    creator_name : str, optional
+        Name of person running the MDMC simulation, by default 'Unknown'
+    creator_email : str, optional
+        Email of the person running the MDMC simulation, by default 'Unknown'
     """
     group = open_file[H5MD_DATA["loc"]]
     group.attrs["version"] = H5MD_DATA["h5md_version"]
@@ -191,13 +191,6 @@ def write_H5MD(
 ):
     """
     Write a CompactTrajectory to a H5MD file.
-
-    In MDMC, an H5MD trajectory File is built from a
-    :class:`~MDMC.trajectory_analysis.compact_trajectory.CompactTrajectory`.
-    Once a ``CompactTrajectory`` is generated, an H5MD trajectory file can be
-    created by passing it to the :func:`~MDMC.writers.H5MD_build.build_full` function.
-    Once executed the a H5MD (``.h5``) file is created with the name
-    "trajectory<timestamp>"
 
     Parameters
     ----------
