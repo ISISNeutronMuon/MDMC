@@ -5,6 +5,7 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
+import logging
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
@@ -529,7 +530,7 @@ class Control:
         self.simulation.minimize(n_steps,minimize_every,verbose,
                                  output_log,work_dir, **settings)
 
-    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -538,7 +539,7 @@ class Control:
         Parameters
         ----------
         n_steps : int
-            Number of simulation steps to run
+            Number of simulation steps to run.
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
@@ -550,8 +551,7 @@ class Control:
         if not n_steps:
             self.simulation.auto_equilibrate()
         else:
-            self.simulation.run(n_steps,equilibration, verbose,
-                                output_log, work_dir,**settings)
+            self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
@@ -968,7 +968,9 @@ class Control:
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself
+        it does not have a ``validate_energy`` function itself. The time step and trajectory step
+        may be changed in the validate_energy method of the specific observable if necessary, to
+        achieve an energy separation that matches that of the experimental data.
 
         Parameters
         ----------
@@ -980,12 +982,19 @@ class Control:
         None
         """
 
-        # Calculate the time separation between trajectory frames, dt, imposed
-        # by the simulation
-        dt = self.simulation.traj_step * self.simulation.time_step
-
         with suppress(AttributeError):
-            obs.validate_energy(dt)
+
+            changed, traj_step, time_step, self.dt_required \
+                  = obs.validate_energy(self.simulation.time_step)
+            if changed:
+                self.simulation.traj_step = traj_step
+                self.simulation.time_step = time_step
+                logging.warning(" The given traj_step and time_step values were not"
+                    " compatibile with the dataset specified.\nThe values "
+                    "(whilst prioritising time_step) have been changed to"
+                    " traj_step: %d, and time_step: %f. \n"
+                    "Context: for this dataset, traj_step multiplied by time_step"
+                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
 
     def _input_check(self, general_set, inputs) -> None:
         """
@@ -1012,4 +1021,3 @@ class Control:
                 raise KeyError("There was an issue retrieving the input: "
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
-            
