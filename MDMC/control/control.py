@@ -981,14 +981,10 @@ class Control:
         None
         """
 
-        # Calculate the time separation between trajectory frames, dt, imposed
-        # by the simulation
-        dt = self.simulation.traj_step * self.simulation.time_step
-
         with suppress(AttributeError):
 
             changed, traj_step, time_step, self.dt_required \
-                  = obs.validate_energy(dt,self.simulation.traj_step,self.simulation.time_step)
+                  = obs.validate_energy(self.simulation.time_step)
             if changed:
                 self.simulation.traj_step = traj_step
                 self.simulation.time_step = time_step

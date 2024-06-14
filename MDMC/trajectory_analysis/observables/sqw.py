@@ -248,7 +248,7 @@ class AbstractSQw(SQwMixins, Observable):
             return self.errors['SQw']
         except KeyError:
             return None
-    def validate_energy(self, dt: float, traj_step: float = None, time_step: float = None):
+    def validate_energy(self, time_step: float = None):
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -257,11 +257,6 @@ class AbstractSQw(SQwMixins, Observable):
 
         Parameters
         ----------
-        dt : float
-            Frame separation in ``fs``
-        traj_step: float, optional
-            User specified value for the number of 'time_steps' used in between snapshots
-            of the simulation, default is None.
         time_step: float, optional
             User specified length of time for each update of the atoms trajectories
             in the simulation, default is None.
@@ -285,10 +280,8 @@ class AbstractSQw(SQwMixins, Observable):
             traj_step = int(np.round(dt_required/time_step))
             if traj_step == 0:
                 traj_step += 1
-
             time_step = dt_required/traj_step
 
-        if traj_step is not None and time_step is not None:
             return True, traj_step, time_step, dt_required
         return False, None, None, dt_required
 
