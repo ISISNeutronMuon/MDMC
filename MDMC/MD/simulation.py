@@ -1407,11 +1407,10 @@ class Simulation:
 
         setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
-            setup_values = [[value] for value in self.settings.values()]
-            setup_keys = [f'  {key}' for key in self.settings]
-            setup_frame = pd.DataFrame(setup_values, index=setup_keys)
-            setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
-
+            settings_strings = [f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}'
+                                for key, value in self.settings.items()]
+            settings_string = '\n'.join(settings_strings)
+            setup_msg += f' and settings:\n{settings_string}\n'
         if self.verbose:
             print(setup_msg)
 
