@@ -14,6 +14,7 @@ import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
 from MDMC.common import units
+from MDMC.MD.simulation import Simulation
 import difflib
 
 
@@ -220,22 +221,20 @@ def test_universe_with_atoms_stdout(capsys):
     assert all(expected in actual for expected, actual in zip(expected_lines, actual_lines))
 
 
-
-
-
-
-def test_simulation_setup(capsys):
-    engine = "lammps"
-    settings = {"temperature": 300.0, "pressure": 101325.0}
-    simulation = MockSimulation(0, engine, **settings)
-    assert simulation is not None
-    captured = capsys.readouterr().out
+def test_simulation_setup():
+    
+    universe=sim.Universe(UNIVERSE_DIMENSIONS)
+    sim_obj = Simulation(universe,
+                            engine="lammps",
+                            time_step=10.18893,
+                            temperature=300.0,
+                            pressure=101325.0,
+                            traj_step=15)
     expected_output = (
         'Simulation created with lammps engine and settings:\n'
-        'temperature: 300.0 K\n'
-        'pressure: 101325.0 Pa\n')
-    assert captured == expected_output
-
+        'temperature: 300.0 K \n'
+        'pressure: 101325.0 Pa \n\n')
+    assert expected_output == sim_obj.setup_msg
 
 
 def test_create_atom(atom):

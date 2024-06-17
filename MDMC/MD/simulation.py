@@ -9,7 +9,6 @@ from typing import Union, Tuple, TYPE_CHECKING
 from statsmodels.tsa.stattools import kpss
 
 import numpy as np
-import pandas as pd
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import unit_decorator_getter, \
@@ -1405,14 +1404,13 @@ class Simulation:
         self.verbose = settings.get('verbose', True)
         self._setup()
 
-        setup_msg = f'Simulation created with {engine} engine'
+        self.setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
-            settings_strings = [f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}'
-                                for key, value in self.settings.items()]
-            settings_string = '\n'.join(settings_strings)
-            setup_msg += f' and settings:\n{settings_string}\n'
+            settings_strings = ''.join([f'{key}: {value} {units.SYSTEM.get(key.upper(),"")} \n'
+                                for key, value in self.settings.items()])
+            self.setup_msg += f' and settings:\n{str(settings_strings)}\n'
         if self.verbose:
-            print(setup_msg)
+            print(self.setup_msg)
 
     @property
     def time_step(self) -> float:
