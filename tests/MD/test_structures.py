@@ -15,7 +15,7 @@ from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import (Atom, BoundingBox, Molecule,
                                       get_reduced_chemical_formula)
-from MDMC.MD.interactions import Coulombic
+from MDMC.MD.interactions import Coulombic, Bond, BondAngle
 from MDMC.MD.structures import Atom
 
 ATOM_TYPES = [1, 2, 3]
@@ -77,11 +77,13 @@ def water_molecule():
     Molecule
         A water molecule with no interactions (i.e. just atoms defined)
     """
-
+    H1 = Atom('H')
+    H2 = Atom('H', position=(0., 1.63298, 0.))
+    O = Atom('O', position=(0., 0.81649, 0.57736))
     return Molecule(position=(0, 0, 0),
-                    atoms=[Atom('H'),
-                           Atom('H', position=(0., 1.63298, 0.)),
-                           Atom('O', position=(0., 0.81649, 0.57736))],
+                    atoms=[H1, H2, O],
+                    interactions=[Bond((H1, O), (H2, O), constrained=True),
+                                  BondAngle(H1, O, H2, constrained=True)],
                     name='water')
 
 
@@ -534,3 +536,21 @@ def test_periodictable_properties(atom_type, element, isotope_num):
     assert test_atom.element.number == actual_atom.number
     assert test_atom.element.neutron == actual_atom.neutron
     assert test_atom.element.density == actual_atom.density
+
+def test_deepcopy_copies_existing_interactions(water_molecule, universe):
+    """Testing that the CompositeStructure.__deepcopy__ method correctly copies
+     the interactions of the CompositeStructure that is being copied. """
+    universe = universe
+    universe.add_structure(water_molecule)
+    universe.add_force_field('SPCE')
+    # there should be 4 parameters for SPCE water:
+    #  2 for H-O Bonds with HarmonicPotential: equilibrium bond length, bond strength
+    #  2 for H-O-H BondAngle with HarmonicPotential: equilibrium bond angle, bond strength
+    assert 4 == len(universe.parameters)
+    water_copy = water_molecule.copy([1.,1.,1.])
+    # there should be 3 interactions in the copied molecule: 
+    # 2 H-O Bonds, 1 H-O-H BondAngle
+    assert 3 == len(water_copy.interactions)
+    universe.add_structure(water_copy)
+    # the number of parameters in the Universe should be unchanged when the copied molecule is added
+    assert 4 == len(universe.parameters)

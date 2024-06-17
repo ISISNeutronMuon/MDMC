@@ -66,13 +66,6 @@ simulation = Simulation(universe,
                         temperature=100.,
                         traj_step=15)
 
-# Energy Minimization and equilibration
-simulation.engine.time_step = 1.0
-simulation.minimize(n_steps=100, output_log='min.log', work_dir='mininm')
-simulation.run(n_steps=100, equilibration=True, output_log='equil.log', work_dir='equil')
-simulation.engine.time_step = 10.18893
-simulation.run(n_steps=10000, equilibration=False, output_log='prod.log', work_dir='prod')
-#print(simulation.trajectory)
 ## dataset
 exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type':'SQw',
@@ -87,6 +80,14 @@ control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
                   MD_steps=570)
+
+# Energy Minimization and equilibration
+simulation.engine.time_step = 1.0
+control.minimize(n_steps=100, output_log='min.log', work_dir='mininm')
+control.equilibrate(n_steps=100, output_log='equil.log', work_dir='equil')
+simulation.engine.time_step = 10.18893
+simulation.run(n_steps=10000, equilibration=False, output_log='prod.log', work_dir='prod')
+#print(simulation.trajectory)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
