@@ -9,8 +9,8 @@ import textwrap
 
 import numpy as np
 import pandas as pd
+import periodictable
 
-from MDMC.common.atom_properties import ATOMIC_NUMBER
 from MDMC.common.decorators import wrap_docstring
 from MDMC.common.df_operations import filter_dataframe
 from MDMC.common import units
@@ -100,7 +100,7 @@ def parse_prm(dataframe: "pd.DataFrame") -> "tuple[pd.DataFrame]":
 
     # Change atomic number to element
     atoms['atomic_num'] = \
-        atoms['atomic_num'].apply(lambda x: ATOMIC_NUMBER[int(x)])
+        atoms['atomic_num'].apply(lambda x: periodictable.elements[int(x)])
     atoms.rename(columns={'atomic_num': 'element'}, inplace=True)
 
     # Rearrange order of proper and improper dihedrals

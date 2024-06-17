@@ -391,7 +391,7 @@ class Universe(AtomContainer):
             The elements in the ``Universe``
         """
 
-        return [atom.element for atom in self.atoms]
+        return [atom.element.symbol for atom in self.atoms]
 
     @property
     def element_dict(self) -> 'dict[str, Atom]':
@@ -410,7 +410,7 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.element: atom for atom in self.atoms}
+        return {atom.element.symbol: atom for atom in self.atoms}
 
     @property
     def element_lookup(self) -> 'dict[str, Atom]':
@@ -429,7 +429,7 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.atom_type: atom.element for atom in self.atoms}
+        return {atom.atom_type: atom.element.symbol for atom in self.atoms}
 
     @property
     def atoms(self) -> 'list[Atom]':
@@ -662,11 +662,11 @@ class Universe(AtomContainer):
         """
 
         if atom.name:
-            inter_key = (atom.element, atom.name)
+            inter_key = (atom.element.symbol, atom.name)
         else:
             # Sorting is just to ensure consistent order. As interactions will have
             # different types, sort by id
-            inter_key = (atom.element, ) + tuple(sorted(atom.interactions,
+            inter_key = (atom.element.symbol, ) + tuple(sorted(atom.interactions,
                                                         k=id))
 
         if atom.atom_type:
