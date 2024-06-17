@@ -1,5 +1,6 @@
 """The Gaussian-Process-Optimizer minimizer class"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, Optional
+from pathlib import Path
 import numpy as np
 
 from skopt import Optimizer
@@ -34,7 +35,9 @@ class GPO(Minimizer):
     control: Control
         The ``Control`` object which uses this Minimizer.
     parameters: Parameters
-        The parameters in the simulation Universe to be optimized
+        The parameters in the simulation Universe to be optimized.
+    previous_history : Path
+        The Path to a results file containing previous refinement data.
 
     Settings
     ----------
@@ -51,11 +54,14 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', \
+        previous_history: Optional[Union[Path, str]] = None, **settings: dict):
+        super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
+        self.previous_history = previous_history
+        self.state_changed = False
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
@@ -72,10 +78,16 @@ class GPO(Minimizer):
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-        self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
-                                   acq_optimizer="sampling", initial_point_generator="lhs",
-                                   n_initial_points=self.n_initial, model_queue_size=1)
+        initial_points = self.n_initial
+        if not self._history or len(self._history) < self.n_initial:
+            initial_points = self.n_initial
+        else:
+            initial_points = len(self._history)
 
+        self.optimizer = Optimizer(
+            self.parameter_bounds, "GP", acq_func="gp_hedge",
+            acq_optimizer="sampling", initial_point_generator= "lhs",
+            n_initial_points=initial_points, model_queue_size=1)
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -101,7 +113,7 @@ class GPO(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.control.n_steps
+        return len(self.history) >= self.control.n_steps + self.previous_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
@@ -170,6 +182,7 @@ class GPO(Minimizer):
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
             Minimum predicted FoM
         """
+
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]

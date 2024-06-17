@@ -1,9 +1,10 @@
 """A module for performing the refinement"""
 import statistics
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, Union
 from contextlib import suppress
 from datetime import datetime
+from pathlib import Path
 
 import logging
 import numpy as np
@@ -183,10 +184,12 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
+                 previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
                  **settings: dict):
 
+        self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -217,9 +220,9 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
-                                                           self.fit_parameters, **settings)
-
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
+                                                           previous_history, **settings)
+        self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -561,16 +564,18 @@ class Control:
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
-
         # Generate FoM by running MD for this step and then calculate FoM
-        fom = self._generate_FoM()
+        if self.first_loaded_step:
+            fom = self.minimizer.FoM_old
+            self.first_loaded_step = False
+        else:
+            fom = self._generate_FoM()
 
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
-
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
