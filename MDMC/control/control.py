@@ -258,7 +258,7 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
-            self.recreated_Q_values = None
+            self.recreated_independent_vars  = {}
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -732,7 +732,7 @@ class Control:
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if pair.MD_obs.name =='SQw':
-                self.recreated_Q_values = pair.MD_obs.recreated_Q
+                self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
@@ -1000,19 +1000,19 @@ class Control:
         None
         """
 
-        # observables for which we want to trim data
-        observable_list = ['SQw']
+        # loop through observable pairs and trim dependent var data accordingly
+        for pair in self.observable_pairs:
+            obs = pair.exp_obs.name
+            if obs in self.recreated_independent_vars:
+                recreated_independent_vars = self.recreated_independent_vars[obs]
+                index = self.observable_pairs.index(obs)
+                exp_obs = self.observable_pairs[index].exp_obs
+                md_obs = self.observable_pairs[index].MD_obs
 
-        exp_obs = self.observable_pairs[0].exp_obs
-        md_obs = self.observable_pairs[0].MD_obs
+                if len(exp_obs.dependent_variables[obs][0]) != \
+                len(md_obs.dependent_variables[obs][0]):
 
-        # trimming dependent variable data and associated errors
-        for obs in observable_list:
-            if obs in exp_obs.dependent_variables:
-                if len(exp_obs.dependent_variables['SQw'][0]) != \
-                len(md_obs.dependent_variables['SQw'][0]):
-
-                    exp_obs.errors['SQw'][0] = \
-                    [exp_obs.errors['SQw'][0][num] for num in self.recreated_Q_values]
-                    exp_obs.dependent_variables['SQw'][0] = \
-                    [exp_obs.dependent_variables['SQw'][0][num] for num in self.recreated_Q_values]
+                    exp_obs.errors[obs][0] = \
+                    [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
+                    exp_obs.dependent_variables[obs][0] = \
+                    [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
