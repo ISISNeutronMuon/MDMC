@@ -178,11 +178,9 @@ def build_full(trajectory: CompactTrajectory,
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')
         file_name = file_name.with_stem(f'{file_name.stem}_{time_stamp}')
 
-    file_name = f'{file_loc}/{file_name}'
+    file_path_name = f'{file_loc}/{file_name}'
 
-    print(file_name)
-
-    with h5py.File(file_name, 'w') as file:
+    with h5py.File(file_path_name, 'w') as file:
         no_data_groups = ['particles',
                           ROOT_TRAJECTORY,
                           'h5md',
