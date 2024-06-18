@@ -175,7 +175,7 @@ class CompactTrajectory:
         Parameters
         ----------
         file_name : str
-            Name of file CompactTrajectory is being built from
+            Path to file `CompactTrajectory` is being built from
         """
         new_ct = CompactTrajectory()
         with h5py.File(file_name, 'r') as file:
