@@ -630,14 +630,7 @@ class Control:
         """
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
-
-        exp_obs = self.observable_pairs[0].exp_obs
-        md_obs = self.observable_pairs[0].MD_obs
-        if len(exp_obs.dependent_variables['SQw'][0]) != len(md_obs.dependent_variables['SQw'][0]):
-            exp_obs.errors['SQw'][0] = [exp_obs.errors['SQw'][0][num]
-                                        for num in self.recreated_Q_values]
-            exp_obs.dependent_variables['SQw'][0] = [exp_obs.dependent_variables['SQw'][0][num]
-                                                     for num in self.recreated_Q_values]
+        self._trim_dependent_variables()
 
         FoM_value = self.FoM_calculator.calculate()
 
@@ -994,3 +987,32 @@ class Control:
 
         with suppress(AttributeError):
             obs.validate_energy(dt)
+
+    def _trim_dependent_variables(self) -> None:
+        """
+        Trims the dependent variable data, and the associated errors, for a list of observables
+        where necessary. One such application is when the smallest q_values cannot be recreated by
+        the simulation, this trimming removes the data associated with q_values which cannot be
+        recreated.
+
+        Returns
+        -------
+        None
+        """
+
+        # observables for which we want to trim data
+        observable_list = ['SQw']
+
+        exp_obs = self.observable_pairs[0].exp_obs
+        md_obs = self.observable_pairs[0].MD_obs
+
+        # trimming dependent variable data and associated errors
+        for obs in observable_list:
+            if obs in exp_obs.dependent_variables:
+                if len(exp_obs.dependent_variables['SQw'][0]) != \
+                len(md_obs.dependent_variables['SQw'][0]):
+
+                    exp_obs.errors['SQw'][0] = \
+                    [exp_obs.errors['SQw'][0][num] for num in self.recreated_Q_values]
+                    exp_obs.dependent_variables['SQw'][0] = \
+                    [exp_obs.dependent_variables['SQw'][0][num] for num in self.recreated_Q_values]
