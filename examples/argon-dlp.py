@@ -7,8 +7,11 @@ A copy of the data fitting against is assumed to be located in
 ../doc/tutorials/data/Well_s_q_omega_Ar_data.xml
 """
 
-import numpy as np
+from pathlib import Path
 import os
+
+import numpy as np
+
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
 
@@ -44,14 +47,15 @@ Ar = Atom('Ar', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
 n_ar_atoms = int(density * np.prod(universe.dimensions))
 universe.fill(Ar, num_struc_units=(n_ar_atoms))
-
+breakpoint()
 # Above an universe of non-interacting argon atoms was created. Below
 # specify how these atoms will interact
 Ar_dispersion = Dispersion(universe,
                            (Ar.atom_type, Ar.atom_type),
                            cutoff=8.0,
                            vdw_tail_correction=True,
-                           function=LennardJones(1.0243, 3.36))
+                           function=LennardJones(1.0243, 3.36, names={"epsilon": "Geoff"})
+                           )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the
@@ -66,7 +70,7 @@ simulation = Simulation(universe,
 #simulation.run(n_steps=10000, equilibration=False)
 #print(simulation.trajectory)
 ## dataset
-exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+exp_datasets = [{'file_name': Path(__file__).parent.absolute() / '../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
                  'weight':1.,

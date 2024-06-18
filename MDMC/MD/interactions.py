@@ -460,6 +460,38 @@ class Dispersion(NonBondedInteraction):
 
         return other.atom_types == self.atom_types and isinstance(other, type(self))
 
+    @staticmethod
+    def _validate_atom_type_pair(atom_type_pair):
+        """Ensure atom types are valid and in standard form.
+
+        Parameters
+        ----------
+        atom_type_pair : Iterable[Atom]
+            Pair to validate
+
+        Raises
+        ------
+        TypeError
+            If atom pair not sortable.
+            If atom IDs not integers.
+        ValueError
+            If not a pair of atoms.
+        """
+
+        try:
+            atom_type_pair = tuple(sorted(atom_type_pair))
+        except TypeError as err:
+            raise TypeError("Atom types must be an iterable") from err
+        if len(atom_type_pair) != 2:
+            raise ValueError(
+                "Dispersion interactions should only be"
+                " specified as existing between pairs of"
+                " atom types"
+            )
+        if not all(isinstance(atom_type, (int, np.integer)) for atom_type in atom_type_pair):
+            raise TypeError("Each atom type must be int")
+        return atom_type_pair
+
     @property
     def atom_types(self):
 
