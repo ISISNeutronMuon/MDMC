@@ -1,10 +1,12 @@
 """A module for performing the refinement"""
 import statistics
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, Union
 from contextlib import suppress
 from datetime import datetime
+from pathlib import Path
 
+import logging
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
@@ -182,10 +184,12 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
+                 previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
                  **settings: dict):
 
+        self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -216,9 +220,9 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
-                                                           self.fit_parameters, **settings)
-
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
+                                                           previous_history, **settings)
+        self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -230,6 +234,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
+            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -413,9 +419,10 @@ class Control:
             control.refine(100)
         """
 
-        if n_steps is None:
+        if not n_steps:
             if self.n_steps is None:
-                raise ValueError('The number of maximum refinement steps has not been specified')
+                raise ValueError('The number of maximum refinement steps needs to be'
+                                 ' specified and greater than 0.')
         else:
             self.n_steps = n_steps
 
@@ -527,7 +534,7 @@ class Control:
         self.simulation.minimize(n_steps,minimize_every,verbose,
                                  output_log,work_dir, **settings)
 
-    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -536,7 +543,7 @@ class Control:
         Parameters
         ----------
         n_steps : int
-            Number of simulation steps to run
+            Number of simulation steps to run.
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
@@ -548,8 +555,7 @@ class Control:
         if not n_steps:
             self.simulation.auto_equilibrate()
         else:
-            self.simulation.run(n_steps,equilibration, verbose,
-                                output_log, work_dir,**settings)
+            self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
@@ -559,16 +565,18 @@ class Control:
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
-
         # Generate FoM by running MD for this step and then calculate FoM
-        fom = self._generate_FoM()
+        if self.first_loaded_step:
+            fom = self.minimizer.FoM_old
+            self.first_loaded_step = False
+        else:
+            fom = self._generate_FoM()
 
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
-
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
@@ -969,7 +977,9 @@ class Control:
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself
+        it does not have a ``validate_energy`` function itself. The time step and trajectory step
+        may be changed in the validate_energy method of the specific observable if necessary, to
+        achieve an energy separation that matches that of the experimental data.
 
         Parameters
         ----------
@@ -981,12 +991,45 @@ class Control:
         None
         """
 
-        # Calculate the time separation between trajectory frames, dt, imposed
-        # by the simulation
-        dt = self.simulation.traj_step * self.simulation.time_step
-
         with suppress(AttributeError):
-            obs.validate_energy(dt)
+
+            changed, traj_step, time_step, self.dt_required \
+                  = obs.validate_energy(self.simulation.time_step)
+            if changed:
+                self.simulation.traj_step = traj_step
+                self.simulation.time_step = time_step
+                logging.warning(" The given traj_step and time_step values were not"
+                    " compatibile with the dataset specified.\nThe values "
+                    "(whilst prioritising time_step) have been changed to"
+                    " traj_step: %d, and time_step: %f. \n"
+                    "Context: for this dataset, traj_step multiplied by time_step"
+                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
+
+    def _input_check(self, general_set, inputs) -> None:
+        """
+
+        Handles error for retrieving data from a set where the input is not found.
+        This was made in a general way to be used for any dataset or set of inputs.
+
+        Parameters
+        ----------
+        general_set : A general dataset
+            A variable that contains a set of information for input checking against,
+            for example 'dset' contains the observable type, file_name and reader type,
+            for checking inputs.
+
+        Returns
+        -------
+        None
+        """
+
+        for input_check in inputs:
+            try:
+                general_set[input_check]
+            except KeyError as error:
+                raise KeyError("There was an issue retrieving the input: "
+                               f" {input_check} "
+                                "from the dataset, please check your inputs again.") from error
 
     def _trim_dependent_variables(self) -> None:
         """
@@ -1004,7 +1047,7 @@ class Control:
         for pair in self.observable_pairs:
             obs = pair.exp_obs.name
             if obs in self.recreated_independent_vars:
-                index = self.observable_pairs.index(obs)
+                index = self.observable_pairs.index(pair)
                 exp_obs = self.observable_pairs[index].exp_obs
                 md_obs = self.observable_pairs[index].MD_obs
 

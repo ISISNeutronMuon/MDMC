@@ -9,12 +9,14 @@ from itertools import combinations, permutations
 import numpy as np
 import pytest
 from pytest_cases import parametrize
+import periodictable
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import (Atom, BoundingBox, Molecule,
                                       get_reduced_chemical_formula)
-from MDMC.MD.interactions import Coulombic
+from MDMC.MD.interactions import Coulombic, Bond, BondAngle
+from MDMC.MD.structures import Atom
 
 ATOM_TYPES = [1, 2, 3]
 POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
@@ -75,11 +77,13 @@ def water_molecule():
     Molecule
         A water molecule with no interactions (i.e. just atoms defined)
     """
-
+    H1 = Atom('H')
+    H2 = Atom('H', position=(0., 1.63298, 0.))
+    O = Atom('O', position=(0., 0.81649, 0.57736))
     return Molecule(position=(0, 0, 0),
-                    atoms=[Atom('H'),
-                           Atom('H', position=(0., 1.63298, 0.)),
-                           Atom('O', position=(0., 0.81649, 0.57736))],
+                    atoms=[H1, H2, O],
+                    interactions=[Bond((H1, O), (H2, O), constrained=True),
+                                  BondAngle(H1, O, H2, constrained=True)],
                     name='water')
 
 
@@ -471,3 +475,82 @@ def test_neutral_atom_has_no_charge(atom, atom_charge):
 
     assert len(atom.interactions) == 0
     assert len(atom_charge.interactions) == 1
+
+
+@pytest.mark.parametrize('element', ['H', 'O','Pb', 'Ca'])
+def test_periodictable_elements(element):
+    """
+    Tests that different elements and checmical symbols created by MDMC match (in properties) those created straight from the periodictable module.
+    """
+    test_atom = Atom(element, name='test atom')
+    actual_atom = periodictable.elements.symbol(element)
+    
+    assert type(test_atom.element) is periodictable.core.Element
+    assert str(test_atom.element) == element == actual_atom.symbol
+
+
+@pytest.mark.parametrize('atom_type, element, isotope_num'
+                         , [('He[3]', 'He',3),('U[235]', 'U',235),
+                            ('He[3]', 'He', 3), ('K[40]', 'K', 40),
+                        ('He[4]', 'He', 4)])
+def test_periodictable_isotopes_and_abundances(atom_type,element,isotope_num):
+    """
+    Tests that different isotopes of elements created by MDMC match (in properties)
+    those created straight from the periodictable module. This also tests the notation
+    of specifying mass number for standard elements (such as He[4]).
+    """
+    test_atom = Atom(atom_type, name='test atom')
+        
+    actual_atom = periodictable.elements.symbol(element)[isotope_num]
+    
+    assert type(test_atom.element) is periodictable.core.Isotope
+    assert str(test_atom.element) == '%d-%s' % (isotope_num, element)
+    assert test_atom.element.abundance == actual_atom.abundance
+
+
+@pytest.mark.parametrize('element', ['X', 'Fo', 'He[5]', 'Si[20]'])
+def test_periodictable_invalid_element_or_isotope(element):
+    """
+    This tests that using a wrong elemental symbol or specifying a non-existent isotope raises exceptions with atom creation.
+    """
+    with pytest.raises(Exception):
+        Atom(element, 'test atom')
+
+
+@pytest.mark.parametrize('atom_type, element, isotope_num'
+                         , [('He[3]', 'He',3),('U[235]', 'U',235),
+                            ('He[3]', 'He', 3), ('K[40]', 'K', 40),
+                        ('He[4]', 'He', 4), ('O', None, None), ('Ca', None, None)])
+def test_periodictable_properties(atom_type, element, isotope_num):
+    """
+    Tests that some important MDMC atoms properties are identical to those of an atom made straight from periodictable.
+    """
+    test_atom = Atom(atom_type, name='test atom')
+    
+    if isotope_num is not None:
+        actual_atom = periodictable.elements.symbol(element)[isotope_num]
+    else:
+        actual_atom = periodictable.elements.symbol(atom_type)
+    
+    assert test_atom.mass == actual_atom.mass
+    assert test_atom.element.number == actual_atom.number
+    assert test_atom.element.neutron == actual_atom.neutron
+    assert test_atom.element.density == actual_atom.density
+
+def test_deepcopy_copies_existing_interactions(water_molecule, universe):
+    """Testing that the CompositeStructure.__deepcopy__ method correctly copies
+     the interactions of the CompositeStructure that is being copied. """
+    universe = universe
+    universe.add_structure(water_molecule)
+    universe.add_force_field('SPCE')
+    # there should be 4 parameters for SPCE water:
+    #  2 for H-O Bonds with HarmonicPotential: equilibrium bond length, bond strength
+    #  2 for H-O-H BondAngle with HarmonicPotential: equilibrium bond angle, bond strength
+    assert 4 == len(universe.parameters)
+    water_copy = water_molecule.copy([1.,1.,1.])
+    # there should be 3 interactions in the copied molecule: 
+    # 2 H-O Bonds, 1 H-O-H BondAngle
+    assert 3 == len(water_copy.interactions)
+    universe.add_structure(water_copy)
+    # the number of parameters in the Universe should be unchanged when the copied molecule is added
+    assert 4 == len(universe.parameters)

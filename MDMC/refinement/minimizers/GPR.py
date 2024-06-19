@@ -1,7 +1,8 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Union, Optional
 
+from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
@@ -40,14 +41,18 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: Parameters, \
+        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+
+        super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
         self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
+        self.previous_history = previous_history
+        self.state_changed = False
 
     def create_parameter_point_array(self,
                                      parameters: Parameters) -> 'tuple[list[str], list[tuple]]':

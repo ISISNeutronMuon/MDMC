@@ -2,7 +2,6 @@
 
 Contents
 --------
-atom_properties
 constants
 decorators
 df_operations
@@ -11,7 +10,6 @@ resolution_functions
 units
 """
 
-from . import atom_properties
 from . import constants
 from . import decorators
 from . import df_operations
