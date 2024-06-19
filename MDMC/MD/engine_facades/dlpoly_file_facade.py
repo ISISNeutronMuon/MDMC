@@ -7,8 +7,10 @@ from typing import Union
 
 from verbosemanager import VerboseManager
 from dlpoly import DLPoly
-from dlpoly.config import Atom
+from dlpoly.config import Config, Atom
 
+from MDMC.common import units
+from MDMC.common.decorators import repr_decorator, unit_decorator
 from .dlpoly_engine import DLPOLYEngine
 from .file_facade import FileSimulation
 
@@ -29,8 +31,8 @@ class DLPolyFileSimulation(FileSimulation):
                  control: PathLike,
                  config: PathLike,
                  field: PathLike,
-                 traj_step: None = None,
-                 time_step: None = None,
+                 traj_step: int,
+                 time_step: float,
                  **settings):
         """Class to control DLPoly run through parametrised file.
 
@@ -42,10 +44,10 @@ class DLPolyFileSimulation(FileSimulation):
             Path to parametrised config file to load.
         field : PathLike
             Path to parametrised field file to load.
-        traj_step : None
-            Dummy for interface compatibility.
-        time_step : None
-            Dummy for interface compatibility.
+        traj_step : int
+            Steps between dumps.
+        time_step : float
+            MD integrator time-step.
         **settings : dict[str, Any]
             Extra config options.
 
@@ -64,7 +66,10 @@ class DLPolyFileSimulation(FileSimulation):
                           "field": field},
                          **settings)
         self._setup()
-        self.dlpoly = DLPoly()
+        self.dlpoly = DLPoly(load_default=False)
+        self.time_step = time_step
+        self.traj_step = traj_step
+        self._saved_config = None
 
     @property
     def atoms(self) -> list[Atom]:
@@ -78,9 +83,39 @@ class DLPolyFileSimulation(FileSimulation):
         """
         return self.dlpoly.config.atoms
 
-    def minimize(self, n_steps: int, verbose=True,
-                 minimize_every: int = 10, output_log: str = None,
-                 work_dir: str = None, **settings: dict) -> None:
+    @property
+    def saved_config(self) -> Path:
+        """
+        Get the saved configuration of the atomic positions
+
+        Returns
+        -------
+        ``Configuration``
+            The atomic positions
+        """
+        return self._saved_config
+
+    def save_config(self) -> None:
+        """
+        Sets ``self.saved_config`` to the current configuration
+        """
+        self._saved_config = Path(self.dlpoly.control['io_file_revcon'])
+
+    def reset_config(self) -> None:
+        """
+        Resets the configuration of the simulation to that in ``saved_config``
+        """
+        self.parser.file_name['config'] = self.saved_config
+
+    def minimize(
+            self,
+            n_steps: int,
+            verbose: bool = True,
+            minimize_every: int = 10,
+            output_log: str = None,
+            work_dir: str = None,
+            **settings: dict
+    ) -> None:
         """
         Minimizes the simulation energy.
 
@@ -171,7 +206,7 @@ class DLPolyFileSimulation(FileSimulation):
         verbose_manager.step(f"Running {process} for {n_steps} steps")
 
         # Get type of control to load
-        control_type = settings.get("control_type", "control")
+        control_type = settings.get("control_type", "run_control")
 
         with self.parser(control_type, "field", "config") as files:
             control, field, config = files
@@ -183,6 +218,9 @@ class DLPolyFileSimulation(FileSimulation):
             for key, val in settings.items():
                 if key in self.dlpoly.control.keys:
                     self.dlpoly.control[key] = val
+
+            self.dlpoly.control.traj_interval = (self.traj_step, "steps")
+            self.dlpoly.control.timestep = (self.time_step, "fs")
 
             if equilibration:
                 self.dlpoly.control["time_equilibration"] = (n_steps, "steps")
@@ -202,7 +240,7 @@ class DLPolyFileSimulation(FileSimulation):
                             outputFile=output_log,
                             mpi="mpirun --allow-run-as-root -n")
 
-            print("update coordinates from ", self.dlpoly.control["io_file_revcon"])
+            print("Update coordinates from ", self.dlpoly.control["io_file_revcon"])
             self.dlpoly.dest_config = "minim.config"
             self.dlpoly.load_config(self.dlpoly.control["io_file_revcon"])
 

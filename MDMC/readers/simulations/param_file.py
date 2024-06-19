@@ -53,7 +53,9 @@ class ParamFileParser():
 
     """
 
-    def __init__(self, file_names: PathsDict):
+    def __init__(self,
+                 file_names: PathsDict,
+                 required_parameters: Sequence[str] = ()):
         """
         Class to read and parse parametrised files.
 
@@ -64,8 +66,7 @@ class ParamFileParser():
         """
         self.file_name = file_names
         self._files = None
-        # These params are always required for functionality
-        self.required_parameters = ["traj_step", "time_step"]
+        self.required_parameters = required_parameters
         self._param_dict = Parameters()
 
     def __call__(self, *keys, **settings):

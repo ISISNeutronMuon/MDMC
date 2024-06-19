@@ -6,8 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from MDMC.common import units
-from MDMC.common.decorators import repr_decorator, unit_decorator
+from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.readers.simulations.param_file import ParamFileParser, PathsDict
 
@@ -23,6 +22,11 @@ class FileSimulation(ABC):
         Parser to read parametrised files.
     settings : dict[str, Any]
         Extra settings passed by users.
+
+    Notes
+    -----
+    If all parameters must be set in dumped files, it is advisable to add
+    `time_step` and `traj_step` as required parameters in the `ParamFileParser`.
     """
     def __init__(self,
                  files: PathsDict,
@@ -124,45 +128,6 @@ class FileSimulation(ABC):
             Fit parameters as ordinary dictionary
         """
         return self.parser.param_dict
-
-    @property
-    def time_step(self) -> float:
-        """
-        Get or set the simulation time step in ``fs``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``fs``
-        """
-        return self.parameters["time_step"].value
-
-    @time_step.setter
-    @unit_decorator(unit=units.TIME)
-    def time_step(self, value: float) -> None:
-        print(f"{value=}")
-        param = self.parameters["time_step"]
-        param.value = value
-
-    @property
-    def traj_step(self) -> int:
-        """
-        Get or set the number of simulation steps between saving the
-        ``CompactTrajectory``
-
-        Returns
-        -------
-        `int`
-            Number of simulation steps that elapse between the
-            ``CompactTrajectory`` being stored
-        """
-
-        return self.parameters["traj_step"].value
-
-    @traj_step.setter
-    def traj_step(self, value: int) -> None:
-        param = self.parameters["traj_step"]
-        self.parameters["traj_step"] = param
 
     def update_parameters(self) -> None:
         """

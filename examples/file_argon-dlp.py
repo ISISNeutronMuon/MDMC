@@ -27,7 +27,6 @@ os.environ["OMPI_MCA_rmaps_base_oversubscribe"]="true"
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 os.environ["OMPI_MCA_btl"] = "^vader"
 os.environ["OMP_NUM_THREADS"] = "4"
-from scipy.interpolate import interp2d
 
 from MDMC.control import Control
 from MDMC.MD.engine_facades.dlpoly_file_facade import DLPolyFileSimulation
@@ -38,6 +37,8 @@ from MDMC.MD.engine_facades.dlpoly_file_facade import DLPolyFileSimulation
 simulation = DLPolyFileSimulation(control="argon.control",
                                   config="argon.config",
                                   field="argon.field",
+                                  time_step=10.18893/2,
+                                  traj_step=30,
                                   numprocs=4)
 
 # simulation.run(n_steps=10000, equilibration=False)
@@ -53,13 +54,12 @@ exp_datasets = [{'file_name': Path(__file__).parent.parent / 'doc/tutorials/data
 
 fit_parameters = simulation.parameters
 
-print(fit_parameters)
-
 # Specify how the refinement is going to be controlled
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
-                  MD_steps=570)
+                  equilibration_steps = 1000,
+                  MD_steps=1140)
 
 # Energy Minimization and equilibration
 control.minimize(n_steps=10, output_log='minim.log', work_dir='minim')
@@ -67,6 +67,6 @@ control.equilibrate(n_steps=1000, output_log='equilibration.log', work_dir='equi
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-simulation.time_step = 0.0015283423720166564 / simulation.traj_step
+# simulation.time_step = 0.0015283423720166564 / simulation.traj_step
 
 control.refine(n_steps=10)

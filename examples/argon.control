@@ -21,7 +21,7 @@ coul_method off
 cutoff  10.0 Ang
 ensemble nve
 temperature  120.0 K
-timestep  {time_step: 10.188929999999999} ps
+timestep  10.188929999999999 ps
 minimisation_criterion off
 minimisation_tolerance  0.001 internal_e
 minimisation_frequency  10 steps
@@ -29,5 +29,5 @@ time_equilibration  0 steps
 traj_calculate ON
 time_run  570 steps
 traj_start  0 steps
-traj_interval  {traj_step: 15} steps
+traj_interval 15 steps
 traj_key pos

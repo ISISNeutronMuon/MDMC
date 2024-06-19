@@ -4,7 +4,7 @@ molecules 1
 Ar
 nummols 512
 atoms 1
-Ar       39.948000 0.000000 1 {charge: 0}
+Ar       39.948000 {charge: 0} 1 0
 finish
 vdw 1
 Ar Ar lj {lj_sig: 1.0166905612643924} {lj_eps: 3.3839292779358168}
