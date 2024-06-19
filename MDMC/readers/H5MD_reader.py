@@ -23,6 +23,28 @@ def particles_file_path(file: h5py.File) -> h5py.File:
 
 def read_dataset(file: h5py.File, dataset_name: str) -> numpy.ndarray:
 
+    """
+    Reads datasets within the H5MD file
+
+    Parameters
+    ----------
+    file : h5py.File
+        The H5MD file being read from
+    dataset_name: str
+        The dataset atempting to be read
+
+    Returns
+    -------
+    numpy.ndarray
+        Returns a aray of the whole dataset
+
+    Raises
+    ------
+    KeyError
+        If the dataset is not found when the
+        recursive check is finished, raise error
+    """
+
     group = file.visit(lambda name: name if dataset_name in name else None)
     if group is None:
         raise KeyError(f"There is no dataset named '{dataset_name}' found in the H5MD")
@@ -31,17 +53,32 @@ def read_dataset(file: h5py.File, dataset_name: str) -> numpy.ndarray:
     if "value" in grp:
         grp = grp["value"]
 
-    # if read in as bytestring read as string 
+    # if read in as bytestring read as string
     if isinstance(grp[1], bytes):
         grp = grp.asstr()
 
     return grp[:]
 
 def read_units(file: h5py.File, data_name: str) -> str:
+    """
+    Reads units of data stored in the H5MD file
+
+    Parameters
+    ----------
+    file : h5py.File
+        The H5MD file being read from
+    data_name : str
+        The name of the data teh unit is to be read from
+
+    Returns
+    -------
+    str
+        String abreviation of the units
+    """
     key = list(file['particles'].keys())[0]
 
     # time is stored deeper that the other units so done like this
-    if data_name is 'time':
+    if data_name == 'time':
         return file[f'particles/{key}/position/time'].attrs['unit']
 
     grp = file[f'particles/{key}/{data_name}']
