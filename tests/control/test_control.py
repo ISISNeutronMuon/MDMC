@@ -849,7 +849,9 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
 def test_control_q_value_trimming(control_object_from_Argon_script):
     """
     Tests that the q_value trimming is done correctly. This uses modified experimental Argon data 
-    with reduced Q_values.
+    with reduced Q_values. There is a specific method that does the trimming but this test
+    doesn't test that method in isolation; it tests that on a general refinement step, that trimming
+    functions as expected.
     """
     ctrl, _ = control_object_from_Argon_script()
     ctrl.equilibrate(n_steps=1000)

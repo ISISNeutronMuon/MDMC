@@ -990,7 +990,7 @@ class Control:
 
     def _trim_dependent_variables(self) -> None:
         """
-        Trims the dependent variable data, and the associated errors, for a list of observables
+        Trims the dependent variable data, and the associated errors, for observables
         where necessary. One such application is when the smallest q_values cannot be recreated by
         the simulation, this trimming removes the data associated with q_values which cannot be
         recreated.
@@ -1004,11 +1004,11 @@ class Control:
         for pair in self.observable_pairs:
             obs = pair.exp_obs.name
             if obs in self.recreated_independent_vars:
-                recreated_independent_vars = self.recreated_independent_vars[obs]
                 index = self.observable_pairs.index(obs)
                 exp_obs = self.observable_pairs[index].exp_obs
                 md_obs = self.observable_pairs[index].MD_obs
 
+                recreated_independent_vars = self.recreated_independent_vars[obs]
                 if len(exp_obs.dependent_variables[obs][0]) != \
                 len(md_obs.dependent_variables[obs][0]):
 
