@@ -64,7 +64,7 @@ class Minimizer(ABC):
         self.state_changed = None
 
     @abstractmethod
-    def step(self, FoM: float) -> None:
+    def step(self, FoM: float, refit: bool) -> None:
         """
         Increments the minimization by a step
 
