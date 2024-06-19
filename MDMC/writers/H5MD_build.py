@@ -3,8 +3,8 @@ A module for building and saving a H5MD file.
 
 Notes
 -----
-In getter functions within this file, the slices 
-are to ensure that the returned types from the 
+In getter functions within this file, the slices
+are to ensure that the returned types from the
 functions are `numpy.ndarray`s and not `h5py.dataset`s.
 """
 from pathlib import Path
@@ -109,8 +109,8 @@ def create_simulation_data(open_file: h5py.File,
     else:
         subgroup = group.create_group(group_name)
         subdata = subgroup.create_dataset('value', data= value)
-        time_link = group.visit(find_time)
-        step_link = group.visit(find_step)
+        time_link = group.visit(lambda name: name if 'time' in name else None)
+        step_link = group.visit(lambda name: name if 'step' in name else None)
         if time_link is not None:
             time_data = subgroup.create_dataset('time', data=group[time_link])
             step_data = subgroup.create_dataset('step', data=group[step_link])
@@ -122,40 +122,6 @@ def create_simulation_data(open_file: h5py.File,
             step_data.attrs['offset'] = step_offset
     if unit is not None:
         subdata.attrs['unit'] = str(unit)
-
-def find_time(name:str) -> str|None:
-    """Finds the first instance of time within the H5MD file
-
-    Parameters
-    ----------
-    name : str
-        Name of the current directory being searched for to find time
-
-    Returns
-    -------
-    str
-        String containing the path of the first instance of 
-        time and if time is not found returns None
-    """
-    if 'time' in name:
-        return name
-
-def find_step(name:str) -> str|None:
-    """Finds the first instance of step within the H5MD file
-
-    Parameters
-    ----------
-    name : str
-        Name of the current directory being searched for to find step
-
-    Returns
-    -------
-    str
-        String containing the path of the first instance of 
-        step and if step is not found returns None
-    """
-    if 'step' in name:
-        return name
 
 def create_box_data(open_file: h5py.File,
                     trajectory: CompactTrajectory):
@@ -231,7 +197,9 @@ def build_full(trajectory: CompactTrajectory,
         create_metadata_group(file)
 
         charge = trajectory.atom_charges
-        charge[charge == None] = 0.0
+        for count, value in enumerate(charge):
+            if value is None:
+                charge[count] = 0.0
         charge = charge.astype(float)
 
         species = [getattr(periodictable, element).number
