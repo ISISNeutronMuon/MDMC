@@ -180,7 +180,7 @@ class CompactTrajectory:
         new_ct = CompactTrajectory()
         with h5py.File(file_name, 'r') as file:
             all_data = H5MD_reader.read_all_data(file)
-        n_atoms = len(all_data['specie'])
+        n_atoms = len(all_data['species'])
         n_steps = all_data['no_steps']
         new_ct.preAllocate(n_atoms=n_atoms,
                            n_steps=n_steps,
@@ -188,10 +188,10 @@ class CompactTrajectory:
         new_ct.time = all_data['time']
         new_ct.setCharge(all_data["charge"])
         new_ct.setDimensions(all_data["box_dimension"])
-        new_ct.position = all_data['possition']
+        new_ct.position = all_data['position']
         new_ct.velocity = all_data['velocity']
         new_ct.atom_masses = all_data['mass']
-        new_ct.atom_types = all_data['specie']
+        new_ct.atom_types = all_data['species']
         new_ct.element_list = all_data['atom_symbol']
         new_ct.element_set = list(set(all_data['atom_symbol']))
 

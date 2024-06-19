@@ -111,7 +111,7 @@ def create_simulation_data(open_file: h5py.File,
         subdata = subgroup.create_dataset('value', data= value)
         time_link = group.visit(find_time)
         step_link = group.visit(find_step)
-        if time_link:
+        if time_link is not None:
             time_data = subgroup.create_dataset('time', data=group[time_link])
             step_data = subgroup.create_dataset('step', data=group[step_link])
         else:
