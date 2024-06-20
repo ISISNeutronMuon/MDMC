@@ -1,23 +1,22 @@
 """Tests the Control class
 """
 
+import logging
 import numpy as np
 import pandas as pd
 import pytest
 import re
 from typing import List
 from unittest.mock import Mock
-import logging
 
-from MDMC.control import control
+from MDMC.control import control, Control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
+from MDMC.MD import Atom, Dispersion, LennardJones
 from tests.test_data import data
-from MDMC.control import Control
-from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
 
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
