@@ -133,6 +133,7 @@ class AbstractSQw(SQwMixins, Observable):
         self.resolution = None
         # Use FFT by default
         self._use_FFT = True
+        self._recreated_Q = None
 
     @property
     def independent_variables(self) -> dict:
@@ -248,6 +249,18 @@ class AbstractSQw(SQwMixins, Observable):
             return self.errors['SQw']
         except KeyError:
             return None
+
+    @property
+    def recreated_Q(self):
+        """
+        Get the indices of the recreated Q_values.
+        """
+        return self._recreated_Q
+
+    @recreated_Q.setter
+    def recreated_Q(self, recreated_Q_pos: list):
+        self._recreated_Q = recreated_Q_pos
+
     def validate_energy(self, time_step: float = None):
         """
         Asserts that the user set frame separation ``dt`` leads to energy
@@ -416,6 +429,7 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
             trj_sliced = False
 
+        obtained_recreated_Q = False
         # Perform calculations for each trajectory
         for trajectory in trajectories:
             self.trajectory = trajectory
@@ -447,6 +461,10 @@ class AbstractSQw(SQwMixins, Observable):
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
 
+            self.Q = FQt.Q
+            if not obtained_recreated_Q:
+                self._recreated_Q = FQt.recreated_Q
+                obtained_recreated_Q = True
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
 
             # Cleanup the trajectory to reduce memory usage

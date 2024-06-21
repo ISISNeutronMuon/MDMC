@@ -3,6 +3,7 @@ from abc import abstractmethod
 from itertools import product
 from typing import TYPE_CHECKING, Generator
 
+import logging
 import numpy as np
 import periodictable
 
@@ -49,6 +50,7 @@ class AbstractFQt(SQwMixins, Observable):
         self.n_Q_vectors = None
         self.Q_values = None
         self.weights = None
+        self.recreated_Q = []
 
     @property
     def independent_variables(self) -> dict:
@@ -207,6 +209,15 @@ class AbstractFQt(SQwMixins, Observable):
         # 'Q_v' is a list of Q_vectors corresponding to a single Q
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
+
+        # Get the positions of the recreated_q_values
+        if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
+            self.recreated_Q.extend(np.where(self.Q==value)[0][0] for value in self.Q_values)
+            self.Q = [val for val in self.Q if val in self.Q_values]
+
+            logging.warning(" The specified universe dimensions were not able to recreate the"
+                            " lowest q values of the experimental data and so this data has been"
+                            " trimmed accordingly.")
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's

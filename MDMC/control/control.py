@@ -264,6 +264,7 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            self.recreated_independent_vars  = {}
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -637,6 +638,7 @@ class Control:
         """
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
+        self._trim_dependent_variables()
 
         FoM_value = self.FoM_calculator.calculate()
 
@@ -737,6 +739,8 @@ class Control:
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            if pair.MD_obs.name =='SQw':
+                self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
@@ -1026,3 +1030,31 @@ class Control:
                 raise KeyError("There was an issue retrieving the input: "
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
+
+    def _trim_dependent_variables(self) -> None:
+        """
+        Trims the dependent variable data, and the associated errors, for observables
+        where necessary. One such application is when the smallest q_values cannot be recreated by
+        the simulation, this trimming removes the data associated with q_values which cannot be
+        recreated.
+
+        Returns
+        -------
+        None
+        """
+
+        # loop through observable pairs and trim dependent var data accordingly
+        for index, pair in enumerate(self.observable_pairs):
+            obs = pair.exp_obs.name
+            if obs in self.recreated_independent_vars:
+                exp_obs = self.observable_pairs[index].exp_obs
+                md_obs = self.observable_pairs[index].MD_obs
+
+                recreated_independent_vars = self.recreated_independent_vars[obs]
+                if len(exp_obs.dependent_variables[obs][0]) != \
+                len(md_obs.dependent_variables[obs][0]):
+
+                    exp_obs.errors[obs][0] = \
+                    [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
+                    exp_obs.dependent_variables[obs][0] = \
+                    [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]

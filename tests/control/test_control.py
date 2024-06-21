@@ -1,6 +1,7 @@
 """Tests the Control class
 """
 
+import logging
 import numpy as np
 import pandas as pd
 import pytest
@@ -8,12 +9,13 @@ import re
 from typing import List
 from unittest.mock import Mock
 
-from MDMC.control import control
+from MDMC.control import Control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
+from MDMC.MD import Atom, Dispersion, LennardJones
 from tests.test_data import data
 
 # The requirements for dt and n_frames is different for each experimental
@@ -90,6 +92,53 @@ def mock_equilibrate(self, *extras):
     pass
 
 @pytest.fixture(scope="module")
+def control_object_from_Argon_script(exp_datasets) -> callable:
+    """
+    Returns
+    -------
+    control : object
+        control object from setting up a universe identical to that of the Argon tutorial
+    fit_parameters : dict
+        dictionary of force field parameters
+    """
+    def _control_object_from_Argon_script():
+        density = 0.0176
+        universe = Universe(dimensions=23.0668)
+        Ar = Atom('Ar', charge=0., mass=36.0)
+
+        n_ar_atoms = int(density * np.product(universe.dimensions))
+        print(f'Number of argon atoms = {n_ar_atoms}')
+        universe.fill(Ar, num_struc_units=(n_ar_atoms))
+
+        Ar_dispersion = Dispersion(universe,
+                                (Ar.atom_type, Ar.atom_type),
+                                cutoff=8.,
+                                function=LennardJones(epsilon=1.02, sigma=3.36))
+
+        simulation = Simulation(universe,
+                                engine="lammps",
+                                time_step=10.18893,
+                                temperature=120.,
+                                traj_step=15)
+
+        dataset = exp_datasets(file_name = 'Argon_test_data.xml')
+
+        fit_parameters = universe.parameters
+        fit_parameters['sigma'].constraints = [2.0,3.8]
+        fit_parameters['epsilon'].constraints = [0.5, 1.5]
+
+        control = Control(simulation=simulation,
+                    exp_datasets=dataset,
+                    fit_parameters=fit_parameters,
+                    minimizer_type="GPO",
+                    reset_config=True,
+                    MD_steps=4000, 
+                    equilibration_steps=4000,
+                    data_printer='ipython')
+        return control, fit_parameters
+    return _control_object_from_Argon_script
+
+@pytest.fixture(scope="module")
 def simulation() -> callable:
     """
     Returns
@@ -130,7 +179,7 @@ def exp_datasets() -> callable:
         datasets = []
         for k, v in data.READER_DATA.items():
             # 'XML_SQw' is the reader Class, but we want the module 'xml_SQw'
-            if k == 'XML_SQw':
+            if k in ('XML_SQw','xml_SQw_2'):
                 k = 'xml_SQw'
 
             if (file_name is not None
@@ -187,8 +236,8 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
     """
 
     # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
+    monkeypatch.setattr(Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
@@ -205,7 +254,7 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
 
     datasets = exp_datasets(file_name="Well_s_q_omega_Ar_data.xml")
     dt = DATASET_INFO['use_FFT']["Well_s_q_omega_Ar_data.xml"]['dt']
-    control.Control(simulation(time_step=dt),
+    Control(simulation(time_step=dt),
                     datasets,
                     [],
                     FoM_options={'error': "none"},
@@ -244,10 +293,10 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
     """
 
     # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
+    monkeypatch.setattr(Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
-    monkeypatch.setattr(control.Control, "equilibrate", mock_equilibrate)
+    monkeypatch.setattr(Control, "equilibrate", mock_equilibrate)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -263,7 +312,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
 
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            FoM_options={'error': error[0]},
                            reset_config=False)
 
@@ -300,10 +349,10 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     """
 
     # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
+    monkeypatch.setattr(Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
-    monkeypatch.setattr(control.Control, "equilibrate", mock_equilibrate)
+    monkeypatch.setattr(Control, "equilibrate", mock_equilibrate)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -319,7 +368,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
 
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
     ctrl.minimizer = minim
@@ -362,7 +411,7 @@ def test_control_no_scaling(simulation, exp_datasets, file_name):
 
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            verbose=-1,
                            reset_config=False)
 
@@ -381,7 +430,7 @@ def test_control_rescale_factor(simulation, exp_datasets, file_name):
 
     datasets = exp_datasets(rescale_factor=0.5, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -398,7 +447,7 @@ def test_control_auto_scale(simulation, exp_datasets, file_name):
 
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -419,7 +468,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                             auto_scale=True,
                             file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -449,7 +498,7 @@ def test_control_use_FFT_default(simulation, exp_datasets, file_name):
 
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -466,7 +515,7 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
 
     datasets = exp_datasets(use_FFT=False, file_name=file_name)
     dt = DATASET_INFO['no_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+    ctrl = Control(simulation(time_step=dt), datasets, [],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -479,10 +528,10 @@ def test_control_max_parameter_change():
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
-    ctrl_default = control.Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
+    ctrl_default = Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
 
-    ctrl = control.Control(None, [], [], reset_config=False, verbose=-1, 
+    ctrl = Control(None, [], [], reset_config=False, verbose=-1, 
                            minimizer_type="MMC", max_parameter_change=0.02)
     assert ctrl.minimizer.max_parameter_change == 0.02
 
@@ -580,7 +629,7 @@ def test_control_is_data_uniform(mock_observable):
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
-    cont = control.Control
+    cont = Control
     observed = cont._is_data_uniform(mock_observable['obs'])
     assert expected == observed
 
@@ -594,7 +643,7 @@ def test_control_make_data_uniform(mock_observable):
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
-    cont = control.Control.__new__(control.Control)
+    cont = Control.__new__(Control)
     observed = cont._make_data_uniform(mock_observable['obs'])
     for var_key in observed.independent_variables:
         assert np.allclose(expected.independent_variables[var_key],
@@ -623,7 +672,7 @@ def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
     dt = DATASET_INFO[key][file_name]['dt']
     n_frames = DATASET_INFO[key][file_name]['n_frames']
     time_step = dt / traj_step
-    ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
+    ctrl = Control(simulation(traj_step=traj_step, time_step=time_step),
                            exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [], verbose=-1,
                            reset_config=False)
@@ -653,7 +702,7 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
 
     dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
-    ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
+    ctrl = Control(simulation(traj_step=traj_step, time_step=time_step),
                            exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [],
                            verbose=-1,
@@ -680,7 +729,7 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
     dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
     with pytest.raises(ValueError):
-        control.Control(simulation(traj_step=traj_step, time_step=time_step),
+        Control(simulation(traj_step=traj_step, time_step=time_step),
                         exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
                         verbose=-1,
@@ -705,7 +754,7 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
         key = 'no_FFT'
     dt = DATASET_INFO[key][file_name]['dt']
     time_step = 2 * dt / traj_step
-    ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
+    ctrl = Control(simulation(traj_step=traj_step, time_step=time_step),
                     exp_datasets(use_FFT=use_FFT, file_name=file_name),
                     [],
                     verbose=-1,
@@ -734,7 +783,7 @@ def test_control_fit_parameters(simulation):
                                  tied_param,
                                  Parameter(3., 'constraints', constraints=(2.9, 3.1))])
 
-    ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
+    ctrl = Control(simulation(), [], fit_parameters=fit_parameters,
                            verbose=-1, reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
@@ -754,7 +803,7 @@ def test_control_resolution_function(simulation, exp_datasets):
     traj_step = 1
     time_step = dt / traj_step
 
-    ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
+    ctrl = Control(simulation(time_step=time_step, traj_step=traj_step),
                            exp_datasets(file_name=file_name, resolution=resolution_file),
                            [],
                            verbose=-1,
@@ -770,9 +819,9 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
     (either 0 or None), then the auto_equilibrate method is called.
     """
     mock_auto_equilibrate = Mock()
-    monkeypatch.setattr(control.Simulation, "auto_equilibrate", mock_auto_equilibrate)
+    monkeypatch.setattr(Simulation, "auto_equilibrate", mock_auto_equilibrate)
     
-    ctrl = control.Control(simulation(traj_step=1, time_step=1),
+    ctrl = Control(simulation(traj_step=1, time_step=1),
                         exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                         [],
                         reset_config=False,
@@ -789,9 +838,9 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     (an integer > 0), then the simulation.run method is called accordingly. 
     """
     mock_simulation_run = Mock()
-    monkeypatch.setattr(control.Simulation, "run", mock_simulation_run)
+    monkeypatch.setattr(Simulation, "run", mock_simulation_run)
     
-    ctrl = control.Control(simulation(traj_step=1, time_step=1),
+    ctrl = Control(simulation(traj_step=1, time_step=1),
                         exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                         [],
                         reset_config=False,
@@ -799,3 +848,43 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     
     ctrl.equilibrate(steps)
     mock_simulation_run.assert_called()
+
+def test_control_q_value_trimming(control_object_from_Argon_script):
+    """
+    Tests that the q_value trimming is done correctly. This uses modified experimental Argon data 
+    with reduced Q_values. There is a specific method that does the trimming but this test
+    doesn't test that method in isolation; it tests that on a general refinement step, that trimming
+    functions as expected.
+    """
+    ctrl, _ = control_object_from_Argon_script()
+    ctrl.equilibrate(n_steps=100)
+
+    recreated_q_values_pos = [6,9]
+    manually_trimmed_obs_arrays = [ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][pos] 
+                               for pos in recreated_q_values_pos]
+    manually_trimmed_errors_arrays = [ctrl.observable_pairs[0].exp_obs.errors['SQw'][0][pos] 
+                               for pos in recreated_q_values_pos]
+
+    ctrl.refine(n_steps=1)
+    auto_trimmed_obs_arrays = ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]
+    auto_trimmed_errors_arrays = ctrl.observable_pairs[0].exp_obs.errors['SQw'][0]
+
+    assert np.array_equal(manually_trimmed_obs_arrays,auto_trimmed_obs_arrays)
+    assert np.array_equal(manually_trimmed_errors_arrays,auto_trimmed_errors_arrays)
+    
+def test_control_q_value_trimming_warning(control_object_from_Argon_script, caplog):
+    """
+    Tests that the correct warning is given when some experimental Q_values cant be recreated. 
+    This uses modified experimental Argon data with reduced Q_values.
+    """
+    ctrl, _ = control_object_from_Argon_script()
+    ctrl.equilibrate(n_steps=100)
+
+    caplog.set_level(logging.WARNING)
+    ctrl.refine(n_steps=1)
+    
+    log_message = ("The specified universe dimensions were not able to recreate the lowest q" \
+                " values of the experimental data and so this data has been" \
+                " trimmed accordingly.")
+
+    assert log_message in caplog.text
