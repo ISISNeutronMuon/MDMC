@@ -1044,10 +1044,9 @@ class Control:
         """
 
         # loop through observable pairs and trim dependent var data accordingly
-        for pair in self.observable_pairs:
+        for index, pair in enumerate(self.observable_pairs):
             obs = pair.exp_obs.name
             if obs in self.recreated_independent_vars:
-                index = self.observable_pairs.index(pair)
                 exp_obs = self.observable_pairs[index].exp_obs
                 md_obs = self.observable_pairs[index].MD_obs
 

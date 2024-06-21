@@ -215,9 +215,9 @@ class AbstractFQt(SQwMixins, Observable):
             self.recreated_Q.extend(np.where(self.Q==value)[0][0] for value in self.Q_values)
             self.Q = [val for val in self.Q if val in self.Q_values]
 
-            logging.warning(" The specified box size was not able to recreate the lowest q"
-            " values of the experimental data and so this data has been"
-            " trimmed accordingly.")
+            logging.warning(" The specified universe dimensions were not able to recreate the"
+                            " lowest q values of the experimental data and so this data has been"
+                            " trimmed accordingly.")
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
