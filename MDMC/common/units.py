@@ -1,4 +1,5 @@
-"""Module for all unit definitions and operations
+"""
+Module for all unit definitions and operations.
 
 This includes defining units used in MDMC, converting units, and subclassing
 data strucures (`float`, ``array``) so that they have a ``unit``
@@ -6,7 +7,8 @@ attribute.  This style follows that of the Atomic Simulation Environment.
 
 As members of units.py are set dynamically, pylintrc excludes member checking
 for units.py using the generated-members keyword. Care must be taken to ensure
-members exist when importing from units.py, as these will not be linted."""
+members exist when importing from units.py, as these will not be linted.
+"""
 
 from __future__ import annotations
 
@@ -21,13 +23,14 @@ import numpy as np
 # pylint: disable=no-member
 # as it raises a false positive for components
 
+#: Version of CODATA used.
 CODATA_VERSION = '2014'
 
 
+#: CODATA 2014 taken from ASE.units, originally from:
+#: http://arxiv.org/pdf/1507.07956.pdf
 CODATA = {
 
-    # CODATA 2014 taken from ASE.units, originally from:
-    # http://arxiv.org/pdf/1507.07956.pdf
     '2014': {'_c': 299792458.,
              '_mu0': 4.0e-7 * np.pi,
              '_Grav': 6.67408e-11,
@@ -42,9 +45,8 @@ CODATA = {
 
 
 class Unit(str):
-
     """
-    A class for defining unit strings
+    A class for defining unit strings.
 
     It possesses additional ``*`` and ``/`` operands so that combined units can
     be returned.
@@ -62,6 +64,21 @@ class Unit(str):
         supported, and any of the characters ``[]()`` will be ignored.
     components : defaultdict(list), optional
         Sets the ``components`` attribute (see Attributes).  Default is `None`.
+
+    Attributes
+    ----------
+    components : `defaultdict(list)`
+        Contains the ``components`` of the ``Unit``, separated into two `list`
+        (``numerator`` and ``denominator``) depending on which side of the
+        fraction each component is on.  If the ``Unit`` is a ``base`` unit i.e.
+        initialized using ``Unit()``, then the ``components`` only has a
+        ``numerator`` and this is the ``Unit`` string. If it a combined ``Unit``
+        (created by either ``__mul__``, ``__div__`` or ``__pow__``) then the
+        ``Unit`` objects which combined to form it make up the ``components``.
+    conversion_factor : float
+        The factor by which to multiply a value in order to express it in
+        system units. For example ``Unit('ps').conversion_factor`` is
+        ``1000.`` as the system units are femtoseconds.
 
     Examples
     --------
@@ -102,21 +119,6 @@ class Unit(str):
     Orders of magnitude can also be included::
 
     >>> pressure = Unit('10 ^ 6 Pa')
-
-    Attributes
-    ----------
-    components : `defaultdict(list)`
-        Contains the ``components`` of the ``Unit``, separated into two `list`
-        (``numerator`` and ``denominator``) depending on which side of the
-        fraction each component is on.  If the ``Unit`` is a ``base`` unit i.e.
-        initialized using ``Unit()``, then the ``components`` only has a
-        ``numerator`` and this is the ``Unit`` string. If it a combined ``Unit``
-        (created by either ``__mul__``, ``__div__`` or ``__pow__``) then the
-        ``Unit`` objects which combined to form it make up the ``components``.
-    conversion_factor : float
-        The factor by which to multiply a value in order to express it in
-        system units. For example ``Unit('ps').conversion_factor`` is
-        ``1000.`` as the system units are femtoseconds.
     """
 
     def __new__(cls, string: str, components: defaultdict[list] = None) -> Unit:
@@ -148,17 +150,22 @@ class Unit(str):
 
     def __mul__(self, other: Unit) -> Unit: #type: ignore
         """
-        Multiplies the ``Unit`` by another ``Unit``
+        Multiply the ``Unit`` by another ``Unit``.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         other : Unit
-            The ``Unit`` object to multiply by
+            The ``Unit`` object to multiply by.
 
         Returns
         -------
-        ``Unit``
-            A compound ``unit``
+        Unit
+            A compound ``unit``.
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a valid ``Unit``.
         """
 
         try:
@@ -170,17 +177,22 @@ class Unit(str):
 
     def __truediv__(self, other: Unit) -> Unit:
         """
-        Divides the ``Unit`` by another ``Unit``
+        Divide the ``Unit`` by another ``Unit``.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         other : Unit
-            The ``Unit`` object to divide by
+            The ``Unit`` object to divide by.
 
         Returns
         -------
-        ``Unit``
-            A compound ``Unit``
+        Unit
+            A compound ``Unit``.
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a valid ``Unit``.
         """
 
         try:
@@ -192,17 +204,22 @@ class Unit(str):
 
     def __pow__(self, exponent: Number) -> Unit:
         """
-        Performs the power operation on the ``Unit``
+        Perform the power operation on the ``Unit``.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         exponent : numeric (inherits from numbers.Number)
-            The number the ``Unit`` is raised to the power of
+            The number the ``Unit`` is raised to the power of.
 
         Returns
         -------
-        ``Unit``
-            A compound ``Unit``
+        Unit
+            A compound ``Unit``.
+
+        Raises
+        ------
+        TypeError
+            If `exponent` a valid integer power.
         """
 
         if not isinstance(exponent, Number):
@@ -218,13 +235,13 @@ class Unit(str):
     @property
     def base(self) -> bool:
         """
-        Get whether the ``Unit`` is a ``base`` or compound ``Unit``
+        Get whether the ``Unit`` is a ``base`` or compound ``Unit``.
 
         Returns
         -------
-        `bool`
+        bool
             If `True`, ``Unit`` is a ``base`` ``Unit`` (only has a single
-            element in the ``components`` ``numerator`` `list`)
+            element in the ``components`` ``numerator`` `list`).
         """
 
         if (not self.components['denominator']
@@ -235,6 +252,8 @@ class Unit(str):
     @property
     def conversion_factor(self) -> float:
         """
+        Get conversion factor for ``Unit``.
+
         Calculates the factor by which a value with this ``Unit`` should be
         multiplied in order to express it in system units. This takes into
         account any orders of magnitude and compound units. The
@@ -243,7 +262,7 @@ class Unit(str):
 
         Returns
         -------
-        `float`
+        float
             The conversion factor to system units for the relevant property.
         """
 
@@ -283,7 +302,7 @@ class Unit(str):
         Returns
         -------
         `str` or None
-            The physical property
+            The physical property.
         """
 
         properties_dict = create_units(CODATA_VERSION)[1]
@@ -295,8 +314,7 @@ class Unit(str):
 
     def _calculate_components(self, other: Unit, op: str) -> defaultdict[list]:
         """
-        Calculates the ``components`` for a new ``Unit`` generated from an
-        operation
+        Calculate the ``components`` for a new ``Unit`` generated from an operation.
 
         These ``components`` are separated into whether they are in the
         ``numerator`` or the ``denominator`` of the new ``Unit``.
@@ -304,15 +322,15 @@ class Unit(str):
         Parameters
         ----------
         other : unit
-            The ``Unit`` which is operating on this ``Unit`` (i.e. ``self``)
+            The ``Unit`` which is operating on this ``Unit`` (i.e. ``self``).
         op : str
-            An operation, either ``mul``, ``div``, or ``pow``
+            An operation, either ``mul``, ``div``, or ``pow``.
 
         Returns
         -------
         `defaultdict(list)`
             Contains the ``numerator`` and ``denominator`` of the new ``Unit``
-            generated from the operation
+            generated from the operation.
         """
 
         # Creating another defaultdict and then populating it by deepcopying
@@ -347,26 +365,36 @@ class Unit(str):
     @staticmethod
     def _calculate_string(components: defaultdict(list)) -> str:
         """
-        Calculates the `str` for a new ``Unit`` generated from an operation
+        Calculate the `str` for a new ``Unit`` generated from an operation.
 
         Parameters
         ----------
         components : defaultdict(list)
-            Contains the ``numerator`` and ``denominator`` of the new ``Unit``
+            Contains the ``numerator`` and ``denominator`` of the new ``Unit``.
 
         Returns
         -------
         `str`
-            the `str` representing the new ``Unit``
+            The `str` representing the new ``Unit``.
         """
 
-        def _calculate_expr_string(expr):
+        def _calculate_expr_string(expr) -> str:
             """
-            Calculates the `str` from a `list` of ``components``
+            Calculate the `str` from a `list` of ``components``.
 
             ``Counter`` is used to determined the number of occurences of each
             ``Unit`` `str` and then create power notation if there is more than
             one occurence.
+
+            Parameters
+            ----------
+            expr : str
+                Add power to underlying expression.
+
+            Returns
+            -------
+            str
+                Unit expression as `str` with appropriate powers.
             """
 
             component_powers = Counter(expr)
@@ -393,12 +421,12 @@ class Unit(str):
     @staticmethod
     def _parse_unit_string(unit_string: str) -> 'tuple[list[Unit]]':
         """
-        Converts a ``Unit`` `str` into ``Unit`` objects
+        Convert a ``Unit`` `str` into ``Unit`` objects.
 
         Parameters
         ----------
         unit_string : str
-            A `str` representing a ``Unit``
+            A `str` representing a ``Unit``.
 
         Returns
         -------
@@ -406,8 +434,8 @@ class Unit(str):
             A `tuple` of (``numerator``, ``denominator``), where each is a
             `list` of ``Unit`` objects for all of the ``base`` ``Unit`` objects.
 
-        Example
-        -------
+        Examples
+        --------
         Parse ``e mol / K ^ 2``::
 
             >>> parse_unit_string('e mol / K ^ 2')
@@ -416,6 +444,8 @@ class Unit(str):
 
         def parse_powers(string):
             """
+            Parse string to series of ``Unit`` s.
+
             Parameters
             ----------
             string : str
@@ -427,10 +457,10 @@ class Unit(str):
             -------
             `tuple` of `list`
                 Contains all ``base`` ``Unit``s that have postive powers and
-                negative powers respectively
+                negative powers respectively.
 
-            Example
-            -------
+            Examples
+            --------
             Parse ``Ang ^ 2 mol kJ^-2``::
                 >>> parse_powers('Ang ^ 2 mol kJ^2')
                 [Unit('Ang'), Unit('Ang'), Unit('mol)'], [Unit('kJ'), Unit('kJ')]
@@ -500,17 +530,17 @@ SYSTEM = {
 
 def create_units(codata_version: str) -> dict[Unit, float]:
     """
-    Creates a `dict` of ``Unit`` based on the CODATA version.
+    Create a `dict` of ``Unit`` based on the CODATA version.
 
     Parameters
     ----------
     codata_version : str
-        The CODATA version to be used
+        The CODATA version to be used.
 
     Returns
     -------
-    `dict`
-        Contains (``Unit``: conversion factor) pairs
+    dict
+        Contains (``Unit``: conversion factor) pairs.
     """
 
     # SYSTEM units are defined to 1.0, and have the physical properties they
@@ -604,21 +634,20 @@ def create_units(codata_version: str) -> dict[Unit, float]:
 
 
 class UnitFloat(float):
-
     """
-    Subclasses `float` so that it contains a ``unit`` attribute
+    Subclass of `float` so that it contains a ``unit`` attribute.
 
-    ``unit`` attribute is returned when __repr__ or __str__ are called.
+    ``unit`` attribute is returned when ``__repr__`` or ``__str__`` are called.
 
     Parameters
     ----------
     value : float
-        the value of the ``UnitFloat``.
+        The value of the ``UnitFloat``.
     unit : Unit, str
-        a ``Unit`` or a `str` representing the unit.
+        A ``Unit`` or a `str` representing the unit.
 
-    Note
-    ----
+    Notes
+    -----
     As both ``__repr__`` and ``__deepcopy__`` rely on the `float` being real,
     this class is not compatible with complex numbers.  This should be
     immaterial as no quantity which possesses units is complex.
@@ -638,13 +667,13 @@ class UnitFloat(float):
     @property
     def unit(self) -> Unit:
         """
-        Get or set the ``unit``
+        Get or set the ``unit``.
 
         Either a `str` or a ``Unit`` can be passed to the setter.
 
         Returns
         -------
-        ``Unit``
+        Unit
             The ``Unit`` equivalent to the passed ``unit`` parameter.
         """
 
@@ -657,9 +686,9 @@ class UnitFloat(float):
             raise TypeError('unit must be a string')
         self._unit = Unit(value)
 
-    def __deepcopy__(self, memo: dict) -> None:
+    def __deepcopy__(self, memo: dict) -> UnitFloat:
         """
-        Copies the ``UnitFloat`` and all attributes
+        Copy the ``UnitFloat`` and all attributes.
 
         This method is required because otherwise the ``float.__deepcopy__`` is
         used, which attempts to create a new ``UnitFloat`` class using only 2
@@ -669,6 +698,16 @@ class UnitFloat(float):
         It simply creates a new ``UnitFloat`` and sets all of its attributes to
         deepcopies of the current attributes (where possible), along with
         updating the ``memo``.
+
+        Parameters
+        ----------
+        memo : dict
+            Dictionary of already deep-copied data.
+
+        Returns
+        -------
+        UnitFloat
+            Deep-copy of `self`.
         """
 
         cls = self.__class__
@@ -688,18 +727,17 @@ class UnitFloat(float):
 
 
 class UnitNDArray(np.ndarray):
-
     """
-    Subclasses ``ndarray`` so that it contains a ``unit`` attribute
+    Subclasses ``ndarray`` so that it contains a ``unit`` attribute.
 
-    ``unit`` attribute is returned when ``__repr__`` or ``__str__`` are called
+    ``unit`` attribute is returned when ``__repr__`` or ``__str__`` are called.
 
     Parameters
     ----------
     shape : tuple of ints
         Shape of created ``array``.
     unit : Unit, str
-        a ``Unit`` or a `str` representing the unit.
+        A ``Unit`` or a `str` representing the unit.
     dtype : data-type, optional
         Any object that can be interpreted as a NumPy data type.
     buffer : object exposing NumPy buffer interface, optional
@@ -724,13 +762,13 @@ class UnitNDArray(np.ndarray):
     @property
     def unit(self) -> None:
         """
-        Get or set the ``unit``
+        Get or set the ``unit``.
 
         Either a ``str`` or a ``Unit`` can be passed to the setter.
 
         Returns
         -------
-        ``Unit``
+        Unit
             The ``Unit`` equivalent to the passed ``unit`` parameter.
         """
 
@@ -758,8 +796,7 @@ class UnitNDArray(np.ndarray):
 
 def unit_array(obj, unit: Union[Unit, str], dtype=None) -> UnitNDArray:
     """
-    Helper function for creating a ``UnitNDArray`` from an ``array`` or any
-    nested sequence
+    Create a ``UnitNDArray`` from an ``array`` or any nested sequence.
 
     This mimics the manner in which NumPy creates arrays (although is in Python
     not C), except several arguments are excluded.
@@ -770,11 +807,11 @@ def unit_array(obj, unit: Union[Unit, str], dtype=None) -> UnitNDArray:
 
     Parameters
     ----------
-    object : None or array_like
+    obj : None or array_like
         An object derived from ``collections.Sequence``. If `None`, then `None`
         is returned.
     unit : Unit, str
-        a ``Unit`` or a `str` representing the unit.
+        A ``Unit`` or a `str` representing the unit.
     dtype : data-type, optional
         Any object that can be interpreted as a NumPy data type.
 

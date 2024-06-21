@@ -1,32 +1,42 @@
-"""Contains some utility functions related to pd.DataFrames, including filtering
-functions
 """
+Contains some utility functions related to :any:`pandas.DataFrame` s, including filtering functions.
+"""
+import re
+from typing import Sequence, Union, overload
 
-from typing import Sequence
 import pandas as pd
 
 
+@overload
+def filter_dataframe(values: Sequence, dataframe: pd.DataFrame, *,
+                     column_names: list[str] = None) -> pd.DataFrame: ...
+
+
+@overload
+def filter_dataframe(values: Sequence, dataframe: pd.DataFrame, *,
+                     column_regex: re.Pattern[str] = None) -> pd.DataFrame: ...
+
+
 def filter_dataframe(values: Sequence,
-                     dataframe: pd.DataFrame,
-                     column_names: 'list[str]' = None,
-                     column_regex: str = None) -> pd.DataFrame:
+                     dataframe: pd.DataFrame, *,
+                     column_names: list[str] = None,
+                     column_regex: Union[str, re.Pattern[str]] = None) -> pd.DataFrame:
     """
-    This filter ignores rows which are duplicated (i.e. it only returns the
-    first occurence of any duplicated rows).
+    Filter a :any:`pandas.DataFrame` ignoring duplicate rows (returns first occurence).
 
     Parameters
     ----------
-    values : Sequence
+    values : typing.Sequence
         The values for which to filter. If any of these values occur in any of
         the columns defined by ``column_names`` or ``column_regex``, the row
         will be included in the filtered return.
     dataframe : pandas.DataFrame
-        The ``pd.DataFrame`` object to be filtered
-    column_names: list, optional
+        The ``pd.DataFrame`` object to be filtered.
+    column_names : list, optional
         A `list` of `str` specifying the names of the columns which will be used
         to filter the ``Dataframe``. This cannot be passed if ``column_regex``
         is also passed.
-    column_regex : str
+    column_regex : str, optional
         A regular expression matching one or more column names. This specifies
         which columns will be used to filter the ``DataFrame``. This cannot be
         passed if ``column_names`` is also passed.
@@ -36,7 +46,13 @@ def filter_dataframe(values: Sequence,
     pandas.DataFrame
         A ``DataFrame`` which has been filtered so that each value in ``values``
         must occur in one of the columns of ``DataFrame`` that are specified by
-        ``column_names`` or matched by ``column_regex``
+        ``column_names`` or matched by ``column_regex``.
+
+    Raises
+    ------
+    ValueError
+        If both `column_names` and `column_regex` provided.
+        If more `values` than `column_names` passed.
     """
 
     if column_names and column_regex:
@@ -68,17 +84,27 @@ def filter_dataframe(values: Sequence,
                                               column_names=column_names)
     return concat_filtered_dataframe.drop_duplicates()
 
+@overload
+def filter_ordered_dataframe(values: Sequence, dataframe: pd.DataFrame, *,
+                             column_names: list[str] = None, wildcard: str = None) -> pd.DataFrame: ...
+
+
+@overload
+def filter_ordered_dataframe(values: Sequence, dataframe: pd.DataFrame, *,
+                             column_regex: re.Pattern[str] = None, wildcard: str = None) -> pd.DataFrame: ...
+
 
 def filter_ordered_dataframe(values: Sequence,
-                             dataframe: pd.DataFrame,
+                             dataframe: pd.DataFrame, *,
                              column_names: 'list[str]' = None,
                              column_regex: str = None,
                              wildcard: str = None) -> pd.DataFrame:
     """
-    Filters a ``pd.DataFrame`` with an iterable of ordered values. The values
-    must occur in columns in the correct order, with the order specified by
-    ``column_names``, or by the order which column order which occurs from using
-    ``column_regex``.
+    Filter a :any:`pandas.DataFrame` with an iterable of ordered values.
+
+    The values must occur in columns in the correct order, with the
+    order specified by ``column_names``, or by the order which column
+    order which occurs from using ``column_regex``.
 
     This filter ignores rows which are duplicated (i.e. it only returns the
     first occurence of any duplicated rows).
@@ -90,24 +116,30 @@ def filter_ordered_dataframe(values: Sequence,
         the columns defined by ``column_names`` or ``column_regex``, the row
         will be included in the filtered return.
     dataframe : pandas.DataFrame
-        The ``pd.DataFrame`` object to be filtered
-    column_names: list, optional
+        The ``pd.DataFrame`` object to be filtered.
+    column_names : list, optional
         A `list` of `str` specifying the names of the columns which will be used
         to filter the ``Dataframe``. This cannot be passed if ``column_regex``
         is also passed.
-    column_regex : str
+    column_regex : str, optional
         A regular expression matching one or more column names. This specifies
         which columns will be used to filter the ``DataFrame``. This cannot be
         passed if ``column_names`` is also passed.
     wildcard : str
-        A `str` which will be a match in any column
+        A `str` which will be a match in any column.
 
     Returns
     -------
     pandas.DataFrame
         A ``DataFrame`` which has been filtered so that each value in ``values``
         must occur in one of the columns of ``DataFrame`` that are specified by
-        ``column_names`` or matched by ``column_regex``
+        ``column_names`` or matched by ``column_regex``.
+
+    Raises
+    ------
+    ValueError
+        If both `column_names` and `column_regex` provided.
+        If more `values` than `column_names` passed.
     """
 
     if column_names and column_regex:
