@@ -264,8 +264,6 @@ class Control:
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
-            self.empty_observable_pairs = self.empty_observable_pair(exp_observable,dset,
-                                                                     rescale_factor,auto_scale)
             self.production_time_step = None
             self.temporary_step_changes = False
 
@@ -287,9 +285,7 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
-        self.empty_FoM_calculator = FoMFactory.create_FoM(FoM_error, self.empty_observable_pairs,
-                                                    norm=FoM_norm,
-                                                    n_parameters=len(self.fit_parameters))
+        self.max_FoM = self.calculating_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -446,7 +442,13 @@ class Control:
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0:
-                    self.equilibrate(self.equilibration_steps)
+                    try:
+                        self.equilibrate(self.equilibration_steps)
+                    except MDEngineError:
+                        try:
+                            self.engine_recovery_from_equil
+                        except MDEngineError:
+                            self.bad_param_location = True
 
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
@@ -562,25 +564,10 @@ class Control:
             Working directory for the MD engine to write to. Default is `None`.
         """
 
-        try:
-            # This if check is to prevent an infinite loop of: 'equilibration fails, alter
-            # time_step, find a time_step where the small test run is successful, then
-            # main equilibration still fails again, and repeat'.
-            if self.equilibrate_attempt > 1:
-                raise MDEngineError('MD engine failed to perform an equilibration.'
-                                    'Either use different parameters or reduce the time_step')
-            if not n_steps:
-                self.simulation.auto_equilibrate()
-            else:
-                self.simulation.run(n_steps,equilibration, verbose,
-                                    output_log, work_dir,**settings)
-        except MDEngineError:
-            self.equilibrate_attempt += 1
-            self.engine_recovery_from_equil()
-
-        self.equilibrate_attempt = 0
-        if self.temporary_step_changes:
-            self.simulation.time_step = self.production_time_step
+        if not n_steps:
+            self.simulation.auto_equilibrate()
+        else:
+            self.simulation.run(n_steps,equilibration, verbose, output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
@@ -591,8 +578,11 @@ class Control:
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
 
-        # Generate FoM by running MD for this step and then calculate FoM
-        fom = self._generate_FoM()
+        if not self.bad_param_location:
+            # Generate FoM by running MD for this step and then calculate FoM
+            fom = self._generate_FoM()
+        else:
+            fom = self.max_FoM
 
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
@@ -659,10 +649,15 @@ class Control:
         `float`
             Non-negative `float` FoM
         """
-        self._run_MD()
-        self._calculate_observables(self.simulation, self.observable_pairs)
+        try:
+            self._run_MD()
+        except MDEngineError:
+            FoM_value = self.max_FoM
+            used_max_FoM = True
 
-        FoM_value = self.FoM_calculator.calculate()
+        if not used_max_FoM:
+            self._calculate_observables(self.simulation, self.observable_pairs)
+            FoM_value = self.FoM_calculator.calculate()
 
         return FoM_value
 
@@ -671,10 +666,7 @@ class Control:
         Run a molecular dynamics simulation
         """
 
-        try:
-            self.simulation.run(self.MD_steps, verbose=False)
-        except MDEngineError:
-            self.engine_recovery_from_bad_params()
+        self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self) -> None:
         """
@@ -1072,51 +1064,6 @@ class Control:
                 self.trial_reduce_time_step(reduction_factor=0.6)
             counter += 1
 
-        raise MDEngineError('MD engine failed to perform an equilibration.'
-                            'Either use different parameters or reduce the time_step')
-
-    def engine_recovery_from_bad_params(self) -> None:
-        """
-        Handles an MDEngineError thrown by the MD engine. Currently this error can only
-        be raised for LAMMPS.
-
-        Tries to find a better set of parameters by comparing the calculated observable to an empty
-        observable. It clears and sets up the system, and changes the parameters if the test run
-        (using a small number of steps) was unsuccessful. When a good set of parameters if found,
-        it equilibrates, and runs the production run as expected. The minimizer history is kept
-        clean, and any bad parameters from these changes are removed. This repeats until the test
-        production run is successful, or until the limit is reached.
-
-        Returns
-        -------
-        None
-        """
-
-        counter = 0
-        prod_works = False
-        # number of attempts was arbitrarily chosen
-        num_attempts = 20
-        for _ in range(num_attempts):
-            prod_works = self.testing_engine_runs()
-
-            if not prod_works:
-                # remove bad params from minimizer and generate new values
-                # pylint: disable=protected-access
-                # it is necessary to update the minimizer history
-                del self.minimizer._history[-1]
-                FoM = self.empty_FoM_calculator.calculate()
-                self.minimizer.step(FoM)
-                self._update_engine_parameters()
-            elif prod_works:
-                self.equilibrate(self.equilibration_steps)
-                self.simulation.run(self.MD_steps, verbose=False)
-                break
-            counter += 1
-
-        else:
-            raise MDEngineError("Failed to find good parameters during refinement."
-            "Please check inputs such as parameter values and constraints.")
-
     def  testing_engine_runs(self, equil: bool=False):
         """
         Clears and resets the MD engine when there is an error thrown by the
@@ -1169,45 +1116,17 @@ class Control:
         self.simulation.time_step *= reduction_factor
         self.temporary_step_changes = True
 
-    def empty_observable_pair(self, exp_observable, dset, rescale_factor, auto_scale):
+    def calculating_max_FoM(self):
         """
-        Creates a list holding just one empty observable pair (meaning full of values close to 0).
-        This is used for creating an artificially high FoM by comparing this empty observable pair
-        to a calculated one.
-
-        Parameters
-        ----------
-        exp_observable : Observable
-            An ``Observable`` with ``Observable.origin == 'experiment'``.
-        weight : float
-            The relative weight of this pair on a total FoM.
-        rescale_factor: float, optional
-            Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
-            on the same scale as ``MD_obs``. Default is `1.`.
-        auto_scale: bool, optional
-            If `True`, ``rescale_factor`` is set automatically to minimise the FoM
-            for each step of the refinement, overriding a user specified value if
-            set. Note that this process is purely statistical and does not account
-            for physical effects that might impact the scaling. Default is `False`.
-
-        Returns
-        -------
-        empty_observable_pairs : list
-            List containing one empty observable pair, with all values close to zero.
 
         """
 
-        empty_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
-        empty_observable_pair = ObservablePair(exp_observable,
-                                            empty_MD_obs,
-                                            dset['weight'],
-                                            rescale_factor=rescale_factor,
-                                            auto_scale=auto_scale)
-        empty_observable_pairs = []
-        empty_observable_pairs.append(empty_observable_pair)
         # pylint: disable=protected-access
         # the purpose of method is to create this empty observable so accessing is necessary
-        empty_observable_pairs[0].MD_obs._dependent_variables = {}
-        empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+        self.observable_pairs[0].MD_obs._dependent_variables = {}
+        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
 
-        return empty_observable_pairs
+        max_FoM = self.FoM_calculator.calculate()
+        self.observable_pairs[0].MD_obs._dependent_variables = None
+        
+        return max_FoM
