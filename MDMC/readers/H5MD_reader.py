@@ -15,7 +15,7 @@ def particles_file_path(file: h5py.File) -> h5py.File:
     Returns
     -------
     h5py.File
-        Root to get to the in to the file to where the particle data is stored
+        Path to the particle data.
     """
     key = list(file['particles'].keys())[0]
     root = file[f'particles/{key}']
@@ -36,13 +36,12 @@ def read_dataset(file: h5py.File, dataset_name: str) -> numpy.ndarray:
     Returns
     -------
     numpy.ndarray
-        Returns a aray of the whole dataset
+        Returns an array of the whole dataset
 
     Raises
     ------
     KeyError
-        If the dataset is not found when the
-        recursive check is finished, raise error
+        If the dataset is not found by `visit`
     """
 
     group = file.visit(lambda name: name if dataset_name in name else None)
@@ -68,16 +67,16 @@ def read_units(file: h5py.File, data_name: str) -> str:
     file : h5py.File
         The H5MD file being read from
     data_name : str
-        The name of the data teh unit is to be read from
+        The name of the data the unit is to be read from
 
     Returns
     -------
     str
-        String abreviation of the units
+        String abbreviation of the units
     """
     key = list(file['particles'].keys())[0]
 
-    # time is stored deeper that the other units so done like this
+    # time is stored deeper than the other units so done like this
     if data_name == 'time':
         return file[f'particles/{key}/position/time'].attrs['unit']
 

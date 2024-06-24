@@ -160,7 +160,7 @@ def create_paramater_data(open_file: h5py.File, data: np.array):
 def build_full(trajectory: CompactTrajectory,
                filename: str = "trajectory", *,
                timestamp: bool = True,
-               file_loc: str = "../file/"):
+               file_loc: str = "/workspaces/MDMCv0.2_pilot/MDMC/H5MD_Files/"):
     """
     Creates full H5MD file including all elements.
 
@@ -173,18 +173,20 @@ def build_full(trajectory: CompactTrajectory,
     timestamp : bool, optional
         If true adds time timestamp to file name, by default True
     file_loc : str, optional
-        The file where the H5MD file should be stored, by defalt ../file/
+        The file where the H5MD file should be stored, by default '../file/'
     """
 
     time_increment = trajectory.time[1] - trajectory.time[0]
     time_offset = trajectory.time[0]
     step_increment = 1
     step_offset = 0
-    file_name = Path(filename).with_suffix(".h5")
+    file_name = Path(filename).with_suffix('.h5')
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')
         file_name = file_name.with_stem(f'{time_stamp}_{file_name.stem}')
+
+    file_name = f'{file_loc}{file_name}'
 
     with h5py.File(file_name, 'w') as file:
         no_data_groups = ['particles',
