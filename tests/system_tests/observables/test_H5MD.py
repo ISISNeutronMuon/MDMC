@@ -27,7 +27,7 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.readers import H5MD_reader
 
 FILE_NAME = 'test_file'
-FILE_PATH = Path(FILE_NAME).with_suffix('.h5')
+FILE_PATH = Path(f"/workspaces/MDMCv0.2_pilot/MDMC/H5MD_Files/{FILE_NAME}").with_suffix('.h5')
 ROOT_LOC = 'particles/simulation'
 
 def setup_module(_):

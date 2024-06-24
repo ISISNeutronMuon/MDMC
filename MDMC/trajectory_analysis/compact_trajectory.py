@@ -171,6 +171,12 @@ class CompactTrajectory:
     def create_from_file(file_name: str):
         """
         Creates a CompactTrajectory from a file
+        """
+        
+    @staticmethod
+    def create_from_file(file_name: str):
+        """
+        Creates a CompactTrajectory from a file
 
         Parameters
         ----------
