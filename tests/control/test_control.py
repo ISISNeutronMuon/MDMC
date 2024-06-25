@@ -89,6 +89,9 @@ def mock_update_engine_parameters(self):
 def mock_equilibrate(self, *extras):
     pass
 
+def mock_calculating_max_FoM(self):
+    pass
+
 
 @pytest.fixture()
 def control_object_from_Argon_script(exp_datasets) -> callable:
@@ -398,6 +401,8 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
+    
+    print(stdout)
     assert stdout_message in stdout
 
 
@@ -522,11 +527,13 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
         assert not pair.MD_obs.use_FFT
 
 
-def test_control_max_parameter_change():
+def test_control_max_parameter_change(monkeypatch):
     """
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
+    monkeypatch.setattr(control.Control, "calculating_max_FoM", mock_calculating_max_FoM)
+    
     ctrl_default = control.Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
 
@@ -761,7 +768,7 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                         reset_config=False)
 
 
-def test_control_fit_parameters(simulation):
+def test_control_fit_parameters(simulation, monkeypatch):
     """
     Test that unsuitable fit_parameters are removed from the Control object:
       - Parameters with a value of 0
@@ -769,6 +776,8 @@ def test_control_fit_parameters(simulation):
       - Parameters that are tied
     As these cannot be refined
     """
+
+    monkeypatch.setattr(control.Control, "calculating_max_FoM", mock_calculating_max_FoM)
 
     tie_target = Parameter(-1., 'tie_target')
     tied_param = Parameter(2., 'tied')
