@@ -5,6 +5,7 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
+import logging
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
@@ -309,7 +310,6 @@ class Control:
                                  'calculate observables') from error
         else:
             self.MD_steps = minimum_MD_steps
-        self.equilibrate_attempt = 0
 
         # read in resolutions for experimental datasets
         for i, dset in enumerate(exp_datasets):
@@ -441,17 +441,16 @@ class Control:
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
+                bad_param_location = False
                 if count >= 0:
                     try:
                         self.equilibrate(self.equilibration_steps)
                     except MDEngineError:
-                        try:
-                            self.engine_recovery_from_equil
-                        except MDEngineError:
-                            self.bad_param_location = True
+                        bad_param_location = True  # assuming params are bad and moving on
 
                 verbose_manager.header(f"Step {count + 1}")
-                self.step()  # advance the refinement by one step
+                # advance the refinement by one step
+                self.step(bad_param_location=bad_param_location)
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                     print("")
@@ -459,9 +458,10 @@ class Control:
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
+                bad_param_location = False
                 if count >= 0:
                     self.equilibrate(self.equilibration_steps)
-                self.step()  # advance the refinement by one step
+                self.step(bad_param_location=bad_param_location)  # advance the refinement by one step
                 count += 1
 
         # Try/except accounts for n_steps <= -1
@@ -550,6 +550,9 @@ class Control:
 
         """
         Run molecular dynamics to equilibrate the ``Universe``.
+        
+        If the equilibration fails, a method to reduce the time_step and re-try, is called.
+        If this re-try also fails then an MDEngineError is raised.
 
         Parameters
         ----------
@@ -564,24 +567,48 @@ class Control:
             Working directory for the MD engine to write to. Default is `None`.
         """
 
-        if not n_steps:
-            self.simulation.auto_equilibrate()
-        else:
-            self.simulation.run(n_steps,equilibration, verbose, output_log, work_dir,**settings)
+        msg = ('MD engine failed to perform an equilibration for these parameter values.'
+                'Likely, because they are bad parameter values.')
+        try:
+            if self.equilibrate_attempt > 1:
+                raise MDEngineError(msg)
+            if not n_steps:
+                self.simulation.auto_equilibrate()
+            else:
+                self.simulation.run(n_steps,equilibration, verbose, output_log, work_dir,**settings)
+        except MDEngineError:
+            try:
+                self.equilibrate_attempt += 1
+                self.engine_recovery_from_equil()
+            except MDEngineError:
+                logging.warning(msg)
+                raise MDEngineError
 
-    def step(self) -> None:
+        self.equilibrate_attempt = 0
+        if self.temporary_step_changes:
+            self.simulation.time_step = self.production_time_step
+
+    def step(self, bad_param_location) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
+        
+        Parameters
+        ---------
+        bad_param_location : bool
+            Represents whether the equilibration at these parameter value failed or not.
+            If equilibration failed, value is True.
+        
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
 
-        if not self.bad_param_location:
+        if not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
             fom = self._generate_FoM()
         else:
+            # assuming params are bad so use max FoM available
             fom = self.max_FoM
 
         verbose_manager.step("Selecting new parameters and updating engine")
@@ -1039,13 +1066,12 @@ class Control:
 
     def engine_recovery_from_equil(self) -> None:
         """
-        Handles an MDEngineError thrown by the MD engine. Currently this error can only
-        be raised for LAMMPS.
+        Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
+        LAMMPS.
 
-        It clears and sets system, and then performs a test equilibration using a small number of
-        steps. If this is unsuccessful, then the time_step is reduced (and the traj_step changed in
-        line with this) and then method repeats until the limit is reached or until the
-        equilibration test run is successful.
+        The time_step is reduced, and then a test equilibration is performed.
+        Unless the equilibration is successful before the attempt limit is reached, an MDEngineError
+        is raised.
 
         Returns
         -------
@@ -1056,23 +1082,25 @@ class Control:
         equil_works = False
         # 2 attempts was arbitrarily chosen
         while not equil_works and counter < 2:
+            self.trial_reduce_time_step(reduction_factor=0.6)
             equil_works = self.testing_engine_runs(equil=True)
 
             if equil_works:
                 self.equilibrate(self.equilibration_steps)
-            else:
-                self.trial_reduce_time_step(reduction_factor=0.6)
             counter += 1
+
+        if not equil_works:
+            raise MDEngineError
 
     def  testing_engine_runs(self, equil: bool=False):
         """
         Clears and resets the MD engine when there is an error thrown by the
         equilibration or production methods. Currently this is only applicable to LAMMPS.
 
-        After the reset, it then tests it by running the simulation with a small number of steps.
+        After the reset, it performs a test attempt with a small number of steps.
         Sometimes, without changing any universe parameters, this reset fixes the issue that raised
         the error. This is assumed to be because the engine can hold some meta data which a normal
-        configuration reset does not remove.
+        configuration reset does not reset.
 
 
         Parameters
@@ -1099,8 +1127,7 @@ class Control:
 
     def trial_reduce_time_step(self,reduction_factor) -> None:
         """
-        Reduces the time_step, and then changes the traj_step in line with this in order to keep
-        these values consistent with the data (energy separation).
+        Reduces the time_step by the reduction factor specified.
 
         Parameters
         ----------
@@ -1118,6 +1145,9 @@ class Control:
 
     def calculating_max_FoM(self):
         """
+        Calculates a maximum FoM value by comparing an a set of experimental observable data,
+        to arrays consisting of numbers closet to zero. For use when the MD Engine fails with
+        a set of parameter values. 
 
         """
 
