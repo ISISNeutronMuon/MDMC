@@ -401,8 +401,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
-    
-    print(stdout)
+
     assert stdout_message in stdout
 
 
@@ -858,7 +857,7 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
 def test_control_bad_params(control_object_from_Argon_script, eps, sig):
     """
     Tests that given a set of bad parameters (which crash the refinement), the equilibration 
-    and production runs handle this and find a new set of better parameters to continue.
+    and production runs handle this.
     """
 
     ctrl, fit_parameters = control_object_from_Argon_script
@@ -877,7 +876,7 @@ def test_control_bad_params(control_object_from_Argon_script, eps, sig):
 def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, sig_constr):
     """
     Tests that given different sets of constraints on the parameter values (which can possibly crash 
-    the refinement), the equilibration and production runs handle this and continue refining.
+    the refinement), the equilibration and production runs handle this.
     """
     
     ctrl, fit_parameters = control_object_from_Argon_script

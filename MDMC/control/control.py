@@ -214,6 +214,7 @@ class Control:
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
+        settings['time_step_reductions'] = settings.get('time_step_reductions', 2)
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
@@ -678,6 +679,7 @@ class Control:
         `float`
             Non-negative `float` FoM
         """
+        used_max_FoM = False
         try:
             self._run_MD()
         except MDEngineError:
@@ -1082,8 +1084,8 @@ class Control:
 
         counter = 0
         equil_works = False
-        # 2 attempts was arbitrarily chosen
-        while not equil_works and counter < 2:
+        attempt_limit = self.settings['time_step_reductions']
+        while not equil_works and counter < attempt_limit:
             self.trial_reduce_time_step(reduction_factor=0.6)
             equil_works = self.testing_engine_runs(equil=True)
 
@@ -1149,10 +1151,11 @@ class Control:
         """
         Calculates a maximum FoM value by comparing an a set of experimental observable data,
         to arrays consisting of numbers closet to zero. For use when the MD Engine fails with
-        a set of parameter values. 
+        a set of parameter values. The rescale factors are changed when the
+        FoM_calculator.calculate() method is called, and so these values are reset.
 
         """
-        
+
         rescale_factors = []
         for pair in self.observable_pairs:
             rescale_factors.append(pair.rescale_factor)
