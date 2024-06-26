@@ -53,13 +53,13 @@ def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
 
     for atom in water_universe.atoms:
         name = model + ' Water '
-        atom.name = name + 'H' if atom.element == 'H' else name + 'O'
+        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
         # Check that initial charges are 0.
         assert atom.charge == 0.
     water_universe.add_force_field('OPLSAA')
 
     for atom in water_universe.atoms:
-        if atom.element == 'H':
+        if atom.element.symbol == 'H':
             assert atom.charge == H_charge
         else:
             assert atom.charge == O_charge
@@ -78,13 +78,13 @@ def test_opls_water_model_masses(water_universe, model):
 
     for atom in water_universe.atoms:
         name = model + ' Water '
-        atom.name = name + 'H' if atom.element == 'H' else name + 'O'
+        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
         # Check that initial masses are not the same as model masses
         assert atom.mass not in [1.008, 15.999]
     water_universe.add_force_field('OPLSAA')
 
     for atom in water_universe.atoms:
-        if atom.element == 'H':
+        if atom.element.symbol == 'H':
             assert atom.mass == 1.008
         else:
             assert atom.mass == 15.999
@@ -108,7 +108,7 @@ def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
 
     for atom in water_universe.atoms:
         name = model + ' Water '
-        atom.name = name + 'H' if atom.element == 'H' else name + 'O'
+        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
 
     for interaction in water_universe.nonbonded_interactions:
@@ -137,7 +137,7 @@ def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
 
     for atom in water_universe.atoms:
         name = model + ' Water '
-        atom.name = name + 'H' if atom.element == 'H' else name + 'O'
+        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
 
     for interaction in water_universe.nonbonded_interactions:
@@ -163,7 +163,7 @@ def test_opls_water_model_bond_angle_parameters(water_universe, model,
 
     for atom in water_universe.atoms:
         name = model + ' Water '
-        atom.name = name + 'H' if atom.element == 'H' else name + 'O'
+        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
 
     for interaction in water_universe.nonbonded_interactions:

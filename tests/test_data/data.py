@@ -37,7 +37,9 @@ READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
                'MantidSQw_one_file':'/experimental_data/IRIS_26176_water_data.dat',
                'MDANSESQw':'/experimental_data/MDANSE_Ar_trajectory.dat',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
+               'xml_SQw_2':'/experimental_data/Argon_test_data.xml',
                'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
+
 
 CONFIG_DATA = {'cif': '/Paracetamol.cif',
                'pdb_ethanol': '/water.pdb',

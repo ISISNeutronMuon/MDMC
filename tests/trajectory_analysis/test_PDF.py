@@ -311,19 +311,18 @@ def generate_position_pairs(start, stop, step):
 @pytest.mark.parametrize('unique_elements, b_cohs, expected',
                          [(['H', 'Na', 'C'],
                            {'Na':3.1, 'C':1.9},
-                           {'Na':3.1, 'C':1.9, 'H':-3.7390}),
+                           {'Na':3.1, 'C':1.9, 'H':-3.7409}),
                           (['O', 'K'],
                            {'K':9.5},
-                           {'K':9.5, 'O':5.803}),
+                           {'K':9.5, 'O':5.805}),
                           (['H', 'O'],
                            {},
-                           {'H':-3.7390, 'O':5.803})])
+                           {'H':-3.7409, 'O':5.805})])
 def test_set_weights(PDF, unique_elements, b_cohs, expected):
 
     """
     Tests that the correct weights of elements are determined
     """
-
     assert PDF._set_weights(unique_elements, b_cohs) == expected
 
 

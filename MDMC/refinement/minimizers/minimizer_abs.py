@@ -1,8 +1,9 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
 
+from pathlib import Path
 import pandas as pd
 
 from MDMC.MD import Parameters
@@ -43,25 +44,39 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters):
+    def __init__(self, control: 'Control', parameters: Parameters,
+                 previous_history: Union[str,Path] = None):
+
         self.control = control
-
-        # First MC step always changes state
-        self.FoM_old = float('inf')
+        self.previous_history = previous_history
         self.FoM = None
-
-        # History of minimization
-        self._history = []
 
         if isinstance(parameters, list):
             parameters = Parameters(parameters)
 
-        self._check_parameters(parameters)
-        self.parameters_old_values = None
         self.parameters = parameters
+        if self.previous_history:
+            if isinstance(previous_history, str):
+                self.previous_history = Path(self.previous_history)
 
-        # Records if most recent step changed the state
-        self.state_changed = None
+            self.column_names, self._history = \
+            self.load_history(self.previous_history)
+            self.previous_steps = len(self._history)
+            self.FoM_old = self._history[-1][0]
+            self.compatible = False
+            self.enforcing_minimizer_compatibility(self.history_columns, self._history)
+            self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
+            self.parameters_old_values = self.get_parameters_old_values(parameters, \
+            self.column_names, self._history)
+            self._history.pop(-1)
+        else:
+            self._history = []
+            self.FoM_old = float('inf')
+            self.parameters_old_values = None
+            self.previous_steps = 0
+
+        self._check_parameters(parameters)
+
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -145,6 +160,7 @@ class Minimizer(ABC):
         ------
         ValueError
             If any ``Parameter`` is fixed
+            If any ``Parameter is tied to another parameter
         """
 
         for parameter in parameters.values():
@@ -217,3 +233,147 @@ class Minimizer(ABC):
             A string encompassing the output of the minimizer.
         """
         raise NotImplementedError
+
+
+    def load_history(self, history: Path) -> tuple:
+        """Uses the `previous_history` variable to load a file of previous refinement steps.
+        It then formats this into the column names and the actual parameter values. The loaded data
+        is stored as numpy arrays.
+
+        Parameters
+        ----------
+        history: Path
+            A file path which contains previous refinement data.
+
+        Raises
+        ----------
+        ValueError
+            If the file with the previous history data can not be found.
+
+        Returns
+        ----------
+        tuple
+            list of columns names, and a list containing a list for each refinement step
+             from the loaded history file."""
+
+        with open(history, 'r', encoding='utf-8') as file:
+            file_content = pd.read_csv(file)
+            file_content = file_content.drop(file_content.columns[0],axis=1)
+            column_names = file_content.columns.tolist()
+            file_content = file_content.values.tolist()
+
+        return column_names, file_content
+
+
+    def _check_parameters_fit_with_history(self, parameters: Parameters,
+                                           column_names: list, history: Path):
+        """Checks that the parameters loaded in from the file of previous refinement steps are
+         compatible with those already defined in the control object. If the parameters are the same
+         but with different numbers (arbitrary), then this is changed to be consistent.
+
+        Parameters
+        ----------
+        column_names: list
+            A list of the columns names from a previous refinement file, excluding any step number
+             column.
+        history: list of lists
+            A list, where each element is a subsequent list with parameter values and FoM value
+             for each step in a previous refinement.
+
+        Raises
+        ----------
+        ValueError
+            If the number of parameters in the history is not consistent with the current set up.
+            If the names of the parameters in the history are not the same as those in the
+            current set up."""
+
+        if history is not None:
+            # using a reduced length for 'column_names' because it includes 'FoM'
+            # and we want parameters only.
+            if (len(column_names)-1) != len(parameters):
+                raise ValueError(f'A history of {len(history.columns) -2}'\
+                    ' is incompatible with the current setup.')
+
+            split_param_list = [parameter.split()[0] for parameter in parameters]
+            split_column_list = [column.split()[0] for column in column_names[1:]]
+            if split_param_list != split_column_list:
+                raise ValueError("The parameters in the minimizer history are not \
+                                      the same as those specified for refining in the current\
+                                      universe setup.")
+            self.column_names = ['FoM', *list(parameters)]
+
+
+    def get_parameters_old_values(self, parameters: Parameters, column_names: list, history: list):
+        """Retrieves the last set of parameters from a file containing data of previous
+        refinement steps.
+
+        Parameters
+        ----------
+        column_names: list
+            A list of the columns names for the past refinement data.
+        history: list of lists
+            A list, where each element is a subsequent list with parameter values and FoM value
+             for each step in a previous refinement.
+
+        Raises
+        ----------
+        Exception
+            If the last parameter values can not be retrieved from history.
+
+        Returns
+        ----------
+
+        dict (if there is a history file loaded)
+            dictionary of parameter values from the last step.
+
+        None (if there is no history file loaded)
+            None type.
+        """
+        if history:
+            try:
+                last_entry = history[-1]
+                for param in parameters:
+                    parameters[param].value = last_entry[column_names.index(param)]
+            except Exception as err:
+                raise Exception('Issue retrieving most recent parameter values \
+                    from given results file.') from err
+            return parameters
+        return None
+
+    def enforcing_minimizer_compatibility(self, column_names, history) -> None:
+        """
+        Checks that the refinement file has the correct set up to be used with the current minimizer
+        and makes the necessary changes for this compatibility.
+
+        Parameters
+        ----------
+        column_names: list
+            A list of the columns names from a previous refinement file, excluding any step number
+             column.
+        history: list of lists
+            A list, where each element is a subsequent list with parameter values and FoM value
+             for each step in a previous refinement.
+
+        Raises
+        ----------
+        Exception
+            If changing _history for minimizer compatibility fails.
+
+        """
+        if history and self.compatible is False:
+            if 'Change state' in column_names and \
+                ('Accepted' not in history[0] or 'Rejected' not in history[0]):
+                for row in history:
+                    pos = column_names.index('Change state')
+                    row.insert(pos,'Accepted')
+
+            elif 'Change state' not in column_names and \
+                ('Accepted' in history[0] or 'Rejected' in history[0]):
+                for row in history:
+                    try:
+                        row.remove('Accepted')
+                    except ValueError:
+                        row.remove('Rejected')
+
+            self.compatible = True
+        self._history = history

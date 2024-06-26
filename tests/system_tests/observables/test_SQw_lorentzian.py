@@ -6,7 +6,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables import sqw
 

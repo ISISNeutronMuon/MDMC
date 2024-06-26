@@ -1,9 +1,10 @@
 """A module for performing the refinement"""
 import statistics
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, Union
 from contextlib import suppress
 from datetime import datetime
+from pathlib import Path
 
 import logging
 import numpy as np
@@ -184,10 +185,12 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
+                 previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
                  **settings: dict):
 
+        self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -219,9 +222,9 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
-                                                           self.fit_parameters, **settings)
-
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
+                                                           previous_history, **settings)
+        self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -265,6 +268,7 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            self.recreated_independent_vars  = {}
 
             self.production_time_step = None
             self.temporary_step_changes = False
@@ -424,9 +428,10 @@ class Control:
             control.refine(100)
         """
 
-        if n_steps is None:
+        if not n_steps:
             if self.n_steps is None:
-                raise ValueError('The number of maximum refinement steps has not been specified')
+                raise ValueError('The number of maximum refinement steps needs to be'
+                                 ' specified and greater than 0.')
         else:
             self.n_steps = n_steps
 
@@ -551,7 +556,7 @@ class Control:
             raise Exception('Minimization failed, please check the parameter values.') from exc
 
 
-    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -563,7 +568,7 @@ class Control:
         Parameters
         ----------
         n_steps : int
-            Number of simulation steps to run
+            Number of simulation steps to run.
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
@@ -610,7 +615,10 @@ class Control:
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
 
-        if not bad_param_location:
+        if self.first_loaded_step:
+            fom = self.minimizer.FoM_old
+            self.first_loaded_step = False
+        elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
             fom = self._generate_FoM()
         else:
@@ -622,7 +630,6 @@ class Control:
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
-
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
@@ -692,6 +699,7 @@ class Control:
         if not used_max_FoM:
             self._calculate_observables(self.simulation, self.observable_pairs)
             FoM_value = self.FoM_calculator.calculate()
+        self._trim_dependent_variables()
 
         return FoM_value
 
@@ -790,6 +798,8 @@ class Control:
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            if pair.MD_obs.name =='SQw':
+                self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
@@ -1026,7 +1036,9 @@ class Control:
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself
+        it does not have a ``validate_energy`` function itself. The time step and trajectory step
+        may be changed in the validate_energy method of the specific observable if necessary, to
+        achieve an energy separation that matches that of the experimental data.
 
         Parameters
         ----------
@@ -1038,12 +1050,19 @@ class Control:
         None
         """
 
-        # Calculate the time separation between trajectory frames, dt, imposed
-        # by the simulation
-        dt = self.simulation.traj_step * self.simulation.time_step
-
         with suppress(AttributeError):
-            obs.validate_energy(dt)
+
+            changed, traj_step, time_step, self.dt_required \
+                  = obs.validate_energy(self.simulation.time_step)
+            if changed:
+                self.simulation.traj_step = traj_step
+                self.simulation.time_step = time_step
+                logging.warning(" The given traj_step and time_step values were not"
+                    " compatibile with the dataset specified.\nThe values "
+                    "(whilst prioritising time_step) have been changed to"
+                    " traj_step: %d, and time_step: %f. \n"
+                    "Context: for this dataset, traj_step multiplied by time_step"
+                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
 
     def _input_check(self, general_set, inputs) -> None:
         """
@@ -1070,6 +1089,30 @@ class Control:
                 raise KeyError("There was an issue retrieving the input: "
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
+
+    def _trim_dependent_variables(self) -> None:
+        """
+        Trims the dependent variable data, and the associated errors, for observables
+        where necessary. One such application is when the smallest q_values cannot be recreated by
+        the simulation, this trimming removes the data associated with q_values which cannot be
+        recreated.
+        """
+
+        # loop through observable pairs and trim dependent var data accordingly
+        for index, pair in enumerate(self.observable_pairs):
+            obs = pair.exp_obs.name
+            if obs in self.recreated_independent_vars:
+                exp_obs = self.observable_pairs[index].exp_obs
+                md_obs = self.observable_pairs[index].MD_obs
+
+                recreated_independent_vars = self.recreated_independent_vars[obs]
+                if len(exp_obs.dependent_variables[obs][0]) != \
+                len(md_obs.dependent_variables[obs][0]):
+
+                    exp_obs.errors[obs][0] = \
+                    [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
+                    exp_obs.dependent_variables[obs][0] = \
+                    [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
 
     def engine_recovery_from_equil(self) -> None:
         """

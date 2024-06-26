@@ -66,7 +66,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
     - name: Build documentation
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install .[docs] && make -d -C $(pwd)/doc html"
     - name: Deploy
       env:
         token: ${{ secrets.PAGES_DEPLOY_TOKEN }}

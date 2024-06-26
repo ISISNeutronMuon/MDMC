@@ -6,8 +6,8 @@ from typing import Optional
 import warnings
 
 import numpy as np
+import periodictable
 
-from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -255,8 +255,8 @@ class PairDistributionFunction(Observable):
             b_coh : dict
                 A dictionary containing coherent scattering length values for one or more elements.
                 This can be used to calculate the PDF of a system where one or more elements
-                has a coherent scattering length different from the coherent scattering length in
-                MDMC.common.atom_properties (i.e. if it has been isotopically substituted).
+                has a coherent scattering length different from the coherent scattering lengths
+                from periodictable.
             r_min : float
                 The minimum ``r`` (atomic separation) in Angstrom for which the PDF will be
                 calculated. If this, ``r_max``, and ``r_step`` are passed then
@@ -641,7 +641,7 @@ class PairDistributionFunction(Observable):
         Partitions the atomic positions into paritions of dimensions specified
         by ``part_comps``
 
-        ``Atom`` objects are grouped in partitions by ``Atom.element``
+        ``Atom`` objects are grouped in partitions by ``Atom.element.symbol``
 
         Parameters
         ----------
@@ -650,7 +650,7 @@ class PairDistributionFunction(Observable):
             shape = (num_time_steps, num_atoms, 3)
         element_list : list
             A `list` of `str` with the same length as ``positions``. Each `str`
-            specifies the ``Atom.element`` for the corresponding index in
+            specifies the ``Atom.element.symbol`` for the corresponding index in
             ``positions``.
         part_comps : numpy.ndarray
             A 3 element array specifying the length of each component for all
@@ -740,8 +740,8 @@ class PairDistributionFunction(Observable):
         """
         Sets the weights for each element
 
-        Uses any scattering lengths passed in b_coh, but defaults to values in
-        ``MDMC.common.atom_properties``
+        Uses any scattering lengths passed in b_coh, but defaults to values from
+        the imported periodictable module.
 
         Parameters
         ----------
@@ -759,7 +759,8 @@ class PairDistributionFunction(Observable):
             the corresponding weight
         """
 
-        return {element: b_coh.get(element, B_COH[element]) for element
+        return {element: b_coh.get(element, periodictable.elements.symbol(element).neutron.b_c\
+            if periodictable.elements.symbol(element).neutron.b_c is not None else 0) for element
                 in unique_elements}
 
     @staticmethod

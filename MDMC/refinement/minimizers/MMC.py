@@ -1,5 +1,6 @@
 """The Metropolis-Hastings minimizer class"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, Optional
+from pathlib import Path
 
 import numpy as np
 
@@ -8,7 +9,6 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 if TYPE_CHECKING:
     from MDMC.MD import Parameters
     from MDMC.control import Control
-
 
 class MMC(Minimizer):
 
@@ -41,8 +41,9 @@ class MMC(Minimizer):
 
     DISTRIBUTION = {'uniform': np.random.uniform}
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', \
+        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+        super().__init__(control, parameters, previous_history)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
         self.parameters = parameters
@@ -52,6 +53,8 @@ class MMC(Minimizer):
         distribution = 'uniform'
         self.distribution = self.__class__.DISTRIBUTION[distribution]
 
+        self.previous_history = previous_history
+        self.state_changed = False
 
     @property
     def history_columns(self) -> 'list[str]':

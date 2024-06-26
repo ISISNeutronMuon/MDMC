@@ -478,7 +478,7 @@ class Dispersion(NonBondedInteraction):
         # Each value in universe.atom_types dictionary contain list of atoms
         # with same elements, so use index 0
         # This is determined for all atom types in Dispersion interaction
-        return [self.universe.atom_types[atom_type][0].element
+        return [self.universe.atom_types[atom_type][0].element.symbol
                 for tpl in self.atom_types
                 for atom_type in tpl]
 
@@ -696,8 +696,8 @@ class Coulombic(NonBondedInteraction):
             The elements for which the ``Coulombic`` interaction applies
         """
 
-        return list(set([atom.element for atom in self._atoms]
-                        + [self.universe.atom_types[atom_type][0].element for
+        return list(set([atom.element.symbol for atom in self._atoms]
+                        + [self.universe.atom_types[atom_type][0].element.symbol for
                            atom_type in self.atom_types]))
 
 
@@ -914,7 +914,7 @@ class BondedInteraction(Interaction):
 
         try:
             # Each tuple should contain the same elements, so first tuple's used
-            return [atom.element for atom in self.atoms[0]]
+            return [atom.element.symbol for atom in self.atoms[0]]
         except (AttributeError, IndexError):
             return None
 

@@ -3,10 +3,11 @@ from abc import abstractmethod
 from itertools import product
 from typing import TYPE_CHECKING, Generator
 
+import logging
 import numpy as np
+import periodictable
 
 from MDMC.common import units
-from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import faster_correlation,\
@@ -49,6 +50,7 @@ class AbstractFQt(SQwMixins, Observable):
         self.n_Q_vectors = None
         self.Q_values = None
         self.weights = None
+        self.recreated_Q = []
 
     @property
     def independent_variables(self) -> dict:
@@ -207,6 +209,15 @@ class AbstractFQt(SQwMixins, Observable):
         # 'Q_v' is a list of Q_vectors corresponding to a single Q
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
+
+        # Get the positions of the recreated_q_values
+        if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
+            self.recreated_Q.extend(np.where(self.Q==value)[0][0] for value in self.Q_values)
+            self.Q = [val for val in self.Q if val in self.Q_values]
+
+            logging.warning(" The specified universe dimensions were not able to recreate the"
+                            " lowest q values of the experimental data and so this data has been"
+                            " trimmed accordingly.")
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
@@ -600,8 +611,12 @@ class FQt(AbstractFQt):
         Calculate the neutron weighting for coherent and incoherent scattering
         """
 
-        self.weights = {element: {'coh': B_COH[element],
-                                  'incoh': B_INCOH[element]}
+        self.weights = {element: {'coh': periodictable.elements.symbol(element).neutron.b_c\
+                                  if periodictable.elements.symbol(element).neutron.b_c \
+                                          is not None else 0,
+                                  'incoh': periodictable.elements.symbol(element).neutron.b_c_i\
+                                      if periodictable.elements.symbol(element).neutron.b_c_i \
+                                          is not None else calc_incoherent_scatt_length(element)}
                         for element in self._trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
@@ -801,3 +816,30 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
               'mmm': orthorhombic}
 
     return groups[point_group](point)
+
+
+def calc_incoherent_scatt_length(element):
+    """
+    Takes the incoherent scattering cross section of element and calculates the incoherent
+    scattering length to be returned.
+
+    Parameters
+    ----------
+
+    element: string
+        a string representing the chemical symbol of the element, e.g 'He' for Helium.
+
+
+    Returns
+    -------
+
+    float
+        Incoherent scattering length of chemical symbol passed in.
+    """
+
+    xs_incoh = periodictable.elements.symbol(element).neutron.incoherent
+    b_incoh = periodictable.elements.symbol(element).neutron.b_c_i
+
+    if xs_incoh is not None and not b_incoh:
+        b_incoh = float(np.sqrt(100 * xs_incoh / (4 * np.pi)))
+    return float(b_incoh)

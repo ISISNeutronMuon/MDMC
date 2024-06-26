@@ -1,6 +1,8 @@
 """A module for plotting data and results of a minimization."""
 from abc import ABC, abstractmethod
 
+import os
+import logging
 import numpy as np
 import pandas as pd
 import corner
@@ -39,8 +41,23 @@ class PlotResults():
         self.minmax_coords, self.FoMs = self.get_measured_points()
 
         # Create the optimizer
-        self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
-                                   acq_optimizer="sampling", model_queue_size=1)
+        try:
+            # The optimizer had a default minimum of 10 points which has since been changed to 2.
+            # We are still using this '10' value here because we are assuming it is a good minimum
+            # for 'meaningful' plots, but technically anything with 2 points can be minimised and
+            # shouldn't cause an error.
+            old_optimizer_min = 10
+            self.optimizer = Optimizer(self.minmax_coords,"GP",
+                                       n_initial_points=min(old_optimizer_min, len(self.FoMs)),
+                                       acq_func="gp_hedge", acq_optimizer="sampling",
+                                         model_queue_size=1)
+            if len(self.FoMs) < old_optimizer_min:
+                logging.warning("You have only used %d refinement steps," \
+                      " use a larger number for more meaningful plots.", (len(self.FoMs)))
+        except ValueError as error:
+            raise ValueError("Insufficient number of refinement steps,"
+                             " please use at least 10.") from error
+
         # Train the optimizer
         self.optimizer.tell(self.parameter_coords, self.FoMs)
 
@@ -141,14 +158,15 @@ class PlotResults():
         corner plot : Matplotlib.figure.Figure
             A plot displaying every parameter combination with their variances and covariances
         """
+
         try:
             _, _, y_random, coords = \
             self._expected_minimum_random_sampling()
         except IndexError:
-            msg = ("\n \n Your data file apears not to have any points in, please check you have "
-                   "run the refinement and it saved correctly. \n")
+            msg = (f"\n \n Your data file, {os.path.abspath(f'{self.filename}')},"
+                   " appears not to have any points in, please check you have"
+                   " run the refinement and it saved correctly. \n")
             print(msg)
-
             return None
 
         _, reduced_coordinate_list = self._remove_points(y_random, coords)

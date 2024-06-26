@@ -10,16 +10,16 @@ from collections import Counter, OrderedDict
 from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count
-import logging
 from math import gcd
 from typing import Callable, Union, TYPE_CHECKING
 import warnings
 import weakref
-
+import re
+import logging
 import numpy as np
 from scipy.spatial.transform import Rotation
+import periodictable
 
-from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
@@ -516,7 +516,7 @@ class CompositeStructure(Structure, AtomContainer):
             The chemical formula using the Hill system
         """
 
-        return get_reduced_chemical_formula([atom.element for atom
+        return get_reduced_chemical_formula([atom.element.symbol for atom
                                              in self.atoms])
 
     @property
@@ -689,8 +689,8 @@ class Atom(Structure):
 
     Parameters
     ----------
-    element : str
-        The atomic element label.
+    element : periodictable.core.Element
+        The periodictable atomic element instance
     position : list, tuple, numpy.ndarray, optional
         A 3 element `list`, `tuple` or ``array`` with the position in units of
         ``Ang``. The default is ``(0., 0., 0.)``.
@@ -723,8 +723,8 @@ class Atom(Structure):
             with other atoms. Must be set if a charge is being added to the atom.
     Attributes
     ----------
-    element : str
-        The atomic element label
+    element : periodictable.core.Element
+        The periodictable atomic element instance
     """
 
     def __init__(self, element: str,
@@ -735,16 +735,28 @@ class Atom(Structure):
                  charge: float = None, **settings: dict):
 
         self.universe = None
-        # the syntax for optional keyword arguments is: kwargs.get(str, default_value)
+
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
-        self.element = element
 
+        try:
+            isotope_re = re.compile(r"\[(\d+)\]")
+            element_re = re.compile(r"^[a-zA-Z]{1,2}")
+            el = element_re.findall(element)[0]
+            try:
+                iso = int(isotope_re.findall(element)[0])
+                self.element = periodictable.elements.symbol(el)[iso]
+            except IndexError:
+                self.element = periodictable.elements.symbol(el)
+
+        except ValueError as error:
+            msg = "Please provide a valid element and/or isotope"
+            raise ValueError(msg) from error
         try:
             self.mass = settings['mass']
         except KeyError:
-            self.mass = atom_properties.MASS[self.element]
+            self.mass = self.element.mass
 
         self._atom_type = settings.get('atom_type', None)
         self.cutoff = settings.get('cutoff', None)
@@ -808,7 +820,7 @@ class Atom(Structure):
         return ('{0} atom,'
                 '  ID: {1}'
                 '  charge: {2},'
-                '  interactions: {3}'.format(self.element,
+                '  interactions: {3}'.format(self.element.symbol,
                                              self.ID,
                                              self.charge,
                                              [i.name for i
@@ -823,7 +835,7 @@ class Atom(Structure):
         """
 
         return ('{0} {1}  charge: {2}  position: {3}'.format(
-            self.element,
+            self.element.symbol,
             self.__class__.__name__,
             self.charge,
             self.position))
@@ -1160,7 +1172,7 @@ class Atom(Structure):
     def is_equivalent(self, structure: Structure) -> bool:
 
         return isinstance(structure, type(self)) and \
-               all([structure.element == self.element,
+               all([structure.element.symbol == self.element.symbol,
                     structure.mass == self.mass,
                     structure.charge == self.charge,
                     len(self.bonded_interactions) == len(structure.bonded_interactions),
@@ -1447,7 +1459,7 @@ def filter_atoms_element(atoms: 'list[Atom]', element: str) -> 'list[Atom]':
         ``Atom`` objects of a specific element
     """
 
-    return list(filter(lambda a: a.element == element, atoms))
+    return list(filter(lambda a: a.element.symbol == element, atoms))
 
 
 def get_reduced_chemical_formula(symbols: 'list[str]',
