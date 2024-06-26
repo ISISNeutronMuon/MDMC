@@ -5,7 +5,6 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
-import copy
 import logging
 import numpy as np
 import pandas as pd
@@ -463,8 +462,12 @@ class Control:
             while count < n_steps and not self.minimizer.has_converged():
                 bad_param_location = False
                 if count >= 0:
-                    self.equilibrate(self.equilibration_steps)
-                self.step(bad_param_location=bad_param_location)  # advance the refinement by one step
+                    try:
+                        self.equilibrate(self.equilibration_steps)
+                    except MDEngineError:
+                        bad_param_location = True  # assuming params are bad and moving on
+                # advance the refinement by one step
+                self.step(bad_param_location=bad_param_location)
                 count += 1
 
         # Try/except accounts for n_steps <= -1
@@ -553,7 +556,7 @@ class Control:
 
         """
         Run molecular dynamics to equilibrate the ``Universe``.
-        
+
         If the equilibration fails, a method to reduce the time_step and re-try, is called.
         If this re-try also fails then an MDEngineError is raised.
 
@@ -583,26 +586,26 @@ class Control:
             try:
                 self.equilibrate_attempt += 1
                 self.engine_recovery_from_equil()
-            except MDEngineError:
+            except MDEngineError as exc:
                 logging.warning(msg)
-                raise MDEngineError
+                raise MDEngineError from exc
 
         self.equilibrate_attempt = 0
         if self.temporary_step_changes:
             self.simulation.time_step = self.production_time_step
 
-    def step(self, bad_param_location) -> None:
+    def step(self, bad_param_location: bool = False) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
-        
+
         Parameters
         ---------
         bad_param_location : bool
             Represents whether the equilibration at these parameter value failed or not.
             If equilibration failed, value is True.
-        
+
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
@@ -1167,8 +1170,8 @@ class Control:
 
         max_FoM = self.FoM_calculator.calculate()
         self.observable_pairs[0].MD_obs._dependent_variables = None
-        
+
         for count, pair in enumerate(self.observable_pairs):
             pair.rescale_factor = rescale_factors[count]
-        
+
         return max_FoM
