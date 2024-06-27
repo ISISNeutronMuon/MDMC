@@ -1,11 +1,5 @@
 """
 A module for building and saving a H5MD file.
-
-Notes
------
-In getter functions within this file, the slices
-are to ensure that the returned types from the
-functions are `numpy.ndarray`s and not `h5py.dataset`s.
 """
 from pathlib import Path
 
@@ -17,7 +11,7 @@ import periodictable
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.common import units
 
-METADATA = {
+H5MD_DATA = {
     'creator_name': 'MDMC',
     'creator_version': [0, 2],
     'h5md_version': [1, 1],
@@ -58,21 +52,21 @@ def create_metadata_group(open_file: h5py.File, *,
     creator_email : str, optional
         Email of the person running the MDMC simulation, by default 'Unknown'
     """
-    group = open_file[METADATA['loc']]
-    group.attrs['version'] = METADATA['h5md_version']
+    group = open_file[H5MD_DATA['loc']]
+    group.attrs['version'] = H5MD_DATA['h5md_version']
 
     author_group = group.create_group('author')
     author_group.attrs['name'] = creator_name
     author_group.attrs['email'] = creator_email
 
     creator_group = group.create_group('creator')
-    creator_group.attrs['name'] = METADATA['creator_name']
-    creator_group.attrs['version'] = METADATA['creator_version']
+    creator_group.attrs['name'] = H5MD_DATA['creator_name']
+    creator_group.attrs['version'] = H5MD_DATA['creator_version']
 
     modules_group = group.create_group('modules')
-    for pos, module in enumerate(METADATA['module_name']):
+    for pos, module in enumerate(H5MD_DATA['module_name']):
         module_group = modules_group.create_group(module)
-        module_group.attrs['version'] = METADATA['module_version'][pos]
+        module_group.attrs['version'] = H5MD_DATA['module_version'][pos]
 
 def create_simulation_data(open_file: h5py.File,
                            group_name: str,
@@ -126,7 +120,7 @@ def create_simulation_data(open_file: h5py.File,
 def create_box_data(open_file: h5py.File,
                     trajectory: CompactTrajectory):
     """
-    Creates the box group and adds all atributes associated with this group
+    Creates the box group and adds all attributes associated with this group
 
     Parameters
     ----------
@@ -137,11 +131,9 @@ def create_box_data(open_file: h5py.File,
     """
     box_group = open_file[f'{ROOT_TRAJECTORY}/box']
     box_group.attrs['dimensions'] = len(trajectory.dimensions)
-    boundry = []
     if trajectory.is_fixedbox:
-        for _ in range(len(trajectory.dimensions)):
-            boundry.append('periodic')  # MDMC assumes perperiodic
-        box_group.attrs['boundary'] = boundry
+        boundary = ['periodic' for _ in trajectory.dimensions]  # MDMC assumes periodic
+        box_group.attrs['boundary'] = boundary
 
 def create_paramater_data(open_file: h5py.File, data: np.array):
     """
@@ -160,7 +152,7 @@ def create_paramater_data(open_file: h5py.File, data: np.array):
 def build_full(trajectory: CompactTrajectory,
                filename: str = "trajectory", *,
                timestamp: bool = True,
-               file_loc: str = "/workspaces/MDMCv0.2_pilot/MDMC/H5MD_Files/"):
+               file_loc: Path = Path(__file__).parents[1] / "H5MD_Files"):
     """
     Creates full H5MD file including all elements.
 
@@ -172,7 +164,7 @@ def build_full(trajectory: CompactTrajectory,
         The name of the H5MD file, by default "trajectory"
     timestamp : bool, optional
         If true adds time timestamp to file name, by default True
-    file_loc : str, optional
+    file_loc : Path, optional
         The file where the H5MD file should be stored, by default '../file/'
     """
 
@@ -184,9 +176,11 @@ def build_full(trajectory: CompactTrajectory,
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')
-        file_name = file_name.with_stem(f'{time_stamp}_{file_name.stem}')
+        file_name = file_name.with_stem(f'{file_name.stem}_{time_stamp}')
 
-    file_name = f'{file_loc}{file_name}'
+    file_name = f'{file_loc}/{file_name}'
+
+    print(file_name)
 
     with h5py.File(file_name, 'w') as file:
         no_data_groups = ['particles',
@@ -207,29 +201,29 @@ def build_full(trajectory: CompactTrajectory,
         species = [getattr(periodictable, element).number
                    for element in trajectory.element_list]
 
-        dependent_data = []
-        dependent_data.append(['species',
-                               species])
-        dependent_data.append(['charge',
-                               charge,
-                               units.SYSTEM['CHARGE']])
-        dependent_data.append(['mass',
-                               trajectory.atom_masses,
-                               units.SYSTEM['MASS']])
-        dependent_data.append(['position',
-                               trajectory.position,
-                               trajectory.position_unit,
-                               time_increment,
-                               step_increment,
-                               time_offset,
-                               step_offset])
-        dependent_data.append(['box/edges',
-                               trajectory.dimensions,
-                               trajectory.position_unit,
-                               time_increment,
-                               step_increment,
-                               time_offset,
-                               step_offset])
+        dependent_data = [
+            ['species',species],
+            ['charge', charge, units.SYSTEM['CHARGE']],
+            ['mass', trajectory.atom_masses, units.SYSTEM['MASS']],
+            [
+                'position',
+                trajectory.position,
+                trajectory.position_unit,
+                time_increment,
+                step_increment,
+                time_offset,
+                step_offset
+            ],
+            [
+                'box/edges',
+                trajectory.dimensions,
+                trajectory.position_unit,
+                time_increment,
+                step_increment,
+                time_offset,
+                step_offset
+            ]
+        ]
         if trajectory.has_velocity:
             dependent_data.append(['velocity',
                                    trajectory.velocity,

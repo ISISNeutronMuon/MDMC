@@ -17,7 +17,6 @@ import zlib
 import pytest
 import h5py
 import numpy as np
-import periodictable
 
 from MDMC.writers import H5MD_build
 from MDMC.common import units
@@ -27,7 +26,8 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.readers import H5MD_reader
 
 FILE_NAME = 'test_file'
-FILE_PATH = Path(f"/workspaces/MDMCv0.2_pilot/MDMC/H5MD_Files/{FILE_NAME}").with_suffix('.h5')
+DRI = Path(__file__).parents[3] / "MDMC/H5MD_Files"
+FILE_PATH = Path(f'{DRI}/{FILE_NAME}').with_suffix('.h5')
 ROOT_LOC = 'particles/simulation'
 
 def setup_module(_):
@@ -49,12 +49,18 @@ def teardown_module(_):
 
     FILE_PATH.unlink(missing_ok=False)
 
+@pytest.fixture(scope="module")
+def open_file():
+    file = h5py.File(FILE_PATH, 'r')
+    yield file
+    file.close()
+
 @pytest.mark.parametrize("expected, test_input", [("atom_masses", "mass"), 
                                                  ("position", "position"), 
                                                  ("velocity", "velocity"), 
                                                  ("element_list", "atom_symbols"),
                                                  ("atom_charges", "charge")])
-def test_H5MD_array(trajectory, expected, test_input):
+def test_H5MD_array(open_file, trajectory, expected, test_input):
     """Tests that everything stored in the H5MD file that is in an array is stored as expected
     """
     expected = getattr(trajectory, expected)
@@ -62,8 +68,7 @@ def test_H5MD_array(trajectory, expected, test_input):
     if test_input == "charge":
         expected[expected == None] = 0 # Covers if for testing charge that is sometimes None's
 
-    with h5py.File(FILE_PATH, 'r') as file:
-        h5md_read = H5MD_reader.read_dataset(file, test_input)
+    h5md_read = H5MD_reader.read_dataset(open_file, test_input)
 
     assert np.array_equal(h5md_read, expected)
 
@@ -71,49 +76,47 @@ def test_H5MD_array(trajectory, expected, test_input):
                                                  ("TIME", "time"), 
                                                  ("LENGTH", "position"), 
                                                  ("CHARGE", "charge")])
-def test_H5MD_units(expected, test_input):
+def test_H5MD_units(open_file, expected, test_input):
     """Tests that all units in the H5MD file are stored as expected
     """
     expected = str(units.SYSTEM[expected])
-    with h5py.File(FILE_PATH, 'r') as file:
-        h5md_read = H5MD_reader.read_units(file, test_input)
+    h5md_read = H5MD_reader.read_units(open_file, test_input)
     assert expected == h5md_read
 
-def test_velocity_units():
+def test_velocity_units(open_file):
     """Tests that velocity units stored in the H5MD file is as expected
     """
     expected = units.SYSTEM['LENGTH'] / units.SYSTEM['TIME']
-    with h5py.File(FILE_PATH, 'r') as file:
-        h5md_read = H5MD_reader.read_units(file, "velocity")
+    h5md_read = H5MD_reader.read_units(open_file, "velocity")
     assert expected == h5md_read
 
-def test_read_n_steps(trajectory):
+def test_read_n_steps(open_file, trajectory):
     """Tests That the correct number of steps are stored the H5MD file are the same as in the trajectory
     """
     expected_n_steps = trajectory.n_steps
-    with h5py.File(FILE_PATH, 'r') as file:
-        h5md_n_steps = H5MD_reader.read_number_steps(file)
+    h5md_n_steps = H5MD_reader.read_number_steps(open_file)
     assert h5md_n_steps == expected_n_steps
 
-def test_read_dimensions(trajectory):
+def test_read_dimensions(open_file, trajectory):
     """Tests that the box dimensions stored in the H5MD file are the same as the trajectory
     """
     expected_dimensions = len(trajectory.dimensions)
-    with h5py.File(FILE_PATH, 'r') as file:
-        h5md_dimensions = H5MD_reader.read_box_dimension(file)
+    h5md_dimensions = H5MD_reader.read_box_dimension(open_file)
     assert np.array_equal(expected_dimensions, h5md_dimensions)
 
-def test_read_time(trajectory):
+def test_read_time(open_file, trajectory):
     """Tests That the correct time can be calculated from what is stored in the H5MD file
     """
     expected_times = trajectory.times
-    with h5py.File(FILE_PATH, 'r') as file:
-        h5md_time = []
-        h5md_time = [H5MD_reader.read_times(file, step)
-                     for step in range(trajectory.n_steps)]
+    h5md_time = []
+    h5md_time = [H5MD_reader.read_times(open_file, step)
+                for step in range(trajectory.n_steps)]
     assert np.array_equal(h5md_time, expected_times)
 
-def test_tragect_from_file():
+def test_tragect_from_file(trajectory):
     """Tests that the H5MD file can be read back in as a compact tragectory
     """
-    CompactTrajectory.create_from_file(FILE_PATH)
+    new_CompactTraject = CompactTrajectory.create_from_h5md(FILE_PATH)
+    assert np.array_equal(trajectory.position, new_CompactTraject.position)
+    assert np.array_equal(trajectory.time, new_CompactTraject.time)
+    assert np.array_equal(trajectory.position_unit, new_CompactTraject.position_unit)
