@@ -799,7 +799,6 @@ class Control:
 
         verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
-
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)

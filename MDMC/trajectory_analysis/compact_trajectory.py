@@ -168,13 +168,7 @@ class CompactTrajectory:
         return np.float16
 
     @staticmethod
-    def create_from_file(file_name: str):
-        """
-        Creates a CompactTrajectory from a file
-        """
-        
-    @staticmethod
-    def create_from_file(file_name: str):
+    def create_from_h5md(file_name: str):
         """
         Creates a CompactTrajectory from a file
 
@@ -197,9 +191,10 @@ class CompactTrajectory:
         new_ct.position = all_data['position']
         new_ct.velocity = all_data['velocity']
         new_ct.atom_masses = all_data['mass']
-        new_ct.atom_types = all_data['species']
+        new_ct.atom_types = new_ct.validateTypes(all_data['atom_symbol'])
         new_ct.element_list = all_data['atom_symbol']
         new_ct.element_set = list(set(all_data['atom_symbol']))
+        return new_ct
 
     def setBytesPerNumber(self, bytes_per_number: int = 8):
         """

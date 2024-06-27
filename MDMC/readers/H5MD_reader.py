@@ -1,4 +1,11 @@
-"""Modual for reading a in H5MD file"""
+"""Modual for reading a in H5MD file
+
+Notes
+-----
+In getter functions within this file, the slices
+are to ensure that the returned types from the
+functions are `numpy.ndarray`s and not `h5py.dataset`s.
+"""
 import h5py
 import numpy
 
@@ -89,7 +96,7 @@ def read_units(file: h5py.File, data_name: str) -> str:
 
 def read_times(file: h5py.File, step: int) -> float:
     """
-    Reads time of a spesified step from the H5MD file and then slices
+    Reads time of a specified step from the H5MD file and then slices
     read data so return is a float, not a HD5 object reference
 
     Parameters
@@ -133,7 +140,7 @@ def read_number_steps(file: h5py.File) -> int:
 
 def read_box_dimension(file: h5py.File) -> numpy.ndarray:
     """
-    Reads box dimenions in from H5MD file
+    Reads box dimensions in from H5MD file
 
     Parameters
     ----------
@@ -164,7 +171,6 @@ def read_box_boundary(file: h5py.File) -> numpy.ndarray:
     """
     group_step = particles_file_path(file)
     return group_step['box'].attrs['boundary']
-
 def read_all_data(file: h5py.File) -> dict:
     """
     Reads all data from a the H5MD file and stores it in a dict
