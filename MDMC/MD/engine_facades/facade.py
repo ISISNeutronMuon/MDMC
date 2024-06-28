@@ -210,6 +210,13 @@ class MDEngine(ABC):
 
         raise NotImplementedError
 
+    def clear(self) -> None:
+        """
+        Deletes all atoms of the MD engine, restores all settings to their default values,
+        and frees all memory.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def reset_config(self) -> None:
         """
@@ -225,3 +232,6 @@ class MDEngine(ABC):
         """
 
         raise NotImplementedError
+
+class MDEngineError(Exception):
+    "Raised when MD engine raises an exception from a run command"

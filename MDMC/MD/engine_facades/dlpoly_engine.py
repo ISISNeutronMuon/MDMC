@@ -490,6 +490,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly_universe.update_parameters()
 
+    def clear(self) -> None:
+        return NotImplementedError
+
     def save_config(self) -> None:
 
         """

@@ -23,6 +23,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.MD.engine_facades.facade import MDEngineError
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -142,6 +143,9 @@ class Control:
         data_printer: str, default 'plaintext'
             How to display the data during minimisation. Current options are 'plaintext' (default,
             plaintext printing) or 'ipython' (prettier HTML printing via iPython)
+        time_step_reductions : int, optional
+            The number of attempts to reduce the time_step of the simulation in order to fix an
+            equilibration that keeps failing. Defaults to a value of 2.
 
     Example
     -------
@@ -215,6 +219,7 @@ class Control:
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
+        settings['time_step_reductions'] = settings.get('time_step_reductions', 2)
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
@@ -265,6 +270,7 @@ class Control:
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
             self.recreated_independent_vars  = {}
+            self.production_time_step = self.simulation.time_step
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -284,6 +290,7 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
+        self.max_FoM = self.calculating_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -439,11 +446,17 @@ class Control:
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
+                bad_param_location = False
                 if count >= 0:
-                    self.equilibrate(self.equilibration_steps)
+                    try:
+                        self.equilibrate(self.equilibration_steps)
+                    except MDEngineError:
+                        bad_param_location = True  # assuming params are bad and moving on
+                        self.resetting_engine()
 
                 verbose_manager.header(f"Step {count + 1}")
-                self.step()  # advance the refinement by one step
+                # advance the refinement by one step
+                self.step(bad_param_location=bad_param_location)
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                     print("")
@@ -451,9 +464,15 @@ class Control:
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
+                bad_param_location = False
                 if count >= 0:
-                    self.equilibrate(self.equilibration_steps)
-                self.step()  # advance the refinement by one step
+                    try:
+                        self.equilibrate(self.equilibration_steps)
+                    except MDEngineError:
+                        bad_param_location = True  # assuming params are bad and moving on
+                        self.resetting_engine()
+                # advance the refinement by one step
+                self.step(bad_param_location=bad_param_location)
                 count += 1
 
         # Try/except accounts for n_steps <= -1
@@ -530,15 +549,21 @@ class Control:
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
         """
+        try:
+            self.simulation.minimize(n_steps,minimize_every,verbose,
+                                        output_log,work_dir, **settings)
+        except Exception as exc:
+            raise Exception('Minimization failed, please check the parameter values.') from exc
 
-        self.simulation.minimize(n_steps,minimize_every,verbose,
-                                 output_log,work_dir, **settings)
 
     def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
         Run molecular dynamics to equilibrate the ``Universe``.
+
+        If the equilibration fails, a method to reduce the time_step and re-try, is called.
+        If this re-try also fails, then an MDEngineError is raised.
 
         Parameters
         ----------
@@ -552,25 +577,48 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        if not n_steps:
-            self.simulation.auto_equilibrate()
-        else:
-            self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
 
-    def step(self) -> None:
+        msg = ('MD engine failed to perform an equilibration for these parameter values.'
+                'Likely, because they are bad parameter values.')
+        try:
+            if not n_steps:
+                self.simulation.auto_equilibrate()
+            else:
+                self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
+        except MDEngineError:
+            try:
+                self.engine_recovery_from_equil(n_steps=n_steps,verbose=verbose,
+                                                output_log=output_log,work_dir=work_dir,**settings)
+            except MDEngineError as exc:
+                logging.warning(msg)
+                raise MDEngineError from exc
+
+
+    def step(self, bad_param_location: bool = False) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
+
+        Parameters
+        ---------
+        bad_param_location : bool
+            Represents whether the equilibration at these parameter value failed or not.
+            If equilibration failed, value is True.
+
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
-        # Generate FoM by running MD for this step and then calculate FoM
+
         if self.first_loaded_step:
             fom = self.minimizer.FoM_old
             self.first_loaded_step = False
-        else:
+        elif not bad_param_location:
+            # Generate FoM by running MD for this step and then calculate FoM
             fom = self._generate_FoM()
+        else:
+            # assuming params are bad so use max FoM available
+            fom = self.max_FoM
 
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
@@ -636,11 +684,17 @@ class Control:
         `float`
             Non-negative `float` FoM
         """
-        self._run_MD()
-        self._calculate_observables(self.simulation, self.observable_pairs)
-        self._trim_dependent_variables()
+        used_max_FoM = False
+        try:
+            self._run_MD()
+        except MDEngineError:
+            FoM_value = self.max_FoM
+            used_max_FoM = True
 
-        FoM_value = self.FoM_calculator.calculate()
+        if not used_max_FoM:
+            self._calculate_observables(self.simulation, self.observable_pairs)
+            self._trim_dependent_variables()
+            FoM_value = self.FoM_calculator.calculate()
 
         return FoM_value
 
@@ -1058,3 +1112,102 @@ class Control:
                     [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
                     exp_obs.dependent_variables[obs][0] = \
                     [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
+
+    def engine_recovery_from_equil(self, n_steps: int, verbose: bool,
+            output_log: str, work_dir: str, **settings: dict) -> None:
+        """
+        Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
+        LAMMPS.
+
+        The time_step is reduced, and the engine cleared, and then an equilibration is performed.
+        If the equilibration is unsuccessful when the attempt limit is reached, an MDEngineError is
+        raised.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run.
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+        output_log: str, optional
+            Log file for the MD engine to write to.
+        work_dir: str, optional
+            Working directory for the MD engine to write to.
+
+        Returns
+        -------
+        None
+        """
+
+        counter = 0
+        equil_works = False
+        attempt_limit = self.settings['time_step_reductions']
+        while not equil_works and counter < attempt_limit:
+            self.trial_reduce_time_step(reduction_factor=0.6)
+            self.resetting_engine()
+
+            try:
+                if not n_steps:
+                    self.simulation.auto_equilibrate()
+                else:
+                    self.simulation.run(n_steps,True, verbose, output_log, work_dir,**settings)
+                equil_works = True
+            except MDEngineError:
+                equil_works = False
+            counter += 1
+
+        # if time_step was altered during equil, revert back to original value
+        self.simulation.time_step = self.production_time_step
+        if not equil_works:
+            raise MDEngineError
+
+    def resetting_engine(self) -> None:
+        """
+        Clears and resets the MD engine when there is an error thrown by the
+        equilibration or production methods. Currently this is only applicable to LAMMPS.
+
+        """
+
+        self.simulation.engine.clear()
+        # pylint: disable=protected-access
+        # it is necessary to reset and setup the MD engine again
+        self.simulation._setup()
+
+    def trial_reduce_time_step(self,reduction_factor) -> None:
+        """
+        Reduces the time_step by the reduction factor specified.
+
+        Parameters
+        ----------
+        reduction_factor : float
+            represents the value which will be multiplied with the time_step in order to reduce it
+
+        Returns
+        -------
+        None
+        """
+
+        self.simulation.time_step *= reduction_factor
+
+    def calculating_max_FoM(self):
+        """
+        Calculates a maximum Figure of Merit value by comparing a set of experimental observable
+        data, to arrays consisting of numbers close to zero. For use when the MD Engine fails with
+        a set of parameter values.
+
+        Returns
+        -------
+        max_FoM : int
+            value of maximum FoM
+
+        """
+
+        # pylint: disable=protected-access
+        # the purpose of method is to create this empty observable so accessing is necessary
+        self.observable_pairs[0].MD_obs._dependent_variables = {}
+        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+
+        max_FoM = self.FoM_calculator.calculate()
+        self.observable_pairs[0].MD_obs._dependent_variables = None
+
+        return max_FoM

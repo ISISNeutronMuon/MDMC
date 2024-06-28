@@ -182,7 +182,6 @@ class GPO(Minimizer):
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
             Minimum predicted FoM
         """
-
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
