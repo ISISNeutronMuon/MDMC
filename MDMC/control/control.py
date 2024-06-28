@@ -270,7 +270,7 @@ class Control:
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
             self.recreated_independent_vars  = {}
-            self.production_time_step = None
+            self.production_time_step = self.simulation.time_step
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -1187,7 +1187,6 @@ class Control:
         None
         """
 
-        self.production_time_step = self.simulation.time_step
         self.simulation.time_step *= reduction_factor
 
     def calculating_max_FoM(self):
