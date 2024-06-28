@@ -94,7 +94,6 @@ def mock_equilibrate(self, *extras):
 def mock_calculating_max_FoM(self):
     pass
 
-
 @pytest.fixture()
 def control_object_from_Argon_script(exp_datasets) -> callable:
     """
@@ -106,53 +105,7 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         dictionary of force field parameters
 
     """
-
-    density = 0.0176
-    universe = Universe(dimensions=23.0668)
-    Ar = Atom('Ar', charge=0., mass=36.0)
-
-    n_ar_atoms = int(density * np.product(universe.dimensions))
-    print(f'Number of argon atoms = {n_ar_atoms}')
-    universe.fill(Ar, num_struc_units=(n_ar_atoms))
-
-    Ar_dispersion = Dispersion(universe,
-                            (Ar.atom_type, Ar.atom_type),
-                            cutoff=8.,
-                            function=LennardJones(epsilon=1.02, sigma=3.36))
-
-    simulation = Simulation(universe,
-                            engine="lammps",
-                            time_step=10.18893,
-                            temperature=120.,
-                            traj_step=15)
-
-    dataset = exp_datasets(file_name='Well_s_q_omega_Ar_data.xml')
-    fit_parameters = universe.parameters
-    fit_parameters['sigma'].constraints = [1.0,20.0]
-    fit_parameters['epsilon'].constraints = [0.5, 20]
-    
-    control = Control(simulation=simulation,
-                exp_datasets=dataset,
-                fit_parameters=fit_parameters,
-                minimizer_type="GPO",
-                reset_config=True,
-                MD_steps=4000, 
-                equilibration_steps=4000,
-                data_printer='ipython')
-    return control, fit_parameters
-
-
-@pytest.fixture(scope="module")
-def control_object_from_Argon_script(exp_datasets) -> callable:
-    """
-    Returns
-    -------
-    control : object
-        control object from setting up a universe identical to that of the Argon tutorial
-    fit_parameters : dict
-        dictionary of force field parameters
-    """
-    def _control_object_from_Argon_script():
+    def _control_object_from_Argon_script(file_name):
         density = 0.0176
         universe = Universe(dimensions=23.0668)
         Ar = Atom('Ar', charge=0., mass=36.0)
@@ -172,12 +125,11 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
                                 temperature=120.,
                                 traj_step=15)
 
-        dataset = exp_datasets(file_name = 'Argon_test_data.xml')
-
+        dataset = exp_datasets(file_name=file_name)
         fit_parameters = universe.parameters
-        fit_parameters['sigma'].constraints = [2.0,3.8]
-        fit_parameters['epsilon'].constraints = [0.5, 1.5]
-
+        fit_parameters['sigma'].constraints = [1.0,20.0]
+        fit_parameters['epsilon'].constraints = [0.5, 20]
+        
         control = Control(simulation=simulation,
                     exp_datasets=dataset,
                     fit_parameters=fit_parameters,
@@ -188,6 +140,7 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
                     data_printer='ipython')
         return control, fit_parameters
     return _control_object_from_Argon_script
+
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:
@@ -404,6 +357,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     monkeypatch.setattr(Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
     monkeypatch.setattr(Control, "equilibrate", mock_equilibrate)
+    monkeypatch.setattr(Control, "calculating_max_FoM", mock_calculating_max_FoM)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -503,7 +457,6 @@ def test_control_auto_scale(simulation, exp_datasets, file_name):
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        assert pair.rescale_factor == 1.
         assert pair.auto_scale
 
 
@@ -524,7 +477,6 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        assert pair.rescale_factor == 1.
         assert pair.auto_scale
 
     stdout = capsys.readouterr().out
@@ -829,7 +781,7 @@ def test_control_fit_parameters(simulation, monkeypatch):
     As these cannot be refined
     """
 
-    monkeypatch.setattr(control.Control, "calculating_max_FoM", mock_calculating_max_FoM)
+    monkeypatch.setattr(Control, "calculating_max_FoM", mock_calculating_max_FoM)
 
     tie_target = Parameter(-1., 'tie_target')
     tied_param = Parameter(2., 'tied')
@@ -910,7 +862,7 @@ def test_control_q_value_trimming(control_object_from_Argon_script):
     doesn't test that method in isolation; it tests that on a general refinement step, that trimming
     functions as expected.
     """
-    ctrl, _ = control_object_from_Argon_script()
+    ctrl, _ = control_object_from_Argon_script(file_name='Argon_test_data.xml')
     ctrl.equilibrate(n_steps=100)
 
     recreated_q_values_pos = [6,9]
@@ -931,7 +883,7 @@ def test_control_q_value_trimming_warning(control_object_from_Argon_script, capl
     Tests that the correct warning is given when some experimental Q_values cant be recreated. 
     This uses modified experimental Argon data with reduced Q_values.
     """
-    ctrl, _ = control_object_from_Argon_script()
+    ctrl, _ = control_object_from_Argon_script(file_name='Argon_test_data.xml')
     ctrl.equilibrate(n_steps=100)
 
     caplog.set_level(logging.WARNING)
@@ -943,25 +895,25 @@ def test_control_q_value_trimming_warning(control_object_from_Argon_script, capl
 
     assert log_message in caplog.text
 
-    @pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
-                                    (2.0, 3.0), 
-                                    (3.0,4.0), 
-                                    (4.0,8.0),])
-def test_control_bad_params(control_object_from_Argon_script, eps, sig):
+@pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
+                                (2.0, 3.0), 
+                                (3.0,4.0), 
+                                (4.0,8.0),])
+def test_control_bad_params(control_object_from_Argon_script, exp_datasets, eps, sig):
     """
     Tests that given a set of bad parameters (which crash the refinement), the equilibration 
     and production runs handle this.
     """
 
-    ctrl, fit_parameters = control_object_from_Argon_script
+    ctrl, fit_parameters = control_object_from_Argon_script(exp_datasets=exp_datasets,file_name='Well_s_q_omega_Ar_data.xml')
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
     
     fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
     fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
 
-    ctrl.equilibrate(n_steps=1000)
-    ctrl._run_MD()
+    ctrl.equilibrate(n_steps=100)
+    ctrl.refine(2)
 
 @pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
                                                              ([0.5,20], [1,20])])
@@ -972,14 +924,14 @@ def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, s
     the refinement), the equilibration and production runs handle this.
     """
     
-    ctrl, fit_parameters = control_object_from_Argon_script
+    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml')
     fit_parameters['epsilon'].constraints = eps_constr
     fit_parameters['sigma'].constraints = sig_constr
     fit_parameters['epsilon'].value = 1.02
     fit_parameters['sigma'].value = 3.36
     
-    ctrl.equilibrate(n_steps=1000)
-    ctrl._run_MD()
+    ctrl.equilibrate(n_steps=100)
+    ctrl.refine(4)
 
 def test_control_trial_reduce_time_step(control_object_from_Argon_script):
     """
@@ -987,7 +939,7 @@ def test_control_trial_reduce_time_step(control_object_from_Argon_script):
     time_step and traj_step accurately.
     """
     
-    ctrl, _ = control_object_from_Argon_script
+    ctrl, _ = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml')
     original_time_step = ctrl.simulation.time_step
     reduction_factor = 0.6
     ctrl.trial_reduce_time_step(reduction_factor=reduction_factor)

@@ -114,8 +114,6 @@ class GPO(Minimizer):
             Whether or not the minimizer has converged.
         """
 
-        if self.control.n_steps is None:
-            self.control.n_steps = 0
         return len(self.history) >= self.control.n_steps + self.previous_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
