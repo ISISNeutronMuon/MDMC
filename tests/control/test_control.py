@@ -105,7 +105,8 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         dictionary of force field parameters
 
     """
-    def _control_object_from_Argon_script(file_name, constraints: list = [], values: list = []):
+    def _control_object_from_Argon_script(file_name, constraints: list = [[1.0,5.0],[0.5, 5.0]],
+                                          values: list = [3.36,1.02]):
         density = 0.0176
         universe = Universe(dimensions=23.0668)
         Ar = Atom('Ar', charge=0., mass=36.0)
@@ -114,17 +115,10 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         print(f'Number of argon atoms = {n_ar_atoms}')
         universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
-
-        if len(values) == 0:
-            sig = 3.336
-            eps = 1.02
-        else:
-            sig = values[0]
-            eps = values[1]
         Ar_dispersion = Dispersion(universe,
                                 (Ar.atom_type, Ar.atom_type),
                                 cutoff=8.,
-                                function=LennardJones(epsilon=eps, sigma=sig))
+                                function=LennardJones(epsilon=values[1], sigma=values[0]))
 
         simulation = Simulation(universe,
                                 engine="lammps",
@@ -134,14 +128,9 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
 
         dataset = exp_datasets(file_name=file_name)
         fit_parameters = universe.parameters
-        
-        if len(constraints) == 0:
-            fit_parameters['sigma'].constraints = [1.0,5.0]
-            fit_parameters['epsilon'].constraints = [0.5, 5.0]
-        else:
-            print()
-            fit_parameters['sigma'].constraints = constraints[0]
-            fit_parameters['epsilon'].constraints = constraints[1]
+
+        fit_parameters['sigma'].constraints = constraints[0]
+        fit_parameters['epsilon'].constraints = constraints[1]
 
         control = Control(simulation=simulation,
                     exp_datasets=dataset,
@@ -417,7 +406,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
-
     assert stdout_message in stdout
 
 
@@ -919,7 +907,8 @@ def test_control_bad_params(control_object_from_Argon_script, eps, sig):
     """
     constraints = [[sig-0.5, sig+0.5], [eps-0.5, eps+0.5]]
     values = [sig,eps]
-    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml', constraints=constraints, values=values)
+    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml',
+                                                            constraints=constraints, values=values)
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
 
@@ -935,7 +924,8 @@ def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, s
     the refinement), the equilibration and production runs handle this.
     """
     constraints = [sig_constr, eps_constr]
-    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml', constraints=constraints)
+    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml',
+                                                            constraints=constraints)
     fit_parameters['epsilon'].value = 1.02
     fit_parameters['sigma'].value = 3.36
     

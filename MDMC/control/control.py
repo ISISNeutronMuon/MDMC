@@ -232,7 +232,6 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
-
         minimum_MD_steps = 0
         for dset in exp_datasets:
             try:
@@ -271,9 +270,7 @@ class Control:
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
             self.recreated_independent_vars  = {}
-
             self.production_time_step = None
-            self.temporary_step_changes = False
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -457,10 +454,6 @@ class Control:
                         bad_param_location = True  # assuming params are bad and moving on
                         self.resetting_engine()
 
-                # if time_step was altered during equil, revert back to original value
-                if self.temporary_step_changes:
-                    self.simulation.time_step = self.production_time_step
-                    self.temporary_step_changes = False
                 verbose_manager.header(f"Step {count + 1}")
                 # advance the refinement by one step
                 self.step(bad_param_location=bad_param_location)
@@ -478,11 +471,6 @@ class Control:
                     except MDEngineError:
                         bad_param_location = True  # assuming params are bad and moving on
                         self.resetting_engine()
-
-                # if time_step was altered during equil, revert back to original value
-                if self.temporary_step_changes:
-                    self.simulation.time_step = self.production_time_step
-                    self.temporary_step_changes = False
                 # advance the refinement by one step
                 self.step(bad_param_location=bad_param_location)
                 count += 1
@@ -1103,6 +1091,10 @@ class Control:
         where necessary. One such application is when the smallest q_values cannot be recreated by
         the simulation, this trimming removes the data associated with q_values which cannot be
         recreated.
+
+        Returns
+        -------
+        None
         """
 
         # loop through observable pairs and trim dependent var data accordingly
@@ -1164,6 +1156,8 @@ class Control:
                 equil_works = False
             counter += 1
 
+        # if time_step was altered during equil, revert back to original value
+        self.simulation.time_step = self.production_time_step
         if not equil_works:
             raise MDEngineError
 
@@ -1195,7 +1189,6 @@ class Control:
 
         self.production_time_step = self.simulation.time_step
         self.simulation.time_step *= reduction_factor
-        self.temporary_step_changes = True
 
     def calculating_max_FoM(self):
         """

@@ -113,7 +113,6 @@ class GPO(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-
         return len(self.history) >= self.control.n_steps + self.previous_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
@@ -183,7 +182,6 @@ class GPO(Minimizer):
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
             Minimum predicted FoM
         """
-
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
