@@ -105,7 +105,7 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         dictionary of force field parameters
 
     """
-    def _control_object_from_Argon_script(file_name):
+    def _control_object_from_Argon_script(file_name, constraints: list = [], values: list = []):
         density = 0.0176
         universe = Universe(dimensions=23.0668)
         Ar = Atom('Ar', charge=0., mass=36.0)
@@ -114,10 +114,17 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         print(f'Number of argon atoms = {n_ar_atoms}')
         universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
+
+        if len(values) == 0:
+            sig = 3.336
+            eps = 1.02
+        else:
+            sig = values[0]
+            eps = values[1]
         Ar_dispersion = Dispersion(universe,
                                 (Ar.atom_type, Ar.atom_type),
                                 cutoff=8.,
-                                function=LennardJones(epsilon=1.02, sigma=3.36))
+                                function=LennardJones(epsilon=eps, sigma=sig))
 
         simulation = Simulation(universe,
                                 engine="lammps",
@@ -127,9 +134,15 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
 
         dataset = exp_datasets(file_name=file_name)
         fit_parameters = universe.parameters
-        fit_parameters['sigma'].constraints = [1.0,20.0]
-        fit_parameters['epsilon'].constraints = [0.5, 20]
         
+        if len(constraints) == 0:
+            fit_parameters['sigma'].constraints = [1.0,5.0]
+            fit_parameters['epsilon'].constraints = [0.5, 5.0]
+        else:
+            print()
+            fit_parameters['sigma'].constraints = constraints[0]
+            fit_parameters['epsilon'].constraints = constraints[1]
+
         control = Control(simulation=simulation,
                     exp_datasets=dataset,
                     fit_parameters=fit_parameters,
@@ -898,35 +911,31 @@ def test_control_q_value_trimming_warning(control_object_from_Argon_script, capl
 @pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
                                 (2.0, 3.0), 
                                 (3.0,4.0), 
-                                (4.0,8.0),])
-def test_control_bad_params(control_object_from_Argon_script, exp_datasets, eps, sig):
+                                (4.0,5.0),])
+def test_control_bad_params(control_object_from_Argon_script, eps, sig):
     """
     Tests that given a set of bad parameters (which crash the refinement), the equilibration 
     and production runs handle this.
     """
-
-    ctrl, fit_parameters = control_object_from_Argon_script(exp_datasets=exp_datasets,file_name='Well_s_q_omega_Ar_data.xml')
+    constraints = [[sig-0.5, sig+0.5], [eps-0.5, eps+0.5]]
+    values = [sig,eps]
+    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml', constraints=constraints, values=values)
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
-    
-    fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
-    fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
 
     ctrl.equilibrate(n_steps=100)
-    ctrl.refine(2)
+    ctrl.refine(4)
 
 @pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
-                                                             ([0.5,20], [1,20])])
+                                                             ([0.5,20.0], [1.0,20.0])])
 
 def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, sig_constr):
     """
     Tests that given different sets of constraints on the parameter values (which can possibly crash 
     the refinement), the equilibration and production runs handle this.
     """
-    
-    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml')
-    fit_parameters['epsilon'].constraints = eps_constr
-    fit_parameters['sigma'].constraints = sig_constr
+    constraints = [sig_constr, eps_constr]
+    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml', constraints=constraints)
     fit_parameters['epsilon'].value = 1.02
     fit_parameters['sigma'].value = 3.36
     

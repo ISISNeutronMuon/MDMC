@@ -575,7 +575,7 @@ class Control:
         Run molecular dynamics to equilibrate the ``Universe``.
 
         If the equilibration fails, a method to reduce the time_step and re-try, is called.
-        If this re-try also fails then an MDEngineError is raised.
+        If this re-try also fails, then an MDEngineError is raised.
 
         Parameters
         ----------
@@ -1121,14 +1121,26 @@ class Control:
                     exp_obs.dependent_variables[obs][0] = \
                     [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
 
-    def engine_recovery_from_equil(self, n_steps, verbose, output_log, work_dir, **settings) -> None:
+    def engine_recovery_from_equil(self, n_steps: int, verbose: bool,
+            output_log: str, work_dir: str, **settings: dict) -> None:
         """
         Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
         LAMMPS.
 
-        The time_step is reduced, and then a test equilibration is performed.
-        Unless the equilibration is successful before the attempt limit is reached, an MDEngineError
-        is raised.
+        The time_step is reduced, and the engine cleared, and then an equilibration is performed.
+        If the equilibration is unsuccessful when the attempt limit is reached, an MDEngineError is
+        raised.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run.
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+        output_log: str, optional
+            Log file for the MD engine to write to.
+        work_dir: str, optional
+            Working directory for the MD engine to write to.
 
         Returns
         -------
@@ -1155,26 +1167,11 @@ class Control:
         if not equil_works:
             raise MDEngineError
 
-    def resetting_engine(self, equil: bool=False):
+    def resetting_engine(self) -> None:
         """
         Clears and resets the MD engine when there is an error thrown by the
         equilibration or production methods. Currently this is only applicable to LAMMPS.
 
-        After the reset, it performs a test attempt with a small number of steps.
-        Sometimes, without changing any universe parameters, this reset fixes the issue that raised
-        the error. This is assumed to be because the engine can hold some meta data which a normal
-        configuration reset does not reset.
-
-
-        Parameters
-        ----------
-        equil : bool
-            information on whether this method is to test an equilibration or not
-
-        Returns
-        -------
-        test_worked : bool
-            represents whether the test run was successful or if the engine threw an error again
         """
 
         self.simulation.engine.clear()
@@ -1202,10 +1199,14 @@ class Control:
 
     def calculating_max_FoM(self):
         """
-        Calculates a maximum FoM value by comparing an a set of experimental observable data,
-        to arrays consisting of numbers closest to zero. For use when the MD Engine fails with
-        a set of parameter values. The rescale factors are changed when the
-        FoM_calculator.calculate() method is called, and so these values are reset.
+        Calculates a maximum Figure of Merit value by comparing a set of experimental observable
+        data, to arrays consisting of numbers close to zero. For use when the MD Engine fails with
+        a set of parameter values.
+
+        Returns
+        -------
+        max_FoM : int
+            value of maximum FoM
 
         """
 
