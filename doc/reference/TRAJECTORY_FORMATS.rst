@@ -23,7 +23,7 @@ analyzed by any other packages if needed.
 Package: NETCDF
 ----------------
 
-NetCDF is a binary, portable and self-describing trajectory file format.
+NetCDF is a binary, portable and self-describing file format for array data.
 NetCDF has a better performance on a large number of processors and super-computers.
 Note that style netcdf outputs all atoms sorted by atom tag while style netcdf/mpiio outputs
 atoms in order of their MPI rank.
