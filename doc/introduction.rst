@@ -54,7 +54,7 @@ a refinement, please see the .py files within 'examples'.
 
 Tutorials
 ---------
-There are a number of notebooks covering different aspects of MDMC located in
+There are a number of Jupyter notebooks covering different aspects of MDMC located in
 the documentation, mainly :ref:`use-MDMC-label`.  These tutorials provide an 
 explanation of the main steps to creating a simulation and running a refinement.
 Major features are described in these tutorials, however the full `Modules`_ 

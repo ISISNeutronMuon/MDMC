@@ -19,13 +19,13 @@ We have two options. Either:
  * build a tiny house (a hamster cage), which contains everything the hamster needs
    to live and function well (water, the correct food, etc.) and give anyone who wants
    the hamster the hamster *and* its cage, so the hamster will be in the same conditions
-   no matter who's house it's in.
+   no matter whose house it's in.
 
 The container is the hamster cage; a sort of 'mini computer inside the computer'.
 For MDMC in particular, this container runs an appropriate Linux environment and
-contains all our dependency software (such as Python, various libraries, and molecular dynamics engine).
+contains all our software dependencies (such as Python, various libraries, and molecular dynamics engine).
 An example of why we use containers is because the molecular dynamics engine (LAMMPS)
-can be complex to install for an arbitrary user, and with the settings and version needed by MDMC.
+can be complex to install for an average user, particularly with the settings and version needed by MDMC.
 By using a container, we can develop MDMC exclusively for one environment, while still having it
 function as intended on other environments/operating systems.
 

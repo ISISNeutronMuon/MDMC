@@ -59,7 +59,7 @@ the setup of MD simulations (without performing a refinement) via these methods.
 
 Creating a Simulation
 ---------------------
-Once the :class:`~MDMC.MD.simulation.Universe` is setup, it should be passed to
+Once the :class:`~MDMC.MD.simulation.Universe` is set up, it should be passed to
 a :class:`~MDMC.MD.simulation.Simulation` object.  This controls the properties
 of the simulation, such as which engine will be used and what the thermodynamic
 conditions are. It is then possible to

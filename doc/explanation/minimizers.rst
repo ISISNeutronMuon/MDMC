@@ -7,16 +7,19 @@ What is a minimizer?
 --------------------
 
 A minimizer is an `optimisation algorithm or heuristic <https://en.wikipedia.org/wiki/Mathematical_optimization>`_
-which takes a set of input parameters and an output function of the inputs, and aims to find which
-combination of inputs makes the output function smallest.
+which takes a set of input parameters and a function of the inputs, and aims to find which
+combination of inputs makes the result of the function the smallest (minimal).
 
 Example: Gradient Descent
 -------------------------
 
-To visualise a minimizer, picture a hilly terrain. For this example, our
-minimizer can be seen as a dot on this terrain, or an automaton moving around; many minimizers
-are based on a concept of a 'walk'. The aim of the minimizer is to find the lowest valley
-in this terrain.
+To visualise a minimizer, picture a hilly terrain. 
+The minimizer is trying to find the lowest valley in this terrain (the global minimum). 
+For this example, our initial parameters can be pictured as the position of a ball on this terrain. 
+Gradient descent does this by rolling the ball down the steepest path it can find, stopping and reassessing (i.e. without momentum) at regular intervals. 
+(note here, that the valley we start in may not be the deepest valley in the landscape and we may only find the bottom of the valley we started in, the local minimum, initial parameters are key)
+Other minimizers might be pictured as an (or many) automata moving around trying to find the lowest valley; 
+many minimizers are based on a concept of a 'walk'. 
 
 The `gradient descent <https://en.wikipedia.org/wiki/Gradient_descent>`_ algorithm
 proceeds as follows:
@@ -47,10 +50,10 @@ or the `BFGS algorithm <https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E
 How does MDMC use minimization?
 -------------------------------
 
-MDMC's parameter space for minimization are the parameters governing the forces between
-molecules in a given simulation, and it then aims to minimize the :ref:`fom-explanation-label`
+MDMC's parameter space for minimization are the parameters governing the interactions between
+molecules in a given simulation. It aims to minimize the :ref:`fom-explanation-label`
 between a simulation using those parameters and experimental data. Through this, it finds
-the parameters which create a simulation that most closely resembles the experimental data.
+the parameters which create a simulation that most closely reproduces the experimental data.
 
 Derivative-free optimisation
 ----------------------------

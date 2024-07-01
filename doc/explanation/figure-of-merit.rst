@@ -7,7 +7,7 @@ What is the figure of merit?
 ----------------------------
 
 When we fit a model to some data, the figure of merit is the value of a `merit function <https://mathworld.wolfram.com/MeritFunction.html>`_, 
-which calculates how different the model is to the data. This means we can use it as 
+which calculates how different the model is from the data. This means we can use it as 
 a quantitative assessment of how 'good' a model is; the smaller the figure of merit,
 the closer our model is to the data.
 
