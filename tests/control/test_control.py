@@ -111,7 +111,7 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
         universe = Universe(dimensions=23.0668)
         Ar = Atom('Ar', charge=0., mass=36.0)
 
-        n_ar_atoms = int(density * np.product(universe.dimensions))
+        n_ar_atoms = int(density * np.prod(universe.dimensions))
         print(f'Number of argon atoms = {n_ar_atoms}')
         universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
@@ -137,7 +137,7 @@ def control_object_from_Argon_script(exp_datasets) -> callable:
                     fit_parameters=fit_parameters,
                     minimizer_type="GPO",
                     reset_config=True,
-                    MD_steps=4000, 
+                    MD_steps=4000,
                     equilibration_steps=4000,
                     data_printer='ipython')
         return control, fit_parameters
@@ -236,7 +236,7 @@ def exp_datasets() -> callable:
 
 def test_control_init_stdout(print_value, expected_indexes, expected_data, monkeypatch,
                              capsys, exp_datasets, simulation):
-    """ 
+    """
     A test to make sure that the stdout when creating a control object
     is as expected, both when a full output is requested, and when not .
     """
@@ -534,11 +534,11 @@ def test_control_max_parameter_change(monkeypatch):
     """
 
     monkeypatch.setattr(Control, "calculating_max_FoM", mock_calculating_max_FoM)
-    
+
     ctrl_default = Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
 
-    ctrl = Control(None, [], [], reset_config=False, verbose=-1, 
+    ctrl = Control(None, [], [], reset_config=False, verbose=-1,
                            minimizer_type="MMC", max_parameter_change=0.02)
     assert ctrl.minimizer.max_parameter_change == 0.02
 
@@ -751,7 +751,7 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
 def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                                  file_name):
     """
-    Test that the time_step and traj_step values are changed correctly when an incompatible 
+    Test that the time_step and traj_step values are changed correctly when an incompatible
     time separation is specified.
     """
 
@@ -766,10 +766,10 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                     [],
                     verbose=-1,
                     reset_config=False)
-    
+
     traj_step_required = np.round(ctrl.dt_required/time_step)
     time_step_required = ctrl.dt_required/ traj_step_required
-    
+
     assert ctrl.simulation.time_step == time_step_required
     assert ctrl.simulation.traj_step == traj_step_required
 
@@ -828,13 +828,13 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
     """
     mock_auto_equilibrate = Mock()
     monkeypatch.setattr(Simulation, "auto_equilibrate", mock_auto_equilibrate)
-    
+
     ctrl = Control(simulation(traj_step=1, time_step=1),
                         exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                         [],
                         reset_config=False,
                         equilibration_steps=steps)
-    
+
     ctrl.equilibrate(steps)
     mock_auto_equilibrate.assert_called()
 
@@ -842,23 +842,23 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
 def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch):
     """
     Tests that when the equilibration method is called with equilibration steps specified
-    (an integer > 0), then the simulation.run method is called accordingly. 
+    (an integer > 0), then the simulation.run method is called accordingly.
     """
     mock_simulation_run = Mock()
     monkeypatch.setattr(Simulation, "run", mock_simulation_run)
-    
+
     ctrl = Control(simulation(traj_step=1, time_step=1),
                         exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                         [],
                         reset_config=False,
                         equilibration_steps=steps)
-    
+
     ctrl.equilibrate(steps)
     mock_simulation_run.assert_called()
 
 def test_control_q_value_trimming(control_object_from_Argon_script):
     """
-    Tests that the q_value trimming is done correctly. This uses modified experimental Argon data 
+    Tests that the q_value trimming is done correctly. This uses modified experimental Argon data
     with reduced Q_values. There is a specific method that does the trimming but this test
     doesn't test that method in isolation; it tests that on a general refinement step, that trimming
     functions as expected.
@@ -867,9 +867,9 @@ def test_control_q_value_trimming(control_object_from_Argon_script):
     ctrl.equilibrate(n_steps=100)
 
     recreated_q_values_pos = [6,9]
-    manually_trimmed_obs_arrays = [ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][pos] 
+    manually_trimmed_obs_arrays = [ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][pos]
                                for pos in recreated_q_values_pos]
-    manually_trimmed_errors_arrays = [ctrl.observable_pairs[0].exp_obs.errors['SQw'][0][pos] 
+    manually_trimmed_errors_arrays = [ctrl.observable_pairs[0].exp_obs.errors['SQw'][0][pos]
                                for pos in recreated_q_values_pos]
 
     ctrl.refine(n_steps=1)
@@ -878,10 +878,10 @@ def test_control_q_value_trimming(control_object_from_Argon_script):
 
     assert np.array_equal(manually_trimmed_obs_arrays,auto_trimmed_obs_arrays)
     assert np.array_equal(manually_trimmed_errors_arrays,auto_trimmed_errors_arrays)
-    
+
 def test_control_q_value_trimming_warning(control_object_from_Argon_script, caplog):
     """
-    Tests that the correct warning is given when some experimental Q_values cant be recreated. 
+    Tests that the correct warning is given when some experimental Q_values cant be recreated.
     This uses modified experimental Argon data with reduced Q_values.
     """
     ctrl, _ = control_object_from_Argon_script(file_name='Argon_test_data.xml')
@@ -889,7 +889,7 @@ def test_control_q_value_trimming_warning(control_object_from_Argon_script, capl
 
     caplog.set_level(logging.WARNING)
     ctrl.refine(n_steps=1)
-    
+
     log_message = ("The specified universe dimensions were not able to recreate the lowest q" \
                 " values of the experimental data and so this data has been" \
                 " trimmed accordingly.")
@@ -897,12 +897,12 @@ def test_control_q_value_trimming_warning(control_object_from_Argon_script, capl
     assert log_message in caplog.text
 
 @pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
-                                (2.0, 3.0), 
-                                (3.0,4.0), 
+                                (2.0, 3.0),
+                                (3.0,4.0),
                                 (4.0,5.0),])
 def test_control_bad_params(control_object_from_Argon_script, eps, sig):
     """
-    Tests that given a set of bad parameters (which crash the refinement), the equilibration 
+    Tests that given a set of bad parameters (which crash the refinement), the equilibration
     and production runs handle this.
     """
     constraints = [[sig-0.5, sig+0.5], [eps-0.5, eps+0.5]]
@@ -920,7 +920,7 @@ def test_control_bad_params(control_object_from_Argon_script, eps, sig):
 
 def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, sig_constr):
     """
-    Tests that given different sets of constraints on the parameter values (which can possibly crash 
+    Tests that given different sets of constraints on the parameter values (which can possibly crash
     the refinement), the equilibration and production runs handle this.
     """
     constraints = [sig_constr, eps_constr]
@@ -928,7 +928,7 @@ def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, s
                                                             constraints=constraints)
     fit_parameters['epsilon'].value = 1.02
     fit_parameters['sigma'].value = 3.36
-    
+
     ctrl.equilibrate(n_steps=100)
     ctrl.refine(4)
 
@@ -937,7 +937,7 @@ def test_control_trial_reduce_time_step(control_object_from_Argon_script):
     Tests that the method for varying time_step (upon a failed equilibration), changes the
     time_step and traj_step accurately.
     """
-    
+
     ctrl, _ = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml')
     original_time_step = ctrl.simulation.time_step
     reduction_factor = 0.6

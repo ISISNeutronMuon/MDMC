@@ -5,7 +5,7 @@ import io
 import glob
 
 import pandas as pd
-from numpy import NaN
+from numpy import nan
 
 
 def CI_profile_summaries(path: str) -> pd.DataFrame:
@@ -155,8 +155,8 @@ def compare_times(base: pd.DataFrame, head: pd.DataFrame) -> pd.DataFrame:
 
     # add back in all rows from head that aren't in base, with time_difference of NaN
     non_match_rows = head[~head['name'].isin(base['name'])]
-    NaNs = pd.Series([NaN * len(non_match_rows.index)], name="change")
-    non_match_rows = pd.concat([non_match_rows, NaNs], axis=1)
+    nans = pd.Series([nan * len(non_match_rows.index)], name="change")
+    non_match_rows = pd.concat([non_match_rows, nans], axis=1)
     comparison_df = pd.concat([comparison_df, non_match_rows], axis=0)
 
     # then reduce comparison_df to just name and time_difference, and merge

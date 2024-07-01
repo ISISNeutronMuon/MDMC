@@ -12,7 +12,6 @@ import os
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
 os.environ["OMP_NUM_THREADS"] = "4"
-from scipy.interpolate import interp2d
 
 from MDMC.control import Control
 from MDMC.MD import Atom, LennardJones, Simulation, Universe,PPPM
@@ -29,7 +28,7 @@ universe = Universe(dimensions=38.4441)
 Ar = Atom('Ar', charge=-0.1)
 Kr = Atom('Kr', charge= 0.1)
 # Calculating number of Ar atoms needed to obtain density
-n_ar_atoms = int(density * np.product(universe.dimensions))
+n_ar_atoms = int(density * np.prod(universe.dimensions))
 print(n_ar_atoms)
 universe.fill(Ar, num_struc_units=(n_ar_atoms/2))
 universe.fill(Kr, num_struc_units=(n_ar_atoms/2))

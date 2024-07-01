@@ -269,7 +269,7 @@ def test_partition_pairs(PDF, number_partitions):
     # is inverted in order to pass it the correct parameter
     PDF.universe_dimensions = np.multiply((1, 1, 1), number_partitions)
     actual = PDF._get_partition_pairs((1, 1, 1))
-    assert np.shape(actual) == (np.product(number_partitions) * 13, 2, 3)
+    assert np.shape(actual) == (np.prod(number_partitions) * 13, 2, 3)
 
     expected = get_expected_partition_pairs(*number_partitions)
     # Pairs in actual may not be in the same order as expected, so sort them
