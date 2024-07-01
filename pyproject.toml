@@ -52,7 +52,7 @@ docs = ["sphinx==7.3.7",
         "sphinx-rtd-theme==2.0.0",
         "docutils==0.18.1",
         "jupyter==1.0.0",
-        "nbmake==1.5.3",
+        "nbmake==1.5.4",
         "nbconvert==7.16.4",
         "lxml[html_clean]"]
 all = ["MDMC[LAMMPS,DLPOLY,test,lint,typecheck,docs]"]
