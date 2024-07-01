@@ -4,8 +4,8 @@ from netCDF4 import Dataset
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import periodictable
 
-import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables import fqt
 
@@ -28,8 +28,10 @@ N_TOTAL = N_H + N_O
 N_H_O = np.sqrt(N_H * N_O)
 # B_FACTOR is set to a constant rather than calculated using B_COH and B_INCOH
 # as MDMC has a different oxygen B_INCOH value to nMOLDYN
-# B_FACTOR = (ap.B_INCOH['H']**2 * N_H + ap.B_INCOH['O']**2 * N_O) / N_TOTAL
-B_FACTOR = 425.792524267738
+
+# calc_incoherent_scatt_length needs to be imported from MDMC.trajectory_analysis.observables.fqt.py
+# B_FACTOR = (calc_incoherent_scatt_length('H')**2 * N_H + calc_incoherent_scatt_length('O')**2 * N_O) / N_TOTAL
+B_FACTOR = 425.7925244185173
 N_Q_VALUES = 13
 
 @pytest.fixture(scope="module")
@@ -66,9 +68,9 @@ def FQt_coh_OO_ref(coh_file):
 
 @pytest.fixture(scope="module")
 def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
-    FQt_coh_ref = (FQt_coh_HH_ref * ap.B_COH['H']**2 * N_H
-                   + FQt_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
-                   + FQt_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
+    FQt_coh_ref = (FQt_coh_HH_ref * periodictable.elements.symbol('H').neutron.b_c**2 * N_H
+                   + FQt_coh_HO_ref * periodictable.elements.symbol('H').neutron.b_c * periodictable.elements.symbol('O').neutron.b_c * N_H_O
+                   + FQt_coh_OO_ref * periodictable.elements.symbol('O').neutron.b_c**2 * N_O) / N_TOTAL
     return FQt_coh_ref
 
 @pytest.fixture(scope='module')
@@ -92,7 +94,7 @@ def FQt_obs(monkeymodule, trajectory, Q_vectors):
 
     FQt_total = of.ObservableFactory.create_observable('FQt')
     FQt_total.use_FFT = True
-    monkeymodule.setitem(fqt.B_INCOH, 'O', 0.)
+    monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS)
@@ -106,7 +108,7 @@ def FQt_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
 
     FQt_total = of.ObservableFactory.create_observable('FQt')
     FQt_total.use_FFT = False
-    monkeymodule.setitem(fqt.B_INCOH, 'O', 0.)
+    monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS)
@@ -124,7 +126,7 @@ def FQt_incoh_obs(monkeymodule, trajectory, Q_vectors):
 
     FQt_incoh = of.ObservableFactory.create_observable('FQt_incoh')
     FQt_incoh.use_FFT = True
-    monkeymodule.setitem(fqt.B_INCOH, 'O', 0.)
+    monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS)
@@ -142,7 +144,7 @@ def FQt_incoh_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
 
     FQt_incoh = of.ObservableFactory.create_observable('FQt_incoh')
     FQt_incoh.use_FFT = False
-    monkeymodule.setitem(fqt.B_INCOH, 'O', 0.)
+    monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS)

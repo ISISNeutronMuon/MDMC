@@ -79,7 +79,7 @@ def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
 
     return ase.atom.Atom(position=atom.position,
                          mass=atom.mass,
-                         symbol=atom.element,
+                         symbol=atom.element.symbol,
                          charge=atom.charge)
 
 

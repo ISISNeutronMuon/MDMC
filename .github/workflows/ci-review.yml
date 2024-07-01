@@ -81,8 +81,7 @@ jobs:
     - name: pip install
       run: |
         python3 -m pip install --upgrade pip
-        python3 -m pip install -r requirements.txt
-        python3 -m pip install -r .dev_requirements.txt
+        python3 -m pip install .[all]
 
     - name: Run tests
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
@@ -137,7 +136,7 @@ jobs:
         run: |
            singularity pull mdmc.sif docker://mdmc/mdmc:ci-$BRANCH || singularity pull mdmc.sif docker://mdmc/mdmc:latest
            singularity exec mdmc.sif pip3 install --upgrade pip
-           singularity exec mdmc.sif pip3 install .
+           singularity exec mdmc.sif pip3 install .[all]
            singularity exec mdmc.sif python3 -m pytest -s $(pwd)/tests/
 
   parallel_tests:
@@ -145,30 +144,35 @@ jobs:
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-22.04
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+            python-version: '3.11.2'
+            architecture: x64
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Run tests
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" --env OMP_NUM_THREADS=4 ${{ env.IMG_NAME }} python3 -m pytest -s $(pwd)/tests/;[ $? -eq 0 ]
+          exit 0
 
-    - name: Run tests
-      env:
-        BRANCH: ${{ github.event.pull_request.head.ref }}
-      run: |
-        docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" --env OMP_NUM_THREADS=4 mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+      - name: Copy coverage
+        run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+        continue-on-error: true
 
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
-      continue-on-error: true
-
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
+      - name: Upload code coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
   documentation:
     name: Documentation
@@ -186,7 +190,7 @@ jobs:
       - name: Create Docker Container
         run: echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
       - name: Install Requirements
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install ."
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install .[docs]"
       - name: Make Documentation
         run: |
           docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "sphinx-apidoc $(pwd)/MDMC -o $(pwd)/doc/reference/api/"

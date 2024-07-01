@@ -9,7 +9,6 @@ from typing import Union, Tuple, TYPE_CHECKING
 from statsmodels.tsa.stattools import kpss
 
 import numpy as np
-import pandas as pd
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import unit_decorator_getter, \
@@ -157,15 +156,17 @@ class Universe(AtomContainer):
                     self.__class__,
                     self.dimensions)
 
-        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
-                                    [force_field],
-                                    [self.n_atoms]],
-                                   index=['  Dimensions',
-                                          '  Force field',
-                                          '  Number of atoms'])
-
         if self.verbose:
-            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+            setup_frame = "Universe created with:"
+            if self.dimensions is not None:
+                setup_frame += f"\nDimensions {np.round(self.dimensions, 2)}"
+            if force_field is not None:
+                setup_frame += f"\nForce field    {force_field}"
+            if self.n_atoms > 0:
+                setup_frame += f"\nNumber of atoms    {self.n_atoms}"
+            print(setup_frame)
+
+
 
     def __str__(self) -> str:
 
@@ -389,7 +390,7 @@ class Universe(AtomContainer):
             The elements in the ``Universe``
         """
 
-        return [atom.element for atom in self.atoms]
+        return [atom.element.symbol for atom in self.atoms]
 
     @property
     def element_dict(self) -> 'dict[str, Atom]':
@@ -408,7 +409,7 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.element: atom for atom in self.atoms}
+        return {atom.element.symbol: atom for atom in self.atoms}
 
     @property
     def element_lookup(self) -> 'dict[str, Atom]':
@@ -427,7 +428,7 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.atom_type: atom.element for atom in self.atoms}
+        return {atom.atom_type: atom.element.symbol for atom in self.atoms}
 
     @property
     def atoms(self) -> 'list[Atom]':
@@ -660,11 +661,11 @@ class Universe(AtomContainer):
         """
 
         if atom.name:
-            inter_key = (atom.element, atom.name)
+            inter_key = (atom.element.symbol, atom.name)
         else:
             # Sorting is just to ensure consistent order. As interactions will have
             # different types, sort by id
-            inter_key = (atom.element, ) + tuple(sorted(atom.interactions,
+            inter_key = (atom.element.symbol, ) + tuple(sorted(atom.interactions,
                                                         k=id))
 
         if atom.atom_type:
@@ -1153,32 +1154,6 @@ class Universe(AtomContainer):
         self._solvent_density += len(mols) * solvent_mass / self.volume
 
 
-def _primitive_cubic(dimensions, number):
-    """
-    Generates a primitive cubic structure
-
-    Raises
-    ------
-    NotImplementedError
-        HAS NOT BEEN IMPLEMENTED
-    """
-
-    raise NotImplementedError
-
-
-def _liquid_structure():
-    """
-    Generates a random arrangement of ``Structure`` objects
-
-    Raises
-    ------
-    NotImplementedError
-        HAS NOT BEEN IMPLEMENTED
-    """
-
-    raise NotImplementedError
-
-
 class KSpaceSolver:
     """
     Class describing the k-space solver that is applied to electrostatic and/or
@@ -1429,15 +1404,13 @@ class Simulation:
         self.verbose = settings.get('verbose', True)
         self._setup()
 
-        setup_msg = f'Simulation created with {engine} engine'
+        self.setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
-            setup_values = [[value] for value in self.settings.values()]
-            setup_keys = [f'  {key}' for key in self.settings]
-            setup_frame = pd.DataFrame(setup_values, index=setup_keys)
-            setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
-
+            settings_strings = ''.join([f'{key}: {value} {units.SYSTEM.get(key.upper(),"")} \n'
+                                for key, value in self.settings.items()])
+            self.setup_msg += f' and settings:\n{str(settings_strings)}\n'
         if self.verbose:
-            print(setup_msg)
+            print(self.setup_msg)
 
     @property
     def time_step(self) -> float:
