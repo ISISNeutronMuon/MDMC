@@ -2,13 +2,15 @@
 from typing import List, Dict, TYPE_CHECKING
 
 from MDMC.MD.structures import Molecule, Atom
-from MDMC.readers.configurations.pdb import ProteinDataBankReader
+from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
 if TYPE_CHECKING:
     from MDMC.MD.structures import Structure
 
-class PackmolPDBReader(ProteinDataBankReader):
+class PackmolPDBReader(ConfigurationReader):
     """A class to read in packmol PDB output files"""
+    extension = "NONE"
+    
     def __init__(self, file_name: str):
         super().__init__(file_name)
         self._structures: List['Structure'] = []
