@@ -99,5 +99,3 @@ WORKDIR /home
 # Create aliases
 RUN echo alias python="python3" > ~/.bash_aliases
 RUN echo alias pip="pip3" >> ~/.bash_aliases
-
-#triggering a rebuild
