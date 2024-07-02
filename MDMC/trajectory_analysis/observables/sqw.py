@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.interpolate import interp2d
+from scipy.interpolate import RectBivariateSpline
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -614,18 +614,14 @@ class AbstractSQw(SQwMixins, Observable):
                      (h_bar * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 
-        # note: the interp2d interpolation function requires input of the form
-        # interp2d(x, y, z)
-        # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
-        # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
         # Because Observable.dependent_variables_structure gives the order in which the
         # independent variables are represented in the np.shape of the data, we have to
-        # reverse the order of the x and y arrays for interp2d.
-        # interp2d does not return complex numbers, so define a new function that combines
+        # reverse the order of the x and y arrays for RectBivariateSpline.
+        # RectBivariateSpline does not return complex numbers, so define a new function that combines
         # the real and imaginary parts
         def data_interpol(t, Q):
-            real = interp2d(t_array, Q_cropped, np.real(SQw_ift))
-            imag = interp2d(t_array, Q_cropped, np.imag(SQw_ift))
+            real = RectBivariateSpline(t_array, Q_cropped, np.real(SQw_ift))
+            imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift))
             return real(t, Q) + 1j * imag(t, Q)
 
         return {'SQw': data_interpol}

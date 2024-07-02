@@ -27,7 +27,6 @@ os.environ["OMPI_MCA_rmaps_base_oversubscribe"]="true"
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 os.environ["OMPI_MCA_btl"]="^vader"
 os.environ["OMP_NUM_THREADS"] = "4"
-from scipy.interpolate import interp2d
 
 from MDMC.control import Control
 from MDMC.MD import Atom, LennardJones, Simulation, Universe
