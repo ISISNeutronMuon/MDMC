@@ -617,8 +617,8 @@ class AbstractSQw(SQwMixins, Observable):
         # Because Observable.dependent_variables_structure gives the order in which the
         # independent variables are represented in the np.shape of the data, we have to
         # reverse the order of the x and y arrays for RectBivariateSpline.
-        # RectBivariateSpline does not return complex numbers, so define a new function that combines
-        # the real and imaginary parts
+        # RectBivariateSpline does not return complex numbers,
+        # so define a new function that combines the real and imaginary parts
         def data_interpol(t, Q):
             real = RectBivariateSpline(t_array, Q_cropped, np.real(SQw_ift))
             imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift))
