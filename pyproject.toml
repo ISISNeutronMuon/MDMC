@@ -44,7 +44,7 @@ test = ["pytest==6.2.5",
         "pytest-cov==5.0.0",
         "pytest-cases==3.8.5",
         "pytest-profiling==1.7.0"]
-lint = ["pylint==2.14.0",
+lint = ["pylint==3.2.5",
         "pylint-exit==1.2.0"]
 typecheck = ["mypy"]
 docs = ["sphinx==7.3.7",
