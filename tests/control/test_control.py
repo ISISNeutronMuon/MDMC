@@ -406,7 +406,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '{}  1.0\n'
                       ''.format(datasets[0]['file_name']))
-    print(stdout)
     assert stdout_message in stdout
 
 
