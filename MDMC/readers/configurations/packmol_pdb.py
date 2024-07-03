@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class PackmolPDBReader(ConfigurationReader):
     """A class to read in packmol PDB output files"""
     extension = "NONE"
-    
+
     def __init__(self, file_name: str):
         super().__init__(file_name)
         self._structures: List['Structure'] = []
