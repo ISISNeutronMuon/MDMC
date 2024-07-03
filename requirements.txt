@@ -1,4 +1,4 @@
-netCDF4==1.6.4
+netCDF4==1.7.1.post1
 numpy==1.25.2
 mypy==1.10.1
 pandas==2.2.2
