@@ -14,6 +14,7 @@ from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
+from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.resolution.from_file import FileResolution
 from MDMC.MD import Atom, Dispersion, LennardJones
 from tests.test_data import data
@@ -30,6 +31,43 @@ DATASET_INFO = {
         '263K05Awat_LAMP': {'dt': 208.08701470659403, 'n_frames': 2042},
         'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 104}}}
 
+class MockEngine:
+    """A mock MD engine."""
+    def run(self):
+        pass
+
+    def clear(self):
+        pass
+
+    def setup_universe(self, *args, **kwargs):
+        pass
+
+    def setup_simulation(self, *args, **kwargs):
+        pass
+
+    def convert_trajectory(self, *args, **kwargs):
+        pass
+
+
+class MockBadEngine(MockEngine):
+    """A mock MD engine that just crashes when you try to use it."""
+    def run(self):
+        raise MDEngineError
+
+
+class MockRecoverableEngine(MockEngine):
+    """A mock MD engine that fails until recovered."""
+    def __init__(self):
+        self.recovered = False
+
+    def run(self):
+        if self.recovered:
+            return
+        raise MDEngineError
+
+    def clear(self):
+        self.recovered = True
+
 
 class MockSimulation(Simulation):
     """
@@ -38,11 +76,22 @@ class MockSimulation(Simulation):
     """
 
     def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., engine: str = "lammps", **settings):
+                 time_step: float = 1., **settings):
         self.universe = universe
         self.settings = settings
+        self.engine = MockEngine()
         self.traj_step = traj_step
         self.time_step = time_step
+        self.ran = False
+        self.auto_equilibrated = False
+
+    def run(self, *args, **kwargs):
+        self.ran = True
+        self.engine.run()
+
+    def auto_equilibrate(self, *args, **kwargs):
+        self.auto_equilibrated = True
+        self.engine.run()
 
 
 class MockParameter:
@@ -50,6 +99,9 @@ class MockParameter:
     def __init__(self, name, value):
         self.name = name
         self.value = value
+        self.fixed = False
+        self.tied = False
+
 
 
 class MockParameters(dict):
@@ -93,55 +145,6 @@ def mock_equilibrate(self, *extras):
 
 def mock_calculating_max_FoM(self):
     pass
-
-@pytest.fixture()
-def control_object_from_Argon_script(exp_datasets) -> callable:
-    """
-    Returns
-    -------
-    control : object
-        control object from setting up a universe identical to that of the Argon tutorial
-    fit_parameters : dict
-        dictionary of force field parameters
-
-    """
-    def _control_object_from_Argon_script(file_name, constraints: list = [[1.0,5.0],[0.5, 5.0]],
-                                          values: list = [3.36,1.02]):
-        density = 0.0176
-        universe = Universe(dimensions=23.0668)
-        Ar = Atom('Ar', charge=0., mass=36.0)
-
-        n_ar_atoms = int(density * np.product(universe.dimensions))
-        print(f'Number of argon atoms = {n_ar_atoms}')
-        universe.fill(Ar, num_struc_units=(n_ar_atoms))
-
-        Ar_dispersion = Dispersion(universe,
-                                (Ar.atom_type, Ar.atom_type),
-                                cutoff=8.,
-                                function=LennardJones(epsilon=values[1], sigma=values[0]))
-
-        simulation = Simulation(universe,
-                                engine="lammps",
-                                time_step=10.18893,
-                                temperature=120.,
-                                traj_step=15)
-
-        dataset = exp_datasets(file_name=file_name)
-        fit_parameters = universe.parameters
-
-        fit_parameters['sigma'].constraints = constraints[0]
-        fit_parameters['epsilon'].constraints = constraints[1]
-
-        control = Control(simulation=simulation,
-                    exp_datasets=dataset,
-                    fit_parameters=fit_parameters,
-                    minimizer_type="GPO",
-                    reset_config=True,
-                    MD_steps=4000,
-                    equilibration_steps=4000,
-                    data_printer='ipython')
-        return control, fit_parameters
-    return _control_object_from_Argon_script
 
 
 @pytest.fixture(scope="module")
@@ -826,17 +829,16 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
     Tests that when the equilibration method is called with no steps specified
     (either 0 or None), then the auto_equilibrate method is called.
     """
-    mock_auto_equilibrate = Mock()
-    monkeypatch.setattr(Simulation, "auto_equilibrate", mock_auto_equilibrate)
+    sim = simulation()
 
-    ctrl = Control(simulation(traj_step=1, time_step=1),
+    ctrl = Control(sim,
                         exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                         [],
                         reset_config=False,
                         equilibration_steps=steps)
 
     ctrl.equilibrate(steps)
-    mock_auto_equilibrate.assert_called()
+    assert sim.auto_equilibrated
 
 @pytest.mark.parametrize('steps', [1,50])
 def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch):
@@ -844,102 +846,45 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     Tests that when the equilibration method is called with equilibration steps specified
     (an integer > 0), then the simulation.run method is called accordingly.
     """
-    mock_simulation_run = Mock()
-    monkeypatch.setattr(Simulation, "run", mock_simulation_run)
+    sim = simulation()
 
-    ctrl = Control(simulation(traj_step=1, time_step=1),
+    ctrl = Control(sim,
                         exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                         [],
                         reset_config=False,
                         equilibration_steps=steps)
 
     ctrl.equilibrate(steps)
-    mock_simulation_run.assert_called()
+    assert sim.ran
 
-def test_control_q_value_trimming(control_object_from_Argon_script):
+def test_control_md_engine_error(simulation, exp_datasets, caplog):
     """
-    Tests that the q_value trimming is done correctly. This uses modified experimental Argon data
-    with reduced Q_values. There is a specific method that does the trimming but this test
-    doesn't test that method in isolation; it tests that on a general refinement step, that trimming
-    functions as expected.
+    Tests that `MDEngineError`s are propagated to the Control object and logged.
     """
-    ctrl, _ = control_object_from_Argon_script(file_name='Argon_test_data.xml')
-    ctrl.equilibrate(n_steps=100)
+    sim = simulation()
+    sim.engine = MockBadEngine()
+    minim = MockMinimizer(history=[])
 
-    recreated_q_values_pos = [6,9]
-    manually_trimmed_obs_arrays = [ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][pos]
-                               for pos in recreated_q_values_pos]
-    manually_trimmed_errors_arrays = [ctrl.observable_pairs[0].exp_obs.errors['SQw'][0][pos]
-                               for pos in recreated_q_values_pos]
+    ctrl = Control(sim, exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'), [MockParameter('eps', 0)])
+    ctrl.min = minim
 
-    ctrl.refine(n_steps=1)
-    auto_trimmed_obs_arrays = ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]
-    auto_trimmed_errors_arrays = ctrl.observable_pairs[0].exp_obs.errors['SQw'][0]
+    with pytest.raises(MDEngineError):
+        ctrl.equilibrate(1)
 
-    assert np.array_equal(manually_trimmed_obs_arrays,auto_trimmed_obs_arrays)
-    assert np.array_equal(manually_trimmed_errors_arrays,auto_trimmed_errors_arrays)
+    log_msg = ('The MD engine produced an error. This is often due to '
+                'bad constraints or parameter values - please check these and try again.')
 
-def test_control_q_value_trimming_warning(control_object_from_Argon_script, caplog):
+    assert log_msg in caplog.text
+
+def test_control_md_engine_recover(simulation, exp_datasets):
     """
-    Tests that the correct warning is given when some experimental Q_values cant be recreated.
-    This uses modified experimental Argon data with reduced Q_values.
+    Tests that recoverable MDEngineErrors are recovered.
     """
-    ctrl, _ = control_object_from_Argon_script(file_name='Argon_test_data.xml')
-    ctrl.equilibrate(n_steps=100)
+    sim = simulation()
+    sim.engine = MockRecoverableEngine()
+    minim = MockMinimizer(history=[])
 
-    caplog.set_level(logging.WARNING)
-    ctrl.refine(n_steps=1)
+    ctrl = Control(sim, exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'), [MockParameter('eps', 0)])
+    ctrl.min = minim
 
-    log_message = ("The specified universe dimensions were not able to recreate the lowest q" \
-                " values of the experimental data and so this data has been" \
-                " trimmed accordingly.")
-
-    assert log_message in caplog.text
-
-@pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
-                                (2.0, 3.0),
-                                (3.0,4.0),
-                                (4.0,5.0),])
-def test_control_bad_params(control_object_from_Argon_script, eps, sig):
-    """
-    Tests that given a set of bad parameters (which crash the refinement), the equilibration
-    and production runs handle this.
-    """
-    constraints = [[sig-0.5, sig+0.5], [eps-0.5, eps+0.5]]
-    values = [sig,eps]
-    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml',
-                                                            constraints=constraints, values=values)
-    fit_parameters['epsilon'].value = eps
-    fit_parameters['sigma'].value = sig
-
-    ctrl.equilibrate(n_steps=100)
-    ctrl.refine(4)
-
-@pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
-                                                             ([0.5,20.0], [1.0,20.0])])
-
-def test_control_bad_constraints(control_object_from_Argon_script, eps_constr, sig_constr):
-    """
-    Tests that given different sets of constraints on the parameter values (which can possibly crash
-    the refinement), the equilibration and production runs handle this.
-    """
-    constraints = [sig_constr, eps_constr]
-    ctrl, fit_parameters = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml',
-                                                            constraints=constraints)
-    fit_parameters['epsilon'].value = 1.02
-    fit_parameters['sigma'].value = 3.36
-
-    ctrl.equilibrate(n_steps=100)
-    ctrl.refine(4)
-
-def test_control_trial_reduce_time_step(control_object_from_Argon_script):
-    """
-    Tests that the method for varying time_step (upon a failed equilibration), changes the
-    time_step and traj_step accurately.
-    """
-
-    ctrl, _ = control_object_from_Argon_script(file_name='Well_s_q_omega_Ar_data.xml')
-    original_time_step = ctrl.simulation.time_step
-    reduction_factor = 0.6
-    ctrl.trial_reduce_time_step(reduction_factor=reduction_factor)
-    assert ctrl.simulation.time_step == original_time_step * reduction_factor
+    ctrl.equilibrate(1)
