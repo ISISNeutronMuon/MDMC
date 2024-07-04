@@ -1,33 +1,17 @@
 """System tests for the Control object with a real MD engine plugged in."""
 import logging
+import re
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from MDMC.control import Control
 from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
+from tests.control.test_control import exp_datasets
 
-class MockMinimizer:
-    def __init__(self, history):
-        df = pd.DataFrame(history)
-        self._history = (row for _, row in df.iterrows())
-        self.history = pd.DataFrame(columns=df.columns)
 
-    def has_converged(self, conv_tol=None, min_steps=None):
-        return False
-
-    def step(self, FoM):
-        self.history = pd.concat([self.history, next(self._history).to_frame().T], ignore_index=True)
-
-    def write_history(self, fn):
-        pass
-
-    def reset_parameters(self):
-        pass
-
-    def present_result(self):
-        return ""
-
+pytestmark = [pytest.mark.lammps]
 
 @pytest.fixture()
 def argon_control(exp_datasets) -> callable:
@@ -132,11 +116,8 @@ def test_control_bad_params(argon_control, simulation, eps, sig):
     """
     constraints = [[sig-0.5, sig+0.5], [eps-0.5, eps+0.5]]
     values = [sig,eps]
-    sim = simulation()
-    minim = MockMinimizer()
     ctrl, fit_parameters = argon_control(file_name='Well_s_q_omega_Ar_data.xml',
                                     constraints=constraints, values=values)
-    ctrl.minimizer = minim
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
 
