@@ -452,7 +452,7 @@ class Control:
                         self.equilibrate(self.equilibration_steps)
                     except MDEngineError:
                         bad_param_location = True  # assuming params are bad and moving on
-                        self.resetting_engine()
+                        self.reset_engine()
 
                 verbose_manager.header(f"Step {count + 1}")
                 # advance the refinement by one step
@@ -470,7 +470,7 @@ class Control:
                         self.equilibrate(self.equilibration_steps)
                     except MDEngineError:
                         bad_param_location = True  # assuming params are bad and moving on
-                        self.resetting_engine()
+                        self.reset_engine()
                 # advance the refinement by one step
                 self.step(bad_param_location=bad_param_location)
                 count += 1
@@ -578,8 +578,6 @@ class Control:
             Working directory for the MD engine to write to. Default is `None`.
         """
 
-        msg = ('MD engine failed to perform an equilibration for these parameter values.'
-                'Likely, because they are bad parameter values.')
         try:
             if not n_steps:
                 self.simulation.auto_equilibrate()
@@ -590,7 +588,8 @@ class Control:
                 self.engine_recovery_from_equil(n_steps=n_steps,verbose=verbose,
                                                 output_log=output_log,work_dir=work_dir,**settings)
             except MDEngineError as exc:
-                logging.warning(msg)
+                logging.exception('The MD engine produced an error. This is often due to '
+                'bad constraints or parameter values - please check these and try again.')
                 raise MDEngineError from exc
 
 
@@ -1144,7 +1143,7 @@ class Control:
         attempt_limit = self.settings['time_step_reductions']
         while not equil_works and counter < attempt_limit:
             self.trial_reduce_time_step(reduction_factor=0.6)
-            self.resetting_engine()
+            self.reset_engine()
 
             try:
                 if not n_steps:
@@ -1161,7 +1160,7 @@ class Control:
         if not equil_works:
             raise MDEngineError
 
-    def resetting_engine(self) -> None:
+    def reset_engine(self) -> None:
         """
         Clears and resets the MD engine when there is an error thrown by the
         equilibration or production methods. Currently this is only applicable to LAMMPS.
