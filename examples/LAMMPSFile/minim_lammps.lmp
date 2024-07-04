@@ -1,0 +1,8 @@
+include {_pot_file}
+
+fix             3 all box/relax aniso 0.0 vmax 1.0e-4 nreset 100
+
+min_style cg
+minimize {_etol} {_ftol} {_n_steps} {_minimize_every}
+
+write_data {_traj_file} nofix nocoeff

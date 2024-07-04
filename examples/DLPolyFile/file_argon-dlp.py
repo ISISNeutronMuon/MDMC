@@ -29,7 +29,7 @@ os.environ["OMPI_MCA_btl"] = "^vader"
 os.environ["OMP_NUM_THREADS"] = "4"
 
 from MDMC.control import Control
-from MDMC.MD.engine_facades.dlpoly_file_facade import DLPolyFileSimulation
+from MDMC.MD.engine_facades.dlpoly_file_engine import DLPolyFileSimulation
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the
@@ -45,7 +45,7 @@ simulation = DLPolyFileSimulation(control="argon.control",
 # print(simulation.trajectory)
 
 # Dataset
-exp_datasets = [{'file_name': Path(__file__).parent.parent / 'doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+exp_datasets = [{'file_name': Path(__file__).parent / '../../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type': 'SQw',
                  'reader': 'xml_SQw',
                  'weight': 1.,

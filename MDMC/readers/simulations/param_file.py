@@ -1,11 +1,11 @@
 """
-Reader and writer for parametrised files
+Reader and writer for parametrised files.
 """
 
 import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Sequence, Union
+from typing import Any, Sequence, Tuple, Union
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameter, Parameters
@@ -25,7 +25,7 @@ PARAM_RE = re.compile(rf"""
 \s*\}}
 """, re.VERBOSE)
 
-BRACK_RE = re.compile(r"\{([^: \t]*)\s*:?.*\}")  # RE to capture non-matched parameters
+BRACK_RE = re.compile(rf"\{{({WORD_RE})\}}")  # RE to capture non-matched parameters
 
 OUT_RE = r"{\g<param>}"
 
@@ -50,7 +50,6 @@ class ParamFileParser():
         File names read into object.
     required_parameters : list[str]
         Parameters which must be present in the files for them to be valid.
-
     """
 
     def __init__(self,
@@ -63,13 +62,33 @@ class ParamFileParser():
         ----------
         file_names : PathsDict
             Files to read data from.
+        required_parameters : Sequence[str], optional
+            Set required parameters which must be present in files
+            for param file to be valid.
         """
         self.file_name = file_names
         self._files = None
         self.required_parameters = required_parameters
         self._param_dict = Parameters()
 
-    def __call__(self, *keys, **settings):
+    def __call__(self, *keys, **settings) -> "ParamFileParser":
+        """
+        Dump selection of files and return object.
+
+        For use in ``with`` blocks to handle closure.
+
+        Parameters
+        ----------
+        *keys : str
+            Keys to dump.
+        **settings
+            Extra options.
+
+        Returns
+        -------
+        ParamFileParser
+            Object holding temporary files.
+        """
         # pylint: disable=consider-using-with
         to_dump = {key: self.file_name[key] for key in keys}
         name_parts = ((f"{pth.stem}_", pth.suffix) for pth in to_dump.values())
@@ -84,13 +103,30 @@ class ParamFileParser():
             file.seek(0)
         return self
 
-    def __enter__(self) -> Sequence[PathLike]:
+    def __enter__(self) -> Tuple[PathLike, ...]:
         """
-        Dump selected keys to file and return paths to said files
+        Dump selected keys to file and return paths to said files.
+
+        Returns
+        -------
+        Tuple[PathLike, ...]
+            Tuple containing dumped file paths.
         """
         return tuple(file.name for file in self._files)
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
+        """
+        Close and remove files.
+
+        Parameters
+        ----------
+        exception_type : Exception
+            Reason for exit.
+        exception_value : str
+            Reason for exit.
+        traceback : Sequence[str]
+            Trace on exit.
+        """
         for file in self._files:
             file.close()
         self._files = None
@@ -99,6 +135,11 @@ class ParamFileParser():
     def file_name(self) -> dict[str, PathLike]:
         """
         Contained file names.
+
+        Returns
+        -------
+        dict[str, PathLike]
+            Dictionary mapping internal key to source file.
         """
         return self._file_name
 
@@ -111,21 +152,69 @@ class ParamFileParser():
     def param_dict(self) -> dict[str, Any]:
         """
         Dictionary of found parameters.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary mapping param keys to current values.
         """
         return {parm.type: parm.value for parm in self.as_parameters.values()}
 
+    @param_dict.setter
+    def param_dict(self, in_dict: dict) -> None:
+        self._param_dict = Parameters([
+            Parameter(
+                name=key,
+                value=val,
+                fixed=key in self.required_parameters or key.startswith("_"),
+            )
+            for key, val in in_dict.items()
+        ])
+
+    def update_param_dict(self, in_dict: dict) -> None:
+        """
+        Set internal parameters from dictionary as per :any:`dict.update`.
+
+        Parameters
+        ----------
+        in_dict : dict
+            Dictionary to take parameters from.
+        """
+        for key, val in in_dict.items():
+            self._param_dict[key].fixed = False
+            self._param_dict[key].value = val
+            self._param_dict[key].fixed = True
+
     @property
-    def as_parameters(self):
+    def as_dict(self) -> dict[str, Any]:
+        """
+        Return dictionary of found parameters s a `dict` object.
+
+        Returns
+        -------
+        dict[str, Any]
+            Found parameters as `dict` object.
+        """
+        return self.param_dict
+
+    @property
+    def as_parameters(self) -> Parameters:
         """
         Return dictionary of found parameters as a `Parameters` object.
+
+        Returns
+        -------
+        Parameters
+            Found parameters as `Parameters` object.
         """
         return self._param_dict
 
     def parse(self, **settings: dict) -> None:
-        """Parse the data file into a `Parameters` object.
+        """
+        Parse the data file into a `Parameters` object.
 
-                Parses the file data so that it is in a format expected by the class
-        calling the data reader
+        Parses the file data so that it is in a format expected by the class
+        calling the data reader.
 
         For readers which are not specific to one data type, the calling class
         must be determined so that the file data can be parsed into
@@ -161,21 +250,25 @@ class ParamFileParser():
 
                     # Catch invalid groups
                     for match in BRACK_RE.finditer(line):
-                        if match[1] not in param_dict:
+                        if match[1] not in param_dict and not match[1].startswith("_"):
                             raise ValueError(f"{file.name}:line {i}:"
-                                             f"Unrecognised parameter {match[0]}:"
+                                             f"Unrecognised parameter {match[0]}: "
                                              "no/invalid initialiser")
+
+                        # Internal param to be set internally later
+                        param_dict[match[1]] = None
 
         if (
             any(param not in param_dict for param in self.required_parameters) and
             not settings.get("testing", False)
         ):
-            raise KeyError(f"One of required parameters for "
-                           f"{self.required_parameters} not present in files.")
+            raise IOError("One or more required parameters not present in files. \n"
+                          f"Expected: {self.required_parameters}.\n"
+                          f"Missing: {tuple(set(self.required_parameters) - param_dict.keys())}.\n"
 
-        self._param_dict = Parameters([Parameter(name=key, value=val,
-                                                 fixed=key in self.required_parameters)
-                                       for key, val in param_dict.items()])
+                          f"Found: {tuple(param_dict.keys())}.")
+
+        self.param_dict = param_dict
 
     def dump(self, out_files: PathsDict, **settings: dict) -> None:
         """
@@ -202,6 +295,6 @@ class ParamFileParser():
             with (open(in_filename, 'r', encoding='utf-8') as in_file,
                   open(out_filename, 'w', encoding='utf-8') as out_file):
                 for line in in_file:
-                    line = re.sub(PARAM_RE, OUT_RE, line)
 
+                    line = re.sub(PARAM_RE, OUT_RE, line)
                     print(line.format(**self.param_dict), file=out_file, end="")

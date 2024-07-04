@@ -1,237 +1,183 @@
 """
-Parameter-file-based runner for LAMMPS simulations.
+Module demonstrating proof-of-concept purely file-driven calculation.
+
+Notes
+-----
+Not intended for use, please see
+:any:`MDMC.MD.engine_facades.lammps_file_engine.LAMMPSFileSimulation`.
 """
 
+# pylint: disable=consider-using-with
+
 from collections import namedtuple
-import logging
 from itertools import count
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import BinaryIO, Union, Iterator, Optional
+from typing import Union
 
-
-from lammps import PyLammps, Atom
 import numpy as np
+from lammps import lammps
+from verbosemanager import VerboseManager
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator_getter
 from MDMC.MD.engine_facades.file_facade import FileSimulation
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 PathLike = Union[str, Path]
-LOGGER = logging.getLogger(__name__)
+NamedFile = namedtuple("NamedFile", "name")
 
 
-# Define the unit system used in LAMMPS
-# NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
-# e.g. harmonic angle potential strength is in kcal / mol radian ^ 2
-SYSTEM = {
-    'LENGTH': units.Unit('Ang'),
-    'TIME': units.Unit('fs'),
-    'MASS': units.Unit('g') / units.Unit('mol'),
-    'CHARGE': units.Unit('e'),
-    'ANGLE': units.Unit('deg'),
-    'TEMPERATURE': units.Unit('K'),
-    'ENERGY': units.Unit('kcal') / units.Unit('mol'),
-    'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('atm')
-}
-
-
-class LAMMPSFileSimulation(FileSimulation):
+class LAMMPSFullFileSimulation(FileSimulation):
     """
-    Class to control LAMMPS run through parametrised file.
+    Class to control LAMMPS run through only parametrised files.
 
     Attributes
     ----------
     parser : ParamFileParser
         Parser to control temporary parametrised files.
+    initial_struct : PathLike
+        Original structure to revert to.
+    known_params : Keys
+        Parameters read from parametrised files.
     lmp : PyLammps
         Main LAMMPS instance.
-    traj_step : int
-        Steps between dumps.
-    time_step : float
-        MD integrator time-step.
-    type_map : dict[int, str]
-        Map of LAMMPS types to chemical symbol.
     trajectory_file : PathLike
-        Current trajectory to read.
+        Current trajectory file to dump to.
+    prev_trajectory_file : PathLike
+        Previous trajectory file to read.
+    stored_trajectory_file : PathLike
+        Trajectory to revert to.
     """
 
     def __init__(self,
-                 script: PathLike,
+                 struct_file: PathLike,
+                 run_script: PathLike,
+                 minim_script: PathLike,
+                 equil_script: PathLike,
                  traj_step: int,
                  time_step: float,
-                 type_map: dict[int, str],
-                 *extra_files,
+                 extra_files: dict[str, PathLike] = None,
                  **settings):
         """
-        Class to control LAMMPS run through parametrised file.
+        Class to control LAMMPS run through only parametrised files.
 
         Parameters
         ----------
-        script : PathLike
-            Path to parametrised control file to load.
+        struct_file : PathLike
+            Path to the initial structure.
+        run_script : PathLike
+            Path to parametrised control file to load for production run phase.
+        minim_script : PathLike
+            Path to parametrised control file to load for minimization phase.
+        equil_script : PathLike
+            Path to parametrised control file to load for equilibration phase.
         traj_step : int
             Steps between dumps.
         time_step : float
             MD integrator time-step.
-        type_map : dict[int, str]
-            Map of LAMMPS types to chemical symbol.
-        *extra_files : Sequence[PathLike]
+        extra_files : dict[str, PathLike]
             Extra files to include in the running.
         **settings : dict[str, Any]
             Extra config options.
-
-        Notes
-        -----
-
-        Using the `LAMMPSFileSimulation` assumes a cut-down version of
-        a lammps run-script, i.e. without any ``run`` statements.
         """
-        files = {"main_script": script}
-        files.update({f"extra_script_{i}": scpt for i, scpt in enumerate(extra_files)})
+        self.extra_files = {} if extra_files is None else extra_files
+
+        files = (
+            {
+                "main_script": run_script,
+                "minim_script": minim_script,
+                "equil_script": equil_script,
+            } | self.extra_files
+        )
 
         super().__init__(files)
+        self.parser.required_parameters = (
+            "_n_steps",  # Also used for equilibration steps in "equil_script"
+            "_pot_file",
+            "_struct_file",
+            "_etol",
+            "_ftol",
+            "_time_step",
+            "_traj_step",
+            "_traj_file",
+            "_minimize_every",
+            *self.extra_files.keys(),
+        )
         self._setup()
-        self.lmp = PyLammps()
-        self.time_step = time_step
-        self.traj_step = traj_step
-        self.type_map = type_map
+
+        self.initial_struct = struct_file
+        self.known_params = self.parser.param_dict.keys()
+        initial_params = {'_struct_file': struct_file,
+                          '_traj_step': traj_step,
+                          '_time_step': time_step}
+        self.parser.update_param_dict(initial_params)
+        self.update_vals_from_settings(settings)
+        self.lmp = lammps(cmdargs=["-screen", "none"])
+        self.prev_trajectory_file = None
         self.trajectory_file = None
-        self._saved_config = None
+        self.stored_trajectory_file = None
+
+    def update_vals_from_settings(self, settings: dict):
+        """
+        Set file parameters from those provided in settings.
+
+        Parameters
+        ----------
+        settings : dict
+            Settings to put into file dump.
+        """
+        params = {}
+        for key, val in settings.items():
+            if key in self.known_params:
+                params[key] = val
+        self.parser.update_param_dict(params)
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH)
-    def dimensions(self) -> np.typing.NDArray:
+    def time_step(self) -> float:
         """
-        System box dimensions.
+        Return the current known timestep.
 
         Returns
         -------
-        np.NDArray
-            System dimensions in Angstrom.
+        float
+            The timestep stored in the `ParamFileParser`.
         """
-        return np.asarray([self.lmp.system.xhi - self.lmp.system.xlo,
-                           self.lmp.system.yhi - self.lmp.system.ylo,
-                           self.lmp.system.zhi - self.lmp.system.zlo])
+        return self.parser.param_dict['_time_step']
+
+    @time_step.setter
+    def time_step(self, value: float) -> None:
+        """
+        Set the timestep in the file parameters.
+
+        Parameters
+        ----------
+        value : float
+            New timestep.
+        """
+        self.parser.update_param_dict({'_time_step': value})
 
     @property
-    def atoms(self) -> Iterator[Atom]:
+    def traj_step(self) -> int:
         """
-        Generator of atoms in system.
-
-        Yields
-        ------
-        lammps.Atom
-            Each atom in the system.
-        """
-        for i in range(self.lmp.system.natoms):
-            yield self.lmp.atoms[i]
-
-    @property
-    def thermostat(self) -> Optional[str]:
-        """
-        Return currently defined thermostat.
+        Return the current known trajectory step.
 
         Returns
         -------
-        Optional[str]
-            Thermostat name if found, else `None`.
-
-        Notes
-        -----
-        If multiple thermostatic fixes defined, only first found is returned.
+        int
+            The trajectory step stored in the `ParamFileParser`.
         """
+        return self.parser.param_dict['_traj_step']
 
-        for fix in self.fix_styles:
-            if fix in ("nvt",
-                       "nvt/sphere",
-                       "nvt/asphere",
-                       "nvt/sllod",
-                       "temp/berendsen",
-                       "temp/csvr",
-                       "langevin",
-                       "temp/rescale",):
-                return fix
-
-        return None
-
-    @property
-    def barostat(self) -> Optional[str]:
+    @traj_step.setter
+    def traj_step(self, value: int) -> None:
         """
-        Return currently defined barostat.
+        Set the trajectory step in the file parameters.
 
-        Returns
-        -------
-        Optional[str]
-            Barostat name if found, else `None`.
-
-        Notes
-        -----
-        If multiple thermostatic fixes defined, only first found is returned.
+        Parameters
+        ----------
+        value : int
+            New trajectory step.
         """
-
-        for fix in self.fix_styles:
-            if fix in ("npt", "npt/sphere", "npt/asphere",
-                       "nph", "press/berendsen"):
-                return fix
-
-        return None
-
-    @property
-    def fixes(self) -> list[dict]:
-        """
-        Get the ``PyLammps`` wrapper `list` of ``fixes``.
-
-        Returns
-        -------
-        list[dict]
-            Each `dict` states the ``group``, ``name`` and ``style`` of a LAMMPS
-            ``fix` which is applied.
-        """
-        return self.lmp.fixes
-
-    @property
-    def fix_styles(self) -> list[str]:
-        """
-        Get the styles of the ``fixes`` applied in LAMMPS.
-
-        Returns
-        -------
-        list[str]
-            The styles of the ``fixes``.
-        """
-        return [fix['style'] for fix in self.fixes]
-
-    @property
-    def fix_names(self) -> "list[str]":
-        """
-        Get the names of the ``fixes`` applied in LAMMPS.
-
-        Returns
-        -------
-        list[str]
-            The names of the ``fixes``.
-        """
-        return [fix['name'] for fix in self.fixes]
-
-    @property
-    def system_state(self) -> namedtuple:
-        """
-        Get the ``PyLammps`` wrapper system ``state`` `dict`.
-
-        Returns
-        -------
-        namedtuple
-            Contains the properties of the simulation box.
-        """
-
-        # Conversion from System class (which is a namedtuple) to
-        # ordered dict required as System cannot be pickled
-        system_state = self.lmp.system._asdict()
-        # Cast back to namedtuple to remain consist with LAMMPS system attribute
-        return namedtuple('System', system_state.keys())(*system_state.values())
+        self.parser.update_param_dict({'_traj_step': value})
 
     @property
     def saved_config(self) -> Path:
@@ -243,79 +189,35 @@ class LAMMPSFileSimulation(FileSimulation):
         Path
             Path to the configuration to use.
         """
-        return self._saved_config
+        return self.parser.param_dict["_struct_file"]
+
+    def store_config(self) -> None:
+        """
+        Set ``self.saved_config`` to the current configuration.
+        """
+        self.stored_trajectory_file = self.trajectory_file
+        self.parser.update_param_dict({'_struct_file': self.trajectory_file.name})
 
     def save_config(self) -> None:
         """
-        Set the current atomic configuration as the saved config.
+        Dummy.
         """
-        # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
-        # or the individual atoms, so instead this saves the x, y, z, mass
-        # and charge in a NumPy array with the indexes given by the atom ID
-        # (with a -1 offset due to zero index)
-        # The atoms attribute also is not iterable
-        n_atoms = self.system_state.natoms
-        LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
-                    self.__class__,
-                    n_atoms)
-
-        atoms = np.zeros([n_atoms, 5])
-        tmp_mass = {atom.id: atom.mass for atom in self.atoms}
-
-        for atom in self.atoms:
-            atom_type = atom.type
-            # _, mass = self.lmp_universe.atom_type_properties[atom_type-1]
-            atoms[atom.id-1, :] = (list(atom.position) + [tmp_mass[atom_type], atom.charge])
-
-        saved_config = atoms
-        self._saved_config = saved_config
 
     def reset_config(self) -> None:
         """
         Reset the configuration of the simulation to that in ``saved_config``.
         """
-        self.set_config(self.saved_config)
+        self.parser.update_param_dict({'_struct_file': self.stored_trajectory_file.name})
 
-    def set_config(self, config: np.ndarray) -> None:
-        """
-        Change the positions of all of the atoms in the LAMMPS wrapper.
-
-        Parameters
-        ----------
-        config : numpy.ndarray
-            The ``positions``, ``mass`` and ``charge`` of the ``Atom`` objects,
-            used to set the LAMMPS configuration. Each row of the array must
-            correspond to the LAMMPS ``atom ID - 1`` (offset is due to ``array``
-            zero indexing) and the columns of the ``array`` must be the ``x``,
-            ``y``, ``z`` components of the ``position``, the ``mass`` and the
-            ``charge`` of each ``Atom``.
-
-        Raises
-        ------
-        IndexError
-            If ``config`` does not contain the same number of atoms as LAMMPS
-            possesses.
-        """
-
-        # Raise an IndexError if the config is not the correct size
-        n_atoms = self.system_state.natoms
-        if len(config) != n_atoms:
-            raise IndexError('the new configuration does not specify the'
-                             ' correct number of atoms')
-
-        # The LAMMPS wrapper does not allow the configuration to be updated
-        # simply by setting all atoms. Instead the position of the atoms must be
-        # reset.
-        index_components = enumerate(['x', 'y', 'z'])
-        # LAMMPS IDs start at 1, so are offset from config indexes
-        for id_offset in range(n_atoms):
-            for index, component in index_components:
-                self.lmp.set('atom', id_offset+1, component,
-                             config[id_offset][index])
-
-    def minimize(self, n_steps: int, minimize_every: int = 10,
-                 verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: dict) -> None:
+    def minimize(
+            self,
+            n_steps: int,
+            verbose: bool = True,
+            minimize_every: int = 10,
+            output_log: str = None,
+            work_dir: str = None,
+            **settings: dict
+    ) -> None:
         """
         Move the atoms towards a potential energy minimum.
 
@@ -352,63 +254,29 @@ class LAMMPSFileSimulation(FileSimulation):
         maxeval : int
             Maximum number of force calculations in a single structure relaxation.
         """
+        self.parser.update_param_dict({"_etol": settings.get('etol', 1.e-4),
+                                       "_ftol": settings.get('ftol', 0.),
+                                       "_n_steps": settings.get('maxiter', 10000),
+                                       "_minimize_every": settings.get('maxeval', 10000)})
+        self.update_vals_from_settings(settings)
 
-        with self.parser(*self.parser.file_name.keys()) as files:
-            self.lmp.clear()
-            # Load first file (main script), which should contain
-            # all necessary references to other files.
-            if output_log is not None:
-                self.lmp.log(output_log)
-
-            self.lmp.file(files[0])
-
-        # Check fix styles for shake or rattle styles and remove them
-        if 'constrain' in self.fix_names:
-            LOGGER.debug('%s Remove constraint from fixes.', self.__class__)
-            self.lmp.unfix('constrain')
-
-        etol = settings.get('etol', 1.e-4)
-        ftol = settings.get('ftol', 0.)
-        maxiter = settings.get('maxiter', 10000)
-        maxeval = settings.get('maxeval', 10000)
-        LOGGER.info('%s minimize: {n_steps: %s, minimize_every: %s, etol: %s, ftol: %s,'
-                    ' maxiter: %s, maxeval: %s}',
-                    self.__class__,
-                    n_steps,
-                    minimize_every,
-                    etol,
-                    ftol,
-                    maxiter,
-                    maxeval)
-
-        self.lmp.minimize(etol,
-                          ftol,
-                          maxiter,  # this is the number of relaxation steps
-                          maxeval)  # this is the number of force evaluations
-        best_energy = self.lmp.eval("pe")
-        self.save_config()
-        for _ in range(int(n_steps/minimize_every)):
-            self.lmp.run(minimize_every)
-            self.lmp.minimize(etol,
-                              ftol,
-                              maxiter,  # this is the number of relaxation steps
-                              maxeval)  # this is the number of force evaluations
-            energy = self.lmp.eval("pe")
-            if energy < best_energy:
-                self.save_config()
-                best_energy = energy
-
-        self.reset_config()
+        self.run(n_steps,
+                 equilibration=True,
+                 output_log=output_log,
+                 work_dir=work_dir,
+                 control_type="minim_script",
+                 **settings)
+        self.store_config()
 
     def run(
             self,
             n_steps: int,
-            equilibration=False,
+            equilibration: bool = False,
             verbose: bool = False,
             output_log: str = None,
             work_dir: str = None,
             **settings: dict
-    ):
+    ) -> None:
         """
         Run the MD simulation for the specified number of steps.
 
@@ -434,47 +302,56 @@ class LAMMPSFileSimulation(FileSimulation):
         work_dir : str, optional
             Working directory for the MD engine to write to. Default is `None`.
         **settings
-            The majority of these are generic but some are specific to the
-            ``MDEngine`` that is being used.
+            Extra options.
         """
-        with self.parser(*self.parser.file_name.keys()) as files:
-            self.lmp.clear()
-            # Load first file (main script), which should contain
-            # all necessary references to other files.
-            if output_log is not None:
-                self.lmp.log(output_log)
+        process = "equilibration" if equilibration else "simulation"
 
-            self.lmp.file(files[0])
+        verbose_manager = VerboseManager.instance()
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
+        verbose_manager.start(1, verbose=int(verbose))
+        verbose_manager.step(f"Running {process} for {n_steps} steps")
 
-        if not equilibration:
-            # Store the trajectory in a NamedTemporaryFile
-            # pylint: disable=consider-using-with
+        # Get type of control to load
+        params = {"_n_steps": n_steps}
+        params["_output_log"] = output_log
+
+        self.prev_trajectory_file = self.trajectory_file
+        if filename := settings.get("output_traj"):
+            self.trajectory_file = NamedFile(filename)
+        else:
             self.trajectory_file = NamedTemporaryFile()
 
-            # Custom trajectory output just saves the atom ID, type and
-            # positions
-            LOGGER.debug('%s set trajectory dump output to %s',
-                         self.__class__,
-                         self.trajectory_file)
-            self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
-                          self.trajectory_file.name, 'id', 'type', 'x', 'y',
-                          'z')
+        params["_traj_file"] = self.trajectory_file.name
+        if equilibration:
+            control_type = settings.get("control_type", "equil_script")
+        else:
+            control_type = settings.get("control_type", "main_script")
 
-        LOGGER.info('%s run: {n_steps: %s, equilibration: %s}',
-                    self.__class__,
-                    n_steps,
-                    equilibration)
-        self.lmp.run(n_steps)
+        self.update_vals_from_settings(settings)
 
-    def convert_trajectory(
-            self,
-            start: int = 0,
-            stop: int = None,
-            step: int = 1,
-            **settings: dict
-    ) -> CompactTrajectory:
+        files = [NamedTemporaryFile() for extra_file in self.extra_files.keys()]
+
+        for key, file in zip(self.extra_files.keys(), files):
+            params[key] = file.name
+            self.parser.dump({key: file.name})
+
+        self.parser.update_param_dict(params)
+
+        with self.parser(control_type) as control:
+            self.lmp.command("clear")
+            self.lmp.file(control[0])
+
+        for file in files:
+            file.close()
+
+        verbose_manager.finish(f"{process.capitalize()}")
+
+    def convert_trajectory(self, start: int = 0, stop: int = None,
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
-        Converts between a LAMMPS trajectory dump and an MDMC ``CompactTrajectory``.
+        Convert between a LAMMPS trajectory dump and an MDMC ``CompactTrajectory``.
 
         The LAMMPS dump must include at least ``id``, ``atom_type``, and ``xyz``
         ``positions``. The ``xyz`` ``positions`` must be consecutive and in that
@@ -514,7 +391,6 @@ class LAMMPSFileSimulation(FileSimulation):
         TypeError
             If ``trajectory_file`` describes a triclinic universe.
         """
-
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
 
@@ -527,7 +403,7 @@ class LAMMPSFileSimulation(FileSimulation):
 
         traj = CompactTrajectory()  # the instance of our new trajectory object
 
-        def _make_gen(reader: BinaryIO) -> bytes:
+        def _make_gen(reader):
             """
             A support function for splitting a binary file into buffers.
 
@@ -554,9 +430,7 @@ class LAMMPSFileSimulation(FileSimulation):
         header_size = 0
 
         with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
-            line = file_handler.readline()
-            while line:
-
+            while line := file_handler.readline():
                 # LAMMPS TIMESTEP is the number of time steps that have elapsed. To
                 # avoid confusion with time_step (the amount of time that elapses in
                 # a single simulation step, i.e. dt), these are referred to as
@@ -587,9 +461,6 @@ class LAMMPSFileSimulation(FileSimulation):
                         dmin, dmax = [float(splt) for splt in line.split()]
                         temp_dim.append((dmin, dmax))
                         traj_dimensions[i] = dmax-dmin
-                    if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
-                        for i in range(3):
-                            dmin, dmax = temp_dim[i]
 
                 if 'ITEM: ATOMS' in line:
                     header_size += 1
@@ -603,8 +474,10 @@ class LAMMPSFileSimulation(FileSimulation):
                         splt = line.split()
                         # Requires id, type and position to be defined, velocity is
                         # optional
-                        i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
-                                               in ['id', 'type', pos_string]]
+                        i_id, i_type, i_pos, i_mass, i_elem, i_chg = [splt.index(prop) - 2
+                                                                      for prop in
+                                                                      ('id', 'type', pos_string,
+                                                                       'mass', 'element', 'q')]
                         if 'vx' in splt:
                             i_vel = splt.index('vx')
                         else:
@@ -628,17 +501,28 @@ class LAMMPSFileSimulation(FileSimulation):
                         # time step.
                         header_size = 0
                         lines = []
+                        atom_symbols = {}
+                        atom_masses = {}
+                        charge_list = []
+
                         for _ in range(n_atoms):
                             split_line = file_handler.readline().split()
                             # convert id to int
                             split_line[i_id] = int(split_line[i_id])
+                            atom_symbols[split_line[i_id]] = split_line[i_elem]
+                            atom_masses[split_line[i_id]] = split_line[i_mass]
+                            charge_list.append((split_line[i_id], split_line[i_chg]))
+                            split_line = [elem for i, elem in enumerate(split_line)
+                                          if i not in (i_elem, i_mass, i_chg)]
                             lines.append(split_line)
+
                         # sort list of lists based on id
                         lines = sorted(lines, key=lambda x: x[i_id])
 
                         sorted_lines = np.array(lines, dtype=traj.dtype)
 
                         atom_types = sorted_lines[:, i_type].astype(np.int64)
+
                         if not traj.validateTypes(atom_types):
                             raise TypeError("CompactTrajectory received wrong atom type array")
 
@@ -660,14 +544,9 @@ class LAMMPSFileSimulation(FileSimulation):
                     if stop is not None and frame_n >= stop:
                         break
 
-                line = file_handler.readline()
-
-        atom_symbols = {atom.id: self.type_map[atom.type] for atom in self.atoms}
-        atom_masses = {atom.id: atom.mass for atom in self.atoms}
         traj.labelAtoms(atom_symbols, atom_masses)
         # electric charges, for completeness
         # (otherwise we cannot output an Atom from CompactTrajectory)
-        charge_list = [[atom.id, atom.charge] for atom in self.atoms]
         charges = np.array(charge_list)
         sequence = np.argsort(charges[:, 0])
         charges = charges[sequence][:, 1]

@@ -1,5 +1,5 @@
 """
-Parameter-file-based runner for DLPoly simulations
+Parameter-file-based runner for DLPoly simulations.
 """
 
 from pathlib import Path
@@ -7,12 +7,10 @@ from typing import Union
 
 from verbosemanager import VerboseManager
 from dlpoly import DLPoly
-from dlpoly.config import Config, Atom
+from dlpoly.config import Atom
 
-from MDMC.common import units
-from MDMC.common.decorators import repr_decorator, unit_decorator
-from .dlpoly_engine import DLPOLYEngine
-from .file_facade import FileSimulation
+from MDMC.MD.engine_facades.file_facade import FileSimulation
+from MDMC.MD.engine_facades.dlpoly_engine import DLPOLYEngine
 
 PathLike = Union[str, Path]
 
@@ -25,7 +23,6 @@ class DLPolyFileSimulation(FileSimulation):
     ----------
     dlpoly : DLPoly
         DLPoly-py instance.
-
     """
     def __init__(self,
                  control: PathLike,
@@ -34,7 +31,8 @@ class DLPolyFileSimulation(FileSimulation):
                  traj_step: int,
                  time_step: float,
                  **settings):
-        """Class to control DLPoly run through parametrised file.
+        """
+        Initialise class to control DLPoly run through parametrised file.
 
         Parameters
         ----------
@@ -51,13 +49,12 @@ class DLPolyFileSimulation(FileSimulation):
         **settings : dict[str, Any]
             Extra config options.
 
-        Extra Parameters
+        Other Parameters
         ----------------
         equil_control : PathLike
             Path to parametrised control to be used during equilibration phase.
         minim_control : PathLike
             Path to parametrised control to be used during minimisation phase.
-
         """
         super().__init__({"run_control": control,
                           "equil_control": settings.get("equil_control", control),
@@ -74,7 +71,7 @@ class DLPolyFileSimulation(FileSimulation):
     @property
     def atoms(self) -> list[Atom]:
         """
-        Atoms in DLPoly configuration.
+        Get atoms in DLPoly configuration.
 
         Returns
         -------
@@ -86,24 +83,24 @@ class DLPolyFileSimulation(FileSimulation):
     @property
     def saved_config(self) -> Path:
         """
-        Get the saved configuration of the atomic positions
+        Get the saved configuration of the atomic positions.
 
         Returns
         -------
-        ``Configuration``
-            The atomic positions
+        Path
+            Path to source CONFIG file.
         """
         return self._saved_config
 
     def save_config(self) -> None:
         """
-        Sets ``self.saved_config`` to the current configuration
+        Set ``self.saved_config`` to the current configuration.
         """
         self._saved_config = Path(self.dlpoly.control['io_file_revcon'])
 
     def reset_config(self) -> None:
         """
-        Resets the configuration of the simulation to that in ``saved_config``
+        Reset the configuration of the simulation to that in ``saved_config``.
         """
         self.parser.file_name['config'] = self.saved_config
 
@@ -117,25 +114,35 @@ class DLPolyFileSimulation(FileSimulation):
             **settings: dict
     ) -> None:
         """
-        Minimizes the simulation energy.
+        Minimize the simulation energy.
 
         Parameters
         ----------
         n_steps : int
             Maximum number of steps for the MD run.
+        verbose : bool, optional
+            Whether to print statements upon starting and completing the run.
+            Default is `False`.
         minimize_every : int, optional, default 10
             Number of MD steps between two consecutive minimizations.
         output_log : str, optional, default None
-            file where the output goes.
+            File where the output goes.
         work_dir : str, optional, default None
-            folder where the run happens
+            Folder where the run happens.
         **settings
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
-        etol : float, energy tolerance criteria for energy minimisation
-        ftol : float, force tolerance criteria for force minimisation, active only if non-zero
-        maxiter : int, not used in this facade
-        maxeval : int, not used in this facade
+
+        Other Parameters
+        ----------------
+        etol : float
+            Energy tolerance criteria for energy minimisation.
+        ftol : float
+            Force tolerance criteria for force minimisation, active only if non-zero.
+        maxiter : int
+            Not used in this facade.
+        maxeval : int
+            Not used in this facade.
         """
 
         # Example of how to use the **settings to specify parameters,
@@ -172,7 +179,7 @@ class DLPolyFileSimulation(FileSimulation):
             **settings: dict
     ) -> None:
         """
-        Runs the MD simulation for the specified number of steps.
+        Run the MD simulation for the specified number of steps.
 
         Trajectories for the simulation are only saved when
         ``equilibration`` is `False`.  Additionally running
@@ -184,7 +191,7 @@ class DLPolyFileSimulation(FileSimulation):
         Parameters
         ----------
         n_steps : int
-            Number of simulation steps to run
+            Number of simulation steps to run.
         equilibration : bool, optional
             If the run is for equilibration (`True`) or production (`False`).
             Default is `False`.
@@ -195,6 +202,9 @@ class DLPolyFileSimulation(FileSimulation):
             Log file for the MD engine to write to. Default is `None`.
         work_dir : str, optional
             Working directory for the MD engine to write to. Default is `None`.
+        **settings
+            The majority of these are generic but some are specific to the
+            ``MDEngine`` that is being used.
         """
         process = "equilibration" if equilibration else "simulation"
 
