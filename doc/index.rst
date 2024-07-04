@@ -46,54 +46,42 @@ Indices
    :hidden:
    :caption: Overview
 
-   pages/introduction
-   pages/installation
-   pages/simulations
-   pages/parameter-refinement
-   pages/contributing
+   introduction
+   contributing
 
 .. toctree::
    :maxdepth: 2
    :hidden:
+   :glob:
    :caption: Tutorials
 
-   tutorials/building-a-universe.ipynb
-   tutorials/read-configurations.ipynb
-   tutorials/units.ipynb
-   tutorials/applying-a-forcefield.ipynb
-   tutorials/solvating-a-universe.ipynb
-   tutorials/molecular-visualization.ipynb
-   tutorials/running-a-simulation.ipynb
-   tutorials/creating-an-observable.ipynb
-   tutorials/selecting-fitting-parameters.ipynb
-   tutorials/running-a-refinement.ipynb
-   tutorials/Argon-a-to-z.ipynb
+   tutorials/*
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: How-to
+
+   how-to/use-MDMC
+   how-to/installation
 
 .. toctree::
   :maxdepth: 1
   :hidden:
-  :caption: Developer Documentation
+  :caption: Reference
 
-  pages/developer/overview
-  pages/developer/coding_standards
-  pages/developer/documentation
-  pages/developer/units
-  pages/developer/testing
-  pages/developer/management
-  pages/developer/containers
-  pages/developer/vscode
-  pages/developer/recipes
-  pages/developer/known_bugs
+  reference/api/modules
 
 .. toctree::
-  :maxdepth: 1
-  :hidden:
-  :caption: Modules
+   :maxdepth: 2
+   :hidden:
+   :caption: Explanation
 
-  pages/modules/common
-  pages/modules/control
-  pages/modules/gui
-  pages/modules/md
-  pages/modules/readers
-  pages/modules/refinement
-  pages/modules/trajectory_analysis
+   explanation/explanation
+
+.. toctree::
+   :maxdepth: 1
+   :hidden: 
+   :caption: Developer Documentation
+
+   developer/overview

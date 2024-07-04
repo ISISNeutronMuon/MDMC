@@ -926,7 +926,7 @@ class Universe(AtomContainer):
                 ``Coulombic()``:
                     normal or modified Coulomb interaction
             with appropriate parameters for the interaction.
-            See http://mdmcproject.org/tutorials/building-a-universe.html?highlight=interaction#Create-non-bonded-interactions
+            See http://mdmcproject.org/how-to/use-MDMC/notebooks/defining-molecule-interactions.ipynb
             for more details on non-bonded interactions.
         """
 
