@@ -183,8 +183,7 @@ class Minimizer(ABC):
 
         if len(self._history) > 1:
             return self._history[-1] < min(self._history[:-1])
-        else:
-            return True
+        return True
 
     def write_history(self, filename) -> None:
         """

@@ -171,9 +171,12 @@ def write_H5MD(trajectory: CompactTrajectory,
     file_loc : Path, optional
         The directory where the H5MD file should be stored, by default Path('.')
     """
-
-    time_increment = trajectory.time[1] - trajectory.time[0]
-    time_offset = trajectory.time[0]
+    if trajectory.time is not None:
+        time_increment = trajectory.time[1] - trajectory.time[0]
+        time_offset = trajectory.time[0]
+    else:
+        time_increment = None
+        time_offset = None
     step_increment = 1
     step_offset = 0
     filename = Path(filename)

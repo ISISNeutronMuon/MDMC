@@ -6,6 +6,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Union
+from enum import Enum
 
 import numpy as np
 import pandas as pd
@@ -24,7 +25,15 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.MD.engine_facades.facade import MDEngineError
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
+class Dump(Enum):
+    """Enum's for desiding how often the H5MD should be dumped
+    """
+    BEST = -1
+    NONE = 0
+    EVERY = 1
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
@@ -191,13 +200,13 @@ class Control:
                  previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
+                 h5md_dump: Dump = Dump.NONE,
                  **settings: dict):
 
         self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
-        self.best_trj = []
         self.verbose = verbose
         self.timings: dict = {'equilibrate': [],
                         '_run_MD': [],
@@ -205,6 +214,9 @@ class Control:
                         'FoM_calculator': [],
                         'minimizer': [],
                         'TOTAL STEP': []}
+
+        self.h5md_dump = h5md_dump
+        self.h5md_filename = None
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         # if a Parameters object, convert to list first for comprehension
@@ -405,7 +417,7 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
-    def refine(self, n_steps: int = None) -> None:
+    def refine(self, n_steps: int = None, **settings) -> None:
         """
         Refines the specified potential parameters
 
@@ -458,7 +470,7 @@ class Control:
 
                 verbose_manager.header(f"Step {count + 1}")
                 # advance the refinement by one step
-                self.step(bad_param_location=bad_param_location)
+                self.step(bad_param_location=bad_param_location, **settings)
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                     print("")
@@ -497,7 +509,7 @@ class Control:
         for i, observable_pair in enumerate(self.observable_pairs):
             if observable_pair.auto_scale:
                 dset = self.exp_datasets[i]
-                scaling_keys.append('  {}'.format(dset['file_name']))
+                scaling_keys.append('{}'.format(dset['file_name']))
                 scaling_values.append([observable_pair.rescale_factor])
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
@@ -514,7 +526,7 @@ class Control:
 
         verbose_manager.finish("Refinement")
 
-        H5MD_build.build_full(self.best_trj)
+        self.h5md_filename = None
 
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
@@ -612,7 +624,7 @@ class Control:
                 raise MDEngineError from exc
 
 
-    def step(self, bad_param_location: bool = False) -> None:
+    def step(self, bad_param_location: bool = False, **settings) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
@@ -623,7 +635,6 @@ class Control:
         bad_param_location : bool
             Represents whether the equilibration at these parameter value failed or not.
             If equilibration failed, value is True.
-
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
@@ -642,8 +653,10 @@ class Control:
         # Select new parameters to consider
         self.minimizer.step(fom)
 
-        if self.minimizer.is_best_FoM():
-            self.best_trj = trj
+        if self.h5md_dump is not Dump.NONE and trj in locals():
+            self.h5md_dumper(trj, **settings)
+        elif self.h5md_dump is not Dump.NONE:
+            raise UnboundLocalError('Trajectory Not found')
 
         # Update the MD engine with new parameters
         self._update_engine_parameters()
@@ -662,6 +675,41 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
+    def h5md_dumper(self, trj: CompactTrajectory, **settings):
+        """
+        Dumper of H5MD files that dumps ether the best or last depending on the users choice
+
+        Parameters
+        ----------
+        trj : CompactTrajectory
+            The compacct trajectory from the current step
+
+        Notes
+        -----
+        When Dumping "EVERY" trajectory timestamp should be true
+        or the file name must be different for each trajectory,
+        as if not the file will be continually overwritten.
+        """
+        h5md_file_path = Path(__file__).parents[1] / "H5MD_Files"
+        h5md_filename = settings.get("h5md_file_name", 'trajectory')
+        h5md_file_loc = settings.get("h5md_file_loc", h5md_file_path)
+        h5md_timestamp = settings.get("h5md_timestamp", True)
+        if self.h5md_dump is Dump.EVERY:
+            h5md_filename = H5MD_build.build_full(trj,
+                                                  filename=h5md_filename,
+                                                  file_loc=h5md_file_loc,
+                                                  timestamp=h5md_timestamp)
+        elif self.h5md_dump is Dump.BEST and self.minimizer.is_best_FoM():
+            if self.h5md_filename is None:
+                self.h5md_filename = H5MD_build.build_full(trj,
+                                                           filename=h5md_filename,
+                                                           file_loc=h5md_file_loc,
+                                                           timestamp=h5md_timestamp)
+            else:
+                self.h5md_filename = H5MD_build.build_full(trj,
+                                                           filename=self.h5md_filename,
+                                                           file_loc=h5md_file_loc,
+                                                           timestamp=False)
 
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """

@@ -135,7 +135,7 @@ class MockMinimizer:
 
 
 def mock_generate_FoM(self):
-    return 1000
+    return 1000, None
 
 def mock_update_engine_parameters(self):
     pass

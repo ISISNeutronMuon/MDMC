@@ -1,4 +1,11 @@
-"""Tests for the H5MD file are writing and reading the files correctly."""
+"""Tests for the H5MD file are writing and reading the files correctly.
+
+Notes
+-----
+The few tests that are not part of the @pytest.mark.parametrize
+are because they are read from the H5MD or CompactTrajectory
+differently to the other variables.
+"""
 from pathlib import Path
 
 try:
