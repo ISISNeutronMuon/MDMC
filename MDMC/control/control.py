@@ -1,4 +1,4 @@
-"""A module for performing the refinement"""
+"""A module for the Control object which sets up and performs a refinement."""
 import getpass
 import logging
 import statistics
@@ -7,8 +7,9 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Container, Dict, Iterable, Literal, TypedDict, Union
 
+import matplotlib
 import numpy as np
 import pandas as pd
 from scipy.interpolate import RectBivariateSpline, interp1d
@@ -40,137 +41,12 @@ class Dump(Enum):
     #: Dump all h5md trajectories.
     EVERY = 1
 
-@repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_parameters', 'MD_steps',
-                'verbose')
-class Control:
-
+class Dataset(TypedDict, total=False):
     """
-    Controls the MDMC refinement
+    Dictionary format for datasets.
 
-    Parameters
-    ----------
-    simulation : Simulation
-        Performs a simulation for a given set of potential ``Parameter``
-        objects.
-    exp_datasets : list of dicts
-        Each `dict` represents an experimental dataset, containing the
-        following keys:
-          - ``file_name`` (`str`) the file name
-          - ``type`` (`str`) the type of observable
-          - ``reader`` (`str`) the reader required for the file
-          - ``weighting`` (`float`) the weighting of the dataset to be used in
-            the Figure of Merit calculation
-          - ``resolution`` : (`dict`, but can be `str`, `float`, or None)
-            Should be a one-line dict of format {'file' : str} or {key : float}
-            if {'file' : str}, the str should be a file in
-            the same format as ``file_name`` containing results of a vanadium
-            sample which is used to determine instrument energy resolution for
-            this dataset.
-            If {key : float}, the key should be the type of resolution function.
-            allowed types are 'gaussian' and 'lorentzian'
-            Can also be 'lazily' given as just a `str` or `float`.
-            If just a string is given, it is assumed to be a filename.
-            If just a float is given, it is assumed to be Gaussian.
-            The float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
-            If you have already accounted for instrument resolution in your dataset,
-            this field can be set to None, and resolution application will be skipped.
-            This must be done explicitly.
-          - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
-            the experimental data when calculating the FoM to ensure it is on
-            the same scale as the calculated observable
-          - ``auto_scale`` (`bool`, optional, defaults to `False`) set the
-            ``rescale_factor`` automatically to minimise the FoM, if both
-            ``rescale_factor`` and ``auto_scale`` are provided then a warning
-            is printed and ``auto_scale`` takes precedence
-          - ``use_FFT`` (`bool`, optional, defaults to `True`) whether to use
-            Fast Fourier Transforms in the calculation of dependent variables.
-            FFT speeds up calculation but places restrictions on spacing in the
-            independent variable domain(s). This option may not be supported
-            for all ``Observable``s
-        Note that the default (and preferred) behaviour of the scaling settings requires that the
-        dataset provided has been properly scaled and normalised for the refinement process.
-        Arbitrary or automatic rescaling should be undertaken with care, as it does not take into
-        account any physical aspects of scaling the data, such as the presence or absence of
-        background events from peaks outside its range.
-    fit_parameters : Parameters, list of Parameter
-        All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
-        ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
-        Those with ``constraints`` set are still passed.
-    h5md_dump : Dump | str, optional
-        Defines how often the trajectory should be dumped to a H5MD file. Default is `Dump.NONE`
-    h5md_file_loc: Path, optional
-        Location the H5MD file should be stored. Default is `Path('.')`
-    h5md_timestamp: bool, optional
-        True if a time stamp should be added to the end of the H5MD file name. Default is `True`
-    h5md_filename: str, optional
-        The name the dumped H5MD file should be. Default is ``trajectory``
-    minimizer_type : str, optional
-        The ``Minimizer`` type. Default is 'MMC'.
-    FoM_options : dict of {str : str}, optional
-        Defines the details of the ``FigureOfMeritCalculator`` to use. Default is `None`, in which
-        case the first option for each of the following keys is used:
-          - ``errors`` {'exp', 'none'} Whether to weight the differences between MD and
-            experimental data with the experimental error or not (errors from MD are not currently
-            supported).
-          - ``norm`` {'data_points', 'dof', 'none'} How to normalise the FoM, either by the total
-            number of data_points (n), the degrees of freedom (n - m, where m is the number of
-            parameters being varied), or not at all.
-    reset_config : bool, optional
-        Determines if the configuration is reset to the end of the last accepted
-        state. Default is `True`.
-    MD_steps : int, optional
-            Number of molecular dynamics steps for each step of the refinement.
-            When not provided, the minimum number of steps needed for successful
-            calculation of the observables is used. If provided, the actual number
-            of steps may be reduced to prevent running MD that won't be used when
-            calculating dependent variables. Default is `None`.
-    equilibration_steps : int, optional
-            Number of molecular dynamics steps used to equilibrate the ``Universe``
-            in between each refinement step. When changes to the ``Parameters`` are small,
-            this equilibration can be much shorter than the equilibration needed before
-            starting the refinement process, but in general will vary depending on
-            the details of the ``Universe`` and ``Parameters``. Default is 0.
-    verbose: int, optional
-            The level of verbosity:
-            Verbose level -1 hides all outputs for tests.
-            Verbose level 0 gives no information.
-            Verbose level 1 gives final time for the whole method.
-            Verbose level 2 gives final time and also a progress bar.
-            Verbose level 3 gives final time, a progress bar, and time per step.
-    print_full_settings: bool, optional
-        Whether to print all settings/attributes/parameters passed to this object,
-        defaults to False.
-    **settings: dict, optional
-        n_steps: int
-            The maximum number of refinement steps to be. An optional parameter that,
-            if specified, will be used in the ``refine`` method unless a different value
-            of ``n_steps`` is explicitly passed when running ``refine``.
-        cont_slicing : bool, optional
-            Flag to decide between two possible behaviours when the number of ``MD_steps`` is
-            larger than the minimum required to calculate the observables. If ``False`` (default)
-            then the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
-            blocks for each of which the observable is calculated. If ``True``, then the
-            ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
-            blocks as possible (with overlap allowed).
-        results_filename: str
-            The name of the file in which the results of the MDMC run will be stored
-        MC_norm: int
-            1 if the MMC minimiser is to be used for parameter optimisation.
-        use_average : bool, optional
-            Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
-            and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
-            If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
-            blocks. If ``False`` they are not averaged.
-        data_printer: str, default 'plaintext'
-            How to display the data during minimisation. Current options are 'plaintext' (default,
-            plaintext printing) or 'ipython' (prettier HTML printing via iPython)
-        time_step_reductions : int, optional
-            The number of attempts to reduce the time_step of the simulation in order to fix an
-            equilibration that keeps failing. Defaults to a value of 2.
-
-    Example
-    -------
+    Examples
+    --------
     An example of an exp_dataset list is::
 
         [{'file_name':data.LAMP_SQW_FILE,
@@ -185,18 +61,165 @@ class Control:
           'weight':0.5,
           'resolution':{'gaussian':2.35}
           'auto_scale':True}]
+    """
+    #: The file name.
+    file_name: str
+    #: The type of observable.
+    type: str
+    #: The reader required for the file.
+    reader: str
+    #: The weighting of the dataset to be used in the Figure of Merit calculation.
+    weight: float
+    #: Determines the resolution function.
+    #:
+    #: Should be a one-line dict of format {'file': :any:`str`} or {key: :any:`float`}.
+    #:
+    #: If {'file' : :any:`str`}, the `str` should be a file in the same format as
+    #: `file_name` containing results of a vanadium sample which is used to
+    #: determine instrument energy resolution for
+    #: this dataset.
+    #:
+    #: If {key : :any:`float`}, the key should be the type of resolution function.
+    #:
+    #: Allowed types are 'gaussian' and 'lorentzian'
+    #:
+    #: Can also be 'lazily' given as just a `str` or `float`.
+    #:
+    #: If just a `str` is given, it is assumed to be a filename.
+    #: If just a `float` is given, it is assumed to be Gaussian.
+    #:
+    #: The `float` should be the instrument energy resolution as the FWHM in μeV (micro eV).
+    #:
+    #: If you have already accounted for instrument resolution in your dataset,
+    #: this field can be set to `None`, and resolution application will be skipped.
+    #: This must be done explicitly.
+    resolution: Union[dict, str, float, None]
+    #: Applied to the experimental data when calculating the FoM to
+    #: ensure it is on the same scale as the calculated observable.
+    rescale_factor: float
+    #: Set the `rescale_factor` automatically to minimise the FoM, if both
+    #: `rescale_factor` and `auto_scale` are provided then a warning
+    #: is printed and `auto_scale` takes precedence.
+    #:
+    #: **Note** that the default (and preferred) behaviour of the scaling
+    #: settings requires that the dataset provided has been properly scaled
+    #: and normalised for the refinement process.
+    #:
+    #: Arbitrary or automatic rescaling should be undertaken with care,
+    #: as it does not take into account any physical aspects of scaling the data,
+    #: such as the presence or absence of background events from peaks outside its range.
+    auto_scale: bool
+    #: Whether to use Fast Fourier Transforms in the calculation of dependent variables.
+    #: FFT speeds up calculation but places restrictions on spacing in the
+    #: independent variable domain(s). This option may not be supported
+    #: for all Observables.
+    use_FFT: bool
+
+
+class FoMOptions(TypedDict):
+    """
+    Potential options for figure of merit calculators.
+    """
+    #: Whether to weight the differences between MD and
+    #: experimental data with the experimental error or not
+    #: (errors from MD are not currently supported).
+    errors: Literal['exp', 'none']
+    #: How to normalise the FoM, either by the total
+    #: number of data_points (n), the degrees of freedom
+    #: (n - m, where m is the number of parameters being varied),
+    #: or not at all.
+    norm: Literal['data_points', 'dof', 'none']
+
+
+@repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
+                'reset_config', 'fit_parameters', 'MD_steps',
+                'verbose')
+class Control:
+    """
+    Controls the MDMC refinement.
+
+    Parameters
+    ----------
+    simulation : Simulation
+        Performs a simulation for a given set of potential :any:`Parameter`
+        objects.
+    exp_datasets : list[Dataset]
+        Set of experimental data sets to load as ``Observable`` s.
+    fit_parameters : Parameters, list of Parameter
+        All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
+        ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
+        Those with ``constraints`` set are still passed.
+    minimizer_type : str, optional
+        The ``Minimizer`` type. Default is 'MMC'.
+    FoM_options : FoMOptions
+        Defines the details of the ``FigureOfMeritCalculator`` to use.
+
+        Default is `None`, for which errors = 'exp', norm = 'data_points'.
+    reset_config : bool, optional
+        Determines if the configuration is reset to the end of the last accepted
+        state. Default is `True`.
+    MD_steps : int, optional
+        Number of molecular dynamics steps for each step of the refinement.
+        When not provided, the minimum number of steps needed for successful
+        calculation of the observables is used. If provided, the actual number
+        of steps may be reduced to prevent running MD that won't be used when
+        calculating dependent variables. Default is `None`.
+    equilibration_steps : int, optional
+        Number of molecular dynamics steps used to equilibrate the ``Universe``
+        in between each refinement step. When changes to the ``Parameters`` are small,
+        this equilibration can be much shorter than the equilibration needed before
+        starting the refinement process, but in general will vary depending on
+        the details of the ``Universe`` and ``Parameters``. Default is 0.
+    verbose : int, optional
+        The level of verbosity:
+
+        * Verbose level -1 hides all outputs for tests.
+        * Verbose level 0 gives no information.
+        * Verbose level 1 gives final time for the whole method.
+        * Verbose level 2 gives final time and also a progress bar.
+        * Verbose level 3 gives final time, a progress bar, and time per step.
+    print_full_settings : bool, optional
+        Whether to print all settings/attributes/parameters passed to this object,
+        defaults to False.
+    **settings : dict, optional
+        n_steps : int
+            The maximum number of refinement steps to be. An optional parameter that,
+            if specified, will be used in the ``refine`` method unless a different value
+            of ``n_steps`` is explicitly passed when running ``refine``.
+        cont_slicing : bool, optional
+            Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+            larger than the minimum required to calculate the observables. If ``False`` (default)
+            then the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
+            blocks for each of which the observable is calculated. If ``True``, then the
+            ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
+            blocks as possible (with overlap allowed).
+        results_filename : str
+            The name of the file in which the results of the MDMC run will be stored
+        MC_norm : int
+            1 if the MMC minimiser is to be used for parameter optimisation.
+        use_average : bool, optional
+            Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
+            and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
+            If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
+            blocks. If ``False`` they are not averaged.
+        data_printer : str, default 'plaintext'
+            How to display the data during minimisation. Current options are 'plaintext' (default,
+            plaintext printing) or 'ipython' (prettier HTML printing via iPython)
+        time_step_reductions : int, optional
+            The number of attempts to reduce the time_step of the simulation in order to fix an
+            equilibration that keeps failing. Defaults to a value of 2.
 
     Attributes
     ----------
     simulation : Simulation
         The ``Simulation`` on which is used to perform the refinement
-    exp_datasets : `list of dicts`
+    exp_datasets : list[Dataset]
         One `dict` per experimental dataset used for the refinement
     fit_parameters : Parameters
-        All ``Parameter`` objects which will be refined
+        All :any:`Parameter` objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    observable_pairs : `list` of ``ObservablePairs``
+    observable_pairs : list[ObservablePair]
         Experimental observable/MD observable pairs which are used to calculate
         the Figure of Merit
     FoM_calculator : FigureOfMeritCalculator
@@ -205,19 +228,25 @@ class Control:
         Number of molecular dynamics steps for each step of the refinement
     """
 
-    def __init__(self, simulation: Simulation, exp_datasets: List[dict],
-                 fit_parameters: Parameters,
-                 minimizer_type: str = 'MMC', FoM_options: dict = None,
-                 reset_config: bool = True, MD_steps: int = None,
-                 equilibration_steps: int = 0,
-                 previous_history: Union[str,Path] = None,
-                 verbose: int = 0,
-                 print_all_settings: bool = False,
-                 h5md_dump: Dump = Dump.NONE,
-                 h5md_file_loc: Path = Path('.'),
-                 h5md_timestamp: bool = True,
-                 h5md_filename: str = 'trajectory',
-                 **settings: dict):
+    def __init__(
+        self,
+        simulation: Simulation,
+        exp_datasets: List[dict],
+        fit_parameters: Parameters,
+        minimizer_type: str = 'MMC',
+        FoM_options: dict = None,
+        reset_config: bool = True,
+        MD_steps: int = None,
+        equilibration_steps: int = 0,
+        previous_history: Union[str,Path] = None,
+        verbose: int = 0,
+        print_all_settings: bool = False,
+        h5md_dump: Dump = Dump.NONE,
+        h5md_file_loc: Path = Path('.'),
+        h5md_timestamp: bool = True,
+        h5md_filename: str = 'trajectory',
+        **settings: dict
+    ):
 
         self.previous_history = previous_history
         self.step_timings: list = []
@@ -225,11 +254,11 @@ class Control:
         self.exp_datasets = exp_datasets
         self.verbose = verbose
         self.timings: dict = {'equilibrate': [],
-                        '_run_MD': [],
-                        'convert_trajectory': [],
-                        'FoM_calculator': [],
-                        'minimizer': [],
-                        'TOTAL STEP': []}
+                              '_run_MD': [],
+                              'convert_trajectory': [],
+                              'FoM_calculator': [],
+                              'minimizer': [],
+                              'TOTAL STEP': []}
 
         if isinstance(h5md_dump, str):
             self.h5md_dump = Dump[h5md_dump.upper()]
@@ -259,8 +288,10 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.settings = settings
         self.n_steps = settings.get('n_steps')
-        self.results_filename = settings.get('results_filename',
-                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
+        self.results_filename = settings.get(
+            'results_filename',
+            f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv',
+        )
         settings['results_filename'] = self.results_filename
         settings['time_step_reductions'] = settings.get('time_step_reductions', 2)
 
@@ -284,11 +315,11 @@ class Control:
 
             # keep the keys in the _dset_input_check function
             # consistent with the ones retrieved from dset
-            self._input_check(dset, inputs = ['type','reader', 'file_name'])
+            self._input_check(dset, inputs=['type', 'reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
-                                                        dset['reader'],
-                                                        dset['file_name'],
-                                                        use_FFT)
+                                                             dset['reader'],
+                                                             dset['file_name'],
+                                                             use_FFT)
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
@@ -313,7 +344,7 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
-            self.recreated_independent_vars  = {}
+            self.recreated_independent_vars = {}
             self.production_time_step = self.simulation.time_step
 
             # Take the largest minimum number of MD_steps needed by any dataset
@@ -420,16 +451,16 @@ class Control:
             data_array.append(["-"])
             if exp_datasets is not None:
                 for dataset in exp_datasets:
-                    for key in dataset:
+                    for key, val in dataset.items():
                         index_array.append(f'  {key}')
-                        data_array.append([dataset[key]])
+                        data_array.append([val])
 
             index_array.append("- FoM Options")
             data_array.append(["-"])
             if FoM_options is not None:
-                for key in FoM_options:
+                for key, val in FoM_options.items():
                     index_array.append(f'  {key}')
-                    data_array.append([FoM_options[key]])
+                    data_array.append([val])
 
         setup_frame = pd.DataFrame(data=data_array,
                                    index=index_array)
@@ -449,7 +480,7 @@ class Control:
 
     def refine(self, n_steps: int = None) -> None:
         """
-        Refines the specified potential parameters
+        Refine the specified potential parameters.
 
         Parameters
         ----------
@@ -467,7 +498,7 @@ class Control:
             .. highlight:: python
             .. code-block:: python
 
-            control.refine(100)
+                control.refine(100)
         """
 
         if not n_steps:
@@ -546,13 +577,15 @@ class Control:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
             if self.verbose != -1:
                 print(
-                f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
+                    f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}',
+                )
 
         if self.verbose >= 1:
             average_timing = statistics.mean(self.step_timings)
             if self.verbose != -1:
                 print(
-                f'\nAverage time per step was {np.round(average_timing, 2)} seconds.')
+                    f'\nAverage time per step was {np.round(average_timing, 2)} seconds.',
+                )
 
         verbose_manager.finish("Refinement")
 
@@ -561,7 +594,8 @@ class Control:
                  verbose: bool = False, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
-        Performs an MD run intertwined with periodic structure relaxation.
+        Perform an MD run intertwined with periodic structure relaxation.
+
         This way after a local minimum is found, the system is taken
         out of the minimum to explore a larger volume of the parameter
         space.
@@ -569,15 +603,15 @@ class Control:
         Parameters
         ----------
         n_steps : int
-            Total number of the MD run steps
-        minimize_every: int, optional
-            Number of MD steps between two consecutive minimizations
-        verbose: bool, optional
+            Total number of the MD run steps.
+        minimize_every : int, optional
+            Number of MD steps between two consecutive minimizations.
+        verbose : bool, optional
             Whether to print statements when the minimization has been started and completed
             (including the number of minimization steps and time taken). Default is `False`.
-        output_log: str, optional
+        output_log : str, optional
             Log file for the MD engine to write to. Default is `None`.
-        work_dir: str, optional
+        work_dir : str, optional
             Working directory for the MD engine to write to. Default is `None`.
         **settings
             ``etol`` (`float`)
@@ -594,8 +628,8 @@ class Control:
                 on engine used.
         """
         try:
-            self.simulation.minimize(n_steps,minimize_every,verbose,
-                                        output_log,work_dir, **settings)
+            self.simulation.minimize(n_steps, minimize_every, verbose,
+                                     output_log, work_dir, **settings)
         except Exception as exc:
             raise Exception('Minimization failed, please check the parameter values.') from exc
 
@@ -614,10 +648,14 @@ class Control:
                             if key.startswith("auto_equil_")}
         self.simulation.auto_equilibrate(**auto_eq_settings)
 
-
-    def equilibrate(self, n_steps: int = None, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
-
+    def equilibrate(
+            self,
+            n_steps: int = None,
+            verbose: bool = False,
+            output_log: str = None,
+            work_dir: str = None,
+            **settings: dict,
+    ) -> None:
         """
         Run molecular dynamics to equilibrate the ``Universe``.
 
@@ -628,41 +666,52 @@ class Control:
         ----------
         n_steps : int
             Number of simulation steps to run.
-        verbose: bool, optional
+        verbose : bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
-        output_log: str, optional
+        output_log : str, optional
             Log file for the MD engine to write to. Default is `None`.
-        work_dir: str, optional
+        work_dir : str, optional
             Working directory for the MD engine to write to. Default is `None`.
+        **settings
+            Extra options to pass to equilibration.
+
+        Raises
+        ------
+        MDEngineError
+            If re-tried equilibration also failed.
         """
 
         try:
             if not n_steps:
                 self.auto_equilibrate()
             else:
-                self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
+                self.simulation.run(n_steps, True, verbose, output_log, work_dir, **settings)
         except MDEngineError:
             try:
-                self.engine_recovery_from_equil(n_steps=n_steps,verbose=verbose,
-                                                output_log=output_log,work_dir=work_dir,**settings)
+                self.engine_recovery_from_equil(n_steps=n_steps,
+                                                verbose=verbose,
+                                                output_log=output_log,
+                                                work_dir=work_dir,
+                                                **settings)
             except MDEngineError as exc:
                 logging.exception('The MD engine produced an error. This is often due to '
                 'bad constraints or parameter values - please check these and try again.')
                 raise MDEngineError from exc
 
-
     def step(self, bad_param_location: bool = False) -> None:
         """
+        Run a single step of refinement.
+
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
-        if previous step was rejected and reset_config = true
+        if previous step was rejected and reset_config = True
 
         Parameters
-        ---------
+        ----------
         bad_param_location : bool
             Represents whether the equilibration at these parameter value failed or not.
-            If equilibration failed, value is True.
+            If equilibration failed, value is `True`.
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
@@ -730,26 +779,30 @@ class Control:
                                   creator_name=self.h5md_creator,
                                   creator_email=self.h5md_email)
 
-    def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
+    def plot_results(
+            self,
+            filename: str = None,
+            points: int = 100000,
+            MH_norm: float = 20.0,
+    ) -> matplotlib.figure.Figure:
         """
-        Instantiates an insstance of the PlotResults class and generates a cornerplot
-        from the data in self.results_filename
+        Instantiate an instance of the :any:`PlotResults` and generate a cornerplot from the data.
 
         Parameters
         ----------
         filename : str, optional
             The filename and path to the history file. Defaults to None which
-            then uses self.results_filename
+            then uses self.results_filename.
         points : int, optional
-            The number of samples to initially generate, defaults to 100,000
+            The number of samples to initially generate, defaults to 100,000.
         MH_norm : float, optional
             The denominator of the exponent, controlling how likley points are to be kept,
-            defaults to 20.0
+            defaults to 20.0.
 
         Returns
         -------
-        corner plot : Matplotlib.figure.Figure
-            A plot displaying every parameter combination with their variances and covariances
+        matplotlib.figure.Figure
+            A plot displaying every parameter combination with their variances and covariances.
         """
         if filename is None:
             filename = self.results_filename
@@ -762,16 +815,17 @@ class Control:
 
         return cornerplot
 
-
     def _generate_FoM(self) -> float:
         """
+        Generate FoM for given observables.
+
         Run the MD for an iteration/step, calculate observable, compare with
-        observed and return the FoM
+        observed and return the FoM.
 
         Returns
         -------
-        `float`
-            Non-negative `float` FoM
+        float
+            Non-negative `float` figure of merit.
         """
         try:
             self._run_MD()
@@ -785,14 +839,14 @@ class Control:
 
     def _run_MD(self) -> None:
         """
-        Run a molecular dynamics simulation
+        Run a molecular dynamics simulation.
         """
 
         self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self) -> None:
         """
-        Update the force field parameters of the MD engine
+        Update the force field parameters of the MD engine.
         """
 
         self.simulation.engine.update_parameters()
@@ -801,7 +855,7 @@ class Control:
     def _read_observable_from_file(obstype: str, reader: str, file_name: str,
                                    use_FFT: bool = True) -> Observable:
         """
-        Creates an Observable of the specified type and reads in data from file
+        Create an Observable of the specified type and reads in data from file.
 
         Parameters
         ----------
@@ -811,13 +865,13 @@ class Control:
             The ``type`` of the ``Reader``.
         file_name : str
             The absolute or relative path and the file name.
-        use_FFT: bool, optional
-            boolean determining if the FFT should be used, default is True
+        use_FFT : bool, optional
+            Boolean determining if the FFT should be used, default is True.
 
         Returns
         -------
-        ``Observable``
-            An ``Observable`` of specified ``type``
+        Observable
+            An ``Observable`` of specified ``type``.
         """
 
         observable = ObservableFactory.create(obstype)
@@ -828,7 +882,9 @@ class Control:
     @staticmethod
     def _create_empty_observable(exp_observable: Observable, use_FFT: bool = True) -> Observable:
         """
-        Creates a ``Observable`` without data but with independent variables
+        Create an empty observable.
+
+        Create an ``Observable`` without data but with independent variables
         specified from another ``Observable``.  This is a placeholder in which
         the ``Observable`` can be calculated from an MD trajectory.
 
@@ -836,37 +892,36 @@ class Control:
         ----------
         exp_observable : Observable
             An ``Observable`` with defined independent variables.
-        use_FFT: bool, optional
-            boolean determining if the FFT should be used, default is True
+        use_FFT : bool, optional
+            Boolean determining if the FFT should be used, default is True.
 
         Returns
         -------
-        ``Observable``
+        Observable
             An ``Observable`` with only independent variables and
-            ``origin == 'MD'``
+            ``origin == 'MD'``.
         """
 
         observable = ObservableFactory.create(exp_observable.name)
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
-        observable.use_FFT =  use_FFT
+        observable.use_FFT = use_FFT
         return observable
 
     def _calculate_observables(self,
                                simulation: Simulation,
-                               observable_pairs: 'list[ObservablePair]') -> None:
+                               observable_pairs: list[ObservablePair]) -> None:
         """
-        Calculates all of the ``Observable`` objects from the MD
-        trajectory/configurations
+        Calculate all of the ``Observable`` objects from the MD trajectory.
 
         Parameters
         ----------
         simulation : Simulation
-            ``MDEngine`` with defined trajectory attribute
+            ``MDEngine`` with defined trajectory attribute.
         observable_pairs : list of ObservablePairs
             ``ObservablesPairs`` for which the MD ``Observable`` will be
-            calculated
+            calculated.
         """
         verbose_manager = VerboseManager.instance()
         # this is a subprocess, so we don't bother giving maximum steps since it won't be used
@@ -878,7 +933,7 @@ class Control:
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
-            if pair.MD_obs.name =='SQw':
+            if pair.MD_obs.name == 'SQw':
                 self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
@@ -890,6 +945,8 @@ class Control:
 
     def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
         """
+        Calculate minimum number of MD steps required for observables.
+
         Calculates the minimum number of steps required for the MD engine in
         order to calculate MD ``Observables`` objects with the same independent
         variables as the experimental ``Observable`` objects.
@@ -898,12 +955,12 @@ class Control:
         ----------
         observable_pair : ObservablePair
             ``ObservablesPair`` for which the required number of ``MD_steps``
-            is calculated
+            is calculated.
 
         Returns
         -------
-        `int`
-            Number of ``MD_steps``
+        int
+            Number of ``MD_steps``.
         """
         time_step = self.simulation.time_step
         traj_step = self.simulation.traj_step
@@ -918,7 +975,9 @@ class Control:
     def _calculate_maximum_MD_steps(self, MD_steps: int,
                                     observable_pair: ObservablePair) -> int:
         """
-        Calculates the maximum number of steps that ``observable_pair`` will be
+        Verify MD steps for an ``ObervablePair``.
+
+        Calculate the maximum number of steps that ``observable_pair`` will be
         able to use when calculating dependent variables whilst still being
         below the ``MD_steps`` specified by the user. Any additional steps
         beyond this would not contribute to the calculation.
@@ -934,15 +993,15 @@ class Control:
         ----------
         MD_steps : int
             The hard upper limit on the number of steps to run, as specified by
-            the user
+            the user.
         observable_pair : ObservablePair
-            ``ObservablesPair`` for which the required number of ``MD_steps``
-            is calculated
+            ``ObservablePair`` for which the required number of ``MD_steps``
+            is calculated.
 
         Returns
         -------
         int
-            Maximum number of ``MD_steps`` needed
+            Maximum number of ``MD_steps`` needed.
         """
         traj_step = self.simulation.traj_step
         maximum_frames = observable_pair.exp_obs.maximum_frames()
@@ -954,8 +1013,9 @@ class Control:
     @staticmethod
     def _is_data_uniform(observable: Observable) -> Dict[str, Dict[str, bool]]:
         """
-        Checks if the values for each independent variable of an ``Observable`` are uniformly
-        spaced and if they start at zero. This information is returned in a single dictionary.
+        Check each independent variable of an ``Observable`` is uniformly spaced and starts at zero.
+
+        This information is returned in a single dictionary.
 
         Parameters
         ----------
@@ -964,7 +1024,7 @@ class Control:
 
         Returns
         -------
-        `Dict[str, Dict[str, bool]]`
+        Dict[str, Dict[str, bool]]
             An outer dictionary where the independent variables of the ``Observable`` are the keys,
             and the values are another dictionary corresponding to that variable. This inner
             dictionary has the same format for all variables, with the two keys 'uniform' and
@@ -987,12 +1047,13 @@ class Control:
 
     def _make_data_uniform(self, observable: Observable) -> Observable:
         """
+        Check an ``Observable`` 's requirements.
+
         Takes an ``Observable``, checks the requirements for its ``independent_variables``
         to be uniform or start at zero, creates uniform grids for the variables that do not
         satisfy their requirement, interpolates the ``dependent_variables`` as needed,
         and returns an ``Observable`` with the uniform/interpolated variables.
         Limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
-        This may change in future.
 
         Parameters
         ----------
@@ -1003,10 +1064,21 @@ class Control:
 
         Returns
         -------
-        ``Observable``
+        Observable
             Returns a copy of the passed ``Observable`` with the independent variables put onto
             uniform grid (for the variables where that is necessary)
-            and the dependent variables interpolated onto the same grid
+            and the dependent variables interpolated onto the same grid.
+
+        Raises
+        ------
+        NotImplementedError
+            If data are not 1D or 2D.
+        AssertionError
+            If dataset has multiple dependent variables for a given key.
+
+        Notes
+        -----
+        This method may change in future.
         """
         # get the uniformity requirements from the Observable
         uniformity_required = observable.uniformity_requirements
@@ -1106,19 +1178,20 @@ class Control:
 
     def _validate_energy(self, obs: Observable) -> None:
         """
+        Validate an ``Observable`` 's energy.
+
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself. The time step and trajectory step
-        may be changed in the validate_energy method of the specific observable if necessary, to
-        achieve an energy separation that matches that of the experimental data.
+        it does not have a ``validate_energy`` function itself.
+
+        The time step and trajectory step may be changed in the
+        validate_energy method of the specific observable if
+        necessary, to achieve an energy separation that matches that
+        of the experimental data.
 
         Parameters
         ----------
         obs : Observable
-            ``Observable`` to validate
-
-        Returns
-        -------
-        None
+            ``Observable`` to validate.
         """
 
         with suppress(AttributeError):
@@ -1128,29 +1201,32 @@ class Control:
             if changed:
                 self.simulation.traj_step = traj_step
                 self.simulation.time_step = time_step
-                logging.warning(" The given traj_step and time_step values were not"
-                    " compatibile with the dataset specified.\nThe values "
-                    "(whilst prioritising time_step) have been changed to"
-                    " traj_step: %d, and time_step: %f. \n"
-                    "Context: for this dataset, traj_step multiplied by time_step"
-                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
+                logging.warning(" The given traj_step and time_step values were not "
+                                "compatibile with the dataset specified.\n"
+                                "The values (whilst prioritising time_step) have been changed to "
+                                " traj_step: %d, and time_step: %f. \n"
+                                "Context: for this dataset, traj_step multiplied by time_step"
+                                " must be ~= %f (6 d.p).", traj_step, time_step, self.dt_required)
 
-    def _input_check(self, general_set, inputs) -> None:
+    def _input_check(self, general_set: Container, inputs: Iterable) -> None:
         """
+        Handle error for retrieving data from a set where the input is not found.
 
-        Handles error for retrieving data from a set where the input is not found.
         This was made in a general way to be used for any dataset or set of inputs.
 
         Parameters
         ----------
-        general_set : A general dataset
+        general_set : Container
             A variable that contains a set of information for input checking against,
             for example 'dset' contains the observable type, file_name and reader type,
             for checking inputs.
+        inputs : Iterable
+            Sequence of inputs to check exist in `general_set`.
 
-        Returns
-        -------
-        None
+        Raises
+        ------
+        KeyError
+            An element of `inputs` not found in `general_set`.
         """
 
         for input_check in inputs:
@@ -1159,18 +1235,15 @@ class Control:
             except KeyError as error:
                 raise KeyError("There was an issue retrieving the input: "
                                f" {input_check} "
-                                "from the dataset, please check your inputs again.") from error
+                               "from the dataset, please check your inputs again.") from error
 
     def _trim_dependent_variables(self) -> None:
         """
-        Trims the dependent variable data, and the associated errors, for observables
-        where necessary. One such application is when the smallest q_values cannot be recreated by
+        Trim the dependent variable data and associated errors for observables.
+
+        One such application is when the smallest q_values cannot be recreated by
         the simulation, this trimming removes the data associated with q_values which cannot be
         recreated.
-
-        Returns
-        -------
-        None
         """
 
         # loop through observable pairs and trim dependent var data accordingly
@@ -1182,37 +1255,47 @@ class Control:
 
                 recreated_independent_vars = self.recreated_independent_vars[obs]
                 if len(exp_obs.dependent_variables[obs][0]) != \
-                len(md_obs.dependent_variables[obs][0]):
+                   len(md_obs.dependent_variables[obs][0]):
 
-                    exp_obs.errors[obs][0] = \
-                    [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
-                    exp_obs.dependent_variables[obs][0] = \
-                    [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
+                    exp_obs.errors[obs][0] = [exp_obs.errors[obs][0][num]
+                                              for num in recreated_independent_vars]
+                    exp_obs.dependent_variables[obs][0] = [exp_obs.dependent_variables[obs][0][num]
+                                                           for num in recreated_independent_vars]
 
-    def engine_recovery_from_equil(self, n_steps: int, verbose: bool,
-            output_log: str, work_dir: str, **settings: dict) -> None:
+    def engine_recovery_from_equil(
+            self,
+            n_steps: int,
+            verbose: bool,
+            output_log: str,
+            work_dir: str,
+            **settings: dict,
+    ) -> None:
         """
-        Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
-        LAMMPS.
+        Handle an `MDEngineError` thrown by the MD engine.
 
-        The time_step is reduced, and the engine cleared, and then an equilibration is performed.
-        If the equilibration is unsuccessful when the attempt limit is reached, an MDEngineError is
-        raised.
+        The `time_step` is reduced, and the engine cleared, and then an equilibration is performed.
 
         Parameters
         ----------
         n_steps : int
             Number of simulation steps to run.
-        verbose: bool, optional
+        verbose : bool
             Whether to print statements upon starting and completing the run.
-        output_log: str, optional
+        output_log : str
             Log file for the MD engine to write to.
-        work_dir: str, optional
+        work_dir : str
             Working directory for the MD engine to write to.
+        **settings
+            Extra options to pass to `Simulation.run`.
 
-        Returns
-        -------
-        None
+        Raises
+        ------
+        MDEngineError
+            If the equilibration is unsuccessful when the attempt limit is reached.
+
+        Notes
+        -----
+        Currently this error is only raised by LAMMPS.
         """
 
         counter = 0
@@ -1226,7 +1309,7 @@ class Control:
                 if not n_steps:
                     self.auto_equilibrate()
                 else:
-                    self.simulation.run(n_steps,True, verbose, output_log, work_dir,**settings)
+                    self.simulation.run(n_steps, True, verbose, output_log, work_dir, **settings)
                 equil_works = True
             except MDEngineError:
                 equil_works = False
@@ -1239,9 +1322,14 @@ class Control:
 
     def reset_engine(self) -> None:
         """
-        Clears and resets the MD engine when there is an error thrown by the
-        equilibration or production methods. Currently this is only applicable to LAMMPS.
+        Clear and reset the MD engine.
 
+        Does so when an error is thrown during equilibration or
+        production methods.
+
+        Notes
+        -----
+        Currently only applicable to LAMMPS.
         """
 
         self.simulation.engine.clear()
@@ -1249,33 +1337,30 @@ class Control:
         # it is necessary to reset and setup the MD engine again
         self.simulation._setup()
 
-    def trial_reduce_time_step(self,reduction_factor) -> None:
+    def trial_reduce_time_step(self, reduction_factor: float) -> None:
         """
-        Reduces the time_step by the reduction factor specified.
+        Reduce the time_step by the reduction factor specified.
 
         Parameters
         ----------
         reduction_factor : float
-            represents the value which will be multiplied with the time_step in order to reduce it
-
-        Returns
-        -------
-        None
+            Represents the value which will be multiplied with the time_step in order to reduce it.
         """
 
         self.simulation.time_step *= reduction_factor
 
     def calculate_max_FoM(self):
         """
-        Calculates a maximum Figure of Merit value by comparing a set of experimental observable
-        data, to arrays consisting of numbers close to zero. For use when the MD Engine fails with
-        a set of parameter values.
+        Calculate a maximum Figure of Merit value.
+
+        Does so by comparing a set of experimental observable data, to
+        arrays consisting of numbers close to zero. For use when the
+        MD Engine fails with a set of parameter values.
 
         Returns
         -------
-        max_FoM : int
-            value of maximum FoM
-
+        int
+            Value of maximum FoM.
         """
 
         # pylint: disable=protected-access
