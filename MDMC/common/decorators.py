@@ -1,4 +1,6 @@
-"""Module which defines decorators"""
+"""
+Module which defines decorators.
+"""
 
 from functools import wraps
 import functools
@@ -14,7 +16,7 @@ from MDMC.common.time_keeper import TimeKeeper
 
 def unit_decorator(unit: Union[str, None]) -> Callable:
     """
-    Decorates ``property.setter`` methods to add units
+    Decorate ``property.setter`` methods to add units.
 
     Adds units to the values passed to ``property.setter`` methods. These units
     are displayed when either ``repr`` or ``str`` is called for the
@@ -35,10 +37,10 @@ def unit_decorator(unit: Union[str, None]) -> Callable:
     -------
     `function`
         A ``property.setter`` `function` with a ``value`` parameter which has a
-        ``unit``.
+        ``unit`` (e.g. :any:`UnitFloat` or :any:`UnitNDArray`).
 
-    Example
-    -------
+    Examples
+    --------
     Add a ``unit_decorator`` to the ``position`` ``property``::
 
         >>> Class Atom(Structure):
@@ -54,7 +56,7 @@ def unit_decorator(unit: Union[str, None]) -> Callable:
     """
 
     # Ignore pylint warning for decorator inner function docstrings
-    #pylint: disable=missing-docstring
+    # pylint: disable=missing-docstring
     def decorator(func):
         def unit_creator(self, value, unit):
             try:
@@ -80,7 +82,7 @@ def unit_decorator(unit: Union[str, None]) -> Callable:
 
 def unit_decorator_getter(unit: Union[str, None]) -> Callable:
     """
-    Decorates ``property.getter`` methods to add units
+    Decorate ``property.getter`` methods to add units.
 
     Adds units to the return values of ``property.getter`` methods. These units
     are displayed when either ``repr`` or ``str`` is called.
@@ -101,10 +103,10 @@ def unit_decorator_getter(unit: Union[str, None]) -> Callable:
     -------
     `function`
         A ``property.getter`` `function` with a return type which has a unit
-        (e.g. ``UnitFloat`` or ``UnitArray``)
+        (e.g. :any:`UnitFloat` or :any:`UnitNDArray`).
 
-    Example
-    -------
+    Examples
+    --------
     Add a ``unit_decorator_getter`` to the ``volume`` property::
 
         >>> Class Universe:
@@ -116,7 +118,7 @@ def unit_decorator_getter(unit: Union[str, None]) -> Callable:
     """
 
     # Ignore pylint warning for decorator inner function docstrings
-    #pylint: disable=missing-docstring
+    # pylint: disable=missing-docstring
     def decorator(func):
         def unit_creator(self, unit):
             try:
@@ -139,7 +141,7 @@ def unit_decorator_getter(unit: Union[str, None]) -> Callable:
 
 def set_docstring(docstring: str) -> Callable:
     """
-    Decorator for setting the docstring of a function, method, class or property
+    Decorator for setting the docstring of a function, method, class or property.
 
     The new docstring is text wrapped to ensure that the line length is valid.
     It is assumed that the specified docstring has the correct indentations.
@@ -147,19 +149,19 @@ def set_docstring(docstring: str) -> Callable:
     Parameters
     ----------
     docstring : str
-        The new docstring for the function, method, class or property
+        The new docstring for the function, method, class or property.
 
     Returns
     -------
     `function`
         A decorator which sets the docstring of a function, method, class or
-        property
+        property.
 
     Raises
     ------
     TypeError
         If ``set_docstring`` is applied to an object which is not a function,
-        method, class, or property
+        method, class, or property.
 
     Examples
     --------
@@ -219,10 +221,9 @@ def set_docstring(docstring: str) -> Callable:
     return decorator
 
 
-def mod_docstring(replacements: 'dict[str, str]') -> Callable:
+def mod_docstring(replacements: dict[str, str]) -> Callable:
     """
-    Decorator for modifying the docstring of a function, method, class or
-    property
+    Decorator for modifying the docstring of a function, method, class or property.
 
     This is done by replacing specified substrings. After replacement the
     docstring is text wrapped to ensure that line length and indentations are
@@ -230,25 +231,25 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
 
     While this can be used for replacements in equations, care must be taken
     to ensure that wrapping does not cause line breaks in invalid places in the
-    Latex.
+    LaTex.
 
     Parameters
     ----------
-    replacements : dict
-        {old:new} pairs where old is a `str` in the docstring which will be
+    replacements : dict[str, str]
+        {old: new} pairs where old is a `str` in the docstring which will be
         replaced, and new is the `str` it should be replaced with.
 
     Returns
     -------
     `function`
         A decorator which modifies the docstring of a function, method, class or
-        property
+        property.
 
     Raises
     ------
     TypeError
         If ``mod_docstring`` is applied to an object which is not a function,
-        method, class, or property
+        method, class, or property.
 
     Examples
     --------
@@ -258,7 +259,7 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
         .. highlight:: python
         .. code-block:: python
 
-            @mod_docstring({'this':'that'})
+            @mod_docstring({'this': 'that'})
             def function():
                 \"\"\"
                 The word this will be replaced
@@ -270,7 +271,7 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
         .. highlight:: python
         .. code-block:: python
 
-            @mod_docstring({'this':'that'})
+            @mod_docstring({'this': 'that'})
             class DocClass():
                 \"\"\"
                 This is the class level docstring. The word this will be
@@ -284,7 +285,7 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
         .. code-block:: python
 
             @property
-            @mod_docstring({'this':'that'})
+            @mod_docstring({'this': 'that'})
             def prop():
                 \"\"\"
                 The word this will be replaced.
@@ -318,7 +319,7 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
 
 def wrap_docstring(docstring: str, line_length: int) -> str:
     """
-    Wraps a docstring to a specific line length.
+    Wrap a docstring to a specific line length.
 
     This maintains any indentation which exists at the start of a line. While
     equations should not be affected by this wrapping, it is recommended that
@@ -327,14 +328,14 @@ def wrap_docstring(docstring: str, line_length: int) -> str:
     Parameters
     ----------
     docstring : str
-        The docstring to be wrapped
+        The docstring to be wrapped.
     line_length : int
-        The maximum line length of the docstring before it is wrapped
+        The maximum line length of the docstring before it is wrapped.
 
     Returns
     -------
     str
-        The wrapped docstring
+        The wrapped docstring.
 
     Raises
     ------
@@ -385,13 +386,13 @@ def wrap_docstring(docstring: str, line_length: int) -> str:
 
 def repr_decorator(attribute: str, *attributes: Optional[str]):
     """
-    Implements ``__repr__`` for a class using passed attributes (including
-    properties)
+    Implement ``__repr__`` for a class using passed attributes (including properties).
 
     The first element of all ``__repr__`` returns is always the name of the
-    class
+    class.
 
     .. warning::
+
         Testing for ``repr_decorator`` is restricted to testing the decorator
         outputs the correct format, not whether each occurence it is used is
         valid. It is strongly recommended that classes decorated with
@@ -413,10 +414,10 @@ def repr_decorator(attribute: str, *attributes: Optional[str]):
     -------
     class
         A class with ``__repr__`` implemented such that ``attribute`` and
-        ``attributes`` are printed
+        ``attributes`` are printed.
 
-    Example
-    -------
+    Examples
+    --------
     Add a ``repr_decorator`` to the ``Atom`` class to include the ``name``
     attribute and the ``position`` property::
 
@@ -440,7 +441,7 @@ def repr_decorator(attribute: str, *attributes: Optional[str]):
     """
 
     # Ignore pylint warning for decorator inner function docstrings
-    #pylint: disable=missing-docstring
+    # pylint: disable=missing-docstring
     def decorator(cls):
         def __repr__(self):
             attrs = (attribute,) + attributes
@@ -459,13 +460,23 @@ def repr_decorator(attribute: str, *attributes: Optional[str]):
     return decorator
 
 
-def weakref_cache(maxsize=128) -> Callable:
+def weakref_cache(maxsize: int = 128) -> Callable:
     """
-    Weakref LRU cache to avoid memory leaks
+    Weakref LRU cache to avoid memory leaks.
 
     Caches on instance methods store `self`, which can
     lead to excess memory use. This avoids it
     by only holding a weakref to the instance.
+
+    Parameters
+    ----------
+    maxsize : int, optional, default=128
+        Max size of LRU cache.
+
+    Returns
+    -------
+    `function`
+        Decorated function with LRU cache.
     """
     def wrapper(func):
 
@@ -481,14 +492,27 @@ def weakref_cache(maxsize=128) -> Callable:
 
     return wrapper
 
-def time_function_execution(func) -> Callable:
+
+def time_function_execution(func: Callable) -> Callable:
     """
-    Creates an instance of the TimeKeeper and stores the
-    function execution time in TimeKeeper's class attributes.
+    Time a given function.
+
+    Create an instance of the :any:`TimeKeeper` and stores the
+    function execution time in `TimeKeeper`'s class attributes.
 
     This decorator is meant to be used on functions that are
     likely to be using up too much CPU time, so the scale
     of the problem can be assessed.
+
+    Parameters
+    ----------
+    func : Callable
+        Function to time.
+
+    Returns
+    -------
+    `function`
+        Decorated function with attached timer.
     """
     def decorated_func(*args, **kwargs):
         tk = TimeKeeper()

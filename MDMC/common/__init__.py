@@ -1,13 +1,12 @@
-"""Common functions and classes used by multiple other subpackages
+"""
+Common functions and classes used by multiple other subpackages.
 
-Contents
---------
-constants
-decorators
-df_operations
-mathematics
-resolution_functions
-units
+- constants
+- decorators
+- df_operations
+- mathematics
+- resolution_functions
+- units
 """
 
 from . import constants
