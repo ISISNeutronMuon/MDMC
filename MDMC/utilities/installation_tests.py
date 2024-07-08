@@ -1,12 +1,15 @@
-"""Module containing installation tests. These determine which features are
-available in an installation of MDMC.
+"""
+Module containing installation tests.
+
+These determine which features are available in an installation of MDMC.
 
 This includes:
-- If MDMC can be imported
-- If an MD engine can be run (e.g. LAMMPS)
-- If X11 forwarding is enabled and the ASE gui can run
-- If the optional dependencies for the dynamic plotting utility have been
-  installed
+
+- Whether MDMC can be imported.
+- Whether an MD engine can be run (e.g. LAMMPS).
+- Whether X11 forwarding is enabled and the ASE gui can run.
+- Whether the optional dependencies for the dynamic plotting utility have been
+  installed.
 
 These tests exist so that a user can test their installation of MDMC.
 """
@@ -16,7 +19,7 @@ from glob import glob
 from importlib import import_module
 import logging
 from os.path import basename, dirname, join
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Literal
 
 
 LOGGER = logging.getLogger(__name__)
@@ -26,24 +29,37 @@ LOGGER = logging.getLogger(__name__)
 
 
 class InstlTestBase(ABC):
-
     """
-    Base class for installation tests
+    Base class for installation tests.
 
     Attributes
     ----------
-    success : str
-        A 'str' denoting if the test has PASSED, FAILED, or is INCOMPLETE
+    success : Literal['PASSED', 'FAILED', 'INCOMPLETE']
+        A `str` denoting if the test has PASSED, FAILED, or is INCOMPLETE.
+    name : str
+        Name of current test.
     """
 
     def __init__(self):
-
         self._success: Optional[bool] = None
         self.name: Optional[str] = None
 
     @property
-    def success(self) -> str:
-        """Get whether or not the test has PASSED, FAILED or is INCOMPLETE"""
+    def success(self) -> Literal['PASSED', 'FAILED', 'INCOMPLETE']:
+        """
+        Get whether or not the test has PASSED, FAILED or is INCOMPLETE.
+
+        Returns
+        -------
+        str
+            One of "PASSED", "FAILED" or "INCOMPLETE"
+            depending on test state.
+
+        Raises
+        ------
+        ValueError
+            If test state is invalid.
+        """
 
         if self._success is True:
             return 'PASSED'
@@ -55,7 +71,9 @@ class InstlTestBase(ABC):
                          ' set. Please run the test again.')
 
     def log_test_passed(self) -> None:
-        """Logs that the test passed"""
+        """
+        Log that the test passed.
+        """
 
         LOGGER.info('%s %s installation test passed',
                     self.__class__,
@@ -63,7 +81,9 @@ class InstlTestBase(ABC):
 
     @abstractmethod
     def run(self):
-        """Runs the test and sets the value of ''self.success''"""
+        """
+        Run the test and sets the value of `self.success`.
+        """
 
         raise NotImplementedError
 
@@ -71,8 +91,10 @@ class InstlTestBase(ABC):
 class InstlTestFactory:
 
     """
-    A factory class which keeps a registry of the installation tests and creates
-    instances of them
+    Testing factory class.
+
+    A factory class which keeps a registry of the installation tests
+    and creates instances of them.
     """
 
     registry: Dict[str, InstlTestBase] = {}
@@ -80,7 +102,7 @@ class InstlTestFactory:
     @classmethod
     def register(cls, name: str) -> Callable:
         """
-        A class level decorator for registering installation test classes
+        Decorator for registering installation test classes.
 
         The name with which the test is registered should be the parameter
         passed to the decorator.
@@ -88,10 +110,15 @@ class InstlTestFactory:
         Parameters
         ----------
         name : str
-            The name with which the test is registered
+            The name with which the test is registered.
 
-        Example
+        Returns
         -------
+        `function`
+            Wrapped class registered in factory.
+
+        Examples
+        --------
         To register the ``InstlTestCore`` class with ``InstlTestFactory``:
 
             .. highlight:: python
@@ -111,13 +138,17 @@ class InstlTestFactory:
     @classmethod
     def create_instl_test(cls, name: str) -> InstlTestBase:
         """
-        Creates an instance of the installation test for the class which
-        corresponds to the passed ``name``
+        Instantiate the installation test for the class `name`.
 
         Parameters
         ----------
         name : str
-            The ``registry`` name of the class to be initialized
+            The ``registry`` name of the class to be initialized.
+
+        Returns
+        -------
+        InstlTestBase
+            Corresponding class with name `name`.
         """
 
         instl_test = cls.registry[name]()
@@ -127,8 +158,7 @@ class InstlTestFactory:
 
 def run_installation_tests():
     """
-    A helper function for running all installation tests and printing the
-    result for each test
+    Run all installation tests and print the result for each test.
     """
 
     for name in InstlTestFactory.registry:
@@ -141,8 +171,9 @@ def run_installation_tests():
 @InstlTestFactory.register('core')
 class InstlTestCore(InstlTestBase):
 
-    """Class to test if all MDMC subpackages can be imported"""
-
+    """
+    Class to test if all MDMC subpackages can be imported.
+    """
     def run(self) -> None:
 
         import MDMC
@@ -184,8 +215,7 @@ class InstlTestCore(InstlTestBase):
 class InstlTestLAMMPS(InstlTestBase):
 
     """
-    Class to test if LAMMPS is installed and if the PyLammps interface can be
-    accessed
+    Class to test if LAMMPS is installed and PyLammps interface can be accessed.
     """
 
     LOG_ERROR_MSG: str = ('Due to this, MDMC will not be able to run MD'
@@ -253,8 +283,10 @@ class InstlTestLAMMPS(InstlTestBase):
 class InstlTestX11Forwarding(InstlTestBase):
 
     """
-    Class to test if tkinter can access the display. This is used to determine
-    if X11 forwarding is working in Docker/Singularity containers.
+    Class to test if tkinter can access the display.
+
+    This is used to determine if X11 forwarding is working
+    in Docker/Singularity containers.
     """
 
     LOG_ERROR_MSG: str = ('Due to this, GUI elements requiring tkinter, such as'
@@ -299,8 +331,7 @@ class InstlTestX11Forwarding(InstlTestBase):
 class InstlTestDynamicPlottingDependencies(InstlTestBase):
 
     """
-    Class to test if the optional dependencies required for dynamic plotting are
-    installed
+    Test if the dynamic plotting optional dependencies are installed.
     """
 
     LOG_ERROR_MSG = ('Due to this, dynamic plotting of the refinement will not'
