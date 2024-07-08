@@ -620,9 +620,9 @@ class AbstractSQw(SQwMixins, Observable):
         # RectBivariateSpline does not return complex numbers,
         # so define a new function that combines the real and imaginary parts
         def data_interpol(t, Q):
-            real = RectBivariateSpline(t_array, Q_cropped, np.real(SQw_ift))
-            imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift))
-            return real(t, Q) + 1j * imag(t, Q)
+            real = RectBivariateSpline(t_array, Q_cropped, np.real(SQw_ift).T)
+            imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift).T)
+            return (real(t, Q) + 1j * imag(t, Q)).T
 
         return {'SQw': data_interpol}
 
