@@ -16,6 +16,7 @@ from numbers import Number
 from typing import Union
 
 import numpy as np
+from pandas import Series
 
 
 # pylint: disable=no-member
@@ -628,6 +629,10 @@ class UnitFloat(float):
 
         if value is None:
             return None
+        if isinstance(value, Series):
+             # sometimes we add a unit to a single element Pandas series;
+             # doing this directly via float.__new__ is deprecated
+            return float(value.iloc[0])
         return float.__new__(cls, value)
 
     def __init__(self, value: float, unit: Union[Unit, str]):
