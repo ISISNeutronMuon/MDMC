@@ -290,7 +290,7 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
-        self.max_FoM = self.calculating_max_FoM()
+        self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -1185,7 +1185,7 @@ class Control:
 
         self.simulation.time_step *= reduction_factor
 
-    def calculating_max_FoM(self):
+    def calculate_max_FoM(self):
         """
         Calculates a maximum Figure of Merit value by comparing a set of experimental observable
         data, to arrays consisting of numbers close to zero. For use when the MD Engine fails with
@@ -1201,7 +1201,7 @@ class Control:
         # pylint: disable=protected-access
         # the purpose of method is to create this empty observable so accessing is necessary
         self.observable_pairs[0].MD_obs._dependent_variables = {}
-        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1e-9
 
         max_FoM = self.FoM_calculator.calculate()
         self.observable_pairs[0].MD_obs._dependent_variables = None
