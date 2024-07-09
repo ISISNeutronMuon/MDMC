@@ -5,7 +5,7 @@ import io
 import glob
 
 import pandas as pd
-from numpy import NaN, nan
+from numpy import nan
 
 
 def CI_profile_summaries(path: str) -> pd.DataFrame:
