@@ -1,24 +1,17 @@
 """
-Partitioning utilities
+Partitioning utilities.
 
-Utilities related to partitioning iterators into their composite components
-
-Notes
------
-
+Utilities related to partitioning iterators into their composite components.
 """
-from typing import TYPE_CHECKING
 from itertools import tee
+from typing import Callable, Iterable
 
-if TYPE_CHECKING:
-    from MDMC.MD import Interaction
-    from typing import Callable, Iterable
+from MDMC.MD import Interaction
 
 
-def partition(items: iter, predicate: "Callable[[any], bool]") -> tuple:
-
+def partition(items: iter, predicate: Callable[[any], bool]) -> tuple:
     """
-    Partitions an ``iterable`` using a predicate
+    Partition an ``iterable`` using a predicate.
 
     Parameters
     ----------
@@ -29,11 +22,11 @@ def partition(items: iter, predicate: "Callable[[any], bool]") -> tuple:
 
     Returns
     -------
-    `tuple`
+    tuple
         A `tuple` of (``gen_true``, ``gen_false``), where ``gen_true`` is a
         generator of all items for which the ``predicate`` returned `True`, and
         ``gen_false is a generator of all items for which the ``predicate``
-        returned `False`
+        returned `False`.
     """
 
     iter_a, iter_b = tee((predicate(item), item) for item in items)
@@ -41,14 +34,13 @@ def partition(items: iter, predicate: "Callable[[any], bool]") -> tuple:
             (item for pred, item in iter_b if not pred))
 
 
-def partition_interactions(interactions: "Iterable[Interaction]",
-                           names: "list[str]",
+def partition_interactions(interactions: Iterable[Interaction],
+                           names: list[str],
                            unpartitioned: bool = False,
-                           lst: bool = False) -> tuple:
+                           lst: bool = False) -> tuple[Interaction, ...]:
 
     """
-    Partitions an ``iterable`` of ``Interaction`` objects using a `list` of
-    ``Interaction`` ``names``
+    Partition an ``iterable`` of ``Interaction`` s by a `list` ``names``.
 
     This occurs by using ``partition`` to filter out one ``Interaction`` type
     for each loop, so previously identified ``Interactions`` are no longer
@@ -71,21 +63,21 @@ def partition_interactions(interactions: "Iterable[Interaction]",
 
     Returns
     -------
-    `tuple`
+    tuple
         A `tuple` of length ``len(names)`` where ``index`` ``n`` is a generator
         of all of the ``Interaction`` objects which have the name specified by
         ``names[n]``. If ``unpartitioned`` is `True`, `tuple` is length ``n+1``.
         If ``lst`` is `True`, the generators are replaced by `list`.
 
-    Example
-    -------
+    Examples
+    --------
     Partion ``interactions`` into ``Bonds`` and ``BondAngles``:
 
-        .. highlight:: python
-        .. code-block:: python
+    .. highlight:: python
+    .. code-block:: python
 
-            bonds, angles = partition_interactions(interactions,
-                                                   ['Bond, BondAngle'])
+        bonds, angles = partition_interactions(interactions,
+                                               ['Bond, BondAngle'])
     """
 
     interaction_lst = [None] * len(names)

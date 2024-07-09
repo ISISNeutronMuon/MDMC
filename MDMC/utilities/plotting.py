@@ -1,8 +1,8 @@
 """
-Plotting related utilities
+Utility functions for plotting.
 
 These are additional functions which can be used to plot specific MDMC data,
-e.g. dynamic plotting during a refinement.  All plotting requires matplotlib to
+e.g. dynamic plotting during a refinement.  All plotting requires ``matplotlib`` to
 be installed, and dynamic plotting requires execution to be performed within a
 Jupyter notebook in order to display correctly.
 """
@@ -10,12 +10,8 @@ Jupyter notebook in order to display correctly.
 from types import MethodType
 import warnings
 
-from typing import TYPE_CHECKING
-
 from MDMC.common.df_operations import filter_dataframe
-
-if TYPE_CHECKING:
-    from MDMC.control import Control
+from MDMC.control import Control
 
 try:
     import matplotlib.pyplot as plt
@@ -26,40 +22,36 @@ except ModuleNotFoundError as error:
 
 
 # Defaults for text and plot output sizes
+
+#: Default VBox height.
 VBOX_HEIGHT = '73%'
+#: Default number of text lines.
 N_TEXT_LINES = 5
+#: Default plot height.
 PLOT_HEIGHT = 360
+#: Default CNVS width.
 CNVS_WIDTH = 800
 
 
 # pylint: disable=import-outside-toplevel, protected-access
 # we are importing things out-of-order and copying variables on purpose here
-def plot_progress(inst: "Control", ynames: str) -> "Control":
+def plot_progress(inst: Control, ynames: str) -> Control:
     """
-    Modifies an instance of ``MDMC.control.Control`` so that the progress of 1
-    or more variables is plotted with each step when ``refine`` is called.
+    Plot current progress of a control.
 
-    This takes an instance of ``MDMC.control.Control`` as a parameter and
+    Modifies an instance of :any:`MDMC.control.Control` so that the progress of 1
+    or more variables is plotted with each step when :any:`refine` is called.
+
+    This takes an instance of ``Control`` as a parameter and
     returns a modified instance, which can be treated exactly as the original
     instance.  See the examples section for more details.
-
-    **This plotting should only be used in a Jupyter notebook and requires
-    ipywidgets and matplotlib to interactively display the progress. The
-    matplotlib backend must be set to 'notebook' before calling `refine`. This
-    can be done by executing the following magic call within a Jupyter notebook
-    cell:**
-
-        .. highlight:: python
-        .. code-block:: python
-
-            %matplotlib notebook
 
     Applying ``plot_progress`` will also change the text output so that only the
     more recent five steps are shown.
 
     Parameters
     ----------
-    inst : MDMC.control.Control
+    inst : Control
         An instance of the ``MDMC.control.Control`` class.
     ynames : str, list of str
         One or more str with the name of the variable to be displayed with each
@@ -70,22 +62,35 @@ def plot_progress(inst: "Control", ynames: str) -> "Control":
 
     Returns
     -------
-    MDMC.control.Control
+    Control
         An instance of the ``MDMC.control.Control`` class, which is
         modified so that a plot is displayed when ``inst.refine`` is called.
+
+    Notes
+    -----
+    This plotting should only be used in a Jupyter notebook and requires
+    ipywidgets and matplotlib to interactively display the progress. The
+    matplotlib backend must be set to 'notebook' before calling `refine`. This
+    can be done by executing the following magic call within a Jupyter notebook
+    cell:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        %matplotlib notebook
 
     Examples
     --------
     Modifying a ``Control`` instance to plot the progress of the 'FoM' with each
     refinement step. This should be executed within a Jupyter notebook:
 
-        .. highlight:: python
-        .. code-block:: python
+    .. highlight:: python
+    .. code-block:: python
 
-            %matplotlib notebook
-            control = Control(...)  # ... represents some parameters
-            control = plot_progress(control, 'FoM')
-            control.refine(100)
+        %matplotlib notebook
+        control = Control(...)  # ... represents some parameters
+        control = plot_progress(control, 'FoM')
+        control.refine(100)
 
     First the matplotlib backend is set to 'notebook', then the ``Control``
     instance is modified, and then a refinement is run. With each step of the
@@ -95,13 +100,13 @@ def plot_progress(inst: "Control", ynames: str) -> "Control":
     and 'epsilon' with each refinement step. This should be executed within a
     Jupyter notebook:
 
-        .. highlight:: python
-        .. code-block:: python
+    .. highlight:: python
+    .. code-block:: python
 
-            %matplotlib notebook
-            control = Control(...)  # ... represents some parameters
-            control = plot_progress(control, ['FoM', 'sigma', 'epsilon'])
-            control.refine(100)
+        %matplotlib notebook
+        control = Control(...)  # ... represents some parameters
+        control = plot_progress(control, ['FoM', 'sigma', 'epsilon'])
+        control.refine(100)
 
     With each step of the refinement a graph of 'FoM' against 'Steps' will be
     plotted, a graph of 'sigma' against 'Steps' will be plotted, and a graph of
