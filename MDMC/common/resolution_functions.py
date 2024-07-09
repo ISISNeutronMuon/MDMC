@@ -52,7 +52,6 @@ def lorentzian(x: np.ndarray, gamma: float, x_0: float = 0.0) -> np.ndarray:
     -------
     numpy.ndarray
         A discretised Lorentzian distribution of the same length as ``x``.
-        distribution.
     """
 
     y = (1 / np.pi) * ((0.5 * gamma) / ((x - x_0) ** 2 + (0.5 * gamma) ** 2))
