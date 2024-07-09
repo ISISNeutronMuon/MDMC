@@ -391,7 +391,7 @@ class FigureOfMerit(ABC):
 
         Raises
         ------
-        AssertionError
+        ValueError
             If calculated value of Figure of Merit is negative
         """
 
@@ -400,7 +400,8 @@ class FigureOfMerit(ABC):
                                   for obs_pair in self.obs_pairs)
         self.value = value_unreduced / total_weight
 
-        assert self.value >= 0.
+        if self.value < 0.:
+            raise ValueError("FoM was calculated to be negative, which is impossible.")
         return self.value
 
     def data_norm_factor(self, obs_pair: ObservablePair) -> int:

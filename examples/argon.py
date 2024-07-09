@@ -10,7 +10,6 @@ import os
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
 os.environ["OMP_NUM_THREADS"] = "4"
-from scipy.interpolate import interp2d
 
 from MDMC.control import Control
 from MDMC.MD import Atom, LennardJones, Simulation, Universe

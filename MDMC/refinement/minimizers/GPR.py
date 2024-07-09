@@ -75,7 +75,7 @@ class GPR(Minimizer):
         """
         parameter_names = [str(name) for name in parameters.keys()]
 
-        samples = st.qmc.LatinHypercube(d=len(parameters), centered=True, seed=1)
+        samples = st.qmc.LatinHypercube(d=len(parameters), scramble=False, seed=1)
         try:
             latin_points = samples.random(n=self.control.n_steps)
         except AttributeError as error:
