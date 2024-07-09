@@ -29,10 +29,14 @@ from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 class Dump(Enum):
-    """Enum's for desiding how often the H5MD should be dumped
     """
+    Enum for deciding how often the H5MD should be dumped.
+    """
+    #: Dump only the best by FoM.
     BEST = -1
+    #: Dump no h5md trajectories.
     NONE = 0
+    #: Dump all h5md trajectories.
     EVERY = 1
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -525,8 +529,6 @@ class Control:
                 f'\nAverage time per step was {np.round(average_timing, 2)} seconds.')
 
         verbose_manager.finish("Refinement")
-
-        self.h5md_filename = None
 
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
