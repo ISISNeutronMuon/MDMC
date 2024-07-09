@@ -69,7 +69,7 @@ class Unit(str):
     Attributes
     ----------
     components : defaultdict[list]
-        Contains the ``components`` of the ``Unit``, separated into two `list`s
+        Contains the ``components`` of the ``Unit``, separated into two `list` s
         (``numerator`` and ``denominator``) depending on which side of the
         fraction each component is on.  If the ``Unit`` is a ``base`` unit i.e.
         initialized using ``Unit()``, then the ``components`` only has a
