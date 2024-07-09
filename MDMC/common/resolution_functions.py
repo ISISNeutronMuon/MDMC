@@ -23,7 +23,7 @@ def gaussian(x: np.ndarray, sigma: float, mu: float = 0.0, norm: bool = True) ->
     Returns
     -------
     numpy.ndarray
-        An ``array`` with the same length as ``x``, with a Gaussian distribution.
+        A discretised Gaussian distribution of the same length as ``x``.
     """
 
     y = np.exp(-0.5 * ((x - mu) / sigma)**2)
@@ -51,7 +51,7 @@ def lorentzian(x: np.ndarray, gamma: float, x_0: float = 0.0) -> np.ndarray:
     Returns
     -------
     numpy.ndarray
-        An ``array`` with the same length as ``x``, with the Lorentzian
+        A discretised Lorentzian distribution of the same length as ``x``.
         distribution.
     """
 

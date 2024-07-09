@@ -15,7 +15,8 @@ from numpy.fft import fft, ifft
 # However, probably the multiprocessing module is going
 # to be the best solution to improve the performance.
 
-#: Set of unit vectors.
+#: Array of standard unit vectors.
+#: Used as a standard basis of 3D space.
 UNIT_VECTOR = np.array([[1., 0., 0.],
                         [0., 1., 0.],
                         [0., 0., 1.]])
@@ -84,7 +85,6 @@ def correlation(input1: np.ndarray,
     return corr
 
 
-# We could trying numba.jit here later to speed things up.
 def faster_correlation(input1: np.ndarray, input2: np.ndarray) -> np.ndarray:
     """
     Compute the correlation of two vectors.
@@ -127,7 +127,6 @@ def faster_correlation(input1: np.ndarray, input2: np.ndarray) -> np.ndarray:
     return corr
 
 
-# We could trying numba.jit here later to speed things up.
 def faster_autocorrelation(input1: np.ndarray,
                            weights: Union[np.ndarray, float] = None) -> np.ndarray:
     """

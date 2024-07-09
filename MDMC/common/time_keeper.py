@@ -10,10 +10,10 @@ class TimeKeeper:
     """
     Class to track per-function execution time.
 
-    A class designed for storing funtion timing information in
+    A class designed for storing function timing information in
     class variable. The idea is to access the class variables
     throught a class instance, typically in a function decorator
-    called time_function_execution.
+    called `time_function_execution`.
     """
 
     #: Number of times a function has been called.

@@ -231,7 +231,7 @@ def mod_docstring(replacements: dict[str, str]) -> Callable:
 
     While this can be used for replacements in equations, care must be taken
     to ensure that wrapping does not cause line breaks in invalid places in the
-    LaTex.
+    LaTeX.
 
     Parameters
     ----------

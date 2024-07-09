@@ -55,8 +55,8 @@ def filter_dataframe(values: Sequence,
     Raises
     ------
     ValueError
-        If both `column_names` and `column_regex` passed.
-        If fewer column_names thab values.
+        If both `column_names` and `column_regex` were passed.
+        If there are fewer `column_names` than values.
     """
 
     if column_names and column_regex:
@@ -151,8 +151,8 @@ def filter_ordered_dataframe(values: Sequence,
     Raises
     ------
     ValueError
-        If both `column_names` and `column_regex` passed.
-        If fewer column_names thab values.
+        If both `column_names` and `column_regex` were passed.
+        If there are fewer `column_names` than values.
     """
 
     if column_names and column_regex:
