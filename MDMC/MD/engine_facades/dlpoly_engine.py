@@ -455,7 +455,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     dim3x3 = read_cell(f)
                     dim = np.diagonal(dim3x3).copy()
 
-                    tempdata = np.row_stack([create_atom(f,
+                    tempdata = np.vstack([create_atom(f,
                                                     level_of_detail,
                                                     element_dict=element_dictionary)
                                             for _ in range(n_atoms)])
