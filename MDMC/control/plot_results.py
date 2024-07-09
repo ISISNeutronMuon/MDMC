@@ -26,7 +26,7 @@ class PlotResults():
         Path to the file to load in the refinement history.
     quantiles : list, optional
         List of the quantiles to be plotted on the corner plot, defaults
-        to [0.34, 0.5, 0.68], i.e. 1-sigma.
+        to [0.34, 0.5, 0.68], i.e. 1 standard deviation.
     MH_norm : float, optional
         The Metropolis-Hastings normalising factor to determine if points should be
         kept or not, defaults to 20.
@@ -307,7 +307,7 @@ class IPythonDataPrinter(DataPrinter):
         Parameters
         ----------
         history
-            The history of the minimizer data is printed from.
+            The history of the minimizer from which data are printed.
         """
         history_table = pd.DataFrame(history,
                                      columns=history.columns)
@@ -321,7 +321,7 @@ class IPythonDataPrinter(DataPrinter):
         Parameters
         ----------
         history
-            The history of the minimizer data is printed from.
+            The history of the minimizer from which data are printed.
         """
         history_table = pd.DataFrame(columns=history.columns)
         self.display.display(history_table)

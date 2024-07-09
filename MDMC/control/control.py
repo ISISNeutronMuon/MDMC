@@ -195,8 +195,8 @@ class Control:
             blocks as possible (with overlap allowed).
         results_filename : str
             The name of the file in which the results of the MDMC run will be stored
-        MC_norm : int
-            1 if the MMC minimiser is to be used for parameter optimisation.
+        MC_norm : float
+            Normalization parameter for MC which determines the accept/reject ratio, default is 1.0.
         use_average : bool, optional
             Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
             and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
@@ -679,7 +679,7 @@ class Control:
         Raises
         ------
         MDEngineError
-            If re-tried equilibration also failed.
+            If equilibration fails and cannot be recovered.
         """
 
         try:
@@ -866,7 +866,7 @@ class Control:
         file_name : str
             The absolute or relative path and the file name.
         use_FFT : bool, optional
-            Boolean determining if the FFT should be used, default is True.
+            Boolean determining if the fast Fourier transform (FFT) should be used, default is True.
 
         Returns
         -------
@@ -893,7 +893,7 @@ class Control:
         exp_observable : Observable
             An ``Observable`` with defined independent variables.
         use_FFT : bool, optional
-            Boolean determining if the FFT should be used, default is True.
+            Boolean determining if the fast Fourier transform (FFT) should be used, default is True.
 
         Returns
         -------
@@ -1078,7 +1078,7 @@ class Control:
 
         Notes
         -----
-        This method may change in future.
+        This method may change in future to allow higher-dimensional dependent variables.
         """
         # get the uniformity requirements from the Observable
         uniformity_required = observable.uniformity_requirements
