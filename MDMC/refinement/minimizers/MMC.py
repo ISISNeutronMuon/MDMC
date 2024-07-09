@@ -237,12 +237,15 @@ class MMC(Minimizer):
         else:
             converged_message = "\nThe refinement has not converged."
 
-        output_string = (f'{converged_message} \n \n'
-                         f'Last accepted point is: \n'
-                         f'{minimizer_output[0]} with a minimum '
-                         f'FoM of {minimizer_output[1]}. \n \n'
-                         f'Best point measured was: \n'
-                         f'{minimizer_output[2]} for a minimum FoM of '
-                         f'{minimizer_output[3]}.\n \n ')
+        # as of numpy 2.0.0, np.float64 has repr e.g. "np.float64(3.0)" instead of "3.14"
+        # we use legacy print options to make the string nicer with less fiddling
+        with np.printoptions(legacy="1.25"):
+            output_string = (f'{converged_message} \n \n'
+                            f'Last accepted point is: \n'
+                            f'{minimizer_output[0]} with a minimum '
+                            f'FoM of {minimizer_output[1]}. \n \n'
+                            f'Best point measured was: \n'
+                            f'{minimizer_output[2]} for a minimum FoM of '
+                            f'{minimizer_output[3]}.\n \n ')
 
-        return output_string
+            return output_string
