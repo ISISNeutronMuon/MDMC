@@ -1,6 +1,7 @@
 """The Metropolis-Hastings minimizer class"""
 from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
+from textwrap import dedent
 
 import numpy as np
 
@@ -252,4 +253,4 @@ class MMC(Minimizer):
                             {minimizer_output[3]}.
                             """)
 
-            return output_string
+            return dedent(output_string)

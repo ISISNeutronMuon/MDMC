@@ -1,8 +1,9 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
-import numpy as np
+from textwrap import dedent
 
+import numpy as np
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -231,4 +232,4 @@ class GPO(Minimizer):
                          FoM of {minimizer_output[3]}.
                          """)
 
-        return output_string
+        return dedent(output_string)
