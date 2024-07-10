@@ -81,7 +81,7 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
           -D PKG_OPENMP=on \
           -D PKG_PYTHON=on \
           -D PKG_VORONOI=on \
-          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/8/libgomp.so \
+          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/12/libgomp.so \
           ../cmake
 RUN make
 RUN make install-python
