@@ -3,6 +3,7 @@
 from collections import Counter
 
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 from MDMC.common import units
@@ -1357,7 +1358,7 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
         assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity) != 0)
 
     lammps_simulation.lmp.run(0)
-    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
+    assert_allclose(lammps_simulation.lmp.runs[0][0].Temp[0], temperature)
 
 
 @pytest.mark.parametrize('temperature', [150., 300.])
@@ -1392,7 +1393,7 @@ def test_initialize_nonzero_velocities(universe, temperature):
                       == scale_factor * velocity[i])
 
     lammps_simulation.lmp.run(0)
-    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
+    assert_allclose(lammps_simulation.lmp.runs[0][0].Temp[0], temperature)
 
 
 @pytest.mark.parametrize('skin, neighbor_steps', [(1, 2),
