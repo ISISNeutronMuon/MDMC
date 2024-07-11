@@ -805,8 +805,8 @@ def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])-
         except AttributeError:
             current_time = 0.0
         if len(config.data) > 0:
-            atpos = np.row_stack(config.atom_positions)
-            atvel = np.row_stack(config.atom_velocities)
+            atpos = np.vstack(config.atom_positions)
+            atvel = np.vstack(config.atom_velocities)
             traj.writeOneStep(step_num=step_number,
                                 time=current_time,
                                 positions=atpos,

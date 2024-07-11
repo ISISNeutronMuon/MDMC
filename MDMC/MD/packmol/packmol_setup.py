@@ -32,7 +32,7 @@ def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> fl
         case "cube":
             return dimensions[0] ** 3
         case "box":
-            return np.product(np.array(dimensions))
+            return np.prod(np.array(dimensions))
         case "sphere":
             return (4 / 3) * math.pi * (dimensions[0] ** 3)
         case _:

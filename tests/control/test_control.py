@@ -143,7 +143,7 @@ def mock_update_engine_parameters(self):
 def mock_equilibrate(self, *extras):
     pass
 
-def mock_calculating_max_FoM(self):
+def mock_calculate_max_FoM(self):
     pass
 
 
@@ -362,7 +362,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     monkeypatch.setattr(Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
     monkeypatch.setattr(Control, "equilibrate", mock_equilibrate)
-    monkeypatch.setattr(Control, "calculating_max_FoM", mock_calculating_max_FoM)
+    monkeypatch.setattr(Control, "calculate_max_FoM", mock_calculate_max_FoM)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -536,7 +536,7 @@ def test_control_max_parameter_change(monkeypatch):
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
-    monkeypatch.setattr(Control, "calculating_max_FoM", mock_calculating_max_FoM)
+    monkeypatch.setattr(Control, "calculate_max_FoM", mock_calculate_max_FoM)
 
     ctrl_default = Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
@@ -785,7 +785,7 @@ def test_control_fit_parameters(simulation, monkeypatch):
     As these cannot be refined
     """
 
-    monkeypatch.setattr(Control, "calculating_max_FoM", mock_calculating_max_FoM)
+    monkeypatch.setattr(Control, "calculate_max_FoM", mock_calculate_max_FoM)
 
     tie_target = Parameter(-1., 'tie_target')
     tied_param = Parameter(2., 'tied')

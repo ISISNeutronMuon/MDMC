@@ -2,7 +2,7 @@
 ### and MD engines; i.e. the 'backend' of mdmc/mdmc.
 
 # Use an official Python runtime as a parent image
-FROM python:3.11.2-slim-buster
+FROM python:3.11.9-slim-bookworm
 
 # Define environment variables
 ENV NAME World
@@ -34,16 +34,7 @@ RUN mkdir /opt/MD
 RUN touch /root/.bashrc
 
 # Install packmol
-# Install dependencies (gfortran)
 RUN mkdir /opt/other
-RUN mkdir /opt/other/gfortran
-WORKDIR /opt/other/gfortran
-RUN wget https://gfortran.meteodat.ch/download/x86_64/releases/gcc-12.2.0.tar.xz
-RUN tar -xJf gcc-12.2.0.tar.xz
-RUN LD_LIBRARY_PATH="/opt/other/gfortran/gcc-12.2.0/lib64:$LD_LIBRARY_PATH"
-RUN export LD_LIBRARY_PATH
-
-# Get packmol
 RUN mkdir /opt/other/packmol
 WORKDIR /opt/other/packmol
 RUN wget https://github.com/m3g/packmol/archive/refs/tags/v20.14.2.tar.gz
@@ -52,7 +43,7 @@ RUN rm v20.14.2.tar.gz
 
 # Build Packmol
 WORKDIR /opt/other/packmol/packmol-20.14.2
-RUN ./configure /opt/other/gfortran/gcc-12.2.0/
+RUN ./configure 
 RUN make
 
 # Add packmol to env variables
@@ -81,7 +72,7 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
           -D PKG_OPENMP=on \
           -D PKG_PYTHON=on \
           -D PKG_VORONOI=on \
-          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/8/libgomp.so \
+          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/12/libgomp.so \
           ../cmake
 RUN make
 RUN make install-python
@@ -99,5 +90,3 @@ WORKDIR /home
 # Create aliases
 RUN echo alias python="python3" > ~/.bash_aliases
 RUN echo alias pip="pip3" >> ~/.bash_aliases
-
-#triggering a rebuild

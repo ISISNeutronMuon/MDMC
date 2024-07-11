@@ -9,7 +9,7 @@ from pathlib import Path
 import logging
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, RectBivariateSpline
 from verbosemanager import VerboseManager
 
 from MDMC.control.plot_results import PlotResults, data_printers
@@ -290,7 +290,7 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
-        self.max_FoM = self.calculating_max_FoM()
+        self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -508,7 +508,7 @@ class Control:
             average_timing = statistics.mean(self.step_timings)
             if self.verbose != -1:
                 print(
-                f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
+                f'\nAverage time per step was {np.round(average_timing, 2)} seconds.')
 
         verbose_manager.finish("Refinement")
 
@@ -996,26 +996,22 @@ class Control:
                 err_uniform[err_uniform == 0.] = float('inf')
             # interpolation for 2D
             elif var_dimension == 2:
-                # note: the interp2d interpolation function requires input of the form
-                # interp2d(x, y, z)
-                # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
-                # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
                 # Because Observable.dependent_variables_structure gives the order in which
                 # the independent variables are represented in the np.shape of the data,
-                # we have to reverse the order of the x and y arrays for interp2d:
+                # we have to reverse the order of the x and y arrays for interpolation:
                 x_data = observable.independent_variables[var_indexing[var_key][1]]
                 y_data = observable.independent_variables[var_indexing[var_key][0]]
-                data_interpol = interp2d(x_data, y_data, data)
+                data_interpol = RectBivariateSpline(x_data, y_data, data.T)
                 # get the independent_variables that satisfy the uniformity requirements
                 # as created earlier
                 x_uniform = indep_var_uniform[var_indexing[var_key][1]]
                 y_uniform = indep_var_uniform[var_indexing[var_key][0]]
-                uniform_data = data_interpol(x_uniform, y_uniform)
+                uniform_data = data_interpol(x_uniform, y_uniform).T
                 # repeat the interpolation for the errors
                 err_data = observable.errors[var_key][0]
                 err_data[err_data == float('inf')] = 0
-                err_interpol = interp2d(x_data, y_data, err_data)
-                err_uniform = err_interpol(x_uniform, y_uniform)
+                err_interpol = RectBivariateSpline(x_data, y_data, err_data.T)
+                err_uniform = err_interpol(x_uniform, y_uniform).T
                 err_uniform[err_uniform == 0.] = float('inf')
             else:
                 raise NotImplementedError(
@@ -1188,7 +1184,7 @@ class Control:
 
         self.simulation.time_step *= reduction_factor
 
-    def calculating_max_FoM(self):
+    def calculate_max_FoM(self):
         """
         Calculates a maximum Figure of Merit value by comparing a set of experimental observable
         data, to arrays consisting of numbers close to zero. For use when the MD Engine fails with
@@ -1204,7 +1200,7 @@ class Control:
         # pylint: disable=protected-access
         # the purpose of method is to create this empty observable so accessing is necessary
         self.observable_pairs[0].MD_obs._dependent_variables = {}
-        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1e-9
 
         max_FoM = self.FoM_calculator.calculate()
         self.observable_pairs[0].MD_obs._dependent_variables = None
