@@ -508,7 +508,7 @@ class Control:
             average_timing = statistics.mean(self.step_timings)
             if self.verbose != -1:
                 print(
-                f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
+                f'\nAverage time per step was {np.round(average_timing, 2)} seconds.')
 
         verbose_manager.finish("Refinement")
 

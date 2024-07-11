@@ -1,8 +1,9 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
-import numpy as np
+from textwrap import dedent
 
+import numpy as np
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -216,16 +217,20 @@ class GPO(Minimizer):
         """
 
         if self.has_converged():
-            converged_message = '\nThe refinement has finished.'
+            converged_message = 'The refinement has finished.'
         else:
-            converged_message = "\nThe refinement has not finished."
+            converged_message = "The refinement has not finished."
 
-        output_string = (f'{converged_message} \n \n'
-                         f'Minimum measured point is: \n'
-                         f'{minimizer_output[0]} with an '
-                         f'FoM of {minimizer_output[1]}. \n \n'
-                         f'Minimum point predicted is: \n'
-                         f'{minimizer_output[2]} for an '
-                         f'FoM of {minimizer_output[3]}.\n \n ')
+        output_string = (f"""
+                        {converged_message}
 
-        return output_string
+                        Minimum measured point is:
+                        {minimizer_output[0]} with an
+                        FoM of {minimizer_output[1]}.
+
+                        Minimum point predicted is:
+                        {minimizer_output[2]} for an
+                        FoM of {minimizer_output[3]}.
+                        """)
+
+        return dedent(output_string)

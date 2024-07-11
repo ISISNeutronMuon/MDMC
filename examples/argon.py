@@ -25,7 +25,7 @@ density = 0.0176
 universe = Universe(dimensions=38.4441)
 Ar = Atom('Ar', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
-n_ar_atoms = int(density * np.product(universe.dimensions))
+n_ar_atoms = int(density * np.prod(universe.dimensions))
 print(n_ar_atoms)
 universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
