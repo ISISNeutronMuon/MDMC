@@ -32,7 +32,7 @@ def argon_control(exp_datasets) -> callable:
         universe = Universe(dimensions=23.0668)
         Ar = Atom('Ar', charge=0., mass=36.0)
 
-        n_ar_atoms = int(density * np.product(universe.dimensions))
+        n_ar_atoms = int(density * np.prod(universe.dimensions))
         print(f'Number of argon atoms = {n_ar_atoms}')
         universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
