@@ -217,19 +217,20 @@ class GPO(Minimizer):
         """
 
         if self.has_converged():
-            converged_message = '\nThe refinement has finished.'
+            converged_message = 'The refinement has finished.'
         else:
-            converged_message = "\nThe refinement has not finished."
+            converged_message = "The refinement has not finished."
 
-        output_string = (f"""{converged_message}
+        output_string = (f"""
+                        {converged_message}
 
-                         Minimum measured point is:
-                         {minimizer_output[0]} with an
-                         FoM of {minimizer_output[1]}.
+                        Minimum measured point is:
+                        {minimizer_output[0]} with an
+                        FoM of {minimizer_output[1]}.
 
-                         Minimum point predicted is:
-                         {minimizer_output[2]} for an
-                         FoM of {minimizer_output[3]}.
-                         """)
+                        Minimum point predicted is:
+                        {minimizer_output[2]} for an
+                        FoM of {minimizer_output[3]}.
+                        """)
 
         return dedent(output_string)

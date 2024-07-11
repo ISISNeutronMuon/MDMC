@@ -234,15 +234,15 @@ class MMC(Minimizer):
             last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
         """
         if self.has_converged():
-            converged_message = '\nThe refinement has converged.'
+            converged_message = 'The refinement has converged.'
         else:
-            converged_message = "\nThe refinement has not converged."
+            converged_message = "The refinement has not converged."
 
         # as of numpy 2.0.0, np.float64 has repr e.g. "np.float64(3.0)" instead of "3.14"
         # we use legacy print options to make the string nicer with less fiddling
         with np.printoptions(legacy="1.25"):
-            output_string = (f"""{converged_message}
-
+            output_string = (f"""
+                            {converged_message}
 
                             Last accepted point is:
                             {minimizer_output[0]} with a minimum
