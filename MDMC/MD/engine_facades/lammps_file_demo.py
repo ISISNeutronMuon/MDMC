@@ -16,7 +16,15 @@ from tempfile import NamedTemporaryFile
 from typing import Union
 
 import numpy as np
-from lammps import lammps
+
+try:
+    from lammps import lammps
+except ModuleNotFoundError as err:
+    raise ModuleNotFoundError('The Python interface for LAMMPS (lammps.py) is'
+                              ' not in the PYTHONPATH. See LAMMPS documentation'
+                              ' on Python to rectify this.',
+                              ) from err
+
 from verbosemanager import VerboseManager
 
 from MDMC.MD.engine_facades.file_facade import FileSimulation
@@ -105,7 +113,6 @@ class LAMMPSFullFileSimulation(FileSimulation):
         self._setup()
 
         self.initial_struct = struct_file
-        self.known_params = self.parser.param_dict.keys()
         initial_params = {'_struct_file': struct_file,
                           '_traj_step': traj_step,
                           '_time_step': time_step}
@@ -115,21 +122,6 @@ class LAMMPSFullFileSimulation(FileSimulation):
         self.prev_trajectory_file = None
         self.trajectory_file = None
         self.stored_trajectory_file = None
-
-    def update_vals_from_settings(self, settings: dict):
-        """
-        Set file parameters from those provided in settings.
-
-        Parameters
-        ----------
-        settings : dict
-            Settings to put into file dump.
-        """
-        params = {}
-        for key, val in settings.items():
-            if key in self.known_params:
-                params[key] = val
-        self.parser.update_param_dict(params)
 
     @property
     def time_step(self) -> float:
@@ -216,7 +208,7 @@ class LAMMPSFullFileSimulation(FileSimulation):
             minimize_every: int = 10,
             output_log: str = None,
             work_dir: str = None,
-            **settings: dict
+            **settings: dict,
     ) -> None:
         """
         Move the atoms towards a potential energy minimum.
@@ -275,7 +267,7 @@ class LAMMPSFullFileSimulation(FileSimulation):
             verbose: bool = False,
             output_log: str = None,
             work_dir: str = None,
-            **settings: dict
+            **settings: dict,
     ) -> None:
         """
         Run the MD simulation for the specified number of steps.
@@ -331,7 +323,7 @@ class LAMMPSFullFileSimulation(FileSimulation):
 
         self.update_vals_from_settings(settings)
 
-        files = [NamedTemporaryFile() for extra_file in self.extra_files.keys()]
+        files = [NamedTemporaryFile() for extra_file in self.extra_files]
 
         for key, file in zip(self.extra_files.keys(), files):
             params[key] = file.name
@@ -391,6 +383,8 @@ class LAMMPSFullFileSimulation(FileSimulation):
         TypeError
             If ``trajectory_file`` describes a triclinic universe.
         """
+        # pylint: disable=E0606
+
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
 
@@ -478,10 +472,7 @@ class LAMMPSFullFileSimulation(FileSimulation):
                                                                       for prop in
                                                                       ('id', 'type', pos_string,
                                                                        'mass', 'element', 'q')]
-                        if 'vx' in splt:
-                            i_vel = splt.index('vx')
-                        else:
-                            i_vel = None
+                        i_vel = splt.index('vx') if 'vx' in splt else None
 
                         # now we try to get the correct number of frames in the trajectory
                         real_n_steps = 1 + line_count // (n_atoms + header_size)

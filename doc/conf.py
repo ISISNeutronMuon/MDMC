@@ -226,4 +226,3 @@ epub_exclude_files = ["search.html"]
 
 
 # -- Extension configuration -------------------------------------------------
-nbsphinx_allow_errors = True

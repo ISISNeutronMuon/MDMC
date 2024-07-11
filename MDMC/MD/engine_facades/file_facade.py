@@ -22,6 +22,8 @@ class FileSimulation(ABC):
         Parser to read parametrised files.
     settings : dict[str, Any]
         Extra settings passed by users.
+    known_params : dict_keys
+
 
     Notes
     -----
@@ -56,6 +58,35 @@ class FileSimulation(ABC):
         Parse configuration files and load parameters into self.
         """
         self.parser.parse()
+
+    @property
+    def known_params(self) -> set[str]:
+        """
+        Parameters known to the parser.
+
+        Used for determining which params can be set from ``settings``.
+
+        Returns
+        -------
+        set[str]
+            Set of parameters known to parser.
+        """
+        return set(self.parser.param_dict.keys())
+
+    def update_vals_from_settings(self, settings: dict):
+        """
+        Set file parameters from those provided in settings.
+
+        Parameters
+        ----------
+        settings : dict
+            Settings to put into file dump.
+        """
+        params = {}
+        for key, val in settings.items():
+            if key in self.known_params:
+                params[key] = val
+        self.parser.update_param_dict(params)
 
     @abstractmethod
     def minimize(self, n_steps: int, **settings: dict) -> None:
@@ -148,7 +179,7 @@ class FileSimulation(ABC):
         """
         return self.parser.param_dict
 
-    def update_parameters(self) -> None:
+    def update_parameters(self) -> None:  # noqa: B027
         """
         Dummy function as not needed for file dump type.
         """

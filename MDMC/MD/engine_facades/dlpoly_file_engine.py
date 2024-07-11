@@ -5,12 +5,12 @@ Parameter-file-based runner for DLPoly simulations.
 from pathlib import Path
 from typing import Union
 
-from verbosemanager import VerboseManager
 from dlpoly import DLPoly
 from dlpoly.config import Atom
+from verbosemanager import VerboseManager
 
-from MDMC.MD.engine_facades.file_facade import FileSimulation
 from MDMC.MD.engine_facades.dlpoly_engine import DLPOLYEngine
+from MDMC.MD.engine_facades.file_facade import FileSimulation
 
 PathLike = Union[str, Path]
 
@@ -67,6 +67,7 @@ class DLPolyFileSimulation(FileSimulation):
         self.time_step = time_step
         self.traj_step = traj_step
         self._saved_config = None
+        self.update_vals_from_settings(settings)
 
     @property
     def atoms(self) -> list[Atom]:
@@ -111,7 +112,7 @@ class DLPolyFileSimulation(FileSimulation):
             minimize_every: int = 10,
             output_log: str = None,
             work_dir: str = None,
-            **settings: dict
+            **settings: dict,
     ) -> None:
         """
         Minimize the simulation energy.
@@ -147,6 +148,7 @@ class DLPolyFileSimulation(FileSimulation):
 
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
+        self.update_vals_from_settings(settings)
         etol = settings.get("etol", 1.e-3)
         ftol = settings.get("ftol", None)
 
@@ -176,7 +178,7 @@ class DLPolyFileSimulation(FileSimulation):
             verbose: bool = False,
             output_log: str = None,
             work_dir: str = None,
-            **settings: dict
+            **settings: dict,
     ) -> None:
         """
         Run the MD simulation for the specified number of steps.
@@ -214,6 +216,8 @@ class DLPolyFileSimulation(FileSimulation):
         # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
         verbose_manager.step(f"Running {process} for {n_steps} steps")
+
+        self.update_vals_from_settings(settings)
 
         # Get type of control to load
         control_type = settings.get("control_type", "run_control")

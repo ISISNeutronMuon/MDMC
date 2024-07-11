@@ -2,15 +2,20 @@
 Parameter-file-based runner for LAMMPS simulations.
 """
 
-from collections import namedtuple
 import logging
+from collections import namedtuple
 from itertools import count
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import BinaryIO, Union, Iterator, Optional
+from typing import BinaryIO, Iterator, Optional, Union
 
-
-from lammps import PyLammps, Atom
+try:
+    from lammps import Atom, PyLammps
+except ModuleNotFoundError as err:
+    raise ModuleNotFoundError('The Python interface for LAMMPS (lammps.py) is'
+                              ' not in the PYTHONPATH. See LAMMPS documentation'
+                              ' on Python to rectify this.',
+                              ) from err
 import numpy as np
 
 from MDMC.common import units
@@ -34,7 +39,7 @@ SYSTEM = {
     'TEMPERATURE': units.Unit('K'),
     'ENERGY': units.Unit('kcal') / units.Unit('mol'),
     'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('atm')
+    'PRESSURE': units.Unit('atm'),
 }
 
 
@@ -100,6 +105,7 @@ class LAMMPSFileSimulation(FileSimulation):
         self.type_map = type_map
         self.trajectory_file = None
         self._saved_config = None
+        self.update_vals_from_settings(settings)
 
     @property
     @unit_decorator_getter(unit=units.LENGTH)
@@ -152,7 +158,7 @@ class LAMMPSFileSimulation(FileSimulation):
                        "temp/berendsen",
                        "temp/csvr",
                        "langevin",
-                       "temp/rescale",):
+                       "temp/rescale"):
                 return fix
 
         return None
@@ -352,6 +358,7 @@ class LAMMPSFileSimulation(FileSimulation):
         maxeval : int
             Maximum number of force calculations in a single structure relaxation.
         """
+        self.update_vals_from_settings(settings)
 
         with self.parser(*self.parser.file_name.keys()) as files:
             self.lmp.clear()
@@ -407,7 +414,7 @@ class LAMMPSFileSimulation(FileSimulation):
             verbose: bool = False,
             output_log: str = None,
             work_dir: str = None,
-            **settings: dict
+            **settings: dict,
     ):
         """
         Run the MD simulation for the specified number of steps.
@@ -437,6 +444,8 @@ class LAMMPSFileSimulation(FileSimulation):
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
         """
+        self.update_vals_from_settings(settings)
+
         with self.parser(*self.parser.file_name.keys()) as files:
             self.lmp.clear()
             # Load first file (main script), which should contain
@@ -471,7 +480,7 @@ class LAMMPSFileSimulation(FileSimulation):
             start: int = 0,
             stop: int = None,
             step: int = 1,
-            **settings: dict
+            **settings: dict,
     ) -> CompactTrajectory:
         """
         Converts between a LAMMPS trajectory dump and an MDMC ``CompactTrajectory``.
@@ -514,6 +523,7 @@ class LAMMPSFileSimulation(FileSimulation):
         TypeError
             If ``trajectory_file`` describes a triclinic universe.
         """
+        # pylint: disable=E0606
 
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
@@ -605,10 +615,8 @@ class LAMMPSFileSimulation(FileSimulation):
                         # optional
                         i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
                                                in ['id', 'type', pos_string]]
-                        if 'vx' in splt:
-                            i_vel = splt.index('vx')
-                        else:
-                            i_vel = None
+
+                        i_vel = splt.index('vx') if 'vx' in splt else None
 
                         # now we try to get the correct number of frames in the trajectory
                         real_n_steps = 1 + line_count // (n_atoms + header_size)
