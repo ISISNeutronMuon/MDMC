@@ -1,4 +1,6 @@
-"""Module for observable reader abstract class"""
+"""
+Module for observable reader abstract class.
+"""
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Union
@@ -12,26 +14,26 @@ from MDMC.readers.reader import Reader
 if TYPE_CHECKING:
     from MDMC.trajectory_analysis.observables.obs import Observable
 
+
 @repr_decorator('data')
 class ObservableReader(Reader):
-
     """
-    Abstract class that defines methods common to all readers for observables
+    Abstract class that defines methods common to all readers for observables.
 
-    ObservableReaders are created using ObservableReaderFactory
+    ``ObservableReader`` s are created using :any:`ObservableReaderFactory`.
     """
 
     def assign(self, observable: 'Observable') -> None:
-        # disable pylint warning about writing to the `Observable`
-        #pylint: disable=protected-access
         """
-        Abstract method to assign the parsed information into the `Observable`
+        Abstract method to assign the parsed information into the `Observable`.
 
         Parameters
         ----------
-        observable : `Observable`
+        observable : Observable
             An MDMC `Observable` that will be assigned the data parsed by the reader.
         """
+        # disable pylint warning about writing to the `Observable`
+        # pylint: disable=protected-access
         observable._independent_variables = self.independent_variables
         observable._dependent_variables = self.dependent_variables
         observable._errors = self.errors
@@ -39,6 +41,8 @@ class ObservableReader(Reader):
     @property
     def data(self) -> dict:
         """
+        Data as dictionary.
+
         A dictionary of dictionaries containing the independent variables,
         dependent variables and the associated errors.
 
@@ -46,7 +50,7 @@ class ObservableReader(Reader):
         -------
         dict
             The independent variables, dependent variables and the errors on
-            the dependent variables
+            the dependent variables.
         """
 
         return {"independent": self.independent_variables,
@@ -57,12 +61,12 @@ class ObservableReader(Reader):
     @abstractmethod
     def independent_variables(self) -> dict:
         """
-        The independent variables
+        The independent variables.
 
         Returns
         -------
         dict
-            A dictionary of the independent variables
+            A dictionary of the independent variables.
         """
 
         raise NotImplementedError
@@ -71,12 +75,12 @@ class ObservableReader(Reader):
     @abstractmethod
     def dependent_variables(self) -> None:
         """
-        The dependent variables
+        The dependent variables.
 
         Returns
         -------
         dict
-            A dictionary of the dependent variables
+            A dictionary of the dependent variables.
         """
 
         raise NotImplementedError
@@ -85,12 +89,12 @@ class ObservableReader(Reader):
     @abstractmethod
     def errors(self) -> None:
         """
-        The errors on the dependent variables
+        The errors on the dependent variables.
 
         Returns
         -------
         dict
-            A dictionary of the errors on the dependent variables
+            A dictionary of the errors on the dependent variables.
         """
 
         raise NotImplementedError
@@ -98,12 +102,12 @@ class ObservableReader(Reader):
     @staticmethod
     def _make_float(i: Any) -> Union[float, None]:
         """
-        Casts the input to a `float`, or passes if the input cannot be cast
+        Cast the input to a `float`, or `None` if the input cannot be cast.
 
         Parameters
         ----------
         i : numeric
-            Input to be cast to `float`
+            Input to be cast to `float`.
 
         Returns
         -------
@@ -118,9 +122,24 @@ class ObservableReader(Reader):
 
 
 class SQwReader(ObservableReader, ABC):
-    """Abstract base subclass that adds attributes & methods common to all SQw readers"""
+    """
+    Abstract base class for SQw readers.
+
+    Parameters
+    ----------
+    file_name : str
+        File name to read data from.
+    """
     # pylint: disable=attribute-defined-outside-init
     # to avoid it flagging up on private attributes in getters
+
+    #: Standard warning message for invalid SQw_err.
+    SQW_ERR_WARNING = ("We have set the error bar to infinity for "
+                       "any zero error values. This allows us to "
+                       "calculate chi-squared but effectively ignores "
+                       "these points, this may not be what you want "
+                       "to do. Consider using a FoM which doesn't "
+                       "need errors if this is an issue. \n")
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
@@ -130,12 +149,12 @@ class SQwReader(ObservableReader, ABC):
     @property
     def independent_variables(self) -> dict:
         """
-        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
+        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``).
 
         Returns
         -------
         dict
-            The independent variables Q and E
+            The independent variables Q and E.
         """
 
         return {"Q": self.Q, "E": self.E}
@@ -143,12 +162,12 @@ class SQwReader(ObservableReader, ABC):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variables, SQw (in ``arb``)
+        Get the dependent variables, SQw (in ``arb``).
 
         Returns
         -------
         dict
-            The dependent variables, SQw (in ``arb``)
+            The dependent variables, SQw (in ``arb``).
         """
 
         return {"SQw": [self.SQw]}
@@ -156,12 +175,12 @@ class SQwReader(ObservableReader, ABC):
     @property
     def errors(self) -> dict:
         """
-        Get the errors on the dependent variables
+        Get the errors on the dependent variables.
 
         Returns
         -------
         dict
-            The error on SQw (in ``arb``)
+            The error on SQw (in ``arb``).
         """
 
         return {"SQw": [self.SQw_err]}
@@ -169,13 +188,12 @@ class SQwReader(ObservableReader, ABC):
     @property
     def w(self) -> float:
         """
-        Get or set the energy transfer expressed in angular frequency, w, in
-        ``1 / ps``
+        The energy transfer expressed in angular frequency, w (in ``1/ps``).
 
         Returns
         -------
         array
-            Energy transfer as angular frequency, w, in ``1 / ps``
+            Energy transfer as angular frequency, w, in ``1/ps``.
         """
 
         return self._w
@@ -188,12 +206,12 @@ class SQwReader(ObservableReader, ABC):
     @property
     def E(self) -> float:
         """
-        Get or set the energy transfer, E, in ``meV``
+        The energy transfer, E (in ``meV``).
 
         Returns
         -------
         array
-            Energy transfer, E, in ``meV``
+            Energy transfer, E (in ``meV``).
         """
 
         return self._E
@@ -206,12 +224,12 @@ class SQwReader(ObservableReader, ABC):
     @property
     def Q(self) -> float:
         """
-        Get or set the momentum transfer, Q, in ``Ang^-1``
+        Get or set the momentum transfer, Q (in ``Ang^-1``).
 
         Returns
         -------
         array
-            Momentum transfer, Q, in ``Ang^-1``
+            Momentum transfer, Q (in ``Ang^-1``).
         """
 
         return self._Q
@@ -224,7 +242,14 @@ class SQwReader(ObservableReader, ABC):
 
 
 class PDFReader(ObservableReader, ABC):
-    """Abstract base subclass that adds attributes & methods common to all PDF readers"""
+    """
+    Abstract base subclass that adds attributes & methods common to all PDF readers.
+
+    Parameters
+    ----------
+    file_name : str
+        File to read data from.
+    """
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
@@ -235,12 +260,12 @@ class PDFReader(ObservableReader, ABC):
     @property
     def independent_variables(self) -> dict:
         """
-        Get the independent variable r (in ``Ang^-1``)
+        The independent variable r (in ``Ang^-1``).
 
         Returns
         -------
         dict
-            The independent variable r (in ``Ang^-1``)
+            The independent variable r (in ``Ang^-1``).
         """
 
         return {"r": self.r}
@@ -248,12 +273,12 @@ class PDFReader(ObservableReader, ABC):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variable PDF, the pair distribution function (in ``barn``)
+        The dependent variable PDF, the pair distribution function (in ``barn``).
 
         Returns
         -------
         dict
-            The dependent variable, PDF (in ``barn``)
+            The dependent variable, PDF (in ``barn``).
         """
 
         return {"PDF": self.PDF}
@@ -261,12 +286,12 @@ class PDFReader(ObservableReader, ABC):
     @property
     def errors(self) -> dict:
         """
-        Get the errors on the dependent variable
+        The errors on the dependent variable.
 
         Returns
         -------
         dict
-            The error on PDF (in ``barn``)
+            The error on PDF (in ``barn``).
         """
 
         return {"PDF": self.PDF_err}
@@ -274,7 +299,12 @@ class PDFReader(ObservableReader, ABC):
     @property
     def r(self) -> float:
         """
-        Get or set the value of the atomic separation distance (in ``Ang``)
+        Atomic separation distance (in ``Ang``).
+
+        Returns
+        -------
+        float
+            Atomic separation (in ``Ang``).
         """
 
         return self._r
@@ -288,11 +318,12 @@ class PDFReader(ObservableReader, ABC):
     @property
     def PDF(self) -> np.ndarray:
         """
-        Get or set the total pair distribution function between pairs (in ``barn``)
+        Total pair distribution function between pairs (in ``barn``).
+
         Returns
         -------
         numpy.ndarray
-            total pair distribution function (in ``barn``)
+            Total pair distribution function (in ``barn``).
         """
 
         return self._PDF
@@ -305,11 +336,12 @@ class PDFReader(ObservableReader, ABC):
     @property
     def PDF_err(self) -> np.ndarray:
         """
-        Get or set the error on the total pair distribution function between pairs (in ``barn``)
+        Error on the total pair distribution function between pairs (in ``barn``).
+
         Returns
         -------
         numpy.ndarray
-            error on the total pair distribution function (in ``barn``)
+            Error on the total pair distribution function (in ``barn``).
         """
         return self._PDF_err
 

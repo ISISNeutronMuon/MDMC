@@ -1,7 +1,8 @@
-"""XML reader for SQw data"""
+"""
+XML reader for SQw data.
+"""
 import logging
 import xml.etree.ElementTree as ET
-from typing import TextIO
 
 import numpy as np
 
@@ -11,20 +12,35 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
-class XML_SQw(SQwReader):
 
+class XML_SQw(SQwReader):
     """
-    An XML reader for SQw data
+    An XML reader for SQw data.
+
+    Attributes
+    ----------
+    SQw : ~numpy.ndarray, size(Q) x size(E)
+        2D array of intensity of ``S``
+    SQw_err : ~numpy.ndarray, size(Q) x size(E)
+        2D array of error in ``S``
+    Q : ~numpy.ndarray
+        1D array of wavevector transfer (in ``Ang^-1``).
+    w : ~numpy.ndarray
+        1D array of frequency (in ``ps^-1``).
+    E : ~numpy.ndarray
+        1D array of energy transfer (in ``meV``).
     """
 
     def parse(self, **settings: dict) -> None:
         """
-        Parses the xml file
+        Parse the .xml file.
 
-        Currently only parses SQw files
+        Currently only parses SQw files.
 
-        E is the energy transfer (in ``meV``)
-        Q is wavevector transfer (in ``Ang^-1``)
+        Parameters
+        ----------
+        **settings : dict
+            Extra options.
         """
 
         _tree = ET.parse(self.file)
@@ -85,22 +101,18 @@ class XML_SQw(SQwReader):
         # inf so that error calculations can still be performed on them.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            msg = "\n We have set the error bar to infinity for any zero error values, this allows \
-                us to calculate chi-squared but effectively ignores these points, this may not \
-                be what you want to do, consider using a FoM which doesn't need errors i f\
-                this is an issue \n"
-            logger.error(msg)
+            logger.error(self.SQW_ERR_WARNING)
 
     @staticmethod
-    def dict_from_element(element: TextIO) -> dict:
+    def dict_from_element(element: ET.Element) -> dict:
         """
-        Creates a dictionary from an XML element
+        Create a dictionary from an XML element.
 
         Parameters
         ----------
-        element : Element
-            An XML element. Must have items method, which must return a list of
-            2 element tuples.
+        element : ~xml.etree.ElementTree.Element
+            An XML element. Must have ``items`` method, which must
+            return a list of 2 element tuples.
 
         Returns
         -------
@@ -108,5 +120,4 @@ class XML_SQw(SQwReader):
             For each tuple from the xml Element, The first index is the key and
             the second element is the value.
         """
-
         return {item[0]: item[1] for item in element.items()}

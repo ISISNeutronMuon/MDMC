@@ -1,4 +1,6 @@
-"""Readers for dynamic data"""
+"""
+Readers for MDANSE SQw data.
+"""
 
 import logging
 
@@ -9,9 +11,12 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
+#: Conversion ratio between `eV` and `J`.
 eV_in_Joules = 1.602176634 * 10**(-19)
+#: Avogadro's number.
 mole = 6.02214076 * 10**23
 
+#: Unit conversions for units used in MDANSE.
 conversion_to_meV = {
     'J' : 6.2415091e+21,
     'kJ' : 6.2415091e+24,
@@ -36,19 +41,47 @@ conversion_to_meV = {
 
 class MDANSESQw(SQwReader):
     """
-    A class for reading SQw files from MDANSE's trajectory analysis
+    Class for reading SQw files from MDANSE's trajectory analysis.
 
     The output from MDANSE analysis of trajectories is a .csv file with some lines
     of comments describing the dataset and columns/rows, followed by an array
-    of numbers. The first row and column of the array define the axes of the data,
+    of numbers.
+
+    The first row and column of the array define the axes of the data,
     where the role and physical unit of each axis is described in the comment lines
-    preceding the data. The [0,0] element of the array is always 0.0 and is not used,
-    while all the remaining points are the S(Q,w) at each corresponding Q and w.
+    preceding the data.
+
+    The [0,0] element of the array is always 0.0 and is not used,
+    while all the remaining points are the S(Q,w) at each
+    corresponding Q and w.
+
+    Parameters
+    ----------
+    file_name : str
+        File to read data from.
 
     Attributes
     ----------
-    file_variables : ndarray
-        numpy array containing all the data
+    SQw : ~numpy.ndarray, size(Q) x size(E)
+        2D array of intensity of ``S``
+    SQw_err : ~numpy.ndarray, size(Q) x size(E)
+        2D array of error in ``S``
+    Q : ~numpy.ndarray
+        1D array of wavevector transfer (in ``Ang^-1``).
+    E : ~numpy.ndarray
+        1D array of energy transfer (in ``meV``).
+    file_variables : ~numpy.ndarray
+        numpy array containing all the data.
+    first_row : {'Q', 'E'}
+        Whether first row is Q or E.
+    first_column : {'Q', 'E'}
+        Whether first column is Q or E.
+    q_unit : Unit or str
+        Units of Q in file.
+    e_unit : Unit or str
+        Units of E in file.
+    transpose_data : bool
+        Whether read data must be transposed to E, Q.
     """
 
     def __init__(self, file_name: str):
@@ -61,19 +94,32 @@ class MDANSESQw(SQwReader):
         self.transpose_data = True
 
     def __enter__(self) -> None:
-        """Open the files for variables and detector momenta"""
-        # pylint: disable=consider-using-with
-        # as this is an abstracted open method
+        """
+        Open the files for variables and detector momenta.
+        """
         self.file_variables = np.loadtxt(self.file_name)
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Does nothing since numpy closes the file after reading anyway"""
-        # pylint: disable=unnecessary-pass
-        pass
+        """
+        Do nothing since numpy closes the file after reading anyway.
+
+        Parameters
+        ----------
+        exception_type : Type[BaseException]
+            Type of exception raised.
+        exception_value : BaseException
+            The exception itself.
+        traceback : TraceBackType
+            Traceback from error.
+        """
 
     def parse_header(self):
-        """Reads the header part of the file to get the labels of
-        the data axes.
+        """
+        Read the header to get the data axis labels.
+
+        Warns
+        -----
+        Unrecognised unit read from file.
         """
         header = []
         value = None
@@ -88,6 +134,7 @@ class MDANSESQw(SQwReader):
                     header.append(line)
                 else:
                     break
+
         # This part will find the relevant part of the header
         # and extract the information about the axes.
         for line in header:
@@ -117,42 +164,50 @@ class MDANSESQw(SQwReader):
                     raise ValueError(f"Unknown variable ({variable}).")
             if "row:" in line:
                 self.first_row = value
-            if "column:" in line:
+            elif "column:" in line:
                 self.first_column = value
         if self.first_row != 'Q':
             self.transpose_data = False
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse into SQw format, creates an error on SQw 1% of the value of SQw,
-        since MDANSE does not yet output an error. This should be changed once
-        it is possible to read an error.
+        Parse into SQw format.
 
-        E is the energy transfer (in meV)
-        Q is wavevector transfer (in Ang^-1)
+        Create an error on SQw 1% of the value of SQw, since MDANSE
+        does not yet output an error.
+
+        .. note::
+
+           This should be changed once it is possible to read an error.
+
+        Parameters
+        ----------
+        **settings : dict
+            No extra options used in this reader.
         """
         self.parse_header()
 
         if self.first_row == 'Q' and self.first_column == 'E':
-            self.Q = self.file_variables[0, 1:] # Entry at [0,0] is always zero
+            self.Q = self.file_variables[0, 1:]  # Entry at [0,0] is always zero
             self.E = self.file_variables[1:, 0]
         elif self.first_row == 'E' and self.first_column == 'Q':
             self.E = self.file_variables[0, 1:]
             self.Q = self.file_variables[1:, 0]
+
         self.Q *= self.q_unit.conversion_factor
         self.E *= conversion_to_meV[self.e_unit]
+
         if self.transpose_data:
             self.SQw = self.file_variables[1:, 1:].T
         else:
             self.SQw = self.file_variables[1:, 1:]
+
         self.SQw_err = self.SQw*0.01  # TODO: When MDANSE outputs an error, read it in
+
         if np.any(self.SQw <= 0.):
             self.SQw[np.where(self.SQw <= 0.)] = 0.0
+
         # Change and zero errors into inf so that error calculations can still be performed on them.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            msg = "We have set the error bar to infinity for any zero error values, this allows\
-                us to calculate chi-squared but effectively ignores these points, this may not\
-                be what you want to do, consider using a FoM which doesn't need errors if\
-                this is an issue"
-            logger.warning(msg)
+            logger.error(self.SQW_ERR_WARNING)

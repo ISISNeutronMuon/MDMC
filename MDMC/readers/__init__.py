@@ -1,4 +1,5 @@
-"""Readers for both atomic configurations and experimental observables
+"""
+Readers for both atomic configurations and experimental observables.
 
 Contents
 --------

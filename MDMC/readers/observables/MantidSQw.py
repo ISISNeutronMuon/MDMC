@@ -1,4 +1,6 @@
-"""Readers for dynamic data"""
+"""
+Readers for dynamic Mantid SQw data.
+"""
 
 import logging
 from contextlib import suppress
@@ -10,32 +12,54 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
+
 class MantidSQw(SQwReader):
     """
-    A class for reading SQw files from Mantid
+    A class for reading SQw files from Mantid.
 
-    Mantid's ascii output uses one or two files, either:
-      - A file containing the SQw data and error for the range of energy values measured at each
-        Q with ``file_name``
-        or
-      - A file containing the SQw data and error for the range of energy values measured at each
-        detector (or group of detectors) ID with ``file_name`` and a file giving the momentum
-        value associated with each detector (or group of detectors) ID, with the name given by
-        ``file_name + '_detectors'``
-    If a single file is supplied, then it is assumed that the Q values are included in the data,
-    this is the typical output of Mantid reduced ISIS data. An example reduction script is included
-    in doc/tutorials/data/water_reduction_IRIS.py
-    If there are two files then it is assumed that the second file links the detector ID's with the
-    corresponding Q's
+    Mantid's ASCII output uses one or two files, either:
+
+    - A file containing the SQw data and error for the range of
+      energy values measured at each Q with ``file_name`` or
+    - A file containing the SQw data and error for the range of energy
+      values measured at each detector (or group of detectors) ID
+      with ``file_name`` and a file giving the momentum value
+      associated with each detector (or group of detectors) ID, with
+      the name given by ``file_name + '_detectors'``
+
+    If a single file is supplied, then it is assumed that the Q values
+    are included in the data, this is the typical output of Mantid
+    reduced ISIS data.
+
+    If there are two files then it is assumed that the second file
+    links the detector ID's with the corresponding Q's.
+
+    Parameters
+    ----------
+    file_name : str
+        File to read data from.
 
     Attributes
     ----------
-    ID_or_Q : file, optional
-        File containing the ID's of the detectors, default=None
-    file_detectors : file, optional
-        File containing the errors on the dependent variables, default=None
-    file_variables : file
-        File containing the variables for each detector ID or Q
+    ID_or_Q : ~typing.IO
+        File containing the ID's of the detectors.
+    file_detectors : ~typing.IO
+        File containing the errors on the dependent variables.
+    file_variables : ~typing.IO
+        File containing the variables for each detector ID or .Q
+    SQw : ~numpy.ndarray, size(Q) x size(E)
+        2D array of intensity of ``S``.
+    SQw_err : ~numpy.ndarray, size(Q) x size(E)
+        2D array of error in ``S``.
+    Q : ~numpy.ndarray
+        1D array of wavevector transfer (in ``Ang^-1``).
+    E : ~numpy.ndarray
+        1D array of energy transfer (in ``meV``).
+
+    Notes
+    -----
+    An example reduction script is included in
+    doc/tutorials/data/water_reduction_IRIS.py
     """
 
     def __init__(self, file_name: str):
@@ -45,7 +69,9 @@ class MantidSQw(SQwReader):
         self.file_variables = None
 
     def __enter__(self) -> None:
-        """Open the files for variables and detector momenta"""
+        """
+        Open the files for variables and detector momenta.
+        """
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
@@ -55,9 +81,19 @@ class MantidSQw(SQwReader):
         except FileNotFoundError:
             self.file_detectors = None
 
-
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Closes variable and detector files after parsing"""
+        """
+        Close variable and detector files after parsing.
+
+        Parameters
+        ----------
+        exception_type : Type[BaseException]
+            Type of exception raised.
+        exception_value : BaseException
+            The exception itself.
+        traceback : TraceBackType
+            Traceback from error.
+        """
 
         self.file_variables.close()
         with suppress(AttributeError):
@@ -65,10 +101,12 @@ class MantidSQw(SQwReader):
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse into SQw format
+        Parse into SQw format.
 
-        E is the energy transfer (in meV)
-        Q is wavevector transfer (in Ang^-1)
+        Parameters
+        ----------
+        **settings : dict
+            No extra options used in this reader.
         """
 
         self.E, self.SQw, self.SQw_err = self.parse_variables(
@@ -92,27 +130,29 @@ class MantidSQw(SQwReader):
         # inf so that error calculations can still be performed on them.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            msg = "We have set the error bar to infinity for any zero error values, this allows\
-                us to calculate chi-squared but effectively ignores these points, this may not\
-                be what you want to do, consider using a FoM which doesn't need errors if\
-                this is an issue"
-            logger.warning(msg)
+            logger.error(self.SQW_ERR_WARNING)
 
-    def parse_variables(self, file: IO) -> 'tuple[float]':
+    def parse_variables(self, file: IO) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Parses the values for energy, SQw and its error for each detector, or momentum value
-        if it is defined instead of detector_ID
+        Parse variables from file.
+
+        Parses the values for energy, SQw and its error for each
+        detector, or momentum value if it is defined instead of
+        detector_ID
 
         Parameters
         ----------
-        file : file
-            Open file containing the variables
+        file : ~typing.IO
+            Open file containing the variables.
 
         Returns
         -------
-        tuple
-            (X, Y, E) where X is the independent variable (energy), Y is the dependent variable
-            (SQw) and E is the errors of Y
+        tuple[~numpy.ndarray, ~numpy.ndarray, ~numpy.ndarray]
+            (X, Y, E) where:
+
+            - ``X`` is the independent variable (energy),
+            - ``Y`` is the dependent variable (SQw) and
+            - ``E`` is the errors of ``Y``.
         """
 
         self.detector_ID_or_Q = []
@@ -145,17 +185,17 @@ class MantidSQw(SQwReader):
 
     def parse_detectors(self, file: IO) -> np.ndarray:
         """
-        Parses the detector momenta values.
+        Parse the detector momenta values.
 
         Parameters
         ----------
-        file : file
-            Open file containing detector IDs and momenta
+        file : ~typing.IO
+            Open file containing detector IDs and momenta.
 
         Returns
         -------
         numpy.ndarray
-            A 1D array of momenta values
+            A 1D array of momenta values.
         """
 
         Q = np.zeros(len(self.detector_ID_or_Q))

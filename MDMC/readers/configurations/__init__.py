@@ -1,6 +1,10 @@
-"""A subpackage for reading files containing atomic configurations"""
+"""
+A subpackage for reading files containing atomic configurations.
+"""
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
+
+from MDMC.MD.structures import Atom
 
 from . import conf_reader, conf_reader_factory
 from .ase import ASEReader
@@ -8,44 +12,51 @@ from .cif import CIFReader
 from .packmol_pdb import PackmolPDBReader
 from .pdb import ProteinDataBankReader
 
-if TYPE_CHECKING:
-    from MDMC.MD.structures import Atom
 
-def read(file: str, docstring: bool = False, **settings: dict) -> Optional[list['Atom']]:
+def read(
+        file: str,
+        docstring: bool = False,
+        **settings: dict,
+) -> Optional[list[Atom]]:
     """
-    Reads a configuration file and returns a list of atoms corresponding to the
-    atoms in the file
+    Parse a configuration file into a list of atoms.
 
-    .. note:: The docstring of the required reader (as determined from the file)
-              can be accessed by passing `help=True`. This may be necessary to
-              determine the reader specific `**settings` that can be passed. In
-              this case, the file will not be read and None will be returned,
-              rather than a list of `Atom` objects.
+    .. note::
+
+       The docstring of the required reader (as determined from the file)
+       can be accessed by passing `help=True`. This may be necessary to
+       determine the reader specific `**settings` that can be passed. In
+       this case, the file will not be read and None will be returned,
+       rather than a list of `Atom` objects.
 
     Parameters
     ----------
     file : str
-        The file name of the configuration file
+        The file name of the configuration file.
     docstring : bool, optional
         This will show the docstring (help) related to the type of configuration
-        file that has been passed. If this is True, the file will not be read
-        and None will be returned. The default is False.
+        file that has been passed. If this is `True`, the file will not be read
+        and `None` will be returned. The default is `False`.
     **settings
-        Parameters passed to ConfigurationReader.parse
+        Parameters passed to ConfigurationReader.parse.
 
     Returns
     -------
     list of Atom, or None
-        `Atom` objects corresponding to the configuration in the file. None will
+        :any:`Atom` objects corresponding to the configuration in the file. `None` will
         be returned if `docstring=True`.
 
     Examples
     --------
-    To read a CIF file and define the `atom_types` of the atoms::
+    To read a CIF file and define the `atom_types` of the atoms:
+
+    .. code-block:: python
 
         atoms = read('example.cif', atom_types=[1, 1, 2, 2, 2, 1, 3])
 
-    To get the docstring (help) for reading a CIF file::
+    To get the docstring (help) for reading a CIF file:
+
+    .. code-block:: python
 
         read('example.cif', help=True)
     """
