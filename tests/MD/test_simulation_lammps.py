@@ -338,6 +338,22 @@ def lammps_engine(universe, simulation):
     return lammps_engine
 
 
+def test_simulation_setup():
+
+    universe=Universe((10., 10., 10.))
+    sim_obj = Simulation(universe,
+                         engine="lammps",
+                         time_step=10.18893,
+                         temperature=300.0,
+                         pressure=101325.0,
+                         traj_step=15)
+    expected_output = (
+        'Simulation created with lammps engine and settings:\n'
+        'temperature: 300.0 K \n'
+        'pressure: 101325.0 Pa \n\n')
+    assert expected_output == sim_obj.setup_msg
+
+
 def test_universe_dimensions(lammps_universe):
 
     """
