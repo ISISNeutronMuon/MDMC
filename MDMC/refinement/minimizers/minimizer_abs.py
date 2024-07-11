@@ -173,12 +173,12 @@ class Minimizer(ABC):
 
     def is_best_FoM(self) -> bool:
         """
-        Checks if the current FoM is the better FoM
+        Check if the current FoM is the best FoM so far.
 
         Returns
         -------
         bool
-            Representation of if the last FoM is better than the last
+            True if the most recent FoM is the best, False otherwise.
         """
 
         if len(self._history) > 1:

@@ -162,25 +162,29 @@ def write_H5MD(trajectory: CompactTrajectory,
     Parameters
     ----------
     trajectory : CompactTrajectory
-        The compact trajectory the file is being built from
+        The compact trajectory the file is being built from.
     filename : str, optional
         The name of the H5MD file,
-        standards suggest it ends with `.h5`, by default "trajectory.h5"
+        standards suggest it ends with `.h5`, by default "trajectory.h5".
     timestamp : bool, optional
-        If true adds time timestamp to file name, by default True
+        If true adds time timestamp to file name, by default True.
     file_loc : Path, optional
-        The directory where the H5MD file should be stored, by default Path('.')
+        The directory where the H5MD file should be stored, by default Path('.').
     """
     if trajectory.time is not None:
         time_increment = trajectory.time[1] - trajectory.time[0]
         time_offset = trajectory.time[0]
+        step_increment = 1
+        step_offset = 0
     else:
         time_increment = None
         time_offset = None
-    step_increment = 1
-    step_offset = 0
+        step_increment = None
+        step_offset = None
+
     filename = Path(filename)
     file_loc = Path(file_loc)
+
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')

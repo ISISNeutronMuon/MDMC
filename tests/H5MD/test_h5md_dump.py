@@ -2,6 +2,7 @@
 """
 from pathlib import Path
 import h5py
+import pytest
 
 from MDMC.control import Control
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -10,7 +11,7 @@ from MDMC.readers import H5MD_reader
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 
-FILE_NAME = 'test_file'
+FILE_NAME = 'test_file.h5'
 
 FOM = [40, 10, 88,77]
 
@@ -18,12 +19,14 @@ class MockControl(Control):
     """Mock class created so a simulation does
     not need to be run to get a FoM
     """
-    def __init__(self, in_list, h5md_dump, *args, **kwargs):
+    def __init__(self, in_list, h5md_dump, h5md_filename, h5md_file_loc, h5md_timestamp):
         self.FoM = in_list
         self.iFoM = iter(in_list)
         self.h5md_dump = h5md_dump
-        self.minimizer = MockMinamizer()
-        self.h5md_filename = None
+        self.minimizer = MockMinimizer()
+        self.h5md_filename = h5md_filename
+        self.h5md_file_loc = h5md_file_loc
+        self.h5md_timestamp = h5md_timestamp
 
     def _generate_FoM(self) -> tuple[float,CompactTrajectory]:
         """A function that overrides the original _generate_FoM
@@ -43,8 +46,8 @@ class MockControl(Control):
         trj.element_list = ['H', 'H', 'H']
         return fom, trj
 
-class MockMinamizer(Minimizer):
-    """A Mock Class created as h5md_dumper needs Minamizer._history
+class MockMinimizer(Minimizer):
+    """A Mock Class created as h5md_dumper needs Minimizer._history
     """
     def __init__(self):
         self._history = []
@@ -64,40 +67,36 @@ class MockMinamizer(Minimizer):
     def step(self):
         pass
 
-def test_save_best_traject(tmp_path):
+def test_save_best_trajectory(tmp_path):
     """Test that checks that the H5MD dumper in control is dumping the best FoM
     """
-    control = MockControl(FOM, Dump.BEST)
+    control = MockControl(FOM, Dump.BEST, FILE_NAME, tmp_path, False)
     for _ in range(len(FOM)):
         fom, trj = control._generate_FoM()
         control.minimizer._history.append(fom)
-        control.h5md_dumper(trj, h5md_file_loc = tmp_path,
-                            h5md_file_name = FILE_NAME,
-                            h5md_timestamp = False)
-    file_path = Path(f'{tmp_path}/{FILE_NAME}').with_suffix('.h5')
+        control.dump_h5md(trj)
+    file_path = tmp_path / FILE_NAME
     with h5py.File(file_path, "r") as file:
         expected_fom = H5MD_reader.read_dataset(file, "position")
         assert expected_fom[0] == min(FOM)
 
-def test_save_all_traject(tmp_path):
+def test_save_all_trajectory(tmp_path):
     """
     Test that checks that the H5MD dumper.
 
     Check control dumps every trajectory based on the correct FoM.
     """
     file_names = []
-    control = MockControl(FOM, Dump.EVERY)
+    control = MockControl(FOM, Dump.EVERY, FILE_NAME, tmp_path, False)
     for x in FOM:
         fom, trj = control._generate_FoM()
         control.minimizer._history.append(fom)
         filename = f"{x}_{FILE_NAME}"
         file_names.append(filename)
-        control.h5md_dumper(trj,
-                            h5md_file_loc = tmp_path,
-                            h5md_file_name = filename,
-                            h5md_timestamp = False)
+        control.h5md_filename = filename
+        control.dump_h5md(trj)
     for filename, fom in zip(file_names, FOM):
-        file_path = Path(f'{tmp_path}/{filename}').with_suffix('.h5')
+        file_path = tmp_path / filename
         with h5py.File(file_path, "r") as file:
             expected_fom = H5MD_reader.read_dataset(file, "position")
             assert expected_fom[0] == fom
