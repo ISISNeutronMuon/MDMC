@@ -8,7 +8,7 @@ import pytest
 
 from MDMC.control import Control
 from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
-from tests.control.test_control import exp_datasets
+from tests.control.test_control import exp_datasets, simulation
 
 
 pytestmark = [pytest.mark.lammps]
