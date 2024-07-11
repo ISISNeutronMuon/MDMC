@@ -43,19 +43,19 @@ RUN rm v20.14.2.tar.gz
 
 # Build Packmol
 WORKDIR /opt/other/packmol/packmol-20.14.2
-RUN ./configure 
+RUN ./configure
 RUN make
 
 # Add packmol to env variables
 ENV PATH /opt/other/packmol/packmol-20.14.2:$PATH
 ENV PYTHONPATH ${PYTHONPATH}:/opt/other/packmol/packmol-20.14.2/
 
-# Get LAMMPS # used to be lammps-stable.tar.gz
+# Get LAMMPS
 RUN mkdir /opt/MD/lammps
 WORKDIR /opt/MD/lammps
-RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
-RUN tar xvzf lammps-29Sep2021.tar.gz -C /opt/MD/lammps --strip-components=1
-RUN rm /opt/MD/lammps/lammps-29Sep2021.tar.gz
+RUN wget https://download.lammps.org/tars/lammps-2Aug2023.tar.gz
+RUN tar xvzf lammps-2Aug2023.tar.gz -C /opt/MD/lammps --strip-components=1
+RUN rm /opt/MD/lammps/lammps-2Aug2023.tar.gz
 
 # Build LAMMPS from source
 WORKDIR /opt/MD/lammps/build
