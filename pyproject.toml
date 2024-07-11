@@ -37,7 +37,7 @@ dependencies = {file = ["requirements.txt"]}
 ### Note that these optional dependencies do not install the requisite molecular
 # dynamics engine.
 LAMMPS = ["pylammps"]
-DLPOLY = ["dlpoly-py==0.4.1"]
+DLPOLY = ["dlpoly-py @ git+https://gitlab.com/ccp5/dlpoly-py.git"]
 ###
 
 test = ["pytest==8.2.2",
