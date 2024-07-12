@@ -86,7 +86,7 @@ def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str,
 
     Notes
     -----
-    that if this resolution function is used on data outside its original range, then it
+    If this resolution function is used on data outside its original range, then it
     will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
     time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
     appropriate for the data in question, this function should not be used.

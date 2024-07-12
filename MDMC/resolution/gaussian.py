@@ -30,9 +30,9 @@ class GaussianResolution(Resolution):
         w : ~numpy.ndarray
             An array of frequency points.
         mu : float
-            the offset of the function (defaults to 0)
+            The offset of the function (defaults to 0).
         norm : bool
-            if True, normalises the distribution to unity.
+            If ``True``, normalises the distribution to unity.
 
         Returns
         -------
