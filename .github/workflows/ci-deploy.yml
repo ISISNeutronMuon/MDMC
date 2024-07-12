@@ -3,6 +3,7 @@ name: deploy
 
 on:
   pull_request:
+    branches: [master]
     types: [closed]
 
 # note that the workflow will be triggered whenever a PR is closed, but the "if:" line of the job means the job will only run if it is closed due to merge
