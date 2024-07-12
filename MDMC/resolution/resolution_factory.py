@@ -4,7 +4,7 @@
 # as this is a factory class
 
 from inspect import getmembers, isclass, isabstract
-from typing import Any, Union
+from typing import Any, Union, TypeAlias
 import warnings
 
 import MDMC.resolution
@@ -27,11 +27,29 @@ class ResolutionFactory:
             if isclass(_type) and issubclass(_type, MDMC.resolution.Resolution):
                 self.resolutions.update([[name, _type]])
 
-    # users will input e.g. 'gaussian' and this will provide a GaussianResolution object
     def create_instance(self,
-                        resolution: Union[dict, float, int, str],
+                        resolution: Union[dict, float, str],
                         *args: Any) -> 'MDMC.resolution.Resolution':
-        """Creates a Resolution object from a dictionary."""
+        """
+        Create a Resolution object from a dictionary.
+
+        Parameters
+        ----------
+        resolution : dict, float, or str
+            A parameter specifying the resolution. Should be a one-line dict
+            giving the resolution type and parameters, e.g. a Lorentzian resolution
+            with FWHM of 3 is specified {'lorentzian': 3.0}.
+            If a float is given, resolution is assumed to be Gaussian with FWHM
+            of that float.
+            If a str is given, the string is assumed to be a file path to a vanadium
+            run used to define a resolution.
+
+        Returns
+        -------
+        ~MDMC.resolution.Resolution
+            A resolution object with the desired properties.
+        """
+
         resolution = _standardise_input(resolution)
         function_name = list(resolution.keys())[0].title() + 'Resolution'
         function_res = list(resolution.values())[0]
@@ -54,7 +72,9 @@ class ResolutionFactory:
 
 def _standardise_input(resolution: Any) -> dict:
     """
-    Ensures that resolution is a one-line dictionary. Fixes 'lazy' input, e.g. if resolution
+    Ensure that resolution is a one-line dictionary.
+
+    Fixes 'lazy' input, e.g. if resolution
     was input as a string or number.
     """
 

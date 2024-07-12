@@ -28,20 +28,21 @@ class FileResolution(Resolution):
 
     def _calculate_resolution_window(self, Q: np.ndarray, t: np.ndarray) -> np.ndarray:
         """
-        Calculate the resolution window in time from a self.resolution_function in the time
-        domain. Normalise this window so that the sum over energy for each Q
+        Calculate the resolution window in the time domain.
+
+        We normalise this window so that the sum over energy for each Q
         value is the same (this enforces that the static structure factor is constant for all Q).
 
         Parameters
         ----------
-        Q : np.array
+        Q : ~np.ndarray
             the points in energy at which FQt is calculated
-        t : np.array
+        t : ~np.ndarray
              the points in time at which FQt is calculated
 
         Returns
         -------
-        numpy.ndarray
+        ~numpy.ndarray
             An ``array`` with the shape ``(N_Q, N_T)``
         """
 
@@ -55,7 +56,7 @@ class FileResolution(Resolution):
 
     def __repr__(self):
         """
-        Resolution objects are represented with the dictionary used to create them
+        Represent a FileResolution object as the dataset used to create it.
         """
 
         return "Resolution" + str({'file': self.file_name})
@@ -63,14 +64,14 @@ class FileResolution(Resolution):
 
 def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str, dt: float) -> dict:
     """
-    Reads resolution data for the specified ``data_type`` from file and interpolates it
-    to give a dictionary of general resolution functions in the time domain for each dependent
-    variable.
+    Read and interpolate resolution data from a file.
+
     Note that if this resolution function is used on data outside its original range, then it
     will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
     time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
     appropriate for the data in question, this function should not be used.
     This may not be supported for all ``Observable`` types.
+
     Parameters
     ----------
     file_type : str
@@ -82,6 +83,7 @@ def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str,
     dt : float
         The time separation of frames in ``fs``, for the simulation
         of the Observable.
+
     Returns
     -------
     dict

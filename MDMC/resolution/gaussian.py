@@ -8,7 +8,8 @@ from MDMC.common.resolution_functions import gaussian
 
 class GaussianResolution(Resolution):
     """
-    A `Resolution` subclass for applying a Gaussian resolution
+    A :any:``Resolution`` subclass for applying a Gaussian resolution
+    to an :any:``Observable``.
     """
 
     def __init__(self, e_res: float):
@@ -23,22 +24,22 @@ class GaussianResolution(Resolution):
 
     def window_in_w(self, w: np.ndarray, mu: float = 0., norm: bool = True) -> np.ndarray:
         """
-        The Gaussian window in frequency space
+        Calculate the Gaussian window function in frequency space.
 
         Parameters
         ----------
-        w: array
+        w : ~numpy.ndarray
             An array of frequency points.
-        mu: float
+        mu : float
             the offset of the function (defaults to 0)
-        norm: bool
+        norm : bool
             if True, normalises the distribution to unity.
 
         Returns
         -------
-        array
+        ~numpy.ndarray
             The window function in frequency space (i.e. the Gaussian with
-            FWHM self.e_res, centred on 0)
+            FWHM self.e_res, centred on 0) over the frequency array `w`
         """
 
         window = gaussian(w, self.e_res, mu, norm)
@@ -47,17 +48,17 @@ class GaussianResolution(Resolution):
 
     def window_in_t(self, t: np.ndarray) -> np.ndarray:
         """
-        The Gaussian window in time space
+        Calculate the Gaussian window function in time space.
 
         Parameters
         ----------
-        t: array
+        t : ~numpy.ndarray
             An array of time points.
 
         Returns
         -------
-        array
-            The Gaussian window over the times in t.
+        ~numpy.ndarray
+            The Gaussian window over the times in the array `t`.
         """
 
         # We convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
@@ -72,7 +73,7 @@ class GaussianResolution(Resolution):
 
     def __repr__(self):
         """
-        Resolution objects are represented with the dictionary used to create them
+        Represent a :any:``GaussianResolution`` object as the given FWHM energy resolution.
         """
 
         return "Resolution" + str({'gaussian': self.e_res})
