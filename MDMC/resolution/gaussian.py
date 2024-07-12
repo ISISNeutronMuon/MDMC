@@ -8,8 +8,7 @@ from MDMC.common.resolution_functions import gaussian
 
 class GaussianResolution(Resolution):
     """
-    A :any:``Resolution`` subclass for applying a Gaussian resolution
-    to an :any:``Observable``.
+    A class for applying a Gaussian resolution to an :any:`Observable`.
     """
 
     def __init__(self, e_res: float):
@@ -39,7 +38,7 @@ class GaussianResolution(Resolution):
         -------
         ~numpy.ndarray
             The window function in frequency space (i.e. the Gaussian with
-            FWHM self.e_res, centred on 0) over the frequency array `w`
+            FWHM self.e_res, centred on 0) over the frequency array `w`.
         """
 
         window = gaussian(w, self.e_res, mu, norm)
@@ -73,7 +72,7 @@ class GaussianResolution(Resolution):
 
     def __repr__(self):
         """
-        Represent a :any:``GaussianResolution`` object as the given FWHM energy resolution.
+        Represent a ``GaussianResolution`` object as the given FWHM energy resolution.
         """
 
         return "Resolution" + str({'gaussian': self.e_res})

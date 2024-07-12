@@ -35,9 +35,9 @@ class FileResolution(Resolution):
 
         Parameters
         ----------
-        Q : ~np.ndarray
+        Q : ~numpy.ndarray
             the points in energy at which FQt is calculated
-        t : ~np.ndarray
+        t : ~numpy.ndarray
              the points in time at which FQt is calculated
 
         Returns
@@ -56,7 +56,7 @@ class FileResolution(Resolution):
 
     def __repr__(self):
         """
-        Represent a FileResolution object as the dataset used to create it.
+        Represent a ``FileResolution`` object as the dataset used to create it.
         """
 
         return "Resolution" + str({'file': self.file_name})
@@ -65,12 +65,6 @@ class FileResolution(Resolution):
 def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str, dt: float) -> dict:
     """
     Read and interpolate resolution data from a file.
-
-    Note that if this resolution function is used on data outside its original range, then it
-    will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
-    time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
-    appropriate for the data in question, this function should not be used.
-    This may not be supported for all ``Observable`` types.
 
     Parameters
     ----------
@@ -89,6 +83,14 @@ def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str,
     dict
         A dictionary with keys for each dependent variable, where the
         values are resolution functions for that variable.
+
+    Notes
+    -----
+    that if this resolution function is used on data outside its original range, then it
+    will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
+    time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
+    appropriate for the data in question, this function should not be used.
+    This may not be supported for all ``Observable`` types.
     """
 
     resolution_obs = ObservableFactory.create_observable(file_type)

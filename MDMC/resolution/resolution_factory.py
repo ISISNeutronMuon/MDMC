@@ -76,6 +76,28 @@ def _standardise_input(resolution: Any) -> dict:
 
     Fixes 'lazy' input, e.g. if resolution
     was input as a string or number.
+
+    Parameters
+    ----------
+    resolution: Any
+        The input to the resolution factory.
+
+    Returns
+    -------
+    dict
+        If ``resolution`` is a dict, returns the first item of the dict.
+        If ``resolution`` was a float, returns ``{'gaussian': resolution}``
+        If ``resolution`` was a string, returns ``{'file': resolution}``
+
+    Raises
+    ------
+    NotImplementedError
+        If ``resolution`` is not a dict, string or float.
+
+    Warns
+    -----
+    SyntaxWarning
+        If ``resolution`` is a dict with multiple lines, or a float.
     """
 
     if isinstance(resolution, dict):

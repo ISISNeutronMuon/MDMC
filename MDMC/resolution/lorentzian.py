@@ -7,8 +7,7 @@ from MDMC.common.resolution_functions import lorentzian
 
 class LorentzianResolution(Resolution):
     """
-    A :any:``Resolution`` subclass for applying a Lorentzian resolution
-    to an :any:``Observable``.
+    A class for applying a Lorentzian resolution to an :any:`Observable`.
     """
 
     def __init__(self, e_res: float):
@@ -66,7 +65,7 @@ class LorentzianResolution(Resolution):
 
     def __repr__(self):
         """
-        Represent a :any:``LorentzianResolution`` object as the given FWHM energy resolution.
+        Represent a ``LorentzianResolution`` object as the given FWHM energy resolution.
         """
 
         return "Resolution" + str({'lorentzian': self.e_res})
