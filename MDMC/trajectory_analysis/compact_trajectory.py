@@ -170,12 +170,17 @@ class CompactTrajectory:
     @staticmethod
     def create_from_h5md(file_name: str):
         """
-        Creates a CompactTrajectory from a file
+        Create a CompactTrajectory from an H5MD file.
 
         Parameters
         ----------
         file_name : str
-            Path to file `CompactTrajectory` is being built from
+            Path to the H5MD file containing the desired trajectory.
+
+        Returns
+        -------
+        CompactTrajectory
+            The trajectory described by the file.
         """
         new_ct = CompactTrajectory()
         with h5py.File(file_name, 'r') as file:
