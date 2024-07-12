@@ -87,7 +87,7 @@ class LAMPPDF(PDFReader):
         ----------
         observable : ~MDMC.trajectory_analysis.observables.pdf.PairDistributionFunction
             The ``PairDistributionFunction`` to which the
-            parsed information should be assiged.
+            parsed information should be assigned.
         """
         # disable pylint warning about writing to the `Observable`
         # pylint: disable=protected-access

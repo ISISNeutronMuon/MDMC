@@ -1,5 +1,5 @@
 """
-A reader for netcdf SQw data.
+A reader for netCDF SQw data.
 """
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
@@ -88,4 +88,4 @@ class netCDFSQw(SQwReader):
 
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            logger.error(self.SQW_ERR_WARNING)
+            logger.warning(self.SQW_ERR_WARNING)

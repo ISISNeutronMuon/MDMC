@@ -7,7 +7,6 @@ from MDMC.MD.structures import Atom
 from MDMC.readers.reader import Reader
 
 
-
 @repr_decorator('file', 'extension', 'atoms')
 class ConfigurationReader(Reader):
     """

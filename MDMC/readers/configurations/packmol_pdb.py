@@ -32,6 +32,12 @@ class PackmolPDBReader(ConfigurationReader):
     ----------
     file_name : str
         File name to parse.
+
+    Notes
+    -----
+    This reader is for reading in entire universe configurations as output by Packmol.
+    For reading single molecules in pdb format, ProteinDataBankReader
+    should be used.
     """
     extension = "NONE"
 

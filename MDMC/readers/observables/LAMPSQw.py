@@ -106,7 +106,7 @@ class LAMPSQw(SQwReader):
         # result in inf.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            logger.error(self.SQW_ERR_WARNING)
+            logger.warning(self.SQW_ERR_WARNING)
 
     def parse_indep_var(self, file: IO) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -174,7 +174,7 @@ class LAMPSQw(SQwReader):
 
         Parameters
         ----------
-        file : IO
+        file : ~typing.IO
             Open file containing independent data.
 
         Returns

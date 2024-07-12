@@ -6,6 +6,9 @@ Notes
 Adapted from https://wiki.fysik.dtu.dk/ase/_modules/ase/io/cif.html#read_cif.
 """
 
+# the reason we adapt it rather than just using the ASE reader is because the ASE cif
+# reader will always read symmetry data - we do not necessarily want this.
+
 from ase.io.cif import parse_cif
 
 from MDMC.MD.ase.convert import ASE_to_MDMC
@@ -21,7 +24,7 @@ class CIFReader(ConfigurationReader):
 
     def parse(self, *, ignore_symmetry: bool = True, **settings: dict) -> None:
         """
-        Parse a .cif file into a list of MDMC Atoms.
+        Parse a .cif file into a list of MDMC `Atom` s.
 
         Parameters
         ----------

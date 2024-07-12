@@ -130,7 +130,7 @@ class MantidSQw(SQwReader):
         # inf so that error calculations can still be performed on them.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            logger.error(self.SQW_ERR_WARNING)
+            logger.warning(self.SQW_ERR_WARNING)
 
     def parse_variables(self, file: IO) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """

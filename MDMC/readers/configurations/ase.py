@@ -30,7 +30,7 @@ class ASEReader(ConfigurationReader):
         Parse any format supported by ASE's file reader.
 
         The file is read in as an :any:`ase.atoms.Atoms` object and then
-        converted to MDMC Atoms.
+        converted to MDMC `Atom` s.
 
         Parameters
         ----------

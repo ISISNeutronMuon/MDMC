@@ -1,5 +1,5 @@
 """
-A reader for netcdf PDF data.
+A reader for netCDF PDF data.
 """
 import re
 

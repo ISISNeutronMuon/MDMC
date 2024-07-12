@@ -1,5 +1,5 @@
 """
-A subpackage for reading files containing atomic configurations.
+A module for reading files containing atomic configurations.
 """
 
 from typing import Optional

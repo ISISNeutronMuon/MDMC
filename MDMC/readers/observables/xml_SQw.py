@@ -101,7 +101,7 @@ class XML_SQw(SQwReader):
         # inf so that error calculations can still be performed on them.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            logger.error(self.SQW_ERR_WARNING)
+            logger.warning(self.SQW_ERR_WARNING)
 
     @staticmethod
     def dict_from_element(element: ET.Element) -> dict:

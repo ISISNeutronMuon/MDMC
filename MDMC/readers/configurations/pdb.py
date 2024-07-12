@@ -41,7 +41,7 @@ class ProteinDataBankReader(ConfigurationReader):
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse ``.pdb`` file into MDMC Atoms.
+        Parse ``.pdb`` file into MDMC `Atom` s.
 
         Parameters
         ----------
