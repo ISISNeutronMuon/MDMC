@@ -4,7 +4,7 @@
 # as this is a factory class
 
 from inspect import getmembers, isclass, isabstract
-from typing import Any, Union, TypeAlias
+from typing import Any, Union
 import warnings
 
 import MDMC.resolution
