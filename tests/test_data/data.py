@@ -5,14 +5,14 @@ observable system tests must have the same key as the observable name. Data for
 MDMC objects must have the same key as the object name.  Descriptions of data
 are also supplied."""
 
-from os import path
+from pathlib import Path
 
-_ABS_DIR_PATH = path.split(path.abspath(__file__))[0]
-_EXP_DATA_PATH = '/experimental_data'
-_CALC_OBS_PATH = '/calculated_observables'
-_OBJECT_PATH = '/MDMC_objects'
-_CONFIG_PATH = '/configurations'
-_GUI_PATH = '/gui'
+_ABS_DIR_PATH = Path(__file__).parent.absolute()
+_EXP_DATA_PATH = _ABS_DIR_PATH / 'experimental_data'
+_CALC_OBS_PATH = _ABS_DIR_PATH / 'calculated_observables'
+_OBJECT_PATH = _ABS_DIR_PATH / 'MDMC_objects'
+_CONFIG_PATH = _ABS_DIR_PATH / 'configurations'
+_GUI_PATH = _ABS_DIR_PATH / 'gui'
 
 # Reader/experimental data
 #
@@ -32,30 +32,24 @@ _GUI_PATH = '/gui'
 # (OBS_DATA['netcdf_PDF'], using the same trajectory as all OBS_DATA). The data was
 # reformatted into LAMP-style format for PDF data.
 
-READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
-               'MantidSQw_two_files':'/experimental_data/iris70429_graphite002_red',
-               'MantidSQw_one_file':'/experimental_data/IRIS_26176_water_data.dat',
-               'MDANSESQw':'/experimental_data/MDANSE_Ar_trajectory.dat',
-               'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
-               'xml_SQw_2':'/experimental_data/Argon_test_data.xml',
-               'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
+READER_DATA = {'LAMPSQw': _EXP_DATA_PATH / '263K05Awat_LAMP',
+               'MantidSQw_two_files': _EXP_DATA_PATH / 'iris70429_graphite002_red',
+               'MantidSQw_one_file': _EXP_DATA_PATH / 'IRIS_26176_water_data.dat',
+               'MDANSESQw': _EXP_DATA_PATH / 'MDANSE_Ar_trajectory.dat',
+               'xml_SQw': _EXP_DATA_PATH / 'Well_s_q_omega_Ar_data.xml',
+               'xml_SQw_2':_EXP_DATA_PATH / 'Argon_test_data.xml',
+               'LAMPPDF': _CALC_OBS_PATH / 'LAMP_from_nMOLDYN_PDF_water.ref'}
 
+CONFIG_DATA = {'cif': _CONFIG_PATH / 'Paracetamol.cif',
+               'pdb_ethanol': _CONFIG_PATH / 'water.pdb',
+               'pdb_palmitic_acid': _CONFIG_PATH / 'example_pdb_export.pdb'}
 
-CONFIG_DATA = {'cif': '/Paracetamol.cif',
-               'pdb_ethanol': '/water.pdb',
-               'pdb_palmitic_acid': '/example_pdb_export.pdb'}
+RESOLUTION_DATA = {'LAMPSQw': _EXP_DATA_PATH / '262p7K0A5van_LAMP'}
 
-RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
-
-# Add paths to data values
-for key in READER_DATA:
-    READER_DATA[key] = _ABS_DIR_PATH + READER_DATA[key]
-
-for key in CONFIG_DATA:
-    CONFIG_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + CONFIG_DATA[key]
-
-for key in RESOLUTION_DATA:
-    RESOLUTION_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + RESOLUTION_DATA[key]
+# Parse back to str
+READER_DATA = {key: str(val) for key, val in READER_DATA.items()}
+CONFIG_DATA = {key: str(val) for key, val in CONFIG_DATA.items()}
+RESOLUTION_DATA = {key: str(val) for key, val in RESOLUTION_DATA.items()}
 
 # Calculated observable data
 #
@@ -80,16 +74,13 @@ for key in RESOLUTION_DATA:
 # netcdf ('netcdf_PDF'). In addition, the data was reformatted file in the style of LAMP output
 # and saved as another file ('lamp_pdf').
 
-OBS_DATA = {'SQw_incoh':'/nMOLDYN_DISF_water.nc',
-            'SQw_coh':'/nMOLDYN_DCSF_water.nc',
-            'Q_vectors':'/qVectors.dat',
-            'netcdf_PDF':'/nMOLDYN_PDF_water.nc',
-            'lamp_PDF':'/LAMP_from_nMOLDYN_PDF_water.ref'}
+OBS_DATA = {'SQw_incoh': _CALC_OBS_PATH / 'nMOLDYN_DISF_water.nc',
+            'SQw_coh': _CALC_OBS_PATH / 'nMOLDYN_DCSF_water.nc',
+            'Q_vectors': _CALC_OBS_PATH / 'qVectors.dat',
+            'netcdf_PDF': _CALC_OBS_PATH / 'nMOLDYN_PDF_water.nc',
+            'lamp_PDF': _CALC_OBS_PATH / 'LAMP_from_nMOLDYN_PDF_water.ref'}
 
-# Add paths to data values
-for key in OBS_DATA:
-    OBS_DATA[key] = _ABS_DIR_PATH + _CALC_OBS_PATH + OBS_DATA[key]
-
+OBS_DATA = {key: str(val) for key, val in OBS_DATA.items()}
 
 # MDMC object data
 #
@@ -98,21 +89,18 @@ for key in OBS_DATA:
 # Subsequently converted to CompactTrajectory and pickled again. Must
 # be unzipped using zlib and then unpickled before use.
 
-OBJECT_DATA = {'compact_trajectory':'/compact_trajectory.zip'}
+OBJECT_DATA = {'compact_trajectory': _OBJECT_PATH / 'compact_trajectory.zip'}
 
-# Add paths to data values
-for key in OBJECT_DATA:
-    OBJECT_DATA[key] = _ABS_DIR_PATH + _OBJECT_PATH + OBJECT_DATA[key]
+OBJECT_DATA = {key: str(val) for key, val in OBJECT_DATA.items()}
 
 # viewer data
 #
 # html files (for X3DOM viewer)
 
 GUI_DATA = {
-    'atom_X3DOM': '/atom.html',
-    'water_molecule_X3DOM': '/water_molecule.html',
-    'universe_X3DOM': '/universe.html'
+    'atom_X3DOM': _GUI_PATH / 'atom.html',
+    'water_molecule_X3DOM': _GUI_PATH / 'water_molecule.html',
+    'universe_X3DOM': _GUI_PATH / 'universe.html'
 }
 
-for key in GUI_DATA:
-    GUI_DATA[key] = _ABS_DIR_PATH + _GUI_PATH + GUI_DATA[key]
+GUI_DATA = {key: str(val) for key, val in GUI_DATA.items()}
