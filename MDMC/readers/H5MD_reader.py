@@ -1,18 +1,17 @@
-"""Modual for reading a in H5MD file
-
-Notes
------
-In getter functions within this file, the slices
-are to ensure that the returned types from the
-functions are `numpy.ndarray`s and not `h5py.dataset`s.
+"""
+Module for reading in H5MD files.
 """
 import h5py
 import numpy
 
+# Note: In getter functions within this file, the slices
+#       are to ensure that the returned types from the
+#       functions are `numpy.ndarray`s and not `h5py.dataset`s.
+
+
 def particles_file_path(file: h5py.File) -> h5py.File:
     """
-    Builds and returns the first part of the file path that is in the H5MD
-    file as the first 2 branches do not contain any data
+    Opens and returns the H5MD file where the particle data is stored
 
     Parameters
     ----------
@@ -31,14 +30,14 @@ def particles_file_path(file: h5py.File) -> h5py.File:
 def read_dataset(file: h5py.File, dataset_name: str) -> numpy.ndarray:
 
     """
-    Reads datasets within the H5MD file
+    Read a dataset within an H5MD file.
 
     Parameters
     ----------
     file : h5py.File
         The H5MD file being read from
     dataset_name: str
-        The dataset atempting to be read
+        The dataset attempting to be read
 
     Returns
     -------
@@ -48,12 +47,12 @@ def read_dataset(file: h5py.File, dataset_name: str) -> numpy.ndarray:
     Raises
     ------
     KeyError
-        If the dataset is not found by `visit`
+        If the dataset is not found in the file.
     """
 
     group = file.visit(lambda name: name if dataset_name in name else None)
     if group is None:
-        raise KeyError(f"There is no dataset named '{dataset_name}' found in the H5MD")
+        raise KeyError(f"There is no dataset named '{dataset_name}' found in the H5MD file.")
 
     grp = file[group]
     if "value" in grp:
@@ -67,7 +66,7 @@ def read_dataset(file: h5py.File, dataset_name: str) -> numpy.ndarray:
 
 def read_units(file: h5py.File, data_name: str) -> str:
     """
-    Reads units of data stored in the H5MD file
+    Read the SI units of the data stored in an H5MD file.
 
     Parameters
     ----------
@@ -96,8 +95,7 @@ def read_units(file: h5py.File, data_name: str) -> str:
 
 def read_times(file: h5py.File, step: int) -> float:
     """
-    Reads time of a specified step from the H5MD file and then slices
-    read data so return is a float, not a HD5 object reference
+    Read the time of a specified step from an H5MD file.
 
     Parameters
     ----------
@@ -118,7 +116,7 @@ def read_times(file: h5py.File, step: int) -> float:
 
 def read_number_steps(file: h5py.File) -> int:
     """
-    Calculates the total number of steps stored in the H5MD file
+    Calculates the total number of simulation steps.
 
     Parameters
     ----------
@@ -131,49 +129,33 @@ def read_number_steps(file: h5py.File) -> int:
         Number of steps stored in H5MD file
     """
     group_step = particles_file_path(file)
-
     particle = group_step['position/value']
 
-    no_steps = len(particle)
+    return len(particle)
 
-    return no_steps
-
-def read_box_dimension(file: h5py.File) -> numpy.ndarray:
+def read_box_property(file: h5py.File, property_name: str) -> numpy.ndarray:
     """
-    Reads box dimensions in from H5MD file
+    Reads box (called `Universe` in MDMC) properties from H5MD file.
 
     Parameters
     ----------
     file : h5py.File
         The H5MD file being read from
+
+    property_name : str
+        The name of the box property being read
 
     Returns
     -------
     numpy.ndaray
-        The dimentions of the simulation box
+        An array returning the property read
     """
     group_step = particles_file_path(file)
-    return group_step['box'].attrs['dimensions']
+    return group_step['box'].attrs[property_name]
 
-def read_box_boundary(file: h5py.File) -> numpy.ndarray:
-    """
-    Reads box boundary in from H5MD file
-
-    Parameters
-    ----------
-    file : h5py.File
-        The H5MD file being read from
-
-    Returns
-    -------
-    str
-        The boundary of the simulation box
-    """
-    group_step = particles_file_path(file)
-    return group_step['box'].attrs['boundary']
 def read_all_data(file: h5py.File) -> dict:
     """
-    Reads all data from a the H5MD file and stores it in a dict
+    Read all data from an H5MD file and return it as a dictionary.
 
     Parameters
     ----------
@@ -183,7 +165,7 @@ def read_all_data(file: h5py.File) -> dict:
     Returns
     -------
     dict
-        A dictornary storing all data in the H5MD file
+        A dictionary storing all data in the H5MD file
     """
     all_time = [read_times(file, step) for step in range(read_number_steps(file))]
     all_data = {
@@ -193,7 +175,8 @@ def read_all_data(file: h5py.File) -> dict:
         'mass': read_dataset(file, 'mass'),
         'species': read_dataset(file, 'species'),
         'no_steps': read_number_steps(file),
-        'box_dimension': read_box_dimension(file),
+        'box_dimension': read_box_property(file, 'dimensions'),
+        'box_boundary': read_box_property(file, 'boundary'),
         'charge': read_dataset(file, 'charge'),
         'atom_symbol': read_dataset(file, 'atom_symbols'),
         'time_unit': read_units(file, 'time'),
