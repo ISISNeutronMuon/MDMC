@@ -1,4 +1,6 @@
-"""Functions for viewing MDMC configurations via ASE."""
+"""
+Functions for viewing MDMC configurations via ASE.
+"""
 from typing import Union
 
 import ase.visualize
@@ -17,7 +19,7 @@ def view(obj: Union[Structure, Universe],
 
     Parameters
     ----------
-    obj : :any:`Structure` or :any:`AtomContainer`
+    obj : ~MDMC.MD.Structure or ~MDMC.MD.AtomContainer
         The MDMC molecular object to be viewed.
     viewer : str
         The viewer.
