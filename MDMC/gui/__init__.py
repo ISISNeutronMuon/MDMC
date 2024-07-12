@@ -12,20 +12,21 @@ def view(obj: Union[Structure, Universe],
          max_atoms: int = 2000) -> Union[HTML, None]:
     """
     View an MDMC Structure or Universe.
+
     Wrapper around the ASE viewer.
 
     Parameters
     ----------
-    obj: Structure or AtomContainer
+    obj : :any:`Structure` or :any:`AtomContainer`
         The MDMC molecular object to be viewed.
-    viewer: str
+    viewer : str
         The viewer.
-    max_atoms: int, default 2000
+    max_atoms : int, default 2000
         The maximum number of atoms to be displayed.
 
     Returns
     -------
-    HTML or None
+    ~IPython.display.HTML or None
         Either opens the relevant GUI, or returns a HTML object
         (in the case of HTML viewers like X3D).
     """
