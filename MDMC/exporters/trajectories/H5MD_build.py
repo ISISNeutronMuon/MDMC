@@ -12,6 +12,8 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.common import units
 
 H5MD_DATA = {
+    # Generic but mandatory H5MD information like,
+    # version of H5MD and any H5MD `modules` used.
     'creator_name': 'MDMC',
     'creator_version': [0, 2],
     'h5md_version': [1, 1],
@@ -23,15 +25,15 @@ H5MD_DATA = {
 ROOT_TRAJECTORY = 'particles/all'
 
 def create_empty_groups(open_file: h5py.File,
-                          groups: list):
+                          groups: list[str]):
     """
     Create all groups and subgroups that make up the main base structure of the file format.
 
     Parameters
     ----------
     open_file : h5py.File
-        A pre-opened file that is being writen to
-    groups : list
+        A pre-opened file that is being written to
+    groups : list[str]
         A list of groups that are being created
     """
     for group_name in groups:
@@ -46,7 +48,7 @@ def create_metadata_group(open_file: h5py.File, *,
     Parameters
     ----------
     open_file : h5py.File
-        A pre-opened file that the data is being writen into
+        A pre-opened file that the data is being written into
     creator_name : str, optional
         Name of person running the MDMC simulation, by default 'Unknown'
     creator_email : str, optional
@@ -64,9 +66,9 @@ def create_metadata_group(open_file: h5py.File, *,
     creator_group.attrs['version'] = H5MD_DATA['creator_version']
 
     modules_group = group.create_group('modules')
-    for pos, module in enumerate(H5MD_DATA['module_name']):
+    for version, module in zip(H5MD_DATA['module_version'], H5MD_DATA['module_name']):
         module_group = modules_group.create_group(module)
-        module_group.attrs['version'] = H5MD_DATA['module_version'][pos]
+        module_group.attrs['version'] = version
 
 def create_simulation_data(open_file: h5py.File,
                            group_name: str,
@@ -82,7 +84,7 @@ def create_simulation_data(open_file: h5py.File,
     Parameters
     ----------
     open_file : h5py.File
-        A pre-opened file that the data is being writen into
+        A pre-opened file that the data is being written into
     group_name : str
         The group name for the data being stored
     value : int | float | str | np.ndarray
@@ -128,7 +130,7 @@ def create_box_data(open_file: h5py.File,
     trajectory : CompactTrajectory
         The compact trajectory the file is being built from
     open_file : h5py.File
-        A pre-opened file that the data is being writen into
+        A pre-opened file that the data is being written into
     """
     box_group = open_file[f'{ROOT_TRAJECTORY}/box']
     box_group.attrs['dimensions'] = len(trajectory.dimensions)
@@ -143,7 +145,7 @@ def create_parameter_data(open_file: h5py.File, data: np.array):
     Parameters
     ----------
     open_file : h5py.File
-        A pre-opened file that the data is being writen into
+        A pre-opened file that the data is being written into
     data : np.array
         The data being stored
     """
@@ -151,9 +153,9 @@ def create_parameter_data(open_file: h5py.File, data: np.array):
     parameters.create_dataset('atom_symbols', data=data)
 
 def write_H5MD(trajectory: CompactTrajectory,
-               filename: str = "trajectory", *,
+               filename: str = "trajectory.h5", *,
                timestamp: bool = True,
-               file_loc: Path = Path(__file__),
+               file_loc: Path = Path('.'),
                **settings):
     """
     Write a CompactTrajectory to a H5MD file.
@@ -163,24 +165,25 @@ def write_H5MD(trajectory: CompactTrajectory,
     trajectory : CompactTrajectory
         The compact trajectory the file is being built from
     filename : str, optional
-        The name of the H5MD file, by default "trajectory"
+        The name of the H5MD file,
+        standards suggest it ends with `.h5`, by default "trajectory.h5"
     timestamp : bool, optional
         If true adds time timestamp to file name, by default True
     file_loc : Path, optional
-        The file where the H5MD file should be stored, by default current path
+        The file where the H5MD file should be stored, by default Path('.')
     """
 
     time_increment = trajectory.time[1] - trajectory.time[0]
     time_offset = trajectory.time[0]
     step_increment = 1
     step_offset = 0
-    file_name = Path(filename).with_suffix('.h5')
+    filename = Path(filename)
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')
-        file_name = file_name.with_stem(f'{file_name.stem}_{time_stamp}')
+        filename = filename.with_stem(f'{time_stamp}_{filename}')
 
-    file_path_name = f'{file_loc}/{file_name}'
+    file_path_name = f'{file_loc}/{filename}'
 
     with h5py.File(file_path_name, 'w') as file:
         no_data_groups = ['particles',

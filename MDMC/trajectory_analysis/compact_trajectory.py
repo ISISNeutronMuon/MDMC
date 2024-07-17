@@ -18,7 +18,6 @@ limits of performance that we can achieve within Python.
 # by numpy.
 
 import numpy as np
-import h5py
 from MDMC.common import units
 from MDMC.MD.structures import Atom
 from MDMC.readers import H5MD_reader
@@ -183,8 +182,7 @@ class CompactTrajectory:
             The trajectory described by the file.
         """
         new_ct = CompactTrajectory()
-        with h5py.File(file_name, 'r') as file:
-            all_data = H5MD_reader.read_all_data(file)
+        all_data = H5MD_reader.read_all_data(file_name)
         n_atoms = len(all_data['species'])
         n_steps = all_data['no_steps']
         new_ct.preAllocate(n_atoms=n_atoms,

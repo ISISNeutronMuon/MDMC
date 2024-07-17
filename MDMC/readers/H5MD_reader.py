@@ -135,7 +135,7 @@ def read_number_steps(file: h5py.File) -> int:
 
 def read_box_property(file: h5py.File, property_name: str) -> numpy.ndarray:
     """
-    Reads box (called `Universe` in MDMC) properties from H5MD file.
+    Reads box properties from H5MD file.
 
     Parameters
     ----------
@@ -149,40 +149,45 @@ def read_box_property(file: h5py.File, property_name: str) -> numpy.ndarray:
     -------
     numpy.ndaray
         An array returning the property read
+
+    Notes
+    -----
+    This `box` is equivalent to what MDMC calls a `Universe` internally.
     """
     group_step = particles_file_path(file)
     return group_step['box'].attrs[property_name]
 
-def read_all_data(file: h5py.File) -> dict:
+def read_all_data(filename: str) -> dict:
     """
     Read all data from an H5MD file and return it as a dictionary.
 
     Parameters
     ----------
-    file : h5py.File
-        The H5MD file being read from
+    file : str
+        The name of file being read from.
 
     Returns
     -------
     dict
-        A dictionary storing all data in the H5MD file
+        A dictionary storing all data in the H5MD file.
     """
-    all_time = [read_times(file, step) for step in range(read_number_steps(file))]
-    all_data = {
-        'time': all_time,
-        'position': read_dataset(file, 'position'),
-        'velocity': read_dataset(file, 'velocity'),
-        'mass': read_dataset(file, 'mass'),
-        'species': read_dataset(file, 'species'),
-        'no_steps': read_number_steps(file),
-        'box_dimension': read_box_property(file, 'dimensions'),
-        'box_boundary': read_box_property(file, 'boundary'),
-        'charge': read_dataset(file, 'charge'),
-        'atom_symbol': read_dataset(file, 'atom_symbols'),
-        'time_unit': read_units(file, 'time'),
-        'position_unit': read_units(file, 'position'),
-        'velocity_unit': read_units(file, 'velocity'),
-        'mass_unit': read_units(file, 'mass'),
-        'charge_unit': read_units(file, 'charge')
-    }
+    with h5py.File(filename, 'r') as file:
+        all_time = [read_times(file, step) for step in range(read_number_steps(file))]
+        all_data = {
+            'time': all_time,
+            'position': read_dataset(file, 'position'),
+            'velocity': read_dataset(file, 'velocity'),
+            'mass': read_dataset(file, 'mass'),
+            'species': read_dataset(file, 'species'),
+            'no_steps': read_number_steps(file),
+            'box_dimension': read_box_property(file, 'dimensions'),
+            'box_boundary': read_box_property(file, 'boundary'),
+            'charge': read_dataset(file, 'charge'),
+            'atom_symbol': read_dataset(file, 'atom_symbols'),
+            'time_unit': read_units(file, 'time'),
+            'position_unit': read_units(file, 'position'),
+            'velocity_unit': read_units(file, 'velocity'),
+            'mass_unit': read_units(file, 'mass'),
+            'charge_unit': read_units(file, 'charge')
+        }
     return all_data

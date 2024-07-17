@@ -19,7 +19,7 @@ from MDMC.exporters.trajectories import H5MD_build
 from tests.system_tests.observables.data_manager import trajectory
 from tests.test_data import data
 
-FILE_NAME = 'test_file'
+FILE_NAME = 'test_file.h5'
 ROOT_LOC = 'particles/simulation'
 
 @pytest.fixture(scope="module")
@@ -41,7 +41,7 @@ def open_file(tmp_path_factory):
                           timestamp=False,
                           file_loc= tmp_path_factory.getbasetemp())
     file_path = Path(tmp_path_factory.getbasetemp())
-    file = h5py.File(f"{file_path}/{FILE_NAME}.h5", 'r')
+    file = h5py.File(f"{file_path}/{FILE_NAME}", 'r')
     yield file
     file.close()
 
@@ -110,7 +110,7 @@ def test_trajectory_from_file(trajectory,tmp_path_factory):
     """Tests that the H5MD file can be read back in as a compact trajectory
     """
     file_path = Path(tmp_path_factory.getbasetemp())
-    file_path = f'{file_path}/{FILE_NAME}.h5'
+    file_path = f'{file_path}/{FILE_NAME}'
     new_ct = CompactTrajectory.create_from_h5md(file_path)
     assert np.array_equal(trajectory.position, new_ct.position)
     assert np.array_equal(trajectory.time, new_ct.time)
