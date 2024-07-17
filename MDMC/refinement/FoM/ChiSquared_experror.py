@@ -1,4 +1,6 @@
-"""The class for Chi Squared figure of merit calculation with errors"""
+"""
+The class for chi-squared figure of merit calculation with errors.
+"""
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
@@ -6,29 +8,30 @@ from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
 class ChiSquaredExpError(FigureOfMerit):
     """
+    Chi-square figure of merit.
+
     Calculates the figure of merit as a sum of the square difference between
     data points for a single pair of observables, normalised by the errors
     and the number of data points, i.e. the reduced chi-squared.
 
-    Please see the documentation page explanation/figure-of-merit for
-    mathematical details.
+    Please see :doc:`/explanation/figure-of-merit` for mathematical details.
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
         """
-        Calculates the chi-squared figure of merit for a single
-        pair of observables, potentially rescaled if the experimental
-        observable is not on an absolute scale.
+        Calculate the chi-squared figure of merit for a single observable pair.
+
+        This can be rescaled if the experimental observable is not on an absolute scale.
 
         Parameters
         ----------
         obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
+            An ``ObservablePair`` for which the FoM is calculated.
 
         Returns
         -------
         float
-            The FoM for the obs_pair
+            The FoM for the obs_pair.
         """
 
         if obs_pair.auto_scale:

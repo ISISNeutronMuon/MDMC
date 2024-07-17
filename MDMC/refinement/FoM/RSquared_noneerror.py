@@ -1,13 +1,16 @@
-"""The class for R Squared figure of merit calculation with no errors"""
+"""
+The class for R-Squared figure of merit calculation with no errors.
+"""
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
 
 class RSquared_noneerror(FigureOfMerit):
-
     r"""
-    Calculates the weighted sum of the Figure of Merits for a number of datasets:
+    Calculate the weighted sum of the Figure of Merits for a number of datasets.
+
+    This is done by:
 
     .. math::
 
@@ -34,10 +37,9 @@ class RSquared_noneerror(FigureOfMerit):
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
-        # ignore line too long linting as it is necessary for LaTeX formatting
-        # pylint: disable=line-too-long
         r"""
-        Performs the square difference for an ``ObservablePair``
+        Perform the square difference for an ``ObservablePair``.
+
         If ``obs_pair.auto_scale`` is `True`, then this will also set ``obs_pair.rescale``
         to the value which minimizes the FoM. If we label ``rescale_factor``:math:`=\lambda`
         then the minimum of the FoM is obtained as:
@@ -60,14 +62,16 @@ class RSquared_noneerror(FigureOfMerit):
         Parameters
         ----------
         obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
+            An ``ObservablePair`` for which the FoM is calculated.
 
         Returns
         -------
         float
-            The FoM for the obs_pair
+            The FoM for the obs_pair.
         """
 
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         if obs_pair.auto_scale:
             exp_values = np.array(
                 *obs_pair.exp_obs.dependent_variables.values())
