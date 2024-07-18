@@ -3,13 +3,36 @@ name: deploy
 
 on:
   pull_request:
+    branches: [master]
     types: [closed]
 
 # note that the workflow will be triggered whenever a PR is closed, but the "if:" line of the job means the job will only run if it is closed due to merge
 jobs:
+  changes:
+    name: Check for Docker changes
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      docker_change: ${{ steps.filter.outputs.docker }}
+    steps:
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          docker:
+            - 'build/Docker/Dockerfile.engines'
+            - 'build/Docker/Dockerfile.mdmc'
+            - 'requirements.txt'
+            - 'pyproject.toml'
+
   update-latest-image:
     name: Update Docker image
-    if: github.event.pull_request.merged == true
+    needs: changes
+    if: ${{ github.event.pull_request.merged == true && needs.changes.outputs.docker_change == 'true' }}
     # just need an env that include docker, here picked:
     runs-on: ubuntu-latest
     steps:
