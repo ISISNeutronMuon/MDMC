@@ -1,7 +1,10 @@
-"""Module for Intermediate Scattering Function class"""
+"""
+Module for Intermediate Scattering Function class.
+"""
 from abc import abstractmethod
+from collections.abc import Callable
 from itertools import product
-from typing import TYPE_CHECKING, Generator
+from typing import Generator, Literal, Optional
 
 import logging
 import numpy as np
@@ -10,9 +13,9 @@ import periodictable
 from MDMC.common import units
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-from MDMC.common.mathematics import faster_correlation,\
-     faster_autocorrelation, \
-     UNIT_VECTOR
+from MDMC.common.mathematics import (faster_correlation,
+                                     faster_autocorrelation,
+                                     UNIT_VECTOR)
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -20,21 +23,23 @@ from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
-if TYPE_CHECKING:
-    from builtins import function
-    from typing import Optional
-
-
 # pylint: disable=c-extension-no-member
+ThreeVec = tuple[float, float, float]
 
 
 class AbstractFQt(SQwMixins, Observable):
     """
-    An abstract class for total, coherent, and incoherent intermediate scattering functions.
-    Equations used for calculating this are based on Kneller et
-    al. Comput. Phys. Commun. 91 (1995) 191-214.
+    Abstract class for total, coherent, and incoherent intermediate scattering functions.
 
-    Note that properties for MD frames & Q are found in the SQwMixins class.
+    Equations used for calculating this are based on Kneller *et al*. [Kneller]_.
+
+    See Also
+    --------
+    SQwMixins : Properties for MD frames & Q are found in the SQwMixins class.
+
+    References
+    ----------
+    .. [Kneller] Kneller *et al*. Comput. Phys. Commun. 91 (1995) 191-214.
     """
 
     def __init__(self):
@@ -55,13 +60,14 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     def independent_variables(self) -> dict:
         """
-        Get or set the independent variables: these are
-        the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
+        Get or set the independent variables.
+
+        These are the frequency Q (in ``Ang^-1``) and time t (in ``fs``).
 
         Returns
         -------
         dict
-            The independent variables
+            The independent variables.
         """
         return self._independent_variables
 
@@ -72,13 +78,14 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variables: this is
-        FQt, the intermediate scattering function (in ``arb``)
+        Get the dependent variables.
+
+        This is FQt, the intermediate scattering function (in ``arb``).
 
         Returns
         -------
         dict
-            The dependent variables
+            The dependent variables.
         """
 
         return self._dependent_variables
@@ -86,32 +93,31 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     def errors(self) -> dict:
         """
-        Get or set the errors on the dependent variables, the intermediate
-        scattering function (in ``arb``)
+        Get or set the errors on the dependent variables.
+
+        This is the intermediate scattering function error (in ``arb``).
 
         Returns
         -------
         dict
-            The errors on the ``dependent_variables``
+            The errors on the ``dependent_variables``.
         """
 
         return self._errors
 
     @errors.setter
     def errors(self, value: dict) -> None:
-
         self._errors = value
 
     @property
-    def t(self) -> 'np.ndarray':
+    def t(self) -> np.ndarray:
         """
-        Get or set the times of the intermediate scattering function in units of
-        ``fs``
+        Get or set the times of the intermediate scattering function (in ``fs``).
 
         Returns
         -------
         numpy.array
-            1D array of times in ``fs``
+            1D array of times in ``fs``.
         """
 
         return self.independent_variables['t']
@@ -124,14 +130,14 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def FQt(self) -> 'Optional[list[np.ndarray]]':
+    def FQt(self) -> Optional[list[np.ndarray]]:
         """
-        Get or set the dynamic structure factor, F(Q, t), in arb
+        Get or set the dynamic structure factor, F(Q, t) (in ``arb``).
 
         Returns
         -------
         list of numpy.ndarray
-            `list` of 2D arrays of F(Q, t) `float` with arbitrary units
+            `list` of 2D arrays of F(Q, t) `float` with arbitrary units.
         """
 
         try:
@@ -141,13 +147,12 @@ class AbstractFQt(SQwMixins, Observable):
 
     @FQt.setter
     def FQt(self, value: 'list[np.ndarray]') -> None:
-
         self.dependent_variables['FQt'] = value
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
                           **settings: dict) -> None:
         """
-        Calculates the intermediate scattering function from a trajectory.
+        Calculate the intermediate scattering function from a trajectory.
 
         ``independent_variables`` can either be set previously or defined within
         ``**settings``.
@@ -155,19 +160,20 @@ class AbstractFQt(SQwMixins, Observable):
         Parameters
         ----------
         MD_input : CompactTrajectory
-            a single ``CompactTrajectory`` object.
-        verbose: int, optional
+            ``CompactTrajectory`` object to compute F(Q, t) from.
+        verbose : int, optional
             The level of verbosity:
-            Verbose level 0 gives no information.
-            Verbose level 1 gives final time for the whole method.
-            Verbose level 2 gives final time and also a progress bar.
-            Verbose level 3 gives final time, a progress bar, and time per step.
+
+            - Verbose level 0 gives no information.
+            - Verbose level 1 gives final time for the whole method.
+            - Verbose level 2 gives final time and also a progress bar.
+            - Verbose level 3 gives final time, a progress bar, and time per step.
         **settings
-            ``n_Q_vectors`` (`int`)
+            **n_Q_vectors** (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
                 greater the number of ``Q_vectors``, the more accurate the
                 calculation, but the longer it will take.
-            ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
+            **dimensions** (`list`, `tuple`, `numpy.ndarray`)
                 A 3 element `tuple` or ``array`` of `float` specifying the
                 dimensions of the ``Universe`` in units of ``Ang``
         """
@@ -212,7 +218,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         # Get the positions of the recreated_q_values
         if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
-            self.recreated_Q.extend(np.where(self.Q==value)[0][0] for value in self.Q_values)
+            self.recreated_Q.extend(np.where(self.Q == value)[0][0]
+                                    for value in self.Q_values)
             self.Q = [val for val in self.Q if val in self.Q_values]
 
             logging.warning(" The specified universe dimensions were not able to recreate the"
@@ -228,8 +235,7 @@ class AbstractFQt(SQwMixins, Observable):
 
     def _calculate_Q_vectors(self, Q_values: list) -> Generator[list, None, None]:
         """
-        For each value of Q in ``Q_values`` calculates a number of Q vectors
-        (points in reciprocal space) that lie close to that Q value.
+        Calculate a number of Q vectors that lie close to each Q value.
 
         The upper limit of the number of Q vectors for a specific Q value is
         determined by ``self.n_Q_vectors``, however in the case that there are
@@ -239,11 +245,11 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        Q_value : list
-            A ``list` of ``float`` for the Q values
+        Q_values : list
+            A ``list` of ``float`` for the Q values.
 
         Yields
-        -------
+        ------
         list
             A list of Q-vectors for each Q-value - each
             Q-vector is a 3-dimensional vector in reciprocal space.
@@ -269,21 +275,22 @@ class AbstractFQt(SQwMixins, Observable):
 
     def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> list:
         """
-        Calculates a number of Q vectors that have a magnitude between
-        ``Q_min`` and ``Q_max``.
-        The upper limit of the number of Q vectors is determined by
-        ``self.n_Q_vectors``.
+        Calculate a number of Q vectors with a magnitude between ``Q_min`` and ``Q_max``.
+
+        The upper limit of the number of Q vectors is determined by ``self.n_Q_vectors``.
+
         Parameters
         ----------
         Q_min : float
-            The minimum Q value for which a Q vector can be calculated
+            The minimum Q value for which a Q vector can be calculated.
         Q_max : float
-            The maximum Q value for which a Q vector can be calculated
+            The maximum Q value for which a Q vector can be calculated.
+
         Returns
         -------
         list
             A list of Q vectors which lie within the range defined by
-            ``Q_min`` and ``Q_max``
+            ``Q_min`` and ``Q_max``.
         """
 
         # define a cube in reciprocal space
@@ -323,12 +330,9 @@ class AbstractFQt(SQwMixins, Observable):
         return Q_vectors
 
     @abstractmethod
-    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
-        # ignore line too long linting as it is necessary for LaTeX formatting
-        # pylint: disable=line-too-long
+    def _calculate_FQt_single_Q(self, single_Q_vectors: np.ndarray) -> np.ndarray:
         r"""
-        Calculates the F(Q, t) from an array of vectors corresponding to a
-        single value of Q.
+        Calculate F(Q, t) for a single value of Q.
 
         The length of the correlations is bounded by the length of the
         ``self.E + 1`` rather than ``self.t``, as this allows energies to be
@@ -340,7 +344,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         .. math::
 
-            \rho_{\alpha, m_Q}(n_t, p) = \sum_{j \in \alpha} e^{-i \vec{q_{p}} \cdot \vec{r_j}}
+            \rho_{\alpha, m_Q}(n_t, p) = \sum_{j \in \alpha}
+               e^{-i \vec{q_{p}} \cdot \vec{r_j}}
 
         Where :math:`n_t` indexes time and :math:`p` indexes momentum vector.
         F(Q,t) is calculated from the correlation :math:`C` between these
@@ -350,13 +355,23 @@ class AbstractFQt(SQwMixins, Observable):
 
         .. math::
 
-            C_{\alpha,\beta,m_Q}(n_t, p) = \Re \Big[\frac{1}{N_E - |n_t|} \mathcal{F}_t^{-1} \big[ \tilde{\rho'}^*_{\alpha, m_Q}(n_E, p) \tilde{\rho'}_{\beta, m_Q}(n_E, p) \big] \Big]
+            C_{\alpha,\beta,m_Q}(n_t, p) =
+               \Re \left[
+                  \frac{1}{N_E - |n_t|} \mathcal{F}_t^{-1}
+                  \left[
+                     \tilde{\rho}'^*_{\alpha, m_Q}(n_E, p)
+                     \tilde{\rho}'_{\beta, m_Q}(n_E, p)
+                  \right]
+               \right]
 
         Where we denote the Fourier transform of :math:`\rho` as:
 
         .. math::
 
-            \tilde{\rho'}_{\alpha, m_Q}(n_E, p) = \mathcal{F}_t \big[ \rho'_{\alpha, m_Q}(n_t, p) \big]
+            \tilde{\rho}'_{\alpha, m_Q}(n_E, p) =
+               \mathcal{F}_t \left[
+                                \rho'_{\alpha, m_Q}(n_t, p)
+                             \right]
 
         Where :math:`\rho'` denotes that :math:`\rho` has been padded with
         zeros in the time domain to give it twice its orginal length.
@@ -365,13 +380,16 @@ class AbstractFQt(SQwMixins, Observable):
 
         .. math::
 
-            F_{m_Q}^{coh}(n_t) = \sum_{\alpha} \sum_{\beta} B^{coh}_\alpha B^{coh}_\beta \sum_p C_{\alpha,\beta, m_Q}(n_t, p)
+            F_{m_Q}^{coh}(n_t) = \sum_{\alpha} \sum_{\beta}
+                                 B^{coh}_\alpha B^{coh}_\beta
+                                 \sum_p C_{\alpha,\beta, m_Q}(n_t, p)
 
         For the incoherent contribution, we calculate:
 
         .. math::
 
-            F_{m_Q}^{inc}(n_t) = \sum_{\alpha} \big( B^{inc}_\alpha \big) ^2 \sum_p C_{\alpha,\alpha, m_Q}(n_t, p)
+            F_{m_Q}^{inc}(n_t) = \sum_{\alpha} \left( B^{inc}_\alpha \right)^2
+                                 \sum_p C_{\alpha,\alpha, m_Q}(n_t, p)
 
         The ideal (not accounting for instrument resolution) scattering
         function is normalised by both the number of atoms that contributed and
@@ -380,7 +398,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         .. math::
 
-            F_{m_Q}^{ideal}(n_t) = \frac{ F_{m_Q}^{coh}(n_t) +  F_{m_Q}^{inc}(n_t)}{N_{atoms} N_p
+            F_{m_Q}^{ideal}(n_t) = \frac{ F_{m_Q}^{coh}(n_t) +
+                                   F_{m_Q}^{inc}(n_t)}{N_{atoms} N_p
 
         If we were only considering the coherent/incoherent scattering
         function, then the other term is simply omitted from the numerator in
@@ -389,14 +408,13 @@ class AbstractFQt(SQwMixins, Observable):
         Parameters
         ----------
         single_Q_vectors : numpy.ndarray
-            An array of Q vectors with approximately the same magnitude
+            An array of Q vectors with approximately the same magnitude.
 
         Returns
         -------
         numpy.ndarray
-            An ``array`` with length ``len(self.E) + 1``
+            An ``array`` with length ``len(self.E) + 1``.
         """
-
         raise NotImplementedError
 
     def calculate_rho_config(self, config: np.ndarray, single_Q_vectors: list) -> np.ndarray:
@@ -405,39 +423,45 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        config: np.ndarray
+        config : np.ndarray
             An array of atom positions.
-        single_Q_vectors: list
+        single_Q_vectors : list
             A list of Q-vectors for a single value of Q.
 
         Returns
         -------
         np.ndarray
-            An array of rho values for each timestep summed over the atoms in the system,
-            corresponding to each Q
+            An array of rho values for each timestep summed over the
+            atoms in the system, corresponding to each Q.
         """
         def helper_coherent(configs: np.ndarray,
                             q_vector: np.ndarray) -> np.ndarray:
-            """A wrapper for the calculate_rho function and the summation
-            of the resulting array. This part of the calculation is handled
-            by numpy, and so it is easy to run in parallel.
+            """
+            Wrapper for `calculate_rho` and the summation of the resulting array.
 
-            Arguments
-            ---------
-            configs: numpy.ndarray
-                array of atom positions, size (N_timesteps, 3, N_atoms)
-            q_vector: numpy.ndarray
-                q vector in array form, size (3)
+            Parameters
+            ----------
+            configs : numpy.ndarray
+                Array of atom positions, size (N_timesteps, 3, N_atoms).
+            q_vector : numpy.ndarray
+                Q vector in array form, size (3).
 
-            Returns:
-                array of rho values summed over the atoms in the system,
-                size (N_timesteps)
+            Returns
+            -------
+            numpy.ndarray
+                Array of rho values summed over the atoms in the system,
+                size (N_timesteps).
+
+            Notes
+            -----
+            This part of the calculation is handled by numpy, and so it
+            is easy to run in parallel.
             """
             return next(calculate_rho(configs, [q_vector])).sum(axis=1)
 
         rho_config = np.zeros((len(config),
                                len(single_Q_vectors)),
-                               dtype=complex)
+                              dtype=complex)
         executor = create_executor()
 
         # For the np.dot product to be broadcast correctly,
@@ -452,7 +476,7 @@ class AbstractFQt(SQwMixins, Observable):
         # the trajectory by each q vector separately.
         futures = core_batch((executor.submit(helper_coherent,
                                               configs, vector)
-                                              for vector in single_Q_vectors))
+                              for vector in single_Q_vectors))
         # Append to rho_config as completed, block until all futures added
         q_num = 0
         for future_batch in futures:
@@ -463,18 +487,16 @@ class AbstractFQt(SQwMixins, Observable):
 
         return rho_config
 
-
     @abstractmethod
     def _set_weights(self) -> None:
         """
-        Calculate the neutron weighting
+        Calculate the neutron weighting.
         """
-
         raise NotImplementedError
 
-    def calculate_SQw(self, energy: 'list[float]', resolution: Resolution = None) -> 'np.ndarray':
+    def calculate_SQw(self, energy: list[float], resolution: Resolution = None) -> np.ndarray:
         """
-        Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
+        Calculate S(Q, w) from F(Q, t), accounting for instrument resolution.
 
         In order to obtain ``len(energy)`` values in energy, we reflect the
         intermediate scattering function in time to give it dimensions of
@@ -489,15 +511,15 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        energy: list of floats
-            the list of energy (E) points at which S(Q, w) will be calculated.
-        resolution: Resolution (default None)
+        energy : list of floats
+            The list of energy (E) points at which S(Q, w) will be calculated.
+        resolution : Resolution (default None)
             The instrument resolution object which will be applied to FQt.
 
         Returns
         -------
         numpy.ndarray
-            The S(Q, w) calculated from F(Q, t)
+            The S(Q, w) calculated from F(Q, t).
         """
         nE = len(energy)
         if self.use_FFT:
@@ -539,18 +561,19 @@ class AbstractFQt(SQwMixins, Observable):
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
-    def apply_resolution(self, resolution: Resolution) -> "FQt": # type: ignore
+    def apply_resolution(self, resolution: Resolution) -> "FQt":  # type: ignore
         """
         Apply instrument resolution to an FQt object.
 
         Parameters
         ----------
-        resolution: Resolution
+        resolution : Resolution
             The Resolution object to apply to FQt.
 
         Returns
         -------
-        The FQt object with resolution applied.
+        FQt
+            The FQt object with resolution applied.
         """
 
         self.FQt = resolution.apply(self.FQt, self.t, self.Q)
@@ -560,33 +583,40 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     def dependent_variables_structure(self) -> dict[str, list]:
         """
-        The order in which the 'FQt' dependent variable is indexed in terms of 'Q' and 't'.
-        Explicitly: we have that self.FQt[Q_index, t_index] is the data point
-        for given indices of self.Q and self.t
-        It also means that:
-        np.shape(self.FQt)=(np.size(self.Q), np.size(self.t))
+        The order of indexing of 'FQt' dependent variables in terms of 'Q' and 't'.
 
         The purpose of this method is to ensure consistency between
         different readers/methods which create ``FQt`` objects.
 
-        Return
-        ------
+        Returns
+        -------
         dict[str, list]
-            The shape of the SQw dependent variable
+            The shape of the SQw dependent variable.
+
+        Notes
+        -----
+        Explicitly: we have that self.FQt[Q_index, t_index] is the data point
+        for given indices of self.Q and self.t.
+
+        It also means that:
+        np.shape(self.FQt)=(np.size(self.Q), np.size(self.t)).
         """
         return {'FQt': ['Q', 't']}
 
     @property
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
-        Captures the current limitations on the time 't' and reciprocal
-        lattice points 'Q' within the intermediate scattering function ``Observables``.
-        If using FFT, then 't' must be uniform and start at zero, otherwise it
-        has no restrictions. 'Q' must be uniform but does not need to start at
-        zero.
+        Get restrictions required for computing E & Q.
 
-        Return
-        ------
+        Capture the current limitations on the time 't' and reciprocal
+        lattice points 'Q' within the intermediate scattering function ``Observables``.
+
+        If using FFT, then 't' must be uniform and start at zero,
+        otherwise it has no restrictions. 'Q' must be uniform but does
+        not need to start at zero.
+
+        Returns
+        -------
         dict[str, dict[str, bool]]
             Dictionary of uniformity restrictions for 't' and 'Q'.
         """
@@ -602,24 +632,27 @@ class AbstractFQt(SQwMixins, Observable):
 @ObservableFactory.register(('IntermediateScatteringFunction', 'FQt'))
 class FQt(AbstractFQt):
     """
-    A class for containing, calculating and reading the intermediate scattering
-    function for the total dynamic structure factor
+    Class to process the intermediate scattering function for the total dynamic structure factor.
     """
 
     def _set_weights(self) -> None:
         """
-        Calculate the neutron weighting for coherent and incoherent scattering
-        """
+        Calculate the neutron weighting for coherent and incoherent scattering.
 
-        self.weights = {element: {'coh': periodictable.elements.symbol(element).neutron.b_c\
-                                  if periodictable.elements.symbol(element).neutron.b_c \
-                                          is not None else 0,
-                                  'incoh': periodictable.elements.symbol(element).neutron.b_c_i\
-                                      if periodictable.elements.symbol(element).neutron.b_c_i \
-                                          is not None else calc_incoherent_scatt_length(element)}
+        See Also
+        --------
+        periodictable.nsf : Source for neutron scattering factors.
+        """
+        elem_getter = periodictable.elements.symbol
+        self.weights = {element: {'coh': (elem_getter(element).neutron.b_c
+                                          if elem_getter(element).neutron.b_c is not None
+                                          else 0),
+                                  'incoh': (elem_getter(element).neutron.b_c_i
+                                            if elem_getter(element).neutron.b_c_i is not None
+                                            else calc_incoherent_scatt_length(element))}
                         for element in self._trajectory.element_set}
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
+    def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
@@ -647,8 +680,8 @@ class FQt(AbstractFQt):
             rho_all = calculate_rho(element_configs, single_Q_vectors)
             futures = core_batch((executor.submit(faster_autocorrelation,
                                                   rho.T,
-                                                  weights = incoh_weights**2)
-                                                  for rho in rho_all))
+                                                  weights=incoh_weights**2)
+                                  for rho in rho_all))
             for future_batch in futures:
                 results = [future.result() for future in future_batch]
                 for result in results:
@@ -661,7 +694,7 @@ class FQt(AbstractFQt):
                 FQt_single_Q += self.weights[element1]['coh'] \
                     * self.weights[element2]['coh'] \
                     * faster_correlation(rho_element[element1],
-                                  rho_element[element2])[:n_t]
+                                         rho_element[element2])[:n_t]
 
         # Normalise to the number of orthogonal vectors
         # default to 1 if there are no vectors to avoid division by 0
@@ -669,10 +702,10 @@ class FQt(AbstractFQt):
 
         return FQt_single_Q / (self._trajectory.n_atoms * norm)
 
+
 def calculate_rho(positions: np.ndarray, Q_vectors: list) -> Generator[np.ndarray, None, None]:
     """
-    Calculates ``t`` dependent number density in reciprocal space for all
-    Q vectors
+    Calculate ``t`` dependent number density in reciprocal space for all Q vectors.
 
     As rho is the sum of the contributions for all of the specified Q
     vectors, these Q vectors should have the same Q value.
@@ -681,37 +714,43 @@ def calculate_rho(positions: np.ndarray, Q_vectors: list) -> Generator[np.ndarra
     ----------
     positions : numpy.ndarray
         An ``array`` of atomic positions for which the reciprocal space number
-        density should be calculated
+        density should be calculated.
     Q_vectors : list
-        A list of one or more Q vectors with the same Q value
+        A list of one or more Q vectors with the same Q value.
 
-    Returns
-    -------
-    Generator[np.ndarray]
-        A generator for the reciprocal space number density for each Q-vector.
+    Yields
+    ------
+    np.ndarray
+        Reciprocal space number density for each Q-vector.
     """
     for Q_vector in Q_vectors:
         yield np.exp(-1j * np.dot(Q_vector, positions))
 
-def get_point_group(dimensions: 'np.ndarray') -> str:
-    """
-    Gets the Hermann-Mauguin point group for the universe.
-    Currently, MDMC can only create universes with mutually orthogonal
-    sides, so this method can only produce cubic, tetragonal, or orthorhombic
-    universe point groups.
 
-    For tetragonal universes, an additional identifier (x), (y), or (z) is
-    added to identify which of the sides is unique.
+def get_point_group(dimensions: np.ndarray) -> str:
+    """
+    Get the Hermann-Mauguin point group for the universe.
+
+    .. note::
+       Currently, MDMC can only create universes with mutually orthogonal
+       sides, so this method can only produce cubic, tetragonal, or orthorhombic
+       universe point groups.
 
     Parameters
     ----------
-    dimensions: numpy.ndarray
+    dimensions : numpy.ndarray
         An array of length 3, containing the dimensions of the universe.
 
     Returns
     -------
     str
         The point group symbol for the universe.
+
+    Notes
+    -----
+    For tetragonal universes, an additional identifier (``x``),
+    (``y``), or (``z``) is added to identify which of the sides is
+    unique.
     """
     # we use a sum of bools to determine group;
     # if x == y, x == z, y == z
@@ -734,29 +773,42 @@ def get_point_group(dimensions: 'np.ndarray') -> str:
     return 'mmm'  # orthorhombic
 
 
-def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
+def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
     """
-    Returns the Wyckoff symmetries for a point based on its point group.
+    Get the Wyckoff symmetries for a point based on its point group.
 
     Parameters
-    -----------
-    point: tuple
+    ----------
+    point : tuple[float, float, float]
         A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
-    point_group: str
+    point_group : str
         The  point group of the universe in Hermann-Mauguin notation.
         Currently accepted groups are:
-            'm-3m' (cubic)
-            '4/mmm' (tetragonal)
-            'mmm' (orthorhombic)
+
+        - 'm-3m' (cubic)
+        - '4/mmm' (tetragonal)
+        - 'mmm' (orthorhombic)
 
     Returns
     -------
-    set[tuple]
-        A calculated set of the symmetries for the point
+    set[tuple[float, float, float]]
+        A calculated set of the symmetries for the point.
     """
 
-    def cubic(point: tuple) -> 'set[tuple]':
-        """The symmetries of a point in a cubic group."""
+    def cubic(point: ThreeVec) -> set[ThreeVec]:
+        """
+        The symmetries of a point in a cubic group.
+
+        Parameters
+        ----------
+        point : tuple[float, float, float]
+            A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
+
+        Returns
+        -------
+        set[tuple[float, float, float]]
+            A calculated set of the symmetries for the point.
+        """
 
         x, y, z = point
         # it's ugly, but an order of magnitude faster if we just list all the
@@ -770,26 +822,76 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
                  (-y, -x, z), (y, x, z), (-y, x, -z), (y, -x, -z), (-x, -z, y), (x, -z, -y),
                  (x, z, y), (-x, z, -y), (-z, -y, x), (-z, y, -x), (z, -y, -x), (z, y, x)})
 
-    def tetragonal(unique_side: str) -> 'function':
-        """The symmetries of a point in a tetragonal group."""
+    def tetragonal(
+            unique_side: Literal['x', 'y', 'z']
+    ) -> Callable[[ThreeVec], set[ThreeVec]]:
+        """
+        The symmetries of a point in a tetragonal group.
+
+        Parameters
+        ----------
+        unique_side : {'x', 'y', 'z'}
+            Unique side of tetragon determining returned function.
+
+        Returns
+        -------
+        Callable
+            A function for computing the set of the symmetries for the point.
+        """
 
         # slightly more complicated as we don't know what axis is unpermutable
-        def tetragonal_z(point: tuple) -> 'set[tuple]':
-            """Tetragonal symmetries for unpermutable z-axis"""
+        def tetragonal_z(point: ThreeVec) -> set[ThreeVec]:
+            """
+            Tetragonal symmetries for unpermutable z-axis.
+
+            Parameters
+            ----------
+            point : tuple[float, float, float]
+                A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
+
+            Returns
+            -------
+            set[tuple[float, float, float]]
+                A calculated set of the symmetries for the point.
+            """
             x, y, z = point
             return ({(x, y, z), (-x, -y, z), (-y, x, z), (y, -x, z), (-x, y, -z), (x, -y, -z),
                     (y, x, -z), (-y, -x, -z), (-x, -y, -z), (x, y, -z), (y, -x, -z), (-y, x, -z),
                     (x, -y, z), (-x, y, z), (-y, -x, z), (y, x, z)})
 
-        def tetragonal_y(point: tuple) -> 'set[tuple]':
-            """Tetragonal symmetries for unpermutable y-axis"""
+        def tetragonal_y(point: ThreeVec) -> set[ThreeVec]:
+            """
+            Tetragonal symmetries for unpermutable y-axis.
+
+            Parameters
+            ----------
+            point : tuple[float, float, float]
+                A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
+
+            Returns
+            -------
+            set[tuple[float, float, float]]
+                A calculated set of the symmetries for the point.
+                """
             x, y, z = point
             return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
                     (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
                     (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
 
-        def tetragonal_x(point: tuple) -> 'set[tuple]':
-            """Tetragonal symmetries for unpermutable x-axis"""
+        def tetragonal_x(point: ThreeVec) -> set[ThreeVec]:
+            """
+            Tetragonal symmetries for unpermutable x-axis.
+
+            Parameters
+            ----------
+            point : tuple[float, float, float]
+                A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
+
+            Returns
+            -------
+            set[tuple[float, float, float]]
+                A calculated set of the symmetries for the point.
+            """
             x, y, z = point
             return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
                     (x, -y, -z), (-x, -y, -z), (x, z, y), (-x, z, y), (x, z, -y), (-x, z, -y),
@@ -802,8 +904,20 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
 
         return side[unique_side]
 
-    def orthorhombic(point: tuple) -> 'set[tuple]':
-        """The symmetries of a point in an orthorhombic group."""
+    def orthorhombic(point: ThreeVec) -> set[ThreeVec]:
+        """
+        The symmetries of a point in an orthorhombic group.
+
+        Parameters
+        ----------
+        point : tuple[float, float, float]
+            A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
+
+        Returns
+        -------
+        set[tuple[float, float, float]]
+            A calculated set of the symmetries for the point.
+        """
 
         x, y, z = point
         return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z),
@@ -820,19 +934,16 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
 
 def calc_incoherent_scatt_length(element):
     """
-    Takes the incoherent scattering cross section of element and calculates the incoherent
-    scattering length to be returned.
+    Calculate incoherent scattering length from incoherent scattering cross section.
 
     Parameters
     ----------
-
-    element: string
-        a string representing the chemical symbol of the element, e.g 'He' for Helium.
-
+    element : str
+        A string representing the chemical symbol of the element, e.g
+        'He' for Helium.
 
     Returns
     -------
-
     float
         Incoherent scattering length of chemical symbol passed in.
     """
