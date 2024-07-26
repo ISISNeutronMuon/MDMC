@@ -165,7 +165,7 @@ def write_force_field_module(fname: str,
     line_length = settings.get('line_length', 80)
     data_fname = settings.get('data_fname', fname)
 
-    imports = ('from MDMC.MD.force_fields.ff import FileForceField\n')
+    imports = 'from MDMC.MD.force_fields.ff import FileForceField\n'
 
     if path is None:
         path = os.path.abspath(

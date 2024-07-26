@@ -163,7 +163,7 @@ class MMC(Minimizer):
         """
 
         # select the history of accepted state changes
-        accepted_history = (self.history['Change state'] == 'Accepted')
+        accepted_history = self.history['Change state'] == 'Accepted'
         accepted_history = self.history[accepted_history]
         if len(accepted_history) >= self.min_steps:
             # drop 'Change state' column to select only parameters;
@@ -241,7 +241,7 @@ class MMC(Minimizer):
         # as of numpy 2.0.0, np.float64 has repr e.g. "np.float64(3.0)" instead of "3.14"
         # we use legacy print options to make the string nicer with less fiddling
         with np.printoptions(legacy="1.25"):
-            output_string = (f"""
+            output_string = f"""
                             {converged_message}
 
                             Last accepted point is:
@@ -251,6 +251,6 @@ class MMC(Minimizer):
                             Best point measured was:
                             {minimizer_output[2]} for a minimum FoM of
                             {minimizer_output[3]}.
-                            """)
+                            """
 
             return dedent(output_string)

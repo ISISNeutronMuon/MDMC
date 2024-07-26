@@ -349,6 +349,8 @@ class SolventConfig(ABC):
                                             if not n else el
                                             for n, el in enumerate(b_i)],
                                            self.bonded_interactions))
+        else:
+            bonded_interactions = []
 
         molecules = []
         for mol_dict in coords.values():

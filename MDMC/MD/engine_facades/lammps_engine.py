@@ -56,7 +56,7 @@ from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,possibly-used-before-assignment
 
 class PyLammpsAttribute:
 
@@ -1686,7 +1686,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                 self.lmp.unfix(name)
 
         if self.system_state.natoms > 0:
-            if self.lin_momentum_steps == self.ang_momentum_steps is not None:
+            if self.lin_momentum_steps == self.ang_momentum_steps:
                 self.lmp.fix('RemoveMomentum', 'all', 'momentum',
                              self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
             else:
@@ -2086,6 +2086,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         if not self.thermostat and not self.barostat:
             self.lmp.fix('nve', 'all', 'nve')
         else:
+            thermo_parameters = []
+            press_parameters = []
+
             if self.thermostat:
                 temp = convert_unit(self.temperature)
                 if self.thermostat != 'rescale':

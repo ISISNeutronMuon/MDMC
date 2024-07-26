@@ -1033,7 +1033,7 @@ class Universe(AtomContainer):
         solvent_mass = solvent_config.mass
         orig_box_dimensions = solvent_config.box_dimensions
         # density is adjusted to account for density of solvent already in box
-        density = (density - self.solvent_density)
+        density = density - self.solvent_density
         # If this is already within the specified tolerance then return, as
         # calling solvate is redundant. Otherwise, raise an error, as solvate is
         # not designed to be applied multiple times to change the
