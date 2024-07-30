@@ -50,7 +50,7 @@ typecheck = ["mypy"]
 docs = ["sphinx==7.4.7",
         "nbsphinx==0.9.4",
         "sphinx-rtd-theme==2.0.0",
-        "docutils==0.20.1",
+        "docutils==0.21.2",
         "jupyter==1.0.0",
         "nbmake==1.5.4",
         "nbconvert==7.16.4",
