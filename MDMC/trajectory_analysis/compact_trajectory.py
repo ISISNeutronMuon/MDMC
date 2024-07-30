@@ -176,8 +176,8 @@ class CompactTrajectory:
                 raise IndexError("Trying to access a nonexistent time"
                                  " frame in the CompactTrajectory.") from exc
             return self.subtrajectory(index, index+1, 1)
-        else:
-            return self.subtrajectory(start, stop, step)
+
+        return self.subtrajectory(start, stop, step)
 
     def __eq__(self, other: 'CompactTrajectory') -> bool:
         if not self.is_allocated == other.is_allocated:

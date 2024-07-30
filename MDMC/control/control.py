@@ -683,17 +683,13 @@ class Control:
         `float`
             Non-negative `float` FoM
         """
-        used_max_FoM = False
         try:
             self._run_MD()
-        except MDEngineError:
-            FoM_value = self.max_FoM
-            used_max_FoM = True
-
-        if not used_max_FoM:
             self._calculate_observables(self.simulation, self.observable_pairs)
             self._trim_dependent_variables()
             FoM_value = self.FoM_calculator.calculate()
+        except MDEngineError:
+            FoM_value = self.max_FoM
 
         return FoM_value
 

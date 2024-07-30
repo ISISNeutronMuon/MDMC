@@ -380,7 +380,7 @@ class GPR(Minimizer):
         # as of numpy 2.0.0, np.float64 has repr e.g. "np.float64(3.14)" instead of "3.14"
         # we use legacy print options to make the string nicer with less fiddling
         with np.printoptions(legacy="1.25"):
-            output_string = (f"""
+            output_string = f"""
                             {converged_message}
 
                             Minimum measured point is:
@@ -390,6 +390,6 @@ class GPR(Minimizer):
                             Minimum point predicted is:
                             {minimizer_output[2]} for an
                             FoM of {minimizer_output[3]}.
-                            """)
+                            """
 
             return dedent(output_string)

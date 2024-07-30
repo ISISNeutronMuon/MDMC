@@ -221,7 +221,7 @@ class GPO(Minimizer):
         else:
             converged_message = "The refinement has not finished."
 
-        output_string = (f"""
+        output_string = f"""
                         {converged_message}
 
                         Minimum measured point is:
@@ -231,6 +231,6 @@ class GPO(Minimizer):
                         Minimum point predicted is:
                         {minimizer_output[2]} for an
                         FoM of {minimizer_output[3]}.
-                        """)
+                        """
 
         return dedent(output_string)

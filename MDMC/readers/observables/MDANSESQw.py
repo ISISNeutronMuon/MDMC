@@ -75,6 +75,7 @@ class MDANSESQw(SQwReader):
         the data axes.
         """
         header = []
+        value = None
         # This loop will only read the header of the file,
         # and stop as soon as it reaches the data
         with open(self.file_name, 'r', encoding='utf-8') as source:
@@ -111,6 +112,8 @@ class MDANSESQw(SQwReader):
                         self.e_unit = 'arb. u.'
                     else:
                         self.e_unit = unit
+                else:
+                    raise ValueError(f"Unknown variable ({variable}).")
             if "row:" in line:
                 self.first_row = value
             if "column:" in line:

@@ -241,9 +241,9 @@ class PackmolSetup:
         if structure not in self._structures:
             warnings.warn(f"The removal of the structure {structure} was requested,"
                           " but no such structure is in the system.")
-        for setting in self._structure_settings:
-            if setting["structure"] == structure:
-                del setting
+        self._structure_settings = [setting
+                                    for setting in self._structure_settings
+                                    if setting["structure"] != structure]
         self._structures.remove(structure)
 
     def validate_setup(self) -> None:
