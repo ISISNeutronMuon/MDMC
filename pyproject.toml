@@ -47,7 +47,7 @@ test = ["pytest==8.3.2",
 lint = ["pylint==3.2.6",
         "pylint-exit==1.2.0"]
 typecheck = ["mypy"]
-docs = ["sphinx==7.4.7",
+docs = ["sphinx==8.0.2",
         "nbsphinx==0.9.4",
         "sphinx-rtd-theme==2.0.0",
         "docutils==0.20.1",
