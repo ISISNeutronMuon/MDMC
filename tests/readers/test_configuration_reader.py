@@ -1,17 +1,13 @@
 """Tests relating to ConfigurationReader and subclasses, and ConfigurationReaderFactory"""
 
 import pytest
-from numpy.testing import assert_allclose
 
-from MDMC.MD import Atom
-from MDMC.readers.configurations import read
 from MDMC.readers.configurations.cif import CIFReader
-from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
+from MDMC.readers.configurations.pdb import ProteinDataBankReader
 from MDMC.readers.configurations.ase import ASEReader
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.conf_reader_factory import \
     ConfigurationReaderFactory
-from tests.test_data import data
 
 
 def test_configuration_reader_extension_error():
@@ -37,7 +33,7 @@ def test_configuration_reader_extension_error():
 
 
 @pytest.mark.parametrize('ext, reader_type', [('cif', CIFReader),
-                                         ('pdb', PackmolPDBReader),
+                                         ('pdb', ProteinDataBankReader),
                                          ('mol', ASEReader)])
 def test_create_reader_from_ext(ext, reader_type):
     """Tests that a reader can be created from a correctly specified file extension"""

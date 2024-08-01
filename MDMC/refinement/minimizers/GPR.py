@@ -1,7 +1,9 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Union, Optional
+from textwrap import dedent
 
+from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
@@ -40,14 +42,18 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: Parameters, \
+        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+
+        super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
         self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
+        self.previous_history = previous_history
+        self.state_changed = False
 
     def create_parameter_point_array(self,
                                      parameters: Parameters) -> 'tuple[list[str], list[tuple]]':
@@ -70,7 +76,7 @@ class GPR(Minimizer):
         """
         parameter_names = [str(name) for name in parameters.keys()]
 
-        samples = st.qmc.LatinHypercube(d=len(parameters), centered=True, seed=1)
+        samples = st.qmc.LatinHypercube(d=len(parameters), scramble=False, seed=1)
         try:
             latin_points = samples.random(n=self.control.n_steps)
         except AttributeError as error:
@@ -367,14 +373,23 @@ class GPR(Minimizer):
         """
 
         if self.has_converged():
-            converged_message = '\nThe refinement has finished.'
+            converged_message = 'The refinement has finished.'
         else:
-            converged_message = "\nThe refinement has not finished."
+            converged_message = "The refinement has not finished."
 
-        return (f'{converged_message} \n \n'
-                f'Minimum measured point is: \n'
-                f'{minimizer_output[0]} with an '
-                f'FoM of {minimizer_output[1]}. \n \n'
-                f'Minimum point predicted is: \n'
-                f'{minimizer_output[2]} for an '
-                f'FoM of {minimizer_output[3]}.\n \n ')
+        # as of numpy 2.0.0, np.float64 has repr e.g. "np.float64(3.14)" instead of "3.14"
+        # we use legacy print options to make the string nicer with less fiddling
+        with np.printoptions(legacy="1.25"):
+            output_string = f"""
+                            {converged_message}
+
+                            Minimum measured point is:
+                            {minimizer_output[0]} with an
+                            FoM of {minimizer_output[1]}.
+
+                            Minimum point predicted is:
+                            {minimizer_output[2]} for an
+                            FoM of {minimizer_output[3]}.
+                            """
+
+            return dedent(output_string)

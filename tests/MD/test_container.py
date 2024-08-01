@@ -65,6 +65,7 @@ def test_atom_collection_slice(atom_collection, request):
     """
 
     collection_slice = request.getfixturevalue(atom_collection)[0:4:2]
+    
     assert len(collection_slice) == 2
-    assert collection_slice[0].element == 'H'
-    assert collection_slice[1].element == 'O'
+    assert collection_slice[0].element.symbol == 'H'
+    assert collection_slice[1].element.symbol == 'O'

@@ -19,7 +19,6 @@ from MDMC.common import units
 from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 
-
 class CompactTrajectory:
     """
     Stores an MD trajectory in numpy arrays.
@@ -177,8 +176,8 @@ class CompactTrajectory:
                 raise IndexError("Trying to access a nonexistent time"
                                  " frame in the CompactTrajectory.") from exc
             return self.subtrajectory(index, index+1, 1)
-        else:
-            return self.subtrajectory(start, stop, step)
+
+        return self.subtrajectory(start, stop, step)
 
     def __eq__(self, other: 'CompactTrajectory') -> bool:
         if not self.is_allocated == other.is_allocated:
@@ -556,7 +555,7 @@ class CompactTrajectory:
             # so we accept a case of no atoms in the CompactTrajectory.
             # We just return False in case we wanted to check in real code if
             # we are trying to set labels on a CompactTrajectory with no atoms.
-        self.element_list = [atom_symbols[atom_id] for atom_id in self.atom_types]
+        self.element_list = [str(atom_symbols[atom_id]) for atom_id in self.atom_types]
         self.element_set = set(self.element_list)
         self.atom_masses = np.array([atom_masses[atom_id] for atom_id in self.atom_types])
         return True
@@ -704,6 +703,7 @@ class CompactTrajectory:
             the specified chemical elements.
         """
         indices = []
+
         for element in elements:
             if element in self.element_list:
                 index = np.where(np.array(self.element_list) == element)[0].ravel()
@@ -805,8 +805,8 @@ def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])-
         except AttributeError:
             current_time = 0.0
         if len(config.data) > 0:
-            atpos = np.row_stack(config.atom_positions)
-            atvel = np.row_stack(config.atom_velocities)
+            atpos = np.vstack(config.atom_positions)
+            atvel = np.vstack(config.atom_velocities)
             traj.writeOneStep(step_num=step_number,
                                 time=current_time,
                                 positions=atpos,
@@ -836,7 +836,7 @@ def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])-
     atom_counter = 0
     # we just iterate over Atom objects
     for nat, atom in enumerate(configs[0].atoms):
-        element = atom.element
+        element = atom.element.symbol
         mass = atom.mass
         charge = atom.charge
         elements.append(element)

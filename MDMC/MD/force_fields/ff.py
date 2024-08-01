@@ -305,7 +305,7 @@ class FileForceField(ForceField):
             The ``Atom`` for which the mass will be set
         """
 
-        ff_atom = filter_ordered_dataframe([atom.name, atom.element],
+        ff_atom = filter_ordered_dataframe([atom.name, atom.element.symbol],
                                            self.atoms,
                                            column_names=['name', 'element'])
         atom.mass = ff_atom.mass
@@ -345,10 +345,10 @@ class FileForceField(ForceField):
                 # Raise an error if the name/element combination can't be found
                 try:
                     tuple_groups.append(self.atom_name_group[(atom.name,
-                                                              atom.element)])
+                                                              atom.element.symbol)])
                 except KeyError as error:
-                    raise KeyError(f'Unable to find atom of element "{atom.element}" recorded with'
-                                   f' the name "{atom.name}" '
+                    raise KeyError(f'Unable to find atom of element "{atom.element.symbol}" '
+                                   f'recorded with the name "{atom.name}" '
                                    'in the specified force field file.') from error
 
             groups.add(tuple(tuple_groups))
@@ -460,7 +460,7 @@ class FileForceField(ForceField):
         atom_names_elements = set()
         for atom in coulombic.atoms:
             self._convert_atom_type_name(atom)
-            atom_names_elements.add((atom.name, atom.element))
+            atom_names_elements.add((atom.name, atom.element.symbol))
 
         cols = ['name', 'element']
         matching_atoms = pd.concat([filter_ordered_dataframe(name_element,
@@ -535,7 +535,7 @@ class FileForceField(ForceField):
             # single atom when determining ff_atom_type
             # ff_atom_type is different to MDMC atom_type
             atom_name_element = (atom_pairs[1][0].name,
-                                 atom_pairs[1][0].element)
+                                 atom_pairs[1][0].element.symbol)
             cols = ['name', 'element']
             ff_atom_type = filter_ordered_dataframe(atom_name_element,
                                                     self.atoms,

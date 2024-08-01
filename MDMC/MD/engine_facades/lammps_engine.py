@@ -47,7 +47,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
-from MDMC.MD.engine_facades.facade import MDEngine
+from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction, Interaction, \
     NonBondedInteraction, Bond, BondAngle
@@ -56,7 +56,7 @@ from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,possibly-used-before-assignment
 
 class PyLammpsAttribute:
 
@@ -458,7 +458,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     self.__class__,
                     n_steps,
                     equilibration)
-        self.lmp.run(n_steps)
+        try:
+            self.lmp.run(n_steps)
+        except Exception as exc:
+            raise MDEngineError("There has been an error running the LAMMPS simulation.") from exc
 
         if equilibration and reset_to_nve:
             self.thermostat = None
@@ -678,6 +681,13 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def update_parameters(self) -> None:
 
         self.lmp_universe.update_parameters()
+
+    def clear(self) -> None:
+        """
+        Deletes all atoms of the MD engine, restores all settings to their default values,
+        and frees all memory in LAMMPS.
+        """
+        self.lmp.clear()
 
     def save_config(self) -> None:
 
@@ -1676,7 +1686,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                 self.lmp.unfix(name)
 
         if self.system_state.natoms > 0:
-            if self.lin_momentum_steps == self.ang_momentum_steps is not None:
+            if self.lin_momentum_steps == self.ang_momentum_steps:
                 self.lmp.fix('RemoveMomentum', 'all', 'momentum',
                              self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
             else:
@@ -2076,6 +2086,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         if not self.thermostat and not self.barostat:
             self.lmp.fix('nve', 'all', 'nve')
         else:
+            thermo_parameters = []
+            press_parameters = []
+
             if self.thermostat:
                 temp = convert_unit(self.temperature)
                 if self.thermostat != 'rescale':

@@ -1,13 +1,14 @@
 """Utility for slicing a ``CompactTrajectory`` object into sub-trajectories"""
 
-from typing import TYPE_CHECKING
+from typing import Iterable
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
-if TYPE_CHECKING:
-    from typing import Iterable
-    from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
-def slice_trajectory(trj: "CompactTrajectory", subtrj_len: int, cont_slicing: bool = False) \
-        -> "Iterable[CompactTrajectory]":
+def slice_trajectory(
+        trj: CompactTrajectory,
+        subtrj_len: int,
+        cont_slicing: bool = False
+) -> Iterable[CompactTrajectory]:
     """
     Takes a ``CompactTrajectory`` object and slices it into a list of shorter
     ``CompactTrajectory`` objects of equal length.
@@ -18,33 +19,37 @@ def slice_trajectory(trj: "CompactTrajectory", subtrj_len: int, cont_slicing: bo
         The trajectory that should be divided into smaller sub-trajectories.
     subtrj_len : int
         The length (number of frames) of the sub-trajectories.
-    cont_slicing : bool
+    cont_slicing : bool, optional
         Flag to set if a rolling/continuous slicing should be used with frames allowed to
-        appear in multiple sub-trajectories. If set to ``False`` (default) then the
-        sub-trajectories are separate subsets of the ``CompactTrajectory`` with distinct frames.
+        appear in multiple sub-trajectories.
+
+        If set to ``False`` (default) then the sub-trajectories are separate
+        subsets of the ``CompactTrajectory`` with distinct frames.
+
         Note that if set to ``False`` it checks if ``len(trj)%subtrj_len==0`` and if not it does
         not use the first ``len(trj)%subtrj_len`` frames of the ``CompactTrajectory``.
 
-    Example
-    -------
-    If ``len(CompactTrajectory)==10`` then the following examples would give:
-        slice_trajectory(CompactTrajectory, subtrj_len=5, cont_slicing=False):
-            [CompactTrajectory[0:5], CompactTrajectory[5:10]]
-        slice_trajectory(CompactTrajectory, subtrj_len=4, cont_slicing=False):
-            [CompactTrajectory[2:6], CompactTrajectory[6:10]]
-        slice_trajectory(CompactTrajectory, subtrj_len=8, cont_slicing=True):
-            [CompactTrajectory[0:8], CompactTrajectory[1:9], CompactTrajectory[2:10]]
+    Yields
+    ------
+    CompactTrajectory
+        Sub-trajectories of length ``subtrj_len``.
 
-    Returns
-    -------
-    Iterable[CompactTrajectory]
-        A generator function for the list of sub-trajectories of length ``subtrj_len``.
+    Examples
+    --------
+    If ``len(CompactTrajectory)==10`` then the following examples would give:
+
+    >>> slice_trajectory(CompactTrajectory, subtrj_len=5, cont_slicing=False):
+    [CompactTrajectory[0:5], CompactTrajectory[5:10]]
+    >>> slice_trajectory(CompactTrajectory, subtrj_len=4, cont_slicing=False):
+    [CompactTrajectory[2:6], CompactTrajectory[6:10]]
+    >>> slice_trajectory(CompactTrajectory, subtrj_len=8, cont_slicing=True):
+    [CompactTrajectory[0:8], CompactTrajectory[1:9], CompactTrajectory[2:10]]
     """
     trj_len = len(trj)
 
-    msg = (f'The sub-trajectory length of {subtrj_len} was larger than the length of the '
-               f'parent trajectory of {trj_len}.')
-    assert trj_len >= subtrj_len, msg
+    if trj_len < subtrj_len:
+        raise IndexError(f'The sub-trajectory length of {subtrj_len} was larger than '
+                         f'the length of the parent trajectory of {trj_len}.')
 
     if cont_slicing:
         first_frame = 0

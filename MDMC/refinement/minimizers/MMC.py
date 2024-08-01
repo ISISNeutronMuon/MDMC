@@ -1,5 +1,7 @@
 """The Metropolis-Hastings minimizer class"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, Optional
+from pathlib import Path
+from textwrap import dedent
 
 import numpy as np
 
@@ -8,7 +10,6 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 if TYPE_CHECKING:
     from MDMC.MD import Parameters
     from MDMC.control import Control
-
 
 class MMC(Minimizer):
 
@@ -41,8 +42,9 @@ class MMC(Minimizer):
 
     DISTRIBUTION = {'uniform': np.random.uniform}
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', \
+        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+        super().__init__(control, parameters, previous_history)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
         self.parameters = parameters
@@ -52,6 +54,8 @@ class MMC(Minimizer):
         distribution = 'uniform'
         self.distribution = self.__class__.DISTRIBUTION[distribution]
 
+        self.previous_history = previous_history
+        self.state_changed = False
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -159,7 +163,7 @@ class MMC(Minimizer):
         """
 
         # select the history of accepted state changes
-        accepted_history = (self.history['Change state'] == 'Accepted')
+        accepted_history = self.history['Change state'] == 'Accepted'
         accepted_history = self.history[accepted_history]
         if len(accepted_history) >= self.min_steps:
             # drop 'Change state' column to select only parameters;
@@ -230,16 +234,23 @@ class MMC(Minimizer):
             last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
         """
         if self.has_converged():
-            converged_message = '\nThe refinement has converged.'
+            converged_message = 'The refinement has converged.'
         else:
-            converged_message = "\nThe refinement has not converged."
+            converged_message = "The refinement has not converged."
 
-        output_string = (f'{converged_message} \n \n'
-                         f'Last accepted point is: \n'
-                         f'{minimizer_output[0]} with a minimum '
-                         f'FoM of {minimizer_output[1]}. \n \n'
-                         f'Best point measured was: \n'
-                         f'{minimizer_output[2]} for a minimum FoM of '
-                         f'{minimizer_output[3]}.\n \n ')
+        # as of numpy 2.0.0, np.float64 has repr e.g. "np.float64(3.0)" instead of "3.14"
+        # we use legacy print options to make the string nicer with less fiddling
+        with np.printoptions(legacy="1.25"):
+            output_string = f"""
+                            {converged_message}
 
-        return output_string
+                            Last accepted point is:
+                            {minimizer_output[0]} with a minimum
+                            FoM of {minimizer_output[1]}.
+
+                            Best point measured was:
+                            {minimizer_output[2]} for a minimum FoM of
+                            {minimizer_output[3]}.
+                            """
+
+            return dedent(output_string)

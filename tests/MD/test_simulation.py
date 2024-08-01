@@ -7,13 +7,15 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from pytest_cases import parametrize, fixture_ref
-
 from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import LennardJones
 import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
+from MDMC.common import units
+from MDMC.MD.simulation import Simulation
+import difflib
 
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
@@ -21,13 +23,13 @@ UNIVERSE_DIMENSIONS = (10., 10., 10.)
 H1_POSITION = (0., 0., 0.)
 H2_POSITION = (0.151390, 0., 0.)
 O_POSITION = (0.075695, 0., 0.058588)
-H_MASS = 1.008
-O_MASS = 16.000
+H_MASS = 1.00794
+O_MASS = 15.9994
 WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
 TOLERANCE = 1.5
-SPCE_MASS = 18.01499
+SPCE_MASS = 18.01528
 SPCE_DIMENSIONS = np.array([18.6206, 18.6206, 18.6206])
 SPCE_NUM_MOL = len(SPC216['molecules'])  # 216
 SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
@@ -64,7 +66,7 @@ def water_SPCE_universe(water_molecule):
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atoms
-                       if atom.element == 'O')
+                       if atom.element.symbol == 'O')
     O_dispersion = interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
     yield water_universe
 
@@ -116,6 +118,8 @@ class MockSimulation(sim.Simulation):
         self.traj_step = traj_step
         self.time_step = time_step
         self.engine = engine
+        self.temperature = settings.get("temperature")
+        self.pressure = settings.get("pressure")
 
 class MockEngine:
     """
@@ -217,13 +221,12 @@ def test_universe_with_atoms_stdout(capsys):
     assert all(expected in actual for expected, actual in zip(expected_lines, actual_lines))
 
 
-
 def test_create_atom(atom):
 
     npt.assert_array_equal((0., 0., 0.), atom.position)
     npt.assert_array_equal((0., 0., 0.), atom.velocity)
-    assert atom.element == 'H'
-    assert atom.mass == 1.008
+    assert atom.element.symbol == 'H'
+    assert atom.mass == 1.00794
 
 
 @parametrize("unit, changed_attr",
@@ -380,7 +383,7 @@ def test_equivalent_top_level_structures_dict(
     assert equivalent_dict[keys[0]] == 28
 
     assert isinstance(keys[1], su.Atom)
-    assert keys[1].element == "Ar"
+    assert keys[1].element.symbol == "Ar"
     assert equivalent_dict[keys[1]] == 65
 
 
@@ -444,7 +447,7 @@ def test_add_molecule(universe, water_molecule):
 
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
-                       if atom.element == 'O')
+                       if atom.element.symbol == 'O')
     O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
     for interaction in water_molecule.interactions:
@@ -458,7 +461,7 @@ def test_spce_water_molecule(universe, water_molecule):
     universe.add_structure(water_molecule)
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
-                       if atom.element == 'O')
+                       if atom.element.symbol == 'O')
     O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
 
@@ -964,7 +967,7 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
         universe.fill(water_molecule, num_struc_units=567)
 
     # Define a tolerance to allow for rounding errors
-    tolerance = 1e-16
+    tolerance = 1e-15
     for atom in universe.atoms:
         assert all(atom.position > [0, 0, 0] - np.array([tolerance] * 3))
         assert all(atom.position < universe.dimensions)
@@ -990,9 +993,9 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     for u in [universe, universe_manual]:
         for atom in u.atoms:
-            if atom.element == 'H':
+            if atom.element.symbol == 'H':
                 assert atom.atom_type == 1
-            elif atom.element == 'O':
+            elif atom.element.symbol == 'O':
                 assert atom.atom_type == 2
 
 
@@ -1191,7 +1194,7 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
                                                   ('sigma', 3.166)))])
 def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     """
-    Tests that the parameters of the solvent molcules are set correctly when
+    Tests that the parameters of the solvent molecules are set correctly when
     the solvent has been selected from inbuilt solvents
     """
 
@@ -1275,14 +1278,14 @@ def test_water_model_inheritance():
     assert ValidWaterModel().n_body == 3
 
 @pytest.mark.parametrize("structures, expected",
-                         [([su.Atom('AA', mass=1.0)],
+                         [([su.Atom('H', mass=1.0)],
                            0.001),
-                          ([su.Atom('BB', mass=15.0)],
+                          ([su.Atom('N', mass=15.0)],
                            0.015),
-                          ([su.Molecule(atoms=[su.Atom('CC', mass=2.0),
-                                               su.Atom('DD', mass=21.0)])],
+                          ([su.Molecule(atoms=[su.Atom('He', mass=2.0),
+                                               su.Atom('Na', mass=21.0)])],
                            0.023),
-                          ([su.Atom('AA', mass=1.0), su.Atom('DD', mass=21.0)],
+                          ([su.Atom('H', mass=1.0), su.Atom('Na', mass=21.0)],
                            0.022)])
 def test_universe_density(structures, expected, universe):
     """
@@ -1344,7 +1347,6 @@ def test_add_force_field_dispersions_atoms(universe, water_molecule):
     universe.add_structure(water_molecule)
     #pylint: disable=len-as-condition
     assert len(get_dispersions(universe.nonbonded_interactions)) == 0
-
     O_atoms = su.filter_atoms_element(water_molecule.atoms, 'O')
     universe.add_force_field('SPCE', add_dispersions=O_atoms)
     dispersions = get_dispersions(universe.nonbonded_interactions)

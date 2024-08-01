@@ -1,14 +1,15 @@
 """A module for performing the refinement"""
 import statistics
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, Union
 from contextlib import suppress
 from datetime import datetime
+from pathlib import Path
 
 import logging
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d, interp2d
+from scipy.interpolate import interp1d, RectBivariateSpline
 from verbosemanager import VerboseManager
 
 from MDMC.control.plot_results import PlotResults, data_printers
@@ -22,6 +23,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.MD.engine_facades.facade import MDEngineError
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -141,6 +143,9 @@ class Control:
         data_printer: str, default 'plaintext'
             How to display the data during minimisation. Current options are 'plaintext' (default,
             plaintext printing) or 'ipython' (prettier HTML printing via iPython)
+        time_step_reductions : int, optional
+            The number of attempts to reduce the time_step of the simulation in order to fix an
+            equilibration that keeps failing. Defaults to a value of 2.
 
     Example
     -------
@@ -183,11 +188,13 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
+                 previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
                  **settings: dict):
 
         self.minimizer_type = minimizer_type
+        self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -213,6 +220,7 @@ class Control:
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
+        settings['time_step_reductions'] = settings.get('time_step_reductions', 2)
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
@@ -220,7 +228,7 @@ class Control:
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(self.minimizer_type, self,
                                                            self.fit_parameters, **settings)
-
+        self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -232,6 +240,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
+            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -260,6 +270,8 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            self.recreated_independent_vars  = {}
+            self.production_time_step = self.simulation.time_step
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -279,6 +291,7 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
+        self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -414,9 +427,10 @@ class Control:
             control.refine(100)
         """
 
-        if n_steps is None:
+        if not n_steps:
             if self.n_steps is None:
-                raise ValueError('The number of maximum refinement steps has not been specified')
+                raise ValueError('The number of maximum refinement steps needs to be'
+                                 ' specified and greater than 0.')
         else:
             self.n_steps = n_steps
 
@@ -435,14 +449,21 @@ class Control:
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
+                bad_param_location = False
                 if count >= 0:
-                    self.equilibrate(self.equilibration_steps)
+                    try:
+                        self.equilibrate(self.equilibration_steps)
+                    except MDEngineError:
+                        bad_param_location = True  # assuming params are bad and moving on
+                        self.reset_engine()
 
                 verbose_manager.header(f"Step {count + 1}")
+
                 if batch_compatible and (count % batch_steps == 0):
-                    self.step(refit=True)  # advance the refinement by one step, refitting model
+                    self.step(bad_param_location=bad_param_location,refit=True)  # advance the refinement by one step, refitting model
                 else:
-                    self.step()  # advance the refinement by one step
+                    self.step(bad_param_location=bad_param_location)  # advance the refinement by one step
+
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                     print("")
@@ -450,9 +471,15 @@ class Control:
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
+                bad_param_location = False
                 if count >= 0:
-                    self.equilibrate(self.equilibration_steps)
-                self.step()  # advance the refinement by one step
+                    try:
+                        self.equilibrate(self.equilibration_steps)
+                    except MDEngineError:
+                        bad_param_location = True  # assuming params are bad and moving on
+                        self.reset_engine()
+                # advance the refinement by one step
+                self.step(bad_param_location=bad_param_location)
                 count += 1
 
         # Try/except accounts for n_steps <= -1
@@ -488,7 +515,7 @@ class Control:
             average_timing = statistics.mean(self.step_timings)
             if self.verbose != -1:
                 print(
-                f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
+                f'\nAverage time per step was {np.round(average_timing, 2)} seconds.')
 
         verbose_manager.finish("Refinement")
 
@@ -529,20 +556,26 @@ class Control:
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
         """
+        try:
+            self.simulation.minimize(n_steps,minimize_every,verbose,
+                                        output_log,work_dir, **settings)
+        except Exception as exc:
+            raise Exception('Minimization failed, please check the parameter values.') from exc
 
-        self.simulation.minimize(n_steps,minimize_every,verbose,
-                                 output_log,work_dir, **settings)
 
-    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
         Run molecular dynamics to equilibrate the ``Universe``.
 
+        If the equilibration fails, a method to reduce the time_step and re-try, is called.
+        If this re-try also fails, then an MDEngineError is raised.
+
         Parameters
         ----------
         n_steps : int
-            Number of simulation steps to run
+            Number of simulation steps to run.
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
@@ -551,30 +584,53 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        if not n_steps:
-            self.simulation.auto_equilibrate()
-        else:
-            self.simulation.run(n_steps,equilibration, verbose,
-                                output_log, work_dir,**settings)
 
-    def step(self, refit: bool = False) -> None:
+        try:
+            if not n_steps:
+                self.simulation.auto_equilibrate()
+            else:
+                self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
+        except MDEngineError:
+            try:
+                self.engine_recovery_from_equil(n_steps=n_steps,verbose=verbose,
+                                                output_log=output_log,work_dir=work_dir,**settings)
+            except MDEngineError as exc:
+                logging.exception('The MD engine produced an error. This is often due to '
+                'bad constraints or parameter values - please check these and try again.')
+                raise MDEngineError from exc
+
+
+    def step(self, bad_param_location: bool = False, refit: bool = False) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
+
+        Parameters
+        ---------
+        bad_param_location : bool
+            Represents whether the equilibration at these parameter value failed or not.
+            If equilibration failed, value is True.
+
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
 
-        # Generate FoM by running MD for this step and then calculate FoM
-        fom = self._generate_FoM()
+        if self.first_loaded_step:
+            fom = self.minimizer.FoM_old
+            self.first_loaded_step = False
+        elif not bad_param_location:
+            # Generate FoM by running MD for this step and then calculate FoM
+            fom = self._generate_FoM()
+        else:
+            # assuming params are bad so use max FoM available
+            fom = self.max_FoM
 
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom, refit=refit)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
-
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
@@ -634,10 +690,13 @@ class Control:
         `float`
             Non-negative `float` FoM
         """
-        self._run_MD()
-        self._calculate_observables(self.simulation, self.observable_pairs)
-
-        FoM_value = self.FoM_calculator.calculate()
+        try:
+            self._run_MD()
+            self._calculate_observables(self.simulation, self.observable_pairs)
+            self._trim_dependent_variables()
+            FoM_value = self.FoM_calculator.calculate()
+        except MDEngineError:
+            FoM_value = self.max_FoM
 
         return FoM_value
 
@@ -736,6 +795,8 @@ class Control:
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            if pair.MD_obs.name =='SQw':
+                self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
@@ -938,26 +999,22 @@ class Control:
                 err_uniform[err_uniform == 0.] = float('inf')
             # interpolation for 2D
             elif var_dimension == 2:
-                # note: the interp2d interpolation function requires input of the form
-                # interp2d(x, y, z)
-                # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
-                # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
                 # Because Observable.dependent_variables_structure gives the order in which
                 # the independent variables are represented in the np.shape of the data,
-                # we have to reverse the order of the x and y arrays for interp2d:
+                # we have to reverse the order of the x and y arrays for interpolation:
                 x_data = observable.independent_variables[var_indexing[var_key][1]]
                 y_data = observable.independent_variables[var_indexing[var_key][0]]
-                data_interpol = interp2d(x_data, y_data, data)
+                data_interpol = RectBivariateSpline(x_data, y_data, data.T)
                 # get the independent_variables that satisfy the uniformity requirements
                 # as created earlier
                 x_uniform = indep_var_uniform[var_indexing[var_key][1]]
                 y_uniform = indep_var_uniform[var_indexing[var_key][0]]
-                uniform_data = data_interpol(x_uniform, y_uniform)
+                uniform_data = data_interpol(x_uniform, y_uniform).T
                 # repeat the interpolation for the errors
                 err_data = observable.errors[var_key][0]
                 err_data[err_data == float('inf')] = 0
-                err_interpol = interp2d(x_data, y_data, err_data)
-                err_uniform = err_interpol(x_uniform, y_uniform)
+                err_interpol = RectBivariateSpline(x_data, y_data, err_data.T)
+                err_uniform = err_interpol(x_uniform, y_uniform).T
                 err_uniform[err_uniform == 0.] = float('inf')
             else:
                 raise NotImplementedError(
@@ -972,7 +1029,9 @@ class Control:
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself
+        it does not have a ``validate_energy`` function itself. The time step and trajectory step
+        may be changed in the validate_energy method of the specific observable if necessary, to
+        achieve an energy separation that matches that of the experimental data.
 
         Parameters
         ----------
@@ -984,12 +1043,171 @@ class Control:
         None
         """
 
-        # Calculate the time separation between trajectory frames, dt, imposed
-        # by the simulation
-        dt = self.simulation.traj_step * self.simulation.time_step
-
         with suppress(AttributeError):
-            obs.validate_energy(dt)
+            changed, traj_step, time_step, self.dt_required \
+                  = obs.validate_energy(self.simulation.time_step)
+            if changed:
+                self.simulation.traj_step = traj_step
+                self.simulation.time_step = time_step
+                logging.warning(" The given traj_step and time_step values were not"
+                    " compatibile with the dataset specified.\nThe values "
+                    "(whilst prioritising time_step) have been changed to"
+                    " traj_step: %d, and time_step: %f. \n"
+                    "Context: for this dataset, traj_step multiplied by time_step"
+                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
+
+    def _input_check(self, general_set, inputs) -> None:
+        """
+
+        Handles error for retrieving data from a set where the input is not found.
+        This was made in a general way to be used for any dataset or set of inputs.
+
+        Parameters
+        ----------
+        general_set : A general dataset
+            A variable that contains a set of information for input checking against,
+            for example 'dset' contains the observable type, file_name and reader type,
+            for checking inputs.
+
+        Returns
+        -------
+        None
+        """
+
+        for input_check in inputs:
+            try:
+                general_set[input_check]
+            except KeyError as error:
+                raise KeyError("There was an issue retrieving the input: "
+                               f" {input_check} "
+                                "from the dataset, please check your inputs again.") from error
+
+    def _trim_dependent_variables(self) -> None:
+        """
+        Trims the dependent variable data, and the associated errors, for observables
+        where necessary. One such application is when the smallest q_values cannot be recreated by
+        the simulation, this trimming removes the data associated with q_values which cannot be
+        recreated.
+
+        Returns
+        -------
+        None
+        """
+
+        # loop through observable pairs and trim dependent var data accordingly
+        for index, pair in enumerate(self.observable_pairs):
+            obs = pair.exp_obs.name
+            if obs in self.recreated_independent_vars:
+                exp_obs = self.observable_pairs[index].exp_obs
+                md_obs = self.observable_pairs[index].MD_obs
+
+                recreated_independent_vars = self.recreated_independent_vars[obs]
+                if len(exp_obs.dependent_variables[obs][0]) != \
+                len(md_obs.dependent_variables[obs][0]):
+
+                    exp_obs.errors[obs][0] = \
+                    [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
+                    exp_obs.dependent_variables[obs][0] = \
+                    [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
+
+    def engine_recovery_from_equil(self, n_steps: int, verbose: bool,
+            output_log: str, work_dir: str, **settings: dict) -> None:
+        """
+        Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
+        LAMMPS.
+
+        The time_step is reduced, and the engine cleared, and then an equilibration is performed.
+        If the equilibration is unsuccessful when the attempt limit is reached, an MDEngineError is
+        raised.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run.
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+        output_log: str, optional
+            Log file for the MD engine to write to.
+        work_dir: str, optional
+            Working directory for the MD engine to write to.
+
+        Returns
+        -------
+        None
+        """
+
+        counter = 0
+        equil_works = False
+        attempt_limit = self.settings['time_step_reductions']
+        while not equil_works and counter < attempt_limit:
+            self.trial_reduce_time_step(reduction_factor=0.6)
+            self.reset_engine()
+
+            try:
+                if not n_steps:
+                    self.simulation.auto_equilibrate()
+                else:
+                    self.simulation.run(n_steps,True, verbose, output_log, work_dir,**settings)
+                equil_works = True
+            except MDEngineError:
+                equil_works = False
+            counter += 1
+
+        # if time_step was altered during equil, revert back to original value
+        self.simulation.time_step = self.production_time_step
+        if not equil_works:
+            raise MDEngineError
+
+    def reset_engine(self) -> None:
+        """
+        Clears and resets the MD engine when there is an error thrown by the
+        equilibration or production methods. Currently this is only applicable to LAMMPS.
+
+        """
+
+        self.simulation.engine.clear()
+        # pylint: disable=protected-access
+        # it is necessary to reset and setup the MD engine again
+        self.simulation._setup()
+
+    def trial_reduce_time_step(self,reduction_factor) -> None:
+        """
+        Reduces the time_step by the reduction factor specified.
+
+        Parameters
+        ----------
+        reduction_factor : float
+            represents the value which will be multiplied with the time_step in order to reduce it
+
+        Returns
+        -------
+        None
+        """
+
+        self.simulation.time_step *= reduction_factor
+
+    def calculate_max_FoM(self):
+        """
+        Calculates a maximum Figure of Merit value by comparing a set of experimental observable
+        data, to arrays consisting of numbers close to zero. For use when the MD Engine fails with
+        a set of parameter values.
+
+        Returns
+        -------
+        max_FoM : int
+            value of maximum FoM
+
+        """
+
+        # pylint: disable=protected-access
+        # the purpose of method is to create this empty observable so accessing is necessary
+        self.observable_pairs[0].MD_obs._dependent_variables = {}
+        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1e-9
+
+        max_FoM = self.FoM_calculator.calculate()
+        self.observable_pairs[0].MD_obs._dependent_variables = None
+
+        return max_FoM
 
     def check_minimzer_batch_compatibility(self, batch_steps: int = None):
         """
@@ -1004,5 +1222,4 @@ class Control:
             logging.warning("The minimizer chosen is not compatible with any value for" 
                                 "'batch_steps' and so that parameter will be ignored. ")
 
-        return batch_steps, batch_compatible    
-        
+        return batch_steps, batch_compatible  

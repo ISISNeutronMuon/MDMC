@@ -32,7 +32,7 @@ def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> fl
         case "cube":
             return dimensions[0] ** 3
         case "box":
-            return np.product(np.array(dimensions))
+            return np.prod(np.array(dimensions))
         case "sphere":
             return (4 / 3) * math.pi * (dimensions[0] ** 3)
         case _:
@@ -241,9 +241,9 @@ class PackmolSetup:
         if structure not in self._structures:
             warnings.warn(f"The removal of the structure {structure} was requested,"
                           " but no such structure is in the system.")
-        for setting in self._structure_settings:
-            if setting["structure"] == structure:
-                del setting
+        self._structure_settings = [setting
+                                    for setting in self._structure_settings
+                                    if setting["structure"] != structure]
         self._structures.remove(structure)
 
     def validate_setup(self) -> None:

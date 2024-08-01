@@ -269,7 +269,7 @@ def test_partition_pairs(PDF, number_partitions):
     # is inverted in order to pass it the correct parameter
     PDF.universe_dimensions = np.multiply((1, 1, 1), number_partitions)
     actual = PDF._get_partition_pairs((1, 1, 1))
-    assert np.shape(actual) == (np.product(number_partitions) * 13, 2, 3)
+    assert np.shape(actual) == (np.prod(number_partitions) * 13, 2, 3)
 
     expected = get_expected_partition_pairs(*number_partitions)
     # Pairs in actual may not be in the same order as expected, so sort them
@@ -311,19 +311,18 @@ def generate_position_pairs(start, stop, step):
 @pytest.mark.parametrize('unique_elements, b_cohs, expected',
                          [(['H', 'Na', 'C'],
                            {'Na':3.1, 'C':1.9},
-                           {'Na':3.1, 'C':1.9, 'H':-3.7390}),
+                           {'Na':3.1, 'C':1.9, 'H':-3.7409}),
                           (['O', 'K'],
                            {'K':9.5},
-                           {'K':9.5, 'O':5.803}),
+                           {'K':9.5, 'O':5.805}),
                           (['H', 'O'],
                            {},
-                           {'H':-3.7390, 'O':5.803})])
+                           {'H':-3.7409, 'O':5.805})])
 def test_set_weights(PDF, unique_elements, b_cohs, expected):
 
     """
     Tests that the correct weights of elements are determined
     """
-
     assert PDF._set_weights(unique_elements, b_cohs) == expected
 
 

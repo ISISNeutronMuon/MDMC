@@ -6,6 +6,10 @@ from types import ModuleType
 from MDMC.MD.engine_facades.facade import MDEngine
 
 
+ENGINES = {'lammps_engine': 'LAMMPSEngine',
+           'dlpoly_engine': 'DLPOLYEngine'}
+
+
 class MDEngineFacadeFactory:
 
     """
@@ -28,32 +32,27 @@ class MDEngineFacadeFactory:
         ``MDEngine``
             The specified ``MDEngine``, as determined by the ``module_name``
         """
+        module_name = MDEngineFacadeFactory.standardise_alias(module_name)
+        module = import_module('.' + module_name, __package__)
 
-        try:
-            module = import_module('.' + module_name, __package__)
-        except ImportError:
-            module = MDEngineFacadeFactory.import_from_alias(module_name)
-
-        classes = getmembers(module, lambda m: (isclass(m)
-                                                and not isabstract(m)
-                                                and issubclass(m, MDEngine)))
-
+        classes = getmembers(module, lambda m: (isclass(m) and
+                                                not isabstract(m) and
+                                                issubclass(m, MDEngine) and
+                                                ENGINES[module_name] in m.__name__))
         return classes[0][1]()
 
     @staticmethod
-    def import_from_alias(alias: str) -> ModuleType:
+    def standardise_alias(alias: str) -> ModuleType:
         """
         Converts an ``alias`` into a module name
         """
 
         alias = alias.lower()
-        engines = ['lammps_engine', 'dlpoly_engine']
         if not alias.endswith('_engine'):
             alias += '_engine'
-        if alias in engines:
-            module_name = alias
-        else:
-            raise ImportError(f"The MD engine {alias} is not in the list of recognised engines, "
-                              f"which currently comprises: {engines}")
 
-        return import_module('.' + module_name, __package__)
+        if alias not in ENGINES:
+            raise ImportError(f"The MD engine {alias} is not in the list of recognised engines, "
+                              f"which currently comprises: {tuple(ENGINES.keys())}")
+
+        return alias

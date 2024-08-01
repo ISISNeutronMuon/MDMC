@@ -1,7 +1,9 @@
 """The Gaussian-Process-Optimizer minimizer class"""
-from typing import TYPE_CHECKING
-import numpy as np
+from typing import TYPE_CHECKING, Union, Optional
+from pathlib import Path
+from textwrap import dedent
 
+import numpy as np
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -13,27 +15,35 @@ if TYPE_CHECKING:
 
 class GPO(Minimizer):
     """
-    ``Minimizer`` which uses Gaussian process regression to find the global minimum
-    figure of merit. The optimizer comes from scikit-optimize
+    ``Minimizer`` which uses Gaussian process optimisation to find the global minimum
+    figure of merit.
+
+    The optimizer comes from scikit-optimize
     https://scikit-optimize.github.io/stable/modules/generated/skopt.optimizer.Optimizer.html
     It acts in an ask/tell architecture, where the optimizer is "asked" for the best
     parameter values to measure at, then when the measurement is complete, we "tell"
     the optimizer what the result was and it updates its model. The optimizer
-    is configured to cycle between prioritising exploration of the space, and
-    exploitation of the minima, in order to find the global minimum, without becoming
-    stuck in a local minimum. The first ``n_initial`` points will be spaced according to a latin
+    is configured to cycle between prioritising exploration of the space and
+    exploitation of the minima, in order to find the global minimum without becoming
+    stuck in a local minimum.
+
+    The first ``n_initial`` points will be spaced according to a latin
     hypercube, to cover the available space, subsequent points will then be chosen according
     to the acquisition function and the measured values.
     Due to the potential large jumps between the points, a reasonable amount of equlibration
     of the MD simulation is likely required.
     This optimizer is likely to be the fastest converging (fewest MD steps) option for MDMC.
 
+    Please see the documentation page explanation/minimizers for more information.
+
     Parameters
     ----------
     control: Control
         The ``Control`` object which uses this Minimizer.
     parameters: Parameters
-        The parameters in the simulation Universe to be optimized
+        The parameters in the simulation Universe to be optimized.
+    previous_history : Path
+        The Path to a results file containing previous refinement data.
 
     Settings
     ----------
@@ -50,11 +60,14 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', \
+        previous_history: Optional[Union[Path, str]] = None, **settings: dict):
+        super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
+        self.previous_history = previous_history
+        self.state_changed = False
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
@@ -71,10 +84,16 @@ class GPO(Minimizer):
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-        self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
-                                   acq_optimizer="sampling", initial_point_generator="lhs",
-                                   n_initial_points=self.n_initial, model_queue_size=1)
+        initial_points = self.n_initial
+        if not self._history or len(self._history) < self.n_initial:
+            initial_points = self.n_initial
+        else:
+            initial_points = len(self._history)
 
+        self.optimizer = Optimizer(
+            self.parameter_bounds, "GP", acq_func="gp_hedge",
+            acq_optimizer="sampling", initial_point_generator= "lhs",
+            n_initial_points=initial_points, model_queue_size=1)
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -100,7 +119,7 @@ class GPO(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.control.n_steps
+        return len(self.history) >= self.control.n_steps + self.previous_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
@@ -197,16 +216,20 @@ class GPO(Minimizer):
         """
 
         if self.has_converged():
-            converged_message = '\nThe refinement has finished.'
+            converged_message = 'The refinement has finished.'
         else:
-            converged_message = "\nThe refinement has not finished."
+            converged_message = "The refinement has not finished."
 
-        output_string = (f'{converged_message} \n \n'
-                         f'Minimum measured point is: \n'
-                         f'{minimizer_output[0]} with an '
-                         f'FoM of {minimizer_output[1]}. \n \n'
-                         f'Minimum point predicted is: \n'
-                         f'{minimizer_output[2]} for an '
-                         f'FoM of {minimizer_output[3]}.\n \n ')
+        output_string = f"""
+                        {converged_message}
 
-        return output_string
+                        Minimum measured point is:
+                        {minimizer_output[0]} with an
+                        FoM of {minimizer_output[1]}.
+
+                        Minimum point predicted is:
+                        {minimizer_output[2]} for an
+                        FoM of {minimizer_output[3]}.
+                        """
+
+        return dedent(output_string)

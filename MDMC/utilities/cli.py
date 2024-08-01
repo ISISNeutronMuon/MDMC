@@ -1,27 +1,25 @@
 """
-Command line interface for MDMC
+Command line interface for MDMC.
 
-This is only used to provide a simple method for users to run installation tests
+Notes
+-----
+This is only used to provide a simple method for users to run installation tests.
 """
 from argparse import ArgumentParser, RawTextHelpFormatter
 import sys
 from textwrap import dedent
-from typing import TYPE_CHECKING
 
 from MDMC.utilities.installation_tests import run_installation_tests
-
-if TYPE_CHECKING:
-    import argparse
 
 
 def get_parser() -> ArgumentParser:
     """
-    Creates and returns a parser for sys.args
+    Create and return a parser for ``sys.args``.
 
     Returns
     -------
-    argparse.ArgumentParser
-        The setup argument parser
+    ArgumentParser
+        The setup argument parser.
     """
 
     description = "The MDMC command line interface."
@@ -45,8 +43,15 @@ def get_parser() -> ArgumentParser:
 # subparsers not typed because it is protected class (special action object)
 
 
-def _add_test_subparser(subparsers: "argparse.ArgumentParser") -> None:
-    """Add a subparser for running installation tests"""
+def _add_test_subparser(subparsers: ArgumentParser) -> None:
+    """
+    Add a subparser for running installation tests.
+
+    Parameters
+    ----------
+    subparsers : ArgumentParser
+        Subparser for installation tests.
+    """
 
     test_help = '''
     This is used to test the installation of the MDMC core
@@ -59,7 +64,9 @@ def _add_test_subparser(subparsers: "argparse.ArgumentParser") -> None:
 
 
 def main():
-    """Entry point exposed for running installation tests"""
+    """
+    Entry point exposed for running installation tests.
+    """
 
     parser = get_parser()
     args = parser.parse_args(sys.argv[1:])

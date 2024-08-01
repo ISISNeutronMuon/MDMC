@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.interpolate import interp2d
+from scipy.interpolate import RectBivariateSpline
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -133,6 +133,7 @@ class AbstractSQw(SQwMixins, Observable):
         self.resolution = None
         # Use FFT by default
         self._use_FFT = True
+        self._recreated_Q = None
 
     @property
     def independent_variables(self) -> dict:
@@ -249,20 +250,35 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    def validate_energy(self, dt: float) -> None:
+    @property
+    def recreated_Q(self):
+        """
+        Get the indices of the recreated Q_values.
+        """
+        return self._recreated_Q
+
+    @recreated_Q.setter
+    def recreated_Q(self, recreated_Q_pos: list):
+        self._recreated_Q = recreated_Q_pos
+
+    def validate_energy(self, time_step: float = None):
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
-        includes the time separation required in the error.
+        changes the time step and trajectory step to fix this. The time step value is
+        prioritised here.
 
         Parameters
         ----------
-        dt : float
-            Frame separation in ``fs``
+        time_step: float, optional
+            User specified length of time for each update of the atoms trajectories
+            in the simulation, default is None.
 
         Returns
         -------
-        None
+        tuple
+            contains a boolean, and two floats (if traj_step and time_step have values)
+            or two NoneType (if traj_step and time_step were passed in as None).
 
         Raises
         ------
@@ -270,31 +286,17 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         dt_required = self.calculate_dt()
-        if self.use_FFT:
-            # When using FFT, require all experimental/simulated energies
-            # to match
-            energy = self.E
-            msg = ("Experimental E values are not consistent with the "
-                   "`Simulation`. For the experimental data provided, the "
-                   f"product of `time_step` and `traj_step` must be {dt_required}, "
-                   f"but it was {dt}")
-            assert_allclose(self.calculate_E(len(energy), dt),
-                            energy,
-                            rtol=1e-5,
-                            err_msg=msg)
-        else:
-            # When not using FFT, there is not a hard requirement to match
-            # the energies, instead impose a requirement that our frame
-            # separation is small enough to capture the highest frequencies
-            msg = ("In order to capture the maximum experimental energy "
-                   "(frequency) value, the frame separation must be at least "
-                   "as small as the time period for oscillations at that "
-                   "frequency. The frame separation is given by the product of"
-                   f" `time_step` and `traj_step` and must be less than {dt_required}, "
-                   f"but it was {dt}")
-            # Allow for rounding errors by using isclose
-            isclose = np.isclose(dt, dt_required, rtol=1e-5)
-            assert isclose or dt <= dt_required, msg
+
+        if time_step is not None:
+            # Changing the time and traj step to fit the required dt value
+            # by finding the highest traj_step that can fit into the dt_required
+            traj_step = int(np.round(dt_required/time_step))
+            if traj_step == 0:
+                traj_step += 1
+            time_step = dt_required/traj_step
+
+            return True, traj_step, time_step, dt_required
+        return False, None, None, dt_required
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
                          **settings: dict):
@@ -427,6 +429,7 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
             trj_sliced = False
 
+        obtained_recreated_Q = False
         # Perform calculations for each trajectory
         for trajectory in trajectories:
             self.trajectory = trajectory
@@ -458,6 +461,10 @@ class AbstractSQw(SQwMixins, Observable):
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
 
+            self.Q = FQt.Q
+            if not obtained_recreated_Q:
+                self._recreated_Q = FQt.recreated_Q
+                obtained_recreated_Q = True
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
 
             # Cleanup the trajectory to reduce memory usage
@@ -607,19 +614,15 @@ class AbstractSQw(SQwMixins, Observable):
                      (h_bar * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 
-        # note: the interp2d interpolation function requires input of the form
-        # interp2d(x, y, z)
-        # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
-        # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
         # Because Observable.dependent_variables_structure gives the order in which the
         # independent variables are represented in the np.shape of the data, we have to
-        # reverse the order of the x and y arrays for interp2d.
-        # interp2d does not return complex numbers, so define a new function that combines
-        # the real and imaginary parts
+        # reverse the order of the x and y arrays for RectBivariateSpline.
+        # RectBivariateSpline does not return complex numbers,
+        # so define a new function that combines the real and imaginary parts
         def data_interpol(t, Q):
-            real = interp2d(t_array, Q_cropped, np.real(SQw_ift))
-            imag = interp2d(t_array, Q_cropped, np.imag(SQw_ift))
-            return real(t, Q) + 1j * imag(t, Q)
+            real = RectBivariateSpline(t_array, Q_cropped, np.real(SQw_ift).T)
+            imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift).T)
+            return (real(t, Q) + 1j * imag(t, Q)).T
 
         return {'SQw': data_interpol}
 

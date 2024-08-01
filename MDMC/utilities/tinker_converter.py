@@ -1,6 +1,5 @@
 """
-This is a module for reading TINKER .prm files and converting them to MDMC
-force field python files.
+Read TINKER ``.prm`` files and convert them to MDMC force field python files.
 """
 
 from datetime import datetime
@@ -9,56 +8,56 @@ import textwrap
 
 import numpy as np
 import pandas as pd
+import periodictable
 
-from MDMC.common.atom_properties import ATOMIC_NUMBER
 from MDMC.common.decorators import wrap_docstring
 from MDMC.common.df_operations import filter_dataframe
 from MDMC.common import units
 from MDMC.MD import force_fields
 
 
-def read_prm(fname: str, ncols: int = 14) -> "pd.DataFrame":
+def read_prm(fname: str, ncols: int = 14) -> pd.DataFrame:
     """
-    Reads a TINKER prm (force field) file
+    Read a TINKER ``.prm`` (force field) file.
 
     Ignores all errors raised by incorrectly formatted data, so will be
-    susceptible to incorrectly formatted prm files
+    susceptible to incorrectly formatted ``.prm`` files.
 
     Parameters
     ----------
     fname : str
-        The name of the prm file
-    ncols : int
+        The name of the ``.prm`` file.
+    ncols : int, optional
         The largest number of columns that should be read. The default is 14,
         which is the number of columns required for the torsion (proper
-        dihedral) in oplsaa.prm
+        dihedral) in ``oplsaa.prm``.
 
     Returns
     -------
     pandas.DataFrame
         A dataframe with columns (named c0, c1, ...) up to (but not including)
         ncols. Each row contains a row read correctly (i.e. no Error thrown)
-        from the prm file.
+        from the ``.prm`` file.
     """
 
     return pd.read_csv(fname, delim_whitespace=True, error_bad_lines=False,
-                       header=None, names=dummy_headers(0, 14))
+                       header=None, names=dummy_headers(0, ncols))
 
 
-def parse_prm(dataframe: "pd.DataFrame") -> "tuple[pd.DataFrame]":
+def parse_prm(dataframe: pd.DataFrame) -> tuple[pd.DataFrame, ...]:
     """
-    Parses a prm file into DataFrames
+    Parse a ``.prm`` file into DataFrames.
 
     Parameters
     ----------
     dataframe : pandas.DataFrame
-        A dataframe of raw data read from a prm file
+        A dataframe of raw data read from a ``.prm`` file.
 
     Returns
     -------
-    tuple
+    tuple[pd.DataFrame, ...]
         A tuple of dataframes, with each dataframe possessing only the entries
-        starting with the corresponding definition
+        starting with the corresponding definition.
     """
 
     ncols = len(dataframe.columns)
@@ -100,7 +99,7 @@ def parse_prm(dataframe: "pd.DataFrame") -> "tuple[pd.DataFrame]":
 
     # Change atomic number to element
     atoms['atomic_num'] = \
-        atoms['atomic_num'].apply(lambda x: ATOMIC_NUMBER[int(x)])
+        atoms['atomic_num'].apply(lambda x: periodictable.elements[int(x)])
     atoms.rename(columns={'atomic_num': 'element'}, inplace=True)
 
     # Rearrange order of proper and improper dihedrals
@@ -128,22 +127,31 @@ def parse_prm(dataframe: "pd.DataFrame") -> "tuple[pd.DataFrame]":
 
 
 def write_force_field_module(fname: str,
-                             atoms: "pd.DataFrame",
-                             *interactions: "pd.DataFrame",
+                             atoms: pd.DataFrame,
+                             *interactions: pd.DataFrame,
                              path: str = None,
                              module_docstring: str = None,
                              class_docstring: str = None,
                              **settings):
     """
+    Write a temporary module to allow Tinker potentials to be imported.
+
     Parameters
     ----------
-    atoms : pandas.DataFrame
-    *interactions
-        An arbitrary number of `pandas.DataFrame` objects
     fname : str
-        name of the module (excluding the file extension) and the class
-    module_docstring : str
-    class_docstring : str
+        Name of the module (excluding the file extension) and the class.
+    atoms : pandas.DataFrame
+        Atoms to dump.
+    *interactions
+        An arbitrary number of `pandas.DataFrame` objects.
+    path : str, optional
+        Path to dump to.
+    module_docstring : str, optional
+        Docstring for created module.
+    class_docstring : str, optional
+        Docstring for created class.
+    **settings
+        Extra options.
 
     Notes
     -----
@@ -157,7 +165,7 @@ def write_force_field_module(fname: str,
     line_length = settings.get('line_length', 80)
     data_fname = settings.get('data_fname', fname)
 
-    imports = ('from MDMC.MD.force_fields.ff import FileForceField\n')
+    imports = 'from MDMC.MD.force_fields.ff import FileForceField\n'
 
     if path is None:
         path = os.path.abspath(
@@ -185,13 +193,38 @@ def write_force_field_module(fname: str,
     # Use pandas to output as CSV
 
 
-def write_data(fname: str, atoms: "pd.DataFrame", path: str = None, **settings: dict) -> None:
+def write_data(
+        fname: str,
+        atoms: pd.DataFrame,
+        path: str = None,
+        **settings
+) -> None:
     """
-    Writes force field data to a .dat file.
+    Write forcefield data to a ``.dat`` file.
 
-    TODO: parameters and returns of this
+    Parameters
+    ----------
+    fname : str
+        File name to write to.
+    atoms : pd.DataFrame
+        Force field to write.
+    path : str, optional
+        Path to read data from.
+    **settings
+        Extra options.
+
+    Other Parameters
+    ----------------
+    orig_file : str
+        Original file forcefield read from.
+
+    Notes
+    -----
+    For each of `disp`, `bond`, `angle`, `proper` and `improper`, there
+    exists a pair of optional arguments:
+    ``<type>s`` and ``<type>_function``
+    Which define the presence of parameters and the function to compute them.
     """
-
     inter_types = ['disps', 'bonds', 'angles', 'propers', 'impropers']
     disps, bonds, angles, propers, impropers = [settings.get(inter_type, []) for
                                                 inter_type in inter_types]
@@ -234,46 +267,48 @@ def write_data(fname: str, atoms: "pd.DataFrame", path: str = None, **settings: 
             data.to_csv(out_datafile, sep='\t', index=False)
 
 
-def dummy_headers(start: int, end: int) -> "list[str]":
+def dummy_headers(start: int, end: int) -> list[str]:
     """
-    Generates dummy headers c0, c1, c2, ... until end (exclusive)
+    Generate dummy headers c0, c1, c2, ... until end (exclusive).
 
     Parameters
     ----------
     start : int
-        The start of the header (inclusive)
+        The start of the header (inclusive).
     end : int
-        The end of the header (exclusive)
+        The end of the header (exclusive).
 
     Returns
     -------
     list of str
-        A `str` (``c{i}``) for each i between start and end (exclusive)
+        A `str` (``c{i}``) for each i between start and end (exclusive).
     """
 
     return ['c{0}'.format(i) for i in range(start, end)]
 
 
-def parse_dataframe(dataframe: "pd.DataFrame", drop: list, names: list) -> pd.DataFrame:
+def parse_dataframe(dataframe: pd.DataFrame, drop: list, names: list) -> pd.DataFrame:
     """
+    Parse a single dataframe.
+
     Parses a dataframe containing single datatype (e.g. atom or angles) by
-    dropping any unnecessary columns and setting correct header names
+    dropping any unnecessary columns and setting correct header names.
 
     If the dataframe has a header 'c0' this is always dropped
 
     Parameters
     ----------
     dataframe : pandas.DataFrame
-        The dataframe to be parsed
+        The dataframe to be parsed.
     drop : list
-        A list of names of headers which will be dropped
+        A list of names of headers which will be dropped.
     names : list
-        A list of the header names which will be set for the remaining columns.
+        A list of the header names which will be set for the remaining columns..
 
     Returns
     -------
     pandas.DataFrame
-        A parsed ``DataFrame``
+        A parsed ``DataFrame``.
     """
 
     try:
@@ -285,14 +320,19 @@ def parse_dataframe(dataframe: "pd.DataFrame", drop: list, names: list) -> pd.Da
     return dataframe
 
 
-def convert_units(series: "pd.Series") -> None:
+def convert_units(series: pd.Series) -> str:
     """
-    Converts from TINKER units (kcal) to kJ
+    Convert from TINKER units (kcal) to kJ.
 
     Parameters
     ----------
     series : pandas.Series
-        The ``Series`` for which the parameters will be converted
+        The ``Series`` for which the parameters will be converted.
+
+    Returns
+    -------
+    str
+        Value in kJ.
     """
 
     return (series.astype(float) * units.kcal

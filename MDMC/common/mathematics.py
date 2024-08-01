@@ -1,6 +1,8 @@
-"""A module containing mathematical functions"""
+"""
+A module containing mathematical functions.
+"""
 
-from typing import Union
+from typing import overload, Union
 
 import numpy as np
 from numpy.fft import fft, ifft
@@ -13,16 +15,29 @@ from numpy.fft import fft, ifft
 # However, probably the multiprocessing module is going
 # to be the best solution to improve the performance.
 
+#: Array of standard unit vectors.
+#: Used as a standard basis of 3D space.
 UNIT_VECTOR = np.array([[1., 0., 0.],
                         [0., 1., 0.],
                         [0., 0., 1.]])
 
-def correlation(input1, input2=None, normalise=False) -> np.ndarray:
-    """
-    The correlation of two vectors
+@overload
+def correlation(input1: np.ndarray, *, normalise: bool = False) -> np.ndarray: ...
 
-    The Fast Correlation Algorithm (FCA) is utilised.  If only a single input is
-    provided, the autocorrelation is calculated.
+
+@overload
+def correlation(input1: np.ndarray, input2: np.ndarray, normalise: bool = False) -> np.ndarray: ...
+
+
+def correlation(input1: np.ndarray,
+                input2: np.ndarray = None,
+                normalise: bool = False) -> np.ndarray:
+    """
+    Compute the correlation of two vectors.
+
+    The Fast Correlation Algorithm (FCA) is utilised.
+
+    If only a single input is provided, the autocorrelation is calculated.
 
     Parameters
     ----------
@@ -40,7 +55,7 @@ def correlation(input1, input2=None, normalise=False) -> np.ndarray:
     numpy.ndarray
         A 1D ``array`` of the same length as the ``input1`` containing the
         correlation between ``input1`` and ``input2`` (or autocorrelation of
-        ``input1`` if ``input2`` is `None`)
+        ``input1`` if ``input2`` is `None`).
     """
 
     num_steps = len(input1)
@@ -69,10 +84,10 @@ def correlation(input1, input2=None, normalise=False) -> np.ndarray:
 
     return corr
 
-# We could trying numba.jit here later to speed things up.
-def faster_correlation(input1, input2) -> np.ndarray:
+
+def faster_correlation(input1: np.ndarray, input2: np.ndarray) -> np.ndarray:
     """
-    The correlation of two vectors.
+    Compute the correlation of two vectors.
 
     The Fast Correlation Algorithm (FCA) is utilised.
 
@@ -81,15 +96,14 @@ def faster_correlation(input1, input2) -> np.ndarray:
     input1 : numpy.ndarray
         A 1D ``array`` of data.
     input2 :  numpy.ndarray, optional
-        A 1D ``array`` of data. If `None`, autocorrelation of ``input1`` is
-        calculated. Default is `None`.
+        A 1D ``array`` of data.
 
     Returns
     -------
     numpy.ndarray
         A 1D ``array`` of the same length as the ``input1`` containing the
         correlation between ``input1`` and ``input2`` (or autocorrelation of
-        ``input1`` if ``input2`` is `None`)
+        ``input1`` if ``input2`` is `None`).
     """
 
     num_steps = len(input1)
@@ -112,9 +126,9 @@ def faster_correlation(input1, input2) -> np.ndarray:
 
     return corr
 
-# We could trying numba.jit here later to speed things up.
+
 def faster_autocorrelation(input1: np.ndarray,
-                           weights: Union[np.ndarray,float] = None) -> np.ndarray:
+                           weights: Union[np.ndarray, float] = None) -> np.ndarray:
     """
     The autocorrelation of a vector.
 
@@ -124,13 +138,15 @@ def faster_autocorrelation(input1: np.ndarray,
     ----------
     input1 : numpy.ndarray
         A 1D ``array`` of data.
+    weights : np.ndarray or float
+        Either weights for each point or single weight for all points.
 
     Returns
     -------
     numpy.ndarray
         A 1D ``array`` of the same length as the ``input1`` containing the
         correlation between ``input1`` and ``input2`` (or autocorrelation of
-        ``input1`` if ``input2`` is `None`)
+        ``input1`` if ``input2`` is `None`).
     """
 
     num_steps = len(input1)
