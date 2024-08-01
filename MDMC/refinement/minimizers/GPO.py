@@ -147,10 +147,7 @@ class GPO(Minimizer):
         self.FoM = FoM
         values = list((self.parameters[p].value for p in self.parameters))
 
-        if not refit:
-            self.optimizer.tell(values, float(self.FoM), fit=False)
-        else:
-            self.optimizer.tell(values, float(self.FoM))
+        self.optimizer.tell(values, float(self.FoM), fit=refit)
 
         self.predicted_FoM = self.optimizer.get_result()['fun']
         self.predicted_min_pos = self.optimizer.get_result()['x']

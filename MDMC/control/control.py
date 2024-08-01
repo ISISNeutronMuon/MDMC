@@ -991,22 +991,18 @@ class Control:
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
-    def check_minimzer_batch_compatibility(self, batch_steps: bool=False):
+    def check_minimzer_batch_compatibility(self, batch_steps: int = None):
         """
         """
-        
         batch_compatible_minimizers = ['GPO']
         batch_compatible = False
-        if batch_steps:
-            if str(self.minimizer_type) not in batch_compatible_minimizers:
-                logging.warning("The minimizer chosen is not compatible with any value for" 
-                                "'batch_steps' and so that parameter will be ignored. ")
-            else:
-                batch_compatible = True
-        else:
-            if str(self.minimizer_type) in batch_compatible_minimizers:
-                batch_compatible = True
+        if str(self.minimizer_type) in batch_compatible_minimizers:
+            batch_compatible = True
+            if not batch_steps:
                 batch_steps = 1
-                
-        return batch_steps, batch_compatible
+        else:
+            logging.warning("The minimizer chosen is not compatible with any value for" 
+                                "'batch_steps' and so that parameter will be ignored. ")
+
+        return batch_steps, batch_compatible    
         
