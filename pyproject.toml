@@ -5,7 +5,7 @@
 # supported engines.
 
 [build-system]
-requires = ["setuptools>=40.8.0"]
+requires = ["setuptools>=61.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -59,3 +59,6 @@ all = ["MDMC[LAMMPS,DLPOLY,test,lint,typecheck,docs]"]
 
 [project.scripts]
 MDMC = "MDMC.utilities.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["MDMC*"]
