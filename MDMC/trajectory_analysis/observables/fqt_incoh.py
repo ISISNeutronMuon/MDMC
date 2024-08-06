@@ -3,15 +3,16 @@ Module for incoherent FQt class.
 """
 
 import numpy as np
-import periodictable
 
 from MDMC.common.mathematics import faster_autocorrelation
+from MDMC.common.periodictable_objects import create_list_of_element_objects
 from MDMC.trajectory_analysis.observables.concurrency_tools import core_batch, create_executor
 from MDMC.trajectory_analysis.observables.fqt import (
     AbstractFQt,
     calc_incoherent_scatt_length,
     calculate_rho,
 )
+from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
@@ -26,14 +27,15 @@ class FQtIncoherent(AbstractFQt):
 
     def _set_weights(self) -> None:
         """Calculate the neutron weighting for incoherent scattering."""
+        elements_list = create_list_of_element_objects(self._trajectory.element_set)
 
-        element_weights = {element: periodictable.elements.symbol(element).neutron.b_c_i**2
-                           if periodictable.elements.symbol(element).neutron.b_c_i is not None
-                           else calc_incoherent_scatt_length(element)**2
-                           for element in self._trajectory.element_set}
-        self.weights = [element_weights[atom.element.symbol] for atom
-                        in (self._trajectory.exportAtom(atom_number=x) for x
-                            in range(self._trajectory.n_atoms))]
+        element_weights = {str(element):  element.neutron.b_c_i**2\
+                           if element.neutron.b_c_i is not None \
+                           else calc_incoherent_scatt_length(str(element))**2 for element
+                           in elements_list}
+        self.weights = [element_weights[str(atom.element)] for atom
+                        in [self._trajectory.exportAtom(atom_number=x) for x
+                        in range(self._trajectory.n_atoms)]]
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
