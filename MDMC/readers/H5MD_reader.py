@@ -9,21 +9,21 @@ import numpy
 #       functions are `numpy.ndarray`s and not `h5py.dataset`s.
 
 
-def particles_file_path(file: h5py.File) -> h5py.File:
+def particles_file_path(file: h5py.File) -> h5py.Group:
     """
-    Opens and returns the H5MD file where the particle data is stored
+    Returns the path in the H5MD file where the particle data is stored.
 
     Parameters
     ----------
     file : h5py.File
-        The H5MD file being read from
+        The H5MD file being read from.
 
     Returns
     -------
-    h5py.File
-        Path to the particle data.
+    h5py.Group
+        Particle data group.
     """
-    key = list(file['particles'].keys())[0]
+    key = next(iter(file['particles']))
     root = file[f'particles/{key}']
     return root
 
@@ -116,7 +116,7 @@ def read_times(file: h5py.File, step: int) -> float:
 
 def read_number_steps(file: h5py.File) -> int:
     """
-    Calculates the total number of simulation steps.
+    Calculate the total number of simulation frames stored in an H5MD file.
 
     Parameters
     ----------
@@ -129,9 +129,9 @@ def read_number_steps(file: h5py.File) -> int:
         Number of steps stored in H5MD file
     """
     group_step = particles_file_path(file)
-    particle = group_step['position/value']
+    position_grps = group_step['position/value']
 
-    return len(particle)
+    return len(position_grps)
 
 def read_box_property(file: h5py.File, property_name: str) -> numpy.ndarray:
     """
