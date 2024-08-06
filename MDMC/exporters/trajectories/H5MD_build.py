@@ -11,9 +11,8 @@ import periodictable
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.common import units
 
+#: Generic H5MD information like, version of H5MD and any H5MD `modules` used.
 H5MD_DATA = {
-    # Generic but mandatory H5MD information like,
-    # version of H5MD and any H5MD `modules` used.
     'creator_name': 'MDMC',
     'creator_version': [0, 2],
     'h5md_version': [1, 1],
@@ -40,8 +39,8 @@ def create_empty_groups(open_file: h5py.File,
         open_file.create_group(group_name)
 
 def create_metadata_group(open_file: h5py.File, *,
-                          creator_name: str = 'Unknown',
-                          creator_email: str = 'Unknown'):
+                          creator_name: str,
+                          creator_email: str):
     """
     Create the H5MD group that contains all Metadata information.
 
@@ -170,7 +169,7 @@ def write_H5MD(trajectory: CompactTrajectory,
     timestamp : bool, optional
         If true adds time timestamp to file name, by default True
     file_loc : Path, optional
-        The file where the H5MD file should be stored, by default Path('.')
+        The directory where the H5MD file should be stored, by default Path('.')
     """
 
     time_increment = trajectory.time[1] - trajectory.time[0]
@@ -178,12 +177,16 @@ def write_H5MD(trajectory: CompactTrajectory,
     step_increment = 1
     step_offset = 0
     filename = Path(filename)
+    file_loc = Path(file_loc)
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')
         filename = filename.with_stem(f'{time_stamp}_{filename}')
 
-    file_path_name = f'{file_loc}/{filename}'
+    file_path_name = file_loc / filename
+
+    if not settings.get("creator_name") or not settings.get("creator_email"):
+        raise ValueError("No creator_name or creator_email provided.")
 
     with h5py.File(file_path_name, 'w') as file:
         no_data_groups = ['particles',
@@ -194,8 +197,8 @@ def write_H5MD(trajectory: CompactTrajectory,
         create_empty_groups(file, no_data_groups)
 
         create_metadata_group(file,
-                              creator_name=settings.get("creator_name", "Unknown"),
-                              creator_email=settings.get("creator_email", "Unknown"))
+                              creator_name=settings["creator_name"],
+                              creator_email=settings["creator_email"])
 
         charge = trajectory.atom_charges
         for count, value in enumerate(charge):
@@ -206,39 +209,32 @@ def write_H5MD(trajectory: CompactTrajectory,
         species = [getattr(periodictable, element).number
                    for element in trajectory.element_list]
 
-        dependent_data = [
-            ['species',species],
-            ['charge', charge, units.SYSTEM['CHARGE']],
-            ['mass', trajectory.atom_masses, units.SYSTEM['MASS']],
-            [
-                'position',
-                trajectory.position,
-                trajectory.position_unit,
-                time_increment,
-                step_increment,
-                time_offset,
-                step_offset
-            ],
-            [
-                'box/edges',
-                trajectory.dimensions,
-                trajectory.position_unit,
-                time_increment,
-                step_increment,
-                time_offset,
-                step_offset
-            ]
-        ]
+        simulation_data = {
+            'species': [species],
+            'charge': [charge,
+                       units.SYSTEM['CHARGE']],
+            'mass': [trajectory.atom_masses,
+                     units.SYSTEM['MASS']],
+            'position': [trajectory.position,
+                         trajectory.position_unit,
+                         time_increment,step_increment,
+                         time_offset,step_offset],
+            'box/edges': [trajectory.dimensions,
+                          trajectory.position_unit,
+                          time_increment,step_increment,
+                          time_offset,
+                          step_offset]
+        }
         if trajectory.has_velocity:
-            dependent_data.append(['velocity',
-                                   trajectory.velocity,
-                                   trajectory.velocity_unit,
-                                   time_increment, step_increment,
-                                   time_offset,
-                                   step_offset])
+            simulation_data['velocity'] = [trajectory.velocity,
+                                           trajectory.velocity_unit,
+                                           time_increment,
+                                           step_increment,
+                                           time_offset,
+                                           step_offset]
 
-        for data in dependent_data:
-            create_simulation_data(file, *data)
+        for grp_name, data in simulation_data.items():
+            create_simulation_data(file, grp_name, *data)
 
         create_box_data(file, trajectory)
         atom_symbols_data = np.array(trajectory.element_list, dtype=object)
