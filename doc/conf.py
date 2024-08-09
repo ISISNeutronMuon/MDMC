@@ -112,6 +112,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
                        'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
                        'ase': ('https://wiki.fysik.dtu.dk/ase/', None),
                        'periodictable': ('https://periodictable.readthedocs.io/en/latest/', None)}
+                       'h5py': ('https://docs.h5py.org/en/stable/', None)}
 
 # -- Options for HTML output -------------------------------------------------
 

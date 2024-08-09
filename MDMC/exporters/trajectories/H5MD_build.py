@@ -159,6 +159,13 @@ def write_H5MD(trajectory: CompactTrajectory,
     """
     Write a CompactTrajectory to a H5MD file.
 
+    In MDMC, an H5MD trajectory File is built from a
+    :class:`~MDMC.trajectory_analysis.compact_trajectory.CompactTrajectory`.
+    Once a ``CompactTrajectory`` is generated, an H5MD trajectory file can be
+    created by passing it to the :func:`~MDMC.writers.H5MD_build.build_full` function.
+    Once executed the a H5MD (``.h5``) file is created with the name
+    "trajectory<timestamp>"
+
     Parameters
     ----------
     trajectory : CompactTrajectory
@@ -184,7 +191,6 @@ def write_H5MD(trajectory: CompactTrajectory,
 
     filename = Path(filename)
     file_loc = Path(file_loc)
-
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')

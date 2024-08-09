@@ -1,14 +1,16 @@
 .. _reusing-refinement-label:
 .. _H5MD Website: https://h5md.nongnu.org/h5md.html
 .. _MDANSE: https://mdanse.readthedocs.io/en/latest/index.html
+.. _MDANCE install docs: https://mdanse.readthedocs.io/en/latest/pages/H_start.html
+.. _MDANCE Turorials: https://mdanse.readthedocs.io/en/latest/pages/T_sim.html
 
 Reusing Refinements
 ===================
 
-MDMC allows for trajectories to be created and stored at the refinement stage to the simulation.
-The trajectories are following a standardised H5MD file format found at the `H5MD Website`_.
+MDMC allows for trajectories to be created and stored at the refinement stage of the simulation.
+The trajectories are saved in a standardised H5MD file format found at the `H5MD Website`_.
 
-MDMC has the functionality for the H5MD trajectory files to be read back in to MDMC as a compact trajectory or
+H5MD trajectory files can be read back into MDMC as a ``CompactTrajectory`` or
 used with software that supports the standardised H5MD file format.
 
 This can be useful as it allows for the trajectories to be reused in MDMC and other software without taking time to
@@ -16,11 +18,11 @@ re-run the simulations.
 
 Creating a trajectory File
 --------------------------
-In MDMC a H5MD file can be created at the refinement stage of the simulation. At this stage it can be chosen to
-ether create a H5MD file from the trajectory with the best figure of merit or from every trajectory generated.
+In MDMC, an H5MD file can be created at the refinement stage of the simulation. It is possible to
+either create a H5MD file only from the trajectory with the best figure of merit or from every trajectory generated.
 
-To get an H5MD trajectory file from the refinement stage the ``Dump.every``, to create a H5MD file from every trajectory,
-or ``Dump.Best``, to create a H5MD file from the trajectory with the best figure of merit, must be passed to the ``Control`` object.
+To get an H5MD trajectory file from the refinement stage pass ``Dump.EVERY`` to the control object to create a H5MD file from every trajectory,
+or ``Dump.BEST``, to create a H5MD file from the trajectory with the best figure of merit.
 
 This will result in files name "<timestamp>trajectory.h5" being created within the MDMC files.
 
@@ -34,14 +36,15 @@ Optionally, additional parameters can be used to change how or where the File is
 
 .. note::
 
-    MDMC will not add the ``.h5`` suffix to the names of the file. This will not break the file but it is suggested
-    to be added to the end of the file name to make the file easier to find.
+    MDMC will not add the ``.h5`` extension to the name of the file and will use exactly the name you define. 
+    Not specifying this will not break the file but it is recommended, as some operating systems rely on the extension
+    to work out the appropriate reader, as well as simply making the file easier to find.
 
 Examples
 --------
 .. code-block::
 
-        control = Control(simulation=simulation,
+        control = Control(simulation=simulation,https://mdanse.readthedocs.io/en/latest/pages/T_sim.html
                     exp_datasets=exp_datasets,
                     fit_parameters=fit_parameters,
                     MD_steps=570,
@@ -53,7 +56,7 @@ Examples
                     h5md_timestamp=False)
 
 This code snippet shows an example of the parameters that may be used to get a file containing the best H5MD trajectory.
-As can be seen in the example code a :class:`~MDMC.MD.simulation.Simulation` needs to be created as explained :ref:`simulation-label`.
+As can be seen in the example code, a :class:`~MDMC.MD.simulation.Simulation` needs to be created as explained in :ref:`simulation-label`.
 
 .. warning::
 
@@ -63,16 +66,33 @@ As can be seen in the example code a :class:`~MDMC.MD.simulation.Simulation` nee
 External Use
 ------------
 
-The H5MD files can then be used within External programs that have comparability with the standardised H5MD file format.
+The H5MD files can then be used within external programs that have support the standard H5MD file format.
 
-Examples of this includes:
+Examples of this include:
 
-* `MDANSE`_: Simulation software that can be used for trajectory visualization and computation of properties.
+* `MDANSE`_: Simulation software that can be used for trajectory visualization and analysis.
 
 How to be used with MDANSE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+``MDANSE`` installation instructions can be found at `MDANSE install docs`_.
+
+Once ``MDANSE`` is installed, you can use the User Interface to visualise the trajectory:
+1. Using the tabs along the top of the interface, navigate to the `Trajectory` tab.
+2. Under that tab, select the button "Load .MDT Trajectory".
+3. Your file explorer should appear, and select your `.h5` trajectory file.
+4. Your file name should appear below the load trajectory button. Double-click it, and a visualisation of the trajectory should appear in the model box.
+5. You can now use the bar or buttons below the visualisation to see the visualisation through time.
+
+``MDANSE`` can also be used for trajectory analysis:
+1. Load a trajectory as seen in above instructions.
+2. Navigete to the `Actions` tab and select Analysis.
+3. Chose an analysis type and configer the paramiters.
+4. Run analysis with the run button.
+
+``MDANSE`` has futher fcuntionality and for more infomation use the MDANCE documentation `MDANSE`_ or the MDANCE Tutorials `MDANCE Turorials`_.
 
 Useful Links
 ------------
 
-* :class:`MDMC.writers.H5MD_build`: API documentation intended for developers and users with advanced understanding of software development.
+* :class:`MDMC.writers.H5MD_build`: API documentation intended for developers.
+* `MDANSE`: MDANSE documentation.
