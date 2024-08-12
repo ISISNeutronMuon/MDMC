@@ -20,6 +20,7 @@ from MDMC.MD import Atom, Dispersion, LennardJones
 from tests.test_data import data
 from MDMC.control import Control
 from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
+
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
 # before initialising Control so store these as a global variable
@@ -407,8 +408,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       '\n'
                       '\n'
                       'Automatic Scale Factors\n'
-                      '{}  1.0\n'
-                      ''.format(datasets[0]['file_name']))
+                      f'  {datasets[0]["file_name"]}  1.0\n')
     assert stdout_message in stdout
 
 

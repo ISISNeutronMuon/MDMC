@@ -7,8 +7,7 @@ from typing import Callable, Iterable
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
-class ObservableFactory:
-
+class ObservableFactory(RegisterFactory[Observable]):
     """
     Provide a factory for creating an :class:`Observable`.
 

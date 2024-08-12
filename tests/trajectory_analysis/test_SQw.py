@@ -39,7 +39,7 @@ def altered_trajectory(water_SPCE_universe):
 
 @pytest.fixture
 def SQw_from_data():
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
     return SQw
 
@@ -56,7 +56,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
 
     def _SQw_from_MD(use_FFT: bool = True, use_traj_list: bool = False,
                      energy_resolution: Optional[float] = None) -> SQw:
-        _SQw = of.ObservableFactory.create_observable('SQw')
+        _SQw = of.ObservableFactory.create('SQw')
         _SQw.use_FFT = use_FFT
         dimensions = universe.dimensions
         n_Q = 10

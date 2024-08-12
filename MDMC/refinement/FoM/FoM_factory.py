@@ -13,7 +13,6 @@ from MDMC.refinement.FoM.FoM_abs import FigureOfMerit
 
 
 class FoMFactory:
-
     """
     Provides a factory for creating a ``Figure of Merit`` also called FoM.  Any FoM within
     the FoM folder can be created with a string of the class name, as

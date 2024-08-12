@@ -40,7 +40,7 @@ Can deal with multiple obs_pair inputs
 @pytest.fixture
 def SQw_from_exp():
 
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
     return SQw
 
@@ -48,14 +48,14 @@ def SQw_from_exp():
 def SQw_from_exp_diff():
 
     # SQw objects from files cannot be deepcopied so add a new fixture
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
     return SQw
 
 @pytest.fixture
 def SQw_from_MD(SQw_from_exp):
 
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw._origin = 'MD'
     SQw.independent_variables = SQw_from_exp.independent_variables
     SQw._dependent_variables = SQw_from_exp.dependent_variables
@@ -74,7 +74,7 @@ def SQw_dict():
     DEP = np.arange(0., 200., 2.)
     ERR = DEP / 10.
 
-    from_exp = of.ObservableFactory.create_observable('SQw')
+    from_exp = of.ObservableFactory.create('SQw')
     from_exp._origin = 'experiment'
     from_exp.independent_variables = {'indep':INDEP}
     from_exp._dependent_variables = {'dep':DEP}
@@ -108,7 +108,7 @@ def pairs():
 
         obs_duo = []
         for obs_info in pair_info:
-            obs = of.ObservableFactory.create_observable('SQw')
+            obs = of.ObservableFactory.create('SQw')
             obs._origin = obs_info[0]
             obs.independent_variables = {'indep':obs_info[1]}
             obs._dependent_variables = {'dep':obs_info[2]}
@@ -219,7 +219,7 @@ def test_OP_types(SQw_from_exp, observable_pair):
     """
 
     # Create an incoherent SQw
-    SQw_incoh_from_MD = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh_from_MD = of.ObservableFactory.create('SQw_incoh')
     SQw_incoh_from_MD._origin = 'MD'
     SQw_incoh_from_MD.independent_variables = SQw_from_exp.independent_variables
     SQw_incoh_from_MD._dependent_variables = SQw_from_exp.dependent_variables
@@ -228,7 +228,7 @@ def test_OP_types(SQw_from_exp, observable_pair):
     init_exception_check(AssertionError, SQw_from_exp, SQw_incoh_from_MD)
 
     # Create a coherent SQw
-    SQw_coh_from_exp = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh_from_exp = of.ObservableFactory.create('SQw_coh')
     SQw_coh_from_exp._origin = 'experiment'
     SQw_coh_from_exp.independent_variables = SQw_from_exp.independent_variables
     SQw_coh_from_exp._dependent_variables = SQw_from_exp.dependent_variables

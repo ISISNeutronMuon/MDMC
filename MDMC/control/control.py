@@ -730,7 +730,7 @@ class Control:
             An ``Observable`` of specified ``type``
         """
 
-        observable = ObservableFactory.create_observable(obstype)
+        observable = ObservableFactory.create(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
         observable.use_FFT = use_FFT
         return observable
@@ -756,7 +756,7 @@ class Control:
             ``origin == 'MD'``
         """
 
-        observable = ObservableFactory.create_observable(exp_observable.name)
+        observable = ObservableFactory.create(exp_observable.name)
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)

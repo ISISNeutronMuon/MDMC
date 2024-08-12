@@ -16,7 +16,7 @@ def test_SQw_averaging(trajectory, Q_vectors):
     # Values are equivalent to those used by nMOLDYN to generate the test data
     DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
     E_RESOLUTION = {'gaussian': 49.99998257}
-    SQw_full_trj = ObservableFactory.create_observable('SQw')
+    SQw_full_trj = ObservableFactory.create('SQw')
     SQw_full_trj.use_FFT = True
     # the trajectories need to have the same length to give same number of energy points and
     # hence np.shape(SQw) so that they can be compared
@@ -24,7 +24,7 @@ def test_SQw_averaging(trajectory, Q_vectors):
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
                                 energy_resolution=E_RESOLUTION)
-    SQw_mean = ObservableFactory.create_observable('SQw')
+    SQw_mean = ObservableFactory.create('SQw')
     SQw_mean.use_FFT = True
     SQw_mean.independent_variables = {'E': SQw_full_trj.E}
     SQw_mean.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dimensions=DIMENSIONS,
