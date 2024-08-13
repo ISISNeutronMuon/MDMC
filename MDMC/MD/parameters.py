@@ -80,10 +80,18 @@ class Parameter:
     # each Parameter has a unique ID, so they can be distinguished
     _ID_generator = count(start=1, step=1)
 
-    def __init__(self, value, name, fixed=False, constraints=None, **settings):
-
+    def __init__(
+        self,
+        value: float,
+        name: str,
+        fixed: bool = False,
+        constraints: tuple[float, float] = None,
+        *,
+        type_: str = None,
+        **settings,
+    ):
         self.ID = self._generate_ID()
-        self.name = name + f" (#{self.ID})"
+        self.name = name
         self.type = name
         self.unit = settings.get("unit", getattr(value, "unit", None))
         self.constraints = constraints
@@ -95,6 +103,36 @@ class Parameter:
         self._interactions = []
         self._tie = None
         self._tie_parameter = None
+
+    @property
+    def name(self) -> str:
+        """
+        Parameter name with ID.
+        Returns
+        -------
+        str
+            Formal parameter name for printing.
+        """
+        return f"{self._name} (#{self.ID})"
+
+    @name.setter
+    def name(self, name: str):
+        self._name = str(name)
+
+    @property
+    def bare_name(self) -> str:
+        """
+        Raw parameter name.
+        Returns
+        -------
+        str
+            Parameter base name.
+        """
+        return self._name
+
+    @bare_name.setter
+    def bare_name(self, name: str):
+        self._name = name
 
     @property
     def value(self) -> float:
@@ -265,13 +303,30 @@ class Parameter:
         self._tie_parameter = weakref.ref(parameter)
         self._tie = ast.parse("self._tie_parameter().value" + expr, mode="eval")
 
+    def rename(self, rename: str | dict[str, str]):
+        """
+        Rename parameter if in dict.
+
+        Parameters
+        ----------
+        rename : dict[str, str]
+            From-to dictionary of names to change.
+        """
+        match rename:
+            case str():
+                self.name = rename
+            case dict():
+                if self.bare_name in rename:
+                    self.name = rename[self.bare_name]
+            case _:
+                raise TypeError(f"Cannot rename with {type(rename).__name__}.")
+
     @classmethod
     def _generate_ID(cls) -> int:
         """Generates a unique ID for the Parameter that has just been created."""
         return next(cls._ID_generator)
 
     def __str__(self) -> str:
-
         condition = (
             "Fixed "
             if self.fixed
@@ -282,7 +337,7 @@ class Parameter:
             else ""
         )
         function = self.functions_name + " " if self.functions_name else ""
-        return "{0}{_value} {1}{name}".format(condition, function, **self.__dict__)
+        return f"{condition}{self._value} {function}{self.name}"
 
     def __getitem__(self, key):
 
@@ -382,6 +437,14 @@ class Parameters(dict):
                     )
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
+
+    def __contains__(self, key) -> bool:
+        if super().__contains__(key):
+            return True
+
+        # see if the key passed was a parameter name with no ID, and catch the error
+        # by getting the first parameter with that name
+        return any(key == param.rsplit("(", 1)[0].strip() for param in self.keys())
 
     def append(self, parameters: list[Parameter] | Parameter) -> None:
         """
@@ -644,3 +707,21 @@ class Parameters(dict):
         raise TypeError(
             "Input into a Parameters object must be either a Parameter or a list of Parameters.",
         )
+
+    def rename(self, rename: dict[str, str]):
+        """
+        Rename parameters.
+        Parameters
+        ----------
+        rename : dict[str, str]
+            Dict of from-to keys to rename in parameters.
+        """
+        new_params = {}
+        for param in self.values():
+            if param.bare_name in rename:
+                new_params[param.name] = param
+                param.name = rename[param.bare_name]
+
+        for key, value in new_params.items():
+            del self[key]
+            self.append(value)
