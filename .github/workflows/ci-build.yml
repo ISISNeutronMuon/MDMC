@@ -61,7 +61,7 @@ jobs:
         continue-on-error: true
 
   linting:
-    name: Pylint
+    name: Ruff
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -75,10 +75,11 @@ jobs:
         run: |
           sudo pip3 install --upgrade pip
           sudo pip3 install .[lint,DLPOLY,LAMMPS]
-      - name: pylint
+      - name: ruff
         run: |
-          pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
+          ruff check MDMC
           exit $?
+
 
   notebooks:
     name: Notebooks
