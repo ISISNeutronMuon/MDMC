@@ -1,29 +1,28 @@
 """A module for performing the refinement"""
+import logging
 import statistics
-from copy import deepcopy
-from typing import List, Dict, Union
 from contextlib import suppress
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Union
 
-import logging
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d, RectBivariateSpline
+from scipy.interpolate import RectBivariateSpline, interp1d
 from verbosemanager import VerboseManager
 
-from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.common.decorators import repr_decorator
+from MDMC.control.plot_results import PlotResults, data_printers
+from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
-from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
-from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.refinement.FoM.FoM_factory import FoMFactory
+from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory
-from MDMC.trajectory_analysis.observables.obs_factory \
-    import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from MDMC.MD.engine_facades.facade import MDEngineError
+from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -239,7 +238,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
-            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            # keep the keys in the _dset_input_check function
+            # consistent with the ones retrieved from dset
             self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
@@ -320,7 +320,7 @@ class Control:
             resolution_factory = ResolutionFactory()
             dt = self.simulation.time_step * self.simulation.traj_step
 
-            if 'resolution' not in dset.keys():
+            if 'resolution' not in dset:
                 # create list of user keys for resolutions to add to the error
                 userkeys = []
                 for setting in resolution_factory.resolutions:
@@ -350,7 +350,7 @@ class Control:
             '  Minimizer',
             '  FoM type',
             '  Number of observables',
-            '  Number of parameters'
+            '  Number of parameters',
         ]
 
         # Printing settings
@@ -376,14 +376,14 @@ class Control:
             data_array.append(["-"])
             if exp_datasets is not None:
                 for dataset in exp_datasets:
-                    for key in dataset.keys():
+                    for key in dataset:
                         index_array.append(f'  {key}')
                         data_array.append([dataset[key]])
 
             index_array.append("- FoM Options")
             data_array.append(["-"])
             if FoM_options is not None:
-                for key in FoM_options.keys():
+                for key in FoM_options:
                     index_array.append(f'  {key}')
                     data_array.append([FoM_options[key]])
 
@@ -856,10 +856,7 @@ class Control:
         traj_step = self.simulation.traj_step
         maximum_frames = observable_pair.exp_obs.maximum_frames()
 
-        if maximum_frames is None:
-            maximum_steps = traj_step
-        else:
-            maximum_steps = traj_step * maximum_frames
+        maximum_steps = traj_step if maximum_frames is None else traj_step * maximum_frames
 
         return maximum_steps * (MD_steps // (maximum_steps))
 
@@ -951,10 +948,7 @@ class Control:
             # check if the independent variable needs to be made uniform
             if var_key in indep_vars_to_be_changed:
                 data = observable.independent_variables[var_key]
-                if uniformity_required[var_key]['zeroed']:
-                    minimum = 0
-                else:
-                    minimum = min(data)
+                minimum = 0 if uniformity_required[var_key]['zeroed'] else min(data)
                 uniform_data = np.linspace(minimum, max(data), num=len(data))
                 indep_var_uniform[var_key] = uniform_data
             # if uniformity requirements are satisfied already,

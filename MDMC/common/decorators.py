@@ -2,16 +2,16 @@
 Module which defines decorators.
 """
 
-from functools import wraps
 import functools
 import textwrap
-from types import FunctionType
-from typing import Optional, Callable, Union
 import weakref
+from functools import wraps
 from time import time
+from types import FunctionType
+from typing import Callable, Optional, Union
 
-from MDMC.common.units import UnitFloat, unit_array
 from MDMC.common.time_keeper import TimeKeeper
+from MDMC.common.units import UnitFloat, unit_array
 
 
 def unit_decorator(unit: Union[str, None]) -> Callable:
@@ -357,7 +357,7 @@ def wrap_docstring(docstring: str, line_length: int) -> str:
         # If previous line was wrapped and has same length of indent, then
         # prepend it to this line
         if prev_line is not None:
-            if prev_indent == indent and not '.. math::' in line:
+            if prev_indent == indent and '.. math::' not in line:
                 line = prev_line + ' ' + textwrap.dedent(line)
             else:
                 wrapped.append('\n' + prev_line)

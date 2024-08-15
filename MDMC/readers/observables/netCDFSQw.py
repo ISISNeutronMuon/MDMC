@@ -2,6 +2,7 @@
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
 import logging
+
 import numpy as np
 from netCDF4 import Dataset
 

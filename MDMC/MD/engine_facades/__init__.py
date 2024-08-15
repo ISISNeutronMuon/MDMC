@@ -7,8 +7,6 @@ force_field_factory
 lammps_engine (requires external module lammps.py)
 """
 
-from importlib import import_module
-import warnings
+from . import facade, facade_factory
 
-from . import facade_factory
-from . import facade
+__all__ = ["facade", "facade_factory"]

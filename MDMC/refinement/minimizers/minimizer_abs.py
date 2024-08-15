@@ -1,13 +1,13 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
-from typing import TYPE_CHECKING, Union
 from abc import ABC, abstractmethod
-
 from pathlib import Path
+from typing import TYPE_CHECKING, Union
+
 import pandas as pd
 
-from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
+from MDMC.MD import Parameters
 
 if TYPE_CHECKING:
     from MDMC.control import Control
@@ -291,8 +291,8 @@ class Minimizer(ABC):
             # using a reduced length for 'column_names' because it includes 'FoM'
             # and we want parameters only.
             if (len(column_names)-1) != len(parameters):
-                raise ValueError(f'A history of {len(history.columns) -2}'\
-                    ' is incompatible with the current setup.')
+                raise ValueError(f'A history of {len(history.columns) -2}'
+                                 ' is incompatible with the current setup.')
 
             split_param_list = [parameter.split()[0] for parameter in parameters]
             split_column_list = [column.split()[0] for column in column_names[1:]]

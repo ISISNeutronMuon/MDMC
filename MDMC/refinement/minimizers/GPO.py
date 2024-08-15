@@ -1,17 +1,17 @@
 """The Gaussian-Process-Optimizer minimizer class"""
-from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
 from textwrap import dedent
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 from skopt import Optimizer
 
-from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
+from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
-    from MDMC.MD.parameters import Parameters
     from MDMC.control import Control
+    from MDMC.MD.parameters import Parameters
 
 
 class GPO(Minimizer):
@@ -77,7 +77,7 @@ class GPO(Minimizer):
         self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) \
                                 for parameter in parameters.values()]
 
-        self.parameter_names = [str(name) for name in parameters.keys()]
+        self.parameter_names = [str(name) for name in parameters]
 
         np.random.seed(7) # This should mean results are reproducible in tests
 
@@ -198,7 +198,7 @@ class GPO(Minimizer):
             tuple(min_parameters_measured),
             float(min_FoM_measured),
             tuple(self.predicted_min_pos),
-            self.predicted_FoM
+            self.predicted_FoM,
         ]
 
     def format_result_string(self, minimizer_output: list) -> str:

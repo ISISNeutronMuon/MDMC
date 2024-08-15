@@ -1,8 +1,8 @@
 """A module containing a class for storing packmol systems and their metadata"""
-import math
 import logging
-from typing import List, Tuple
+import math
 import warnings
+from typing import List, Tuple
 
 import numpy as np
 
@@ -81,7 +81,7 @@ class PackmolSetup:
             "structure": structure,
             "number": 1,
             "center": centre,
-            "fixed": " ".join([str(number) for number in position+rotation])
+            "fixed": " ".join([str(number) for number in position+rotation]),
         })
 
     def add_container(self,
@@ -128,7 +128,7 @@ class PackmolSetup:
             "structure": structure,
             "number": n_structures,
             # Packmol needs the origin information explicitly
-            f"inside {container_type}": " ".join([str(number) for number in origin+dimensions])
+            f"inside {container_type}": " ".join([str(number) for number in origin+dimensions]),
         })
 
     def add_cube(self, structure: Structure,

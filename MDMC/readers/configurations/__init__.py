@@ -1,18 +1,17 @@
 """A subpackage for reading files containing atomic configurations"""
 
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from . import conf_reader_factory
+from . import conf_reader, conf_reader_factory
 from .ase import ASEReader
 from .cif import CIFReader
-from .pdb import ProteinDataBankReader
 from .packmol_pdb import PackmolPDBReader
-from . import conf_reader
+from .pdb import ProteinDataBankReader
 
 if TYPE_CHECKING:
     from MDMC.MD.structures import Atom
 
-def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[list[Atom], None]':
+def read(file: str, docstring: bool = False, **settings: dict) -> Optional[list['Atom']]:
     """
     Reads a configuration file and returns a list of atoms corresponding to the
     atoms in the file
@@ -70,3 +69,11 @@ def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[list[At
             setattr(atom, setting, value)
 
     return atoms
+
+__all__ = [
+    "ASEReader",
+    "CIFReader",
+    "PackmolPDBReader",
+    "ProteinDataBankReader",
+    "read",
+]

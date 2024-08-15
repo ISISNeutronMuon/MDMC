@@ -2,7 +2,7 @@
 A module containing mathematical functions.
 """
 
-from typing import overload, Union
+from typing import Union, overload
 
 import numpy as np
 from numpy.fft import fft, ifft
@@ -62,10 +62,9 @@ def correlation(input1: np.ndarray,
 
     fft1 = fft(input1, n=(num_steps * 2), axis=0)
 
-    if input2 is None:
-        fft2 = fft1
-    else:
-        fft2 = fft(input2, n=(num_steps * 2), axis=0)
+    fft2 = (fft1
+            if input2 is None else
+            fft(input2, n=(num_steps * 2), axis=0))
 
     # Calculate the cyclic correlation function
     cyclic_corr = ifft(np.conjugate(fft1) * fft2, axis=0)

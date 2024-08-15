@@ -1,4 +1,3 @@
-
 """
 Factory class for generating Figure of Merits
 And ObservablePair class fro defining the obseravble pairs used to calculate the Figure of Merit
@@ -7,8 +6,8 @@ And ObservablePair class fro defining the obseravble pairs used to calculate the
 
 from glob import glob
 from importlib import import_module
-from inspect import isclass, isabstract, getmembers
-from os.path import basename, dirname, join, isfile
+from inspect import getmembers, isabstract, isclass
+from os.path import basename, dirname, isfile, join
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit
 

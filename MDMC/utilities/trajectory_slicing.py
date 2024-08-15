@@ -1,13 +1,14 @@
 """Utility for slicing a ``CompactTrajectory`` object into sub-trajectories"""
 
 from typing import Iterable
+
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 def slice_trajectory(
         trj: CompactTrajectory,
         subtrj_len: int,
-        cont_slicing: bool = False
+        cont_slicing: bool = False,
 ) -> Iterable[CompactTrajectory]:
     """
     Takes a ``CompactTrajectory`` object and slices it into a list of shorter

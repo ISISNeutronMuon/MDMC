@@ -17,8 +17,8 @@ from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
-from MDMC.common.decorators import repr_decorator
 from MDMC.common import units
+from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameter, Parameters
 
 if TYPE_CHECKING:

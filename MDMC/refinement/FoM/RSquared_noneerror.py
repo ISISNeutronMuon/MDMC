@@ -45,7 +45,8 @@ class RSquared_noneerror(FigureOfMerit):
         .. math::
 
 
-            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \left(\lambda*D_{j}^{exp} - D_{j}^{sim}\right)^2 \\\\
+            FoM_{i}(\lambda) &=& w_{i} \sum_{j}
+                \left(\lambda*D_{j}^{exp} - D_{j}^{sim}\right)^2 \\\\
             \left. \frac{dFoM_{i}}{d\lambda}\right|_{\lambda=\lambda_{min}} &=& 0 \\\\
             \lambda_{min} &=& \frac{A}{B} \\\\
 

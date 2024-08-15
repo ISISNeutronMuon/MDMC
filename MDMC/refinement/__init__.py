@@ -7,5 +7,6 @@ FoM
 minimizers
 """
 
-from . import FoM
-from . import minimizers
+from . import FoM, minimizers
+
+__all__ = ["FoM", "minimizers"]

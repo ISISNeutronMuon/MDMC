@@ -1,18 +1,17 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
-from typing import TYPE_CHECKING, Union, Optional
-from textwrap import dedent
-
 from pathlib import Path
-import numpy as np
-import scipy.stats as st
-import pandas as pd
+from textwrap import dedent
+from typing import TYPE_CHECKING, Optional, Union
 
+import numpy as np
+import pandas as pd
+import scipy.stats as st
+from scipy.ndimage import minimum, minimum_position
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
-from scipy.ndimage import minimum_position, minimum
 
-from MDMC.MD.parameters import Parameters, Parameter
+from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
@@ -74,7 +73,7 @@ class GPR(Minimizer):
         point_array : list
                 ``list`` of parameter coordinates to be simulated
         """
-        parameter_names = [str(name) for name in parameters.keys()]
+        parameter_names = [str(name) for name in parameters]
 
         samples = st.qmc.LatinHypercube(d=len(parameters), scramble=False, seed=1)
         try:
@@ -121,7 +120,7 @@ class GPR(Minimizer):
             lower_bound = parameter.constraints[0]
             upper_bound = parameter.constraints[1]
         except TypeError as error:
-            if not parameter.value ==0:
+            if parameter.value != 0:
                 lower_bound = parameter.value*(1.0 - fraction)
                 upper_bound = parameter.value*(1.0 + fraction)
             else:
@@ -354,7 +353,7 @@ class GPR(Minimizer):
             min_parameters_measured,
             min_FoM_measured,
             min_parameters_predicted,
-            min_FoM_predicted
+            min_FoM_predicted,
         ]
 
     def format_result_string(self, minimizer_output: list) -> str:

@@ -1,17 +1,18 @@
 """Readers for dynamic data"""
 
 import logging
+
 import numpy as np
 
-from MDMC.readers.observables.obs_reader import SQwReader
 from MDMC.common.units import SYSTEM, Unit
+from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
 eV_in_Joules = 1.602176634 * 10**(-19)
 mole = 6.02214076 * 10**23
 
-conversion_to_meV ={
+conversion_to_meV = {
     'J' : 6.2415091e+21,
     'kJ' : 6.2415091e+24,
     'kcal' : 2.6114474e+25,
@@ -29,7 +30,7 @@ conversion_to_meV ={
     'meV' : 1.0,
     'eV' : 1e3,
     'keV' : 1e6,
-    'ueV' : 1e-3
+    'ueV' : 1e-3,
 }
 
 
@@ -99,7 +100,7 @@ class MDANSESQw(SQwReader):
                     value = 'Q'
                     q_unit = Unit(unit)
                     try:
-                        q_unit.conversion_factor
+                        _ = q_unit.conversion_factor
                     except KeyError:
                         logger.warning('Unit %s not recognised, replaced with 1/Ang', str(unit))
                         q_unit = Unit('1')/SYSTEM["LENGTH"]
@@ -118,7 +119,7 @@ class MDANSESQw(SQwReader):
                 self.first_row = value
             if "column:" in line:
                 self.first_column = value
-        if not self.first_row == 'Q':
+        if self.first_row != 'Q':
             self.transpose_data = False
 
     def parse(self, **settings: dict) -> None:

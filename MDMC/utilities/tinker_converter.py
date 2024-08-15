@@ -2,17 +2,17 @@
 Read TINKER ``.prm`` files and convert them to MDMC force field python files.
 """
 
-from datetime import datetime
 import os
 import textwrap
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import periodictable
 
+from MDMC.common import units
 from MDMC.common.decorators import wrap_docstring
 from MDMC.common.df_operations import filter_dataframe
-from MDMC.common import units
 from MDMC.MD import force_fields
 
 
@@ -197,7 +197,7 @@ def write_data(
         fname: str,
         atoms: pd.DataFrame,
         path: str = None,
-        **settings
+        **settings,
 ) -> None:
     """
     Write forcefield data to a ``.dat`` file.

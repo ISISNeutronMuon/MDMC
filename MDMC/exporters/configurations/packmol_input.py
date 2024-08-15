@@ -1,7 +1,8 @@
 """A module for a class to export a packmol input file"""
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 from copy import copy
+from typing import TYPE_CHECKING
 
 from MDMC.exporters.exporter import Exporter
 

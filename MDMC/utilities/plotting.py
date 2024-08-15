@@ -7,8 +7,9 @@ be installed, and dynamic plotting requires execution to be performed within a
 Jupyter notebook in order to display correctly.
 """
 
-from types import MethodType
 import warnings
+from contextlib import suppress
+from types import MethodType
 
 from MDMC.common.df_operations import filter_dataframe
 from MDMC.control import Control
@@ -172,11 +173,9 @@ def plot_progress(inst: Control, ynames: str) -> Control:
         height = min(len(self._ynames), 4) * PLOT_HEIGHT
         # This try/except allows IPython/Jupyter console to run without error
         # (although it does not live plot)
-        try:
+        with suppress(AttributeError):
             self.figure.canvas.handle_resize({'width': CNVS_WIDTH,
                                               'height': height})
-        except AttributeError:
-            pass
         self.figure.canvas.draw()
         orig_print_header()
         display.display(self._vbox)

@@ -1,8 +1,8 @@
 """Module for observable reader abstract class"""
 
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Union
 
-from typing import Union, Any, TYPE_CHECKING
 import numpy as np
 
 from MDMC.common import units

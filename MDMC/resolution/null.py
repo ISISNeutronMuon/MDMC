@@ -1,5 +1,6 @@
 """A class for the null object for Resolution classes."""
 from typing import Any
+
 from MDMC.resolution.resolution import Resolution
 
 

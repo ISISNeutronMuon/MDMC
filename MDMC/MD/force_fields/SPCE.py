@@ -20,9 +20,8 @@ Note that different values for bond strengths are given in the OPLSAA data
 file, namely 2510.4 and 313.8 respectively."""
 
 from MDMC.MD.force_fields.ff import WaterModel
-from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
-                                           LennardJones)
-from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
+from MDMC.MD.interaction_functions import Coulomb, HarmonicPotential, LennardJones
+from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 
 
 class SPCE(WaterModel):
