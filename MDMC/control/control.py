@@ -287,9 +287,9 @@ class Control:
         else:
             FoM_norm = FoM_options.get('norm')
 
-        self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
-                                                    norm=FoM_norm,
-                                                    n_parameters=len(self.fit_parameters))
+        self.FoM_calculator = FoMFactory.create(FoM_error, self.observable_pairs,
+                                                norm=FoM_norm,
+                                                n_parameters=len(self.fit_parameters))
         self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
