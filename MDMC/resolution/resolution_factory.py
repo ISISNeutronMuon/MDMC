@@ -46,7 +46,9 @@ class ResolutionFactory:
         function_name = list(resolution.keys())[0].title() + 'Resolution'
         function_res = list(resolution.values())[0]
 
-        return cls.create(function_name, function_res, *args)
+        if function_name == "FileResolution":
+            return cls.create(function_name, function_res, *args)
+        return cls.create(function_name, function_res)
 
     @singledispatchmethod
     @staticmethod
