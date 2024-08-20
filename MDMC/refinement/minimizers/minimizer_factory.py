@@ -1,12 +1,9 @@
 """Factory class for generating minimizers"""
-from glob import glob
-from importlib import import_module
-from inspect import getmembers, isabstract, isclass
-from os.path import basename, dirname, isfile, join
 from pathlib import Path
 
 from MDMC.common.factory import ModuleFactory
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
 
 class MinimizerFactory(ModuleFactory[Minimizer]):
     """

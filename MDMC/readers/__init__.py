@@ -4,15 +4,13 @@ Contents
 --------
 configurations
 observables
-reader_factory
 reader
 """
 
-from . import configurations, observables, reader, reader_factory
+from . import configurations, observables, reader
 
 __all__ = [
     "configurations",
     "observables",
     "reader",
-    "reader_factory",
 ]

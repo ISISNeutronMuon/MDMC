@@ -1,7 +1,9 @@
 """Factory class for generating readers for observables"""
 
+from pathlib import Path
+
+from MDMC.common.factory import ModuleFactory
 from MDMC.readers.observables.obs_reader import ObservableReader
-from MDMC.readers.reader_factory import ReaderFactory
 
 
 class ObservableReaderFactory(ModuleFactory[ObservableReader]):

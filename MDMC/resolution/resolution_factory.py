@@ -1,13 +1,14 @@
 """A factory pattern for instantiating Resolution objects."""
 import warnings
-from inspect import getmembers, isabstract, isclass
-from typing import Any, Union
+from functools import singledispatchmethod
+from pathlib import Path
+from typing import Any
 
 from MDMC.common.factory import ModuleFactory
 from MDMC.resolution.resolution import Resolution
 
 
-class ResolutionFactory:
+class ResolutionFactory(ModuleFactory[Resolution]):
     """
     Factory class for resolution window functions.
 
@@ -30,7 +31,7 @@ class ResolutionFactory:
         resolution : dict, float, or str
             A parameter specifying the resolution. Should be a one-line dict
             giving the resolution type and parameters, e.g. a Lorentzian resolution
-            with FWHM of 4 is specified {'lorentzian': 3.0}.
+            with FWHM of 3 is specified {'lorentzian': 3.0}.
             If a float is given, resolution is assumed to be Gaussian with FWHM
             of that float.
             If a str is given, the string is assumed to be a file path to a vanadium

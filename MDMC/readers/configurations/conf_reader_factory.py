@@ -4,10 +4,9 @@ from pathlib import Path
 
 from ase.io.formats import ioformats
 
-import MDMC.readers.configurations
+from MDMC.common.factory import ModuleFactory
 from MDMC.readers.configurations.ase import ASEReader
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
-from MDMC.readers.reader_factory import ReaderFactory
 
 # pylint: disable=cyclic-import
 # this is handled!

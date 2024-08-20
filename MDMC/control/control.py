@@ -322,11 +322,11 @@ class Control:
 
             if 'resolution' not in dset:
                 # create list of user keys for resolutions to add to the error
-                userkeys = []
-                for setting in resolution_factory.resolutions:
-                    userkeys.append(setting.lower().replace('resolution', ''))
-                raise KeyError("A resolution function must be added. Recognised functions are " +
-                               str(userkeys) +
+                userkeys = [setting.lower().replace('resolution', '')
+                            for setting in resolution_factory.registry]
+
+                raise KeyError("A resolution function must be added. Recognised functions are: " +
+                               ", ".join(userkeys) +
                                ". If you meant to apply no resolution,"
                                " then specify resolution as None for the exp_dataset parameters.")
 

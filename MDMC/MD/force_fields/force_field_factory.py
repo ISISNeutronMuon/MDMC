@@ -1,9 +1,6 @@
 """Factory class for generating force fields"""
 
-from glob import glob
-from importlib import import_module
-from inspect import getmembers, isabstract, isclass
-from os.path import basename, dirname, isfile, join
+from pathlib import Path
 
 from MDMC.common.factory import ModuleFactory
 from MDMC.MD.force_fields.ff import ForceField

@@ -4,12 +4,7 @@ And ObservablePair class fro defining the obseravble pairs used to calculate the
 """
 from pathlib import Path
 
-
-from glob import glob
-from importlib import import_module
-from inspect import getmembers, isabstract, isclass
-from os.path import basename, dirname, isfile, join
-
+from MDMC.common.factory import ModuleFactory
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit
 
 

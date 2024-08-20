@@ -11,8 +11,11 @@ from typing import Generic, TypeVar, get_args
 
 T = TypeVar('T')
 
+# Inheritors define own registry
+# pylint: disable=no-member
 
-class Factory(ABC):
+
+class Factory(ABC):  # noqa: B024 - Abstract class no abs meth.
     """
     General factory class.
 
@@ -100,7 +103,7 @@ class ModuleFactory(Factory, ABC, Generic[T]):
                     isclass(m) and
                     not isabstract(m) and
                     issubclass(m, cls.supported_types())
-                )
+                ),
             )
 
             for name, type_ in classes:
