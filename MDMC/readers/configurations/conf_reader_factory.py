@@ -1,6 +1,6 @@
 """Factory class for generating readers for configurations"""
 
-from inspect import getmembers, isabstract, isclass
+from pathlib import Path
 
 from ase.io.formats import ioformats
 
@@ -13,18 +13,19 @@ from MDMC.readers.reader_factory import ReaderFactory
 # this is handled!
 
 
-class ConfigurationReaderFactory(ReaderFactory):
+class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
 
     """
-    Provides a factory for creating readers.  Any module within the readers
-    submodule can be created with a string of the class name, as long as it is a
-    subclass of ``ConfigurationReader``.
+    Provides a factory for creating readers.
+
+    Any module within the readers submodule can be created with a
+    string of the class name, as long as it is a subclass of
+    ``ConfigurationReader``.
     """
-
-    @staticmethod
-    def base_class() -> type['ConfigurationReader']:
-
-        return ConfigurationReader
+    registry: dict[str, ConfigurationReader] = {}
+    curr_path = Path(__file__).parent
+    curr_pack = __package__
+    exclude = (curr_path / "__init__.py", curr_path / "conf_reader_factory.py")
 
     @classmethod
     def create_reader_from_ext(cls, extension: str, file_name: str) -> ConfigurationReader:
@@ -50,14 +51,9 @@ class ConfigurationReaderFactory(ReaderFactory):
             If ``extension`` does not match the ``extension`` property of any
             subclass of ``ConfigurationReader``
         """
-
-        readers = getmembers(MDMC.readers.configurations,
-                             lambda m: isclass(m)
-                             and not isabstract(m)
-                             and issubclass(m, cls.base_class()))
-        for reader in readers:
-            if reader[1].extension == extension:
-                return reader[1](file_name)
+        for reader in cls.registry.values():
+            if reader.extension == extension:
+                return reader(file_name)
 
         # if no direct reader exists, try ASE reader
         if extension in ioformats:
@@ -65,3 +61,5 @@ class ConfigurationReaderFactory(ReaderFactory):
 
         raise NotImplementedError(
             f'No implemented reader is compatible with {extension} extension')
+
+ConfigurationReaderFactory.scan()
