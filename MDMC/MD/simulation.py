@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
-                 ', '.join(ForceFieldFactory.get_force_field_names())}
+                 ', '.join(ForceFieldFactory.available_names())}
 
 # pylint: disable=too-few-public-methods
 # as many classes here are small MD engine compatibility
@@ -133,8 +133,7 @@ class Universe(AtomContainer):
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         if force_field:
-            self._force_fields = ForceFieldFactory.create_force_field(
-                force_field)
+            self._force_fields = ForceFieldFactory.create(force_field)
         else:
             self._force_fields = None
 
@@ -867,7 +866,7 @@ class Universe(AtomContainer):
                 default, no ``Dispersion`` interactions are added.
         """
 
-        self._force_fields = ForceFieldFactory.create_force_field(force_field)
+        self._force_fields = ForceFieldFactory.create(force_field)
         add_dispersions = settings.get('add_dispersions', False)
 
         if add_dispersions:

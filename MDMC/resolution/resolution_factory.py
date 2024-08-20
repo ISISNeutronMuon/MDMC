@@ -1,8 +1,4 @@
 """A factory pattern for instantiating Resolution objects."""
-# pylint: disable=too-few-public-methods
-# pylint: disable=cyclic-import
-# as this is a factory class
-
 import warnings
 from inspect import getmembers, isabstract, isclass
 from typing import Any, Union

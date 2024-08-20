@@ -421,7 +421,7 @@ def _parametrize_interaction(interaction_class, force_field_name, *atoms,
     """
 
     interaction = interaction_class(*atoms, **settings)
-    force_field = ForceFieldFactory.create_force_field(force_field_name)
+    force_field = ForceFieldFactory.create(force_field_name)
 
     interaction_type = (interaction_class.__name__.lower() if interaction_class
                         not in [Bond, BondAngle, DihedralAngle]
@@ -442,7 +442,7 @@ def test_filter_element(force_field_name, element, expected_number):
     rows have the correct element type
     """
 
-    force_field = ForceFieldFactory.create_force_field(force_field_name)
+    force_field = ForceFieldFactory.create(force_field_name)
     atoms = force_field.filter_element(element)
     assert len(atoms) == expected_number
     assert all(atoms['element'] == element)
@@ -461,7 +461,7 @@ def test_specific_force_fields_names():
     test.
     """
 
-    force_field_names = ForceFieldFactory.get_force_field_names()
+    force_field_names = ForceFieldFactory.available_names()
     for name in ['SPC', 'SPCE', 'OPLSAA']:
         assert name in force_field_names
 

@@ -4,13 +4,9 @@ from importlib import import_module
 from inspect import getmembers, isabstract, isclass
 from os.path import basename, dirname, isfile, join
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from MDMC.common.factory import ModuleFactory
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
-
-if TYPE_CHECKING:
-    from MDMC.control import Control
 
 class MinimizerFactory(ModuleFactory[Minimizer]):
     """
