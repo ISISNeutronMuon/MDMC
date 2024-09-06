@@ -132,7 +132,7 @@ def create_box_data(open_file: h5py.File,
         A pre-opened file that the data is being written into
     """
     box_group = open_file[f'{ROOT_TRAJECTORY}/box']
-    box_group.attrs['dimensions'] = len(trajectory.dimensions)
+    box_group.attrs['dimension'] = len(trajectory.dimensions)
     if trajectory.is_fixedbox:
         boundary = ['periodic' for _ in trajectory.dimensions]  # MDMC assumes periodic
         box_group.attrs['boundary'] = boundary
