@@ -13,7 +13,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install setuptools pip-tools --upgrade
 COPY pyproject.toml pyproject.toml
 COPY requirements.txt requirements.txt
-RUN pip-compile --extra LAMMPS,DLPOLY,test,docs -o dependencies.txt pyproject.toml
+RUN pip-compile --extra LAMMPS,DLPOLY,ogpr,test,docs -o dependencies.txt pyproject.toml
 RUN pip3 install -r dependencies.txt
 RUN rm -r pyproject.toml requirements.txt dependencies.txt
 
