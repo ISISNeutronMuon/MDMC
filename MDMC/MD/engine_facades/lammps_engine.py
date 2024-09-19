@@ -1121,9 +1121,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                          self.__class__)
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
-            self.lmp.bond_style('hybrid',
-                                *set(tuple(parse_bonded_styles(b)
-                                           for b in list(bonds))))
+            self.lmp.bond_style('hybrid', *{parse_bonded_styles(b) for b in list(bonds)})
             self._create_bonded_interactions('bond', bonds)
 
         if angles:
@@ -1133,9 +1131,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             # pylint: disable=not-an-iterable
             # false positive raised here
-            self.lmp.angle_style('hybrid',
-                                 *set(tuple(parse_bonded_styles(a)
-                                            for a in angles)))
+            self.lmp.angle_style('hybrid', *{parse_bonded_styles(a) for a in angles})
             self._create_bonded_interactions('angle', angles)
 
         if dihedrals:
@@ -1147,10 +1143,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # Set used to remove duplicate dihedral styles, which are not
             # required to be (and in fact cannot) be passed to LAMMPS hybrid
             # dihedral_style or improper_style
-            proper_styles = set(tuple(parse_bonded_styles(p) for p
-                                      in self.propers))
-            improper_styles = set(tuple(parse_bonded_styles(i) for i
-                                        in self.impropers))
+            proper_styles = {parse_bonded_styles(p) for p in self.propers}
+            improper_styles = {parse_bonded_styles(i) for i in self.impropers}
             if proper_styles:
                 self.lmp.dihedral_style('hybrid', *proper_styles)
                 self._create_bonded_interactions('dihedral', self.propers)
@@ -1686,17 +1680,21 @@ class LAMMPSSimulation(PyLammpsAttribute):
                         'RemoveAngularMomentum']:
                 self.lmp.unfix(name)
 
-        if self.system_state.natoms > 0:
-            if self.lin_momentum_steps == self.ang_momentum_steps:
-                self.lmp.fix('RemoveMomentum', 'all', 'momentum',
-                             self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
-            else:
-                if self.lin_momentum_steps:
-                    self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
-                                 self.lin_momentum_steps, 'linear', 1, 1, 1)
-                if self.ang_momentum_steps:
-                    self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
-                                 self.ang_momentum_steps, 'angular')
+        if (
+                self.system_state.natoms <= 0 or
+                (self.lin_momentum_steps is None and
+                 self.ang_momentum_steps is None)
+        ):
+            pass
+        elif self.lin_momentum_steps == self.ang_momentum_steps:
+            self.lmp.fix('RemoveMomentum', 'all', 'momentum',
+                         self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
+        elif self.lin_momentum_steps:
+            self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
+                         self.lin_momentum_steps, 'linear', 1, 1, 1)
+        elif self.ang_momentum_steps:
+            self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
+                         self.ang_momentum_steps, 'angular')
 
     def _set_kspace_solver(self) -> None:
         """
