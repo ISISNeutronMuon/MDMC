@@ -34,3 +34,7 @@ prof
 .coverage
 
 .ipynb_checkpoints/
+
+benchmarks/results
+
+benchmarks/env
