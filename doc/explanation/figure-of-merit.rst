@@ -70,7 +70,7 @@ the rescale factor :math:`\lambda` then the minimum of the FoM is obtained as:
 
 
     FoM_{i}(\lambda) &=& w_{i} \sum\limits_{j} \left(\frac{\lambda*D_{j}^{\textrm{exp}} - \\\\
-    D_{j}^{\textrm{sim}}}{\lambda*\sigma_{j}^{\textrm{exp}}\right)^2 \\\\
+    D_{j}^{\textrm{sim}}}{\lambda*\sigma_{j}^{\textrm{exp}}}\right)^2 \\\\
     \left. \frac{dFoM_{i}}{d\lambda}\right|_{\lambda=\lambda_{\textrm{min}}} &=& 0 \\\\
     \lambda_{\textrm{min}} &=& \frac{A}{B} \\\\
 
