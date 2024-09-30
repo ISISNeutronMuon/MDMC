@@ -64,4 +64,5 @@ class TimeSuite:
         self.control.equilibrate(n_steps=10000)
 
     def time_minimiser(self):
-        self.control.refine(n_steps=1)
+        fom = self.control.max_FoM
+        self.control.minimizer.step(fom)
