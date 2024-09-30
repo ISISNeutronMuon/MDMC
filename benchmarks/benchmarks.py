@@ -6,7 +6,7 @@ import numpy as np
 
 from pathlib import Path
 
-class TimeSuite:
+class MinimizerSuite:
     timeout = 10000
 
     def setup(self):
@@ -42,7 +42,7 @@ class TimeSuite:
         data_path = Path(__file__).with_name("data")
         input_file_path = data_path.joinpath("Well_s_q_omega_Ar_data.xml")
         
-        exp_datasets = [
+        self.exp_datasets = [
             {
                 'file_name':input_file_path.absolute(),
                 'type':'SQw',
@@ -51,18 +51,39 @@ class TimeSuite:
                 'resolution':None
             }
             ]
-
-        fit_parameters = self.universe.parameters
-        
-        self.control = Control(
+    
+        self.control_MMC = Control(
             simulation=self.simulation,
-            exp_datasets=exp_datasets,
-            fit_parameters=fit_parameters,
-            MD_steps=570)
+            exp_datasets=self.exp_datasets,
+            fit_parameters=self.universe.parameters,
+            MD_steps=570,
+            minimizer_type="MMC")
         
-        self.control.minimize(n_steps=50)
-        self.control.equilibrate(n_steps=10000)
+        self.control_GPR = Control(
+            simulation=self.simulation,
+            exp_datasets=self.exp_datasets,
+            fit_parameters=self.universe.parameters,
+            MD_steps=570,
+            minimizer_type="GPR",
+            n_steps=100)
+        
+        self.control_GPO = Control(
+            simulation=self.simulation,
+            exp_datasets=self.exp_datasets,
+            fit_parameters=self.universe.parameters,
+            MD_steps=570,
+            minimizer_type="GPO",
+            n_steps=100)
+        
+    def time_minimiser_MMC(self):
+       fom = self.control_MMC.max_FoM
+       self.control_MMC.minimizer.step(fom)
 
-    def time_minimiser(self):
-        fom = self.control.max_FoM
-        self.control.minimizer.step(fom)
+    def time_minimiser_GPR(self):
+       fom = self.control_GPR.max_FoM
+       self.control_GPR.minimizer.step(fom)
+
+    def time_minimiser_GPO(self):
+       fom = self.control_GPO.max_FoM
+       self.control_GPO.minimizer.step(fom)
+
