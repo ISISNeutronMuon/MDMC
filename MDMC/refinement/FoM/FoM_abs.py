@@ -289,10 +289,9 @@ class ObservablePair:
             between the ``dependent_variables`` taking the ``rescale_factor``
             into account.
         """
-
-        diff = (np.array(*self.exp_obs.dependent_variables.values())
-                * self.rescale_factor
-                - np.array(*self.MD_obs.dependent_variables.values()))
+        exp_values = np.array(*self.exp_obs.dependent_variables.values())
+        MD_values = np.array(*self.MD_obs.dependent_variables.values())
+        diff = ((self.rescale_factor * exp_values) - MD_values)
 
         return diff
 
@@ -326,7 +325,7 @@ class ObservablePair:
             ``exp_obs``, taking the ``rescale_factor`` into account.
         """
 
-        return np.array(*self.exp_obs.errors.values()) * self.rescale_factor
+        return np.array(*self.exp_obs.errors.values()) # * self.rescale_factor
 
 
 @repr_decorator('value', 'obs_pairs')

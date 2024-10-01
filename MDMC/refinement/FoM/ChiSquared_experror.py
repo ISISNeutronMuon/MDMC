@@ -31,15 +31,25 @@ class ChiSquaredExpError(FigureOfMerit):
             The FoM for the obs_pair
         """
 
+
+        exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+        MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
         if obs_pair.auto_scale:
-            exp_errors = np.array(*obs_pair.exp_obs.errors.values())
-            exp_values = np.array(
-                *obs_pair.exp_obs.dependent_variables.values())
-            MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2) / np.sum(
-                MD_values * exp_values / exp_errors ** 2))
+
+            # Normalise area
+            obs_pair.rescale_factor = MD_values.sum() / exp_values.sum()
+            # Normalise and remove "zeros"
+            # exp_values /= exp_values.max()
+            # exp_values[exp_values < 1e-8] = 0.
+
+            # obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2) / np.sum(
+            #     MD_values * exp_values / exp_errors ** 2)) / exp_values.max()
+
+        exp_errors = np.array(*obs_pair.exp_obs.errors.values())
+        exp_errors[exp_values < 1e-8] = np.inf
+        print(f"{obs_pair.rescale_factor=}")
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum((obs_pair.calculate_difference()
-                                  / obs_pair.calculate_exp_errors()) ** 2)
+        value_unreduced = np.sum((obs_pair.calculate_difference() /
+                                  exp_errors * obs_pair.rescale_factor) ** 2) / exp_values.size
         return obs_pair.weight * value_unreduced / norm_factor
