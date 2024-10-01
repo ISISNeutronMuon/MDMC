@@ -1560,11 +1560,14 @@ class Simulation:
     # this is flagged up by variables having a list as default value
     # but we don't mutate the list anywhere in the function, so
     # this is safe and has better readability
-    def auto_equilibrate(self,
-                         variables: list[str] = ('temp', 'pe'),
-                         eq_step: int = 10,
-                         window_size: int = 100,
-                         tolerance: float = 0.01) -> Tuple[int, dict]:
+    def auto_equilibrate(
+            self,
+            variables: list[str] = ('temp', 'pe'),
+            eq_step: int = 10,
+            window_size: int = 100,
+            tolerance: float = 0.01,
+            max_step = 10000,
+    ) -> Tuple[int, dict]:
         """
         Equilibrate until the specified list of variables have stabilised.
         Uses the KPSS stationarity test to determine
@@ -1609,7 +1612,7 @@ class Simulation:
             window = variable_values[-window_size:]
             results = kpss(window, regression='c')
             # results[1] is the p-value from the test
-            # we base our tolerance on the p-value, where the altenrative hypothesis
+            # we base our tolerance on the p-value, where the alternative hypothesis
             # for KPSS is "NOT stationary" - statsmodels also never gives a p above
             # 0.1 as it doesn't hold critical values above that point. so for 0.05
             # tolerance, we are asking that p be greater than 0.95
@@ -1621,8 +1624,12 @@ class Simulation:
 
         # we consider the simulation stable if the rolling window
         # is stationary for all variables (by KPSS)
-        while not all(window_is_stationary(var) for var in vals_dict):
+        for _ in range(max_step - window_size):
+            if all(window_is_stationary(var) for var in vals_dict):
+                break
             auto_step()
+        else:
+            raise ValueError("Auto-equilibration stability not reached after {max_step} steps.")
 
         total_steps = len(list(vals_dict.values())[0]) * eq_step
         print("Auto-equilibration has detected stability "

@@ -1,22 +1,23 @@
 """Tests for setting up a simulation"""
 
+import difflib
 from collections import Counter
-from itertools import combinations, permutations
+from itertools import combinations, permutations, count
+
 
 import numpy as np
 import numpy.testing as npt
 import pytest
-from pytest_cases import parametrize, fixture_ref
+from pytest_cases import fixture_ref, parametrize
+
+import MDMC.MD.simulation as sim
+import MDMC.MD.structures as su
+from MDMC.common import units
 from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import LennardJones
-import MDMC.MD.simulation as sim
-from MDMC.MD.solvents.SPC_config import SPC216
-import MDMC.MD.structures as su
-from MDMC.common import units
 from MDMC.MD.simulation import Simulation
-import difflib
-
+from MDMC.MD.solvents.SPC_config import SPC216
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
 
@@ -1370,3 +1371,25 @@ def test_auto_equilibrate(universe, variables, pe_stability_point, temp_stabilit
     assert eq_steps >= max(pe_stability_point, temp_stability_point)
     # assert that it doesn't over-equilibrate
     assert eq_steps < 2 * max(pe_stability_point, temp_stability_point)
+
+def test_auto_equilibrate_bailout(universe, monkeypatch):
+    """Check auto-equilibration will bail out for unstable function."""
+    simulation = MockSimulation(universe, 1, 1,
+                                MockEngine(10, 10))
+
+    # Continuously increasing function
+    Q = count()
+    def unstable(*args, **kwargs):
+        return next(Q)
+
+    monkeypatch.setattr(simulation.engine, "eval", unstable)
+
+    with pytest.raises(ValueError):
+        eq_steps, _ = simulation.auto_equilibrate()
+
+def test_auto_equilibrate_bailout_forced(universe, monkeypatch):
+    simulation = MockSimulation(universe, 1, 1,
+                                MockEngine(10, 10))
+
+    with pytest.raises(ValueError):
+        eq_steps, _ = simulation.auto_equilibrate(max_step=1)

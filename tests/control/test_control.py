@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import re
 from typing import List
-from unittest.mock import Mock
+from unittest.mock import Mock, ANY
 
 from MDMC.control import Control
 from MDMC.trajectory_analysis.observables.sqw import SQw
@@ -823,7 +823,7 @@ def test_control_resolution_function(simulation, exp_datasets):
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
 
-@pytest.mark.parametrize('steps', [0,None])
+@pytest.mark.parametrize('steps', [0, None])
 def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeypatch):
     """
     Tests that when the equilibration method is called with no steps specified
@@ -832,15 +832,15 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
     sim = simulation()
 
     ctrl = Control(sim,
-                        exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
-                        [],
-                        reset_config=False,
-                        equilibration_steps=steps)
+                   exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
+                   [],
+                   reset_config=False,
+                   equilibration_steps=steps)
 
     ctrl.equilibrate(steps)
     assert sim.auto_equilibrated
 
-@pytest.mark.parametrize('steps', [1,50])
+@pytest.mark.parametrize('steps', [1, 50])
 def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch):
     """
     Tests that when the equilibration method is called with equilibration steps specified
@@ -849,13 +849,35 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     sim = simulation()
 
     ctrl = Control(sim,
-                        exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
-                        [],
-                        reset_config=False,
-                        equilibration_steps=steps)
+                   exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
+                   [],
+                   reset_config=False,
+                   equilibration_steps=steps)
 
     ctrl.equilibrate(steps)
     assert sim.ran
+
+def test_control_auto_equil_params(simulation, exp_datasets, monkeypatch):
+    """Tests that params are passed through to auto_equilibrate."""
+    sim = simulation()
+    ctrl = Control(sim,
+                   exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
+                   [],
+                   reset_config=False,
+                   equilibration_steps=0,
+                   auto_equil_eq_step=50,
+                   auto_equil_window_size=500,
+                   auto_equil_tolerance=0.00001,
+                   auto_equil_max_steps=100)
+
+    monkeypatch.setattr(sim, "auto_equilibrate", Mock())
+
+    mocked = sim.auto_equilibrate
+
+    ctrl.auto_equilibrate()
+    assert mocked.called
+    mocked.assert_called_with(eq_step=50, window_size=500, tolerance=0.00001, max_steps=100)
+
 
 def test_control_md_engine_error(simulation, exp_datasets, caplog):
     """
