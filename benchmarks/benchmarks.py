@@ -150,8 +150,8 @@ class MinimizerSuite:
 
 class RefineSuite:
     timeout = 10000
-    n_params = [1]#, 25]
-    n_steps = [10,]#10, 100]
+    n_params = [1, 10, 25, 50, 100]
+    n_steps = [10, 20, 30]
 
     params = (n_params, n_steps)
     param_names = ["Number of parameters", "Number of steps"]
@@ -227,22 +227,31 @@ class RefineSuite:
         )
 
     def mock_FoM(self):
-        fom = 0
+        self.fom = 0
 
         for v in self.fit_parameters.values():
-            fom += v.value ** 2 + v.value
+            self.fom += v.value ** 2 + v.value
 
-        return fom
+        return self.fom
 
-    # @patch.object(Control, "_generate_FoM", mock_FoM)
-    # def time_refine_MMC(self, n_params, n_steps):
-    #     self.control_MMC.refine(n_steps=n_steps)
-
-    # @patch.object(Control, "_generate_FoM", mock_FoM)
-    # def time_refine_GPO(self, n_params, n_steps):
-    #     self.control_GPO.refine(n_steps=n_steps)
-
-    @skip_for_params([(25, 10)])
     @patch.object(Control, "_generate_FoM", mock_FoM)
-    def time_refine_GPR(self, num_params, n_steps):
-        self.control_GPR.refine(n_steps=n_steps)
+    def time_refine_MMC(self, n_params, n_steps):
+        self.control_MMC.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def track_refine_MMC(self, n_params, n_steps):
+        self.control_MMC.refine(n_steps=n_steps)
+        return self.control_MMC.fom
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def time_refine_GPO(self, n_params, n_steps):
+        self.control_GPO.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def track_refine_GPO(self, n_params, n_steps):
+        self.control_GPO.refine(n_steps=n_steps)
+        return float(self.control_GPO.fom)
+
+    # @patch.object(Control, "_generate_FoM", mock_FoM)
+    # def time_refine_GPR(self, num_params, n_steps):
+    #     self.control_GPR.refine(n_steps=n_steps)
