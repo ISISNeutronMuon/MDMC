@@ -1,14 +1,24 @@
 import json
 import pandas as pd
-import numpy as np
 from itertools import product
-from pprint import pprint
+from pathlib import Path
+import glob
+import os
 
-filename = "results/a23cc70a78d3/e3e2bb98-virtualenv-py3.12.json"
+results_dir = Path(__file__).parent.parent.absolute() / "results/"
+
+#Assume we only have one machine
+machine_dir = [x.name for x in os.scandir(results_dir) if x.is_dir()][0]
+results_dir = results_dir / machine_dir
+
+filenames = glob.glob("*.json", root_dir=results_dir)
+filenames.remove("machine.json")
+
+#Assumes we only have one results file
+filename = results_dir / filenames[0]
 
 with open(filename) as json_file:
     data = json.load(json_file)
-
 
 results = {k.split(".")[-1]:v[0] for k, v in data["results"].items()}
 
