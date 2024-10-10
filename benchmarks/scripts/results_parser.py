@@ -26,8 +26,6 @@ results = {k.split(".")[-1]:v[0] for k, v in data["results"].items()}
 results_vals = list(data["results"].values())
 params = product(*results_vals[0][1])
 
-params = [f"{p[0]} parameters, {p[1]} steps" for p in params]
-
 tuple_results = {}
 
 for k in results.keys():
@@ -38,7 +36,10 @@ for k in results.keys():
         tuple_results[("FoM", result_name)] = results[k]
 
 cols = pd.MultiIndex.from_tuples(tuple_results.keys())
+rows = pd.MultiIndex.from_tuples(params)
 
-df = pd.DataFrame(tuple_results,  columns=cols, index=params)
+df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
+
+df.index.names = ["Parameters", "Steps"]
 
 print(df)
