@@ -150,8 +150,8 @@ class MinimizerSuite:
 
 class RefineSuite:
     timeout = 10000
-    n_params = [1, 10, 25, 50, 100, 1000]#, 10000]
-    n_steps = [10, 20, 30]
+    n_params = [1, 5, 10]
+    n_steps = [5, 10, 50]#, 100, 1000]
 
     params = (n_params, n_steps)
     param_names = ["Number of parameters", "Number of steps"]
@@ -173,7 +173,7 @@ class RefineSuite:
                         temperature=120.,
                         traj_step=15)
         
-        params = {str(i): np.random.uniform(-1, -1) for i in range(n_params)}
+        params = {str(i): np.random.uniform(-1., 1.) for i in range(n_params)}
 
         interactions = InteractionFunction(params)
 
@@ -230,7 +230,7 @@ class RefineSuite:
         self.fom = 0
 
         for v in self.fit_parameters.values():
-            self.fom += v.value ** 2 + v.value
+            self.fom += v.value ** 2
 
         return self.fom
 
