@@ -178,7 +178,7 @@ class RefineSuite:
         interactions = InteractionFunction(params)
 
         for p in interactions.parameters.values():
-            p.constraints = (-1, 1)
+            p.constraints = (-1., 1.)
         
         Ar_dispersion = Dispersion(self.universe,
                            (Ar.atom_type, Ar.atom_type),
