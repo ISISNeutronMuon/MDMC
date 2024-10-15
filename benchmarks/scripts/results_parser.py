@@ -23,8 +23,9 @@ with open(filename) as json_file:
 results = {k.split(".")[-1]:v[0] for k, v in data["results"].items()}
 
 #Take params from first benchmark's result
+#Tuple of (number of parameters, number of refinement steps)
 results_vals = list(data["results"].values())
-params = product(*results_vals[0][1])
+params = list(product(*results_vals[0][1]))
 
 tuple_results = {}
 
