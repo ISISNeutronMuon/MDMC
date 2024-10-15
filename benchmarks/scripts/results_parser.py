@@ -23,17 +23,22 @@ with open(filename) as json_file:
 results = {k.split(".")[-1]:v[0] for k, v in data["results"].items()}
 
 #Take params from first benchmark's result
+#Tuple of (number of parameters, number of refinement steps)
 results_vals = list(data["results"].values())
-params = product(*results_vals[0][1])
+params = list(product(*results_vals[0][1]))
 
 tuple_results = {}
 
 for k in results.keys():
     result_type, result_name = k.split("_")
     if result_type == "time":
-        tuple_results[("time", result_name)] = results[k]
+        tuple_results[(result_name, "Time")] = results[k]
+        
+        time_per_step = [r / int(p[1]) for r, p in zip(results[k], params)]
+        tuple_results[(result_name, "Time per step")] = time_per_step
     elif result_type == "track":
-        tuple_results[("FoM", result_name)] = results[k]
+        tuple_results[(result_name, "FoM")] = results[k]
+
 
 cols = pd.MultiIndex.from_tuples(tuple_results.keys())
 rows = pd.MultiIndex.from_tuples(params)
