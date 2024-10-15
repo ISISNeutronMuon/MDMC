@@ -47,4 +47,9 @@ df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
 
 df.index.names = ["Parameters", "Steps"]
 
+cols = df.columns.to_list()
+
+#Quick and dirty way to group columns by benchmark
+df.insert(2, ("refineGPO", "FoM"), df.pop(("refineGPO", "FoM")))
+
 print(df)
