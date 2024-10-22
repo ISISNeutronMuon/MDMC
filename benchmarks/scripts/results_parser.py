@@ -31,14 +31,20 @@ tuple_results = {}
 for k in results.keys():
     result_type, result_name = k.split("_")
     if result_type == "time":
-        tuple_results[("time", result_name)] = results[k]
+        tuple_results[("Time (s)", result_name)] = results[k]
     elif result_type == "track":
         tuple_results[("FoM", result_name)] = results[k]
+    elif result_type == "peakmem":
+        mem_vals = [r / 1e+9 if r is not None else r for r in results[k] ]
+        tuple_results[("Peak Memory (GB)", result_name)] = mem_vals
 
 cols = pd.MultiIndex.from_tuples(tuple_results.keys())
 rows = pd.MultiIndex.from_tuples(params)
 
 df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
+
+df.insert(3, ("Peak Memory (GB)", "refineGPR"), df.pop(("Peak Memory (GB)", "refineGPR")))
+df.insert(6, ("FoM", "refineGPR"), df.pop(("FoM", "refineGPR")))
 
 df.index.names = ["Parameters", "Steps"]
 
