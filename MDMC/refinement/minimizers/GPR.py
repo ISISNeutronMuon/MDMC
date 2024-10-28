@@ -1,8 +1,10 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
 from pathlib import Path
-from textwrap import dedent
-from typing import TYPE_CHECKING, Optional, Union
+import numpy as np
+import scipy.stats as st
+import pandas as pd
+import pyswarms as ps
 
 import numpy as np
 import pandas as pd
@@ -82,10 +84,10 @@ class GPR(Minimizer):
             raise AttributeError("GPR requires that the number of refinement steps "
                                  "is set when initialising Control.") from error
 
-        lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
-        upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
+        self.lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
+        self.upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
 
-        latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
+        latin_points = st.qmc.scale(latin_points, self.lower_bounds, self.upper_bounds)
         return parameter_names, latin_points
 
     @staticmethod
@@ -269,9 +271,8 @@ class GPR(Minimizer):
 
         return fitted_GPR, min_FOM, min_pars
 
-    @staticmethod
-    def GPR_predict(input_regressor,
-                    points: Optional[float] = 100) -> 'tuple[list[tuple[float]], np.ndarray]':
+    def GPR_predict(self, input_regressor,
+                    points: Optional[float] = 1) -> 'tuple[list[tuple[float]], np.ndarray]':
         """
         Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
         between the minimum and maximum measured parameter values and predicts the FoM at each
@@ -296,16 +297,14 @@ class GPR(Minimizer):
 
         predictive_coordinates = []
 
-        for column in regressor_points.T:
-            min_point, max_point = np.min(column), np.max(column)
-            dense_array = np.linspace(min_point, max_point, points)
-            predictive_coordinates.append(dense_array)
+        options = {'c1': 0.4, 'c2': 0.5, 'w':0.9}
+        bounds = (np.array(self.lower_bounds), np.array(self.upper_bounds))
 
-        point_array = list(itertools.product(*predictive_coordinates))
-        # predict method needs explicit array
-        prediction = input_regressor.predict(point_array, return_std=False)
+        swarm = ps.single.GlobalBestPSO(n_particles=100, dimensions=(regressor_points.T.shape[0]), options=options, bounds=bounds)
+        
+        fom, params = swarm.optimize(input_regressor.predict, 100)
 
-        return point_array, prediction
+        return params, fom
 
     @staticmethod
     def global_minimum_position(predicted_FOMs: np.ndarray,
@@ -346,8 +345,8 @@ class GPR(Minimizer):
             Minimum predicted FoM
         """
         fit, min_FoM_measured, min_parameters_measured = self.GPR_fit()
-        points, FoMs = self.GPR_predict(fit)
-        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
+        min_parameters_predicted, min_FoM_predicted = self.GPR_predict(fit)
+
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
 
         min_parameters_measured = tuple(min_parameters_measured.iloc[0])
