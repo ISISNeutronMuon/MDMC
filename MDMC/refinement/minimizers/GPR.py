@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
+import pyswarms as ps
 
 import numpy as np
 import pandas as pd
@@ -275,7 +276,7 @@ class GPR(Minimizer):
         return fitted_GPR, min_FOM, min_pars
 
     def GPR_predict(self, input_regressor,
-                    ) -> 'tuple[np.ndarray, float]':
+                    points: Optional[float] = 1) -> 'tuple[list[tuple[float]], np.ndarray]':
         """
         Takes a fitted Gaussian process regressor from GPR_fit, and uses the DIRECT
         global optimization algorithm 
@@ -303,10 +304,42 @@ class GPR(Minimizer):
             bounds,
         )
 
-        params = result.x
-        fom = result.fun
+        options = {'c1': 0.4, 'c2': 0.5, 'w':0.9}
+        bounds = (np.array(self.lower_bounds), np.array(self.upper_bounds))
+
+        swarm = ps.single.GlobalBestPSO(n_particles=100, dimensions=(regressor_points.T.shape[0]), options=options, bounds=bounds)
+        
+        fom, params = swarm.optimize(input_regressor.predict, 100)
 
         return params, fom
+
+    @staticmethod
+    def global_minimum_position(predicted_FOMs: np.ndarray,
+                                measured_parameter_coordinates: 'list[float]') \
+            -> 'tuple[np.ndarray, float]':
+        """
+        Gives the coordinates of the global minimum of the predicted figure of merit surface.
+
+        Parameters
+        ----------
+        predicted_FOMs : numpy.ndarray
+            A numpy ``array`` of the predicted figures of merit
+        measured_parameter_coordinates: list
+            A ``list`` of the coordinates corresponding to the points at which the FoM was predicted
+
+        Returns
+        -------
+        minimum_parameters : numpy.ndarray
+            The parameter coordinates where the minimum figure of merit is predicted to be
+        min_FoM : float
+            The predicted minimum figure of merit value
+        """
+
+        min_coordinates = minimum_position(predicted_FOMs)[0]
+        min_FoM = minimum(predicted_FOMs)
+        minimum_parameters = measured_parameter_coordinates[min_coordinates]
+
+        return minimum_parameters, min_FoM
 
     def extract_result(self) -> list:
         """
