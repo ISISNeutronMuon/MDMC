@@ -186,7 +186,10 @@ def exp_datasets() -> callable:
                       auto_scale: bool = None,
                       use_FFT: bool = None,
                       file_name: str = None,
-                      resolution: dict = None) -> List[dict]:
+                      resolution: dict = None,
+                      abs_threshold: float = None,
+                      rel_threshold: float = None,
+                      absolute: bool = None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
@@ -208,6 +211,17 @@ def exp_datasets() -> callable:
                 dataset['auto_scale'] = auto_scale
             if use_FFT is not None:
                 dataset['use_FFT'] = use_FFT
+            if any(key is not None for key in (rel_threshold, abs_threshold, absolute)):
+                dataset.setdefault("select", {})
+                # Always print removed %
+                dataset["select"]["warn_threshold"] = -1.
+
+                if rel_threshold is not None:
+                    dataset["select"]["rel"] = rel_threshold
+                if abs_threshold is not None:
+                    dataset["select"]["abs"] = abs_threshold
+                if absolute is not None:
+                    dataset["select"]["use_magnitude"] = absolute
 
             for resolution_v in data.RESOLUTION_DATA.values():
                 if (resolution is not None
@@ -912,3 +926,47 @@ def test_control_md_engine_recover(simulation, exp_datasets):
     ctrl.min = minim
 
     ctrl.equilibrate(1)
+
+@pytest.mark.parametrize('mag, abs_threshold, rel_threshold, pct_removed', [
+    (False, 0., 0., 7),
+    (False, 0.1, 0., 45),
+    (False, 1, 0., 92),
+    (False, 1e8, 0., 100),
+    (False, 0., 1e-5, 9),
+    (False, 0., 0.001, 17),
+    (False, 0., 1., 99),
+    (True, 0., 0., 0),
+    (True, 0.1, 0., 45),
+    (True, 1, 0., 92),
+    (True, 1e8, 0., 100),
+    (True, 0., 1e-5, 7),
+    (True, 0., 0.001, 17),
+    (True, 0., 1., 99),
+])
+def test_control_md_filter_threshold_on_read(caplog, simulation, exp_datasets, mag,
+                                             abs_threshold, rel_threshold, pct_removed):
+    sim = simulation()
+
+    ctrl = Control(sim,
+                   exp_datasets(
+                       use_FFT=False,
+                       file_name='Well_s_q_omega_Ar_data.xml',
+                       abs_threshold=abs_threshold,
+                       rel_threshold=rel_threshold,
+                       absolute=mag,
+                   ),
+                   [MockParameter('eps', 0)])
+
+    data = {'dep': ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0],
+            'err': ctrl.observable_pairs[0].exp_obs.errors['SQw'][0]}
+
+    check = np.abs(data['dep'][data['dep'].nonzero()]).min(initial=np.inf)
+
+    if abs_threshold > 0:
+        assert check >= abs_threshold
+
+    if rel_threshold > 0:
+        assert check >= rel_threshold*data['dep'].max()
+
+    assert f"{pct_removed}%" in caplog.text
+    assert np.isinf(data['err'][data['dep'] == 0.]).all()
