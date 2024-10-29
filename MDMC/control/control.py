@@ -233,21 +233,27 @@ class Control:
         self.observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
-            try:
-                use_FFT = dset['use_FFT']
-            except KeyError:
-                use_FFT = True
+            use_FFT = dset.get('use_FFT', True)
 
             # keep the keys in the _dset_input_check function
             # consistent with the ones retrieved from dset
-            self._input_check(dset, inputs = ['type','reader', 'file_name'])
+            self._input_check(dset, inputs=['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
-                                                        dset['reader'],
-                                                        dset['file_name'],
-                                                        use_FFT)
+                                                             dset['reader'],
+                                                             dset['file_name'],
+                                                             use_FFT)
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
+
+            if "select" in dset:  # Data below threshold should be zeroed.
+                self._threshold_filter(
+                    exp_observable,
+                    abs_threshold=dset["select"].get("abs", 0.),
+                    rel_threshold=dset["select"].get("rel", 0.),
+                    magnitude=dset["select"].get("use_magnitude", False),
+                    warn_threshold=dset["select"].get("warn_threshold", 0.1),
+                )
 
             MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
 
@@ -708,8 +714,12 @@ class Control:
         self.simulation.engine.update_parameters()
 
     @staticmethod
-    def _read_observable_from_file(obstype: str, reader: str, file_name: str,
-                                   use_FFT: bool = True) -> Observable:
+    def _read_observable_from_file(
+            obstype: str,
+            reader: str,
+            file_name: str,
+            use_FFT: bool = True,
+    ) -> Observable:
         """
         Creates an Observable of the specified type and reads in data from file
 
@@ -722,12 +732,12 @@ class Control:
         file_name : str
             The absolute or relative path and the file name.
         use_FFT: bool, optional
-            boolean determining if the FFT should be used, default is True
+            Boolean determining if the FFT should be used, default is True.
 
         Returns
         -------
-        ``Observable``
-            An ``Observable`` of specified ``type``
+        Observable
+            An ``Observable`` of specified ``type``.
         """
 
         observable = ObservableFactory.create_observable(obstype)
@@ -859,6 +869,69 @@ class Control:
         maximum_steps = traj_step if maximum_frames is None else traj_step * maximum_frames
 
         return maximum_steps * (MD_steps // (maximum_steps))
+
+    @staticmethod
+    def _threshold_filter(obs: Observable,
+                          *,
+                          abs_threshold: float = 0.,
+                          rel_threshold: float = 0.,
+                          magnitude: bool = False,
+                          warn_threshold: float = 0.1) -> int:
+        """
+        Remove data below threshold in-place.
+
+        Removed data are set to zero and respective errors set to infinity
+        to avoid weighting.
+
+        Parameters
+        ----------
+        obs : Observable
+            Observable to filter.
+        abs_threshold : float
+            Minimum value below which to remove data.
+        rel_threshold : float
+            Proportion of the maximum value below which to remove data.
+        magnitude : bool
+            Whether the magnitude of the data must be below threshold
+            or the original values.
+        warn_threshold : float
+            Fraction of data over which to warn too much may have been removed.
+
+        Returns
+        -------
+        int
+            Number of data removed.
+
+        Notes
+        -----
+        If both abs and rel threshold provided, use the larger of the two, i.e.
+        the one which will remove the most data.
+        """
+        n_data = 0
+        n_skip = 0
+
+        for variable in obs.dependent_variables:
+
+            for values, errors in zip(obs.dependent_variables[variable],
+                                      obs.errors[variable]):
+                threshold = max(rel_threshold * values.max(), abs_threshold)
+
+                loc = np.abs(values) if magnitude else values
+                loc = loc < threshold
+
+                values[loc] = 0.
+                errors[loc] = np.inf
+                n_data += values.size
+                n_skip += np.count_nonzero(loc)
+
+        logging.info("Threshold (%g) removed %d data of %d",
+                     threshold, n_skip, n_data)
+
+        if n_skip / n_data > warn_threshold:
+            logging.warning("Over %d%% of data have been removed.",
+                            np.floor(100. * n_skip / n_data))
+
+        return n_skip
 
     @staticmethod
     def _is_data_uniform(observable: Observable) -> Dict[str, Dict[str, bool]]:
