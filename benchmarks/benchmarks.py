@@ -225,6 +225,15 @@ class RefineSuite:
             minimizer_type="GPO",
             n_steps=n_steps
         )
+        
+        self.control_OGPR = Control(
+            simulation=self.simulation,
+            exp_datasets=self.exp_datasets,
+            fit_parameters=self.universe.parameters,
+            MD_steps=570,
+            minimizer_type="OGPR",
+            n_steps=n_steps
+        )
 
     def mock_FoM(self):
         self.fom = 0
@@ -272,3 +281,16 @@ class RefineSuite:
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def peakmem_refineGPR(self, num_params, n_steps):
         self.control_GPR.refine(n_steps=n_steps)
+             
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def time_refineOGPR(self, num_params, n_steps):
+        self.control_OGPR.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def track_refineOGPR(self, n_params, n_steps):
+        self.control_OGPR.refine(n_steps=n_steps)
+        return float(self.control_OGPR.fom)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def peakmem_refineOGPR(self, num_params, n_steps):
+        self.control_OGPR.refine(n_steps=n_steps)
