@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
-from typing import Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
 import pandas as pd
@@ -94,7 +94,7 @@ class OGPR(Minimizer):
         point_array : list
                 ``list`` of parameter coordinates to be simulated
         """
-        parameter_names = [str(name) for name in parameters.keys()]
+        parameter_names = [str(name) for name in parameters]
 
         samples = st.qmc.LatinHypercube(d=len(parameters), scramble=False, seed=1)
 
@@ -142,7 +142,7 @@ class OGPR(Minimizer):
             lower_bound = parameter.constraints[0]
             upper_bound = parameter.constraints[1]
         except TypeError as error:
-            if not parameter.value == 0:
+            if parameter.value != 0:
                 lower_bound = parameter.value*(1.0 - fraction)
                 upper_bound = parameter.value*(1.0 + fraction)
             else:
@@ -374,7 +374,7 @@ class OGPR(Minimizer):
     @staticmethod
     def global_minimum_position(
             predicted_FOMs: np.ndarray,
-            measured_parameter_coordinates: list[float]
+            measured_parameter_coordinates: list[float],
     ) -> tuple[np.ndarray, float]:
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
@@ -420,7 +420,7 @@ class OGPR(Minimizer):
             min_parameters_measured,
             min_FoM_measured,
             min_parameters_predicted,
-            min_FoM_predicted
+            min_FoM_predicted,
         ]
 
     def format_result_string(self, minimizer_output: list) -> str:
