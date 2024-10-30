@@ -49,6 +49,43 @@ class RSquared_noneerror(FigureOfMerit):
     simple linear scaling.
     """
 
+    def _compute_unreduced(self, obs_pair: ObservablePair):
+        """
+        Compute the unreduced FoM value for the given observable pair.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated.
+
+        Returns
+        -------
+        float
+            Unreduced FoM value.
+        """
+        return np.sum(obs_pair.calculate_difference() ** 2)
+
+    def _minimise_factor(self, obs_pair: ObservablePair) -> float:
+        """
+        Minimise the FoM factor for the given FoM type.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            Computed auto_scale factor to minimise the FoM.
+        """
+        exp_values = np.array(
+            *obs_pair.exp_obs.dependent_variables.values())
+        MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
+        A = np.sum(MD_values * exp_values)
+        B = np.sum(exp_values ** 2)
+        return A / B
+
     def calculate_single_FoM(self, obs_pair: ObservablePair):
         # ignore line too long linting as it is necessary for LaTeX formatting
         # pylint: disable=line-too-long

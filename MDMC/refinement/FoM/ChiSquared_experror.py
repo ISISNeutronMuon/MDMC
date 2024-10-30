@@ -31,6 +31,43 @@ class ChiSquaredExpError(FigureOfMerit):
     mathematical details.
     """
 
+    def _compute_unreduced(self, obs_pair: ObservablePair):
+        """
+        Compute the unreduced FoM value for the given observable pair.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated.
+
+        Returns
+        -------
+        float
+            Unreduced FoM value.
+        """
+        return np.sum((obs_pair.calculate_difference() /
+                       obs_pair.calculate_exp_errors()) ** 2)
+
+    def _minimise_factor(self, obs_pair: ObservablePair) -> float:
+        """
+        Minimise the FoM factor for the given FoM type.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            Computed auto_scale factor to minimise the FoM.
+        """
+        exp_errors = np.array(*obs_pair.exp_obs.errors.values())
+        exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+        MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
+        return (np.sum((MD_values / exp_errors) ** 2) /
+                np.sum(MD_values * exp_values / exp_errors ** 2))
+
     def calculate_single_FoM(self, obs_pair: ObservablePair):
         """
         Calculates the chi-squared figure of merit for a single
