@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
-from typing import Sequence
+from typing import Sequence, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -22,10 +22,11 @@ import scipy.stats as st
 from goppy import OnlineGP, SquaredExponentialKernel
 from scipy.ndimage import minimum, minimum_position
 
-from MDMC.control import Control
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
+if TYPE_CHECKING:
+    from MDMC.control import Control
 
 class OGPR(Minimizer):
     """
@@ -223,7 +224,7 @@ class OGPR(Minimizer):
         FoM_pass = np.array([[FoM]], dtype=np.float64)
 
         if self.gpr is None:
-            self.gpr.init_OGPR(values_pass, FoM_pass)
+            self.init_OGPR(values_pass, FoM_pass)
         else:
             self.gpr.add(values_pass, FoM_pass)
 
@@ -323,7 +324,7 @@ class OGPR(Minimizer):
         if self.gpr is not None:
             raise RuntimeError("Attempting to initialise OGPR twice")
 
-        if n_params is None and not params:
+        if n_params is None and not params.size:
             raise RuntimeError("Unable to determine parameter space size")
 
         self.n_params = len(params[0]) if params is not None else n_params
@@ -332,7 +333,7 @@ class OGPR(Minimizer):
         # Alpha squared as Goppy uses variance, while Sklearn uses st.d.
         self.gpr = OnlineGP(kernel, noise_var=alpha**2)
 
-        if params and FoMs:
+        if params.size and FoMs:
             params = np.atleast_2d(np.array(params))
             FoMs = np.atleast_2d(np.array(FoMs)).T
             self.gpr.add(params, FoMs)
