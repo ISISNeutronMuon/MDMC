@@ -59,4 +59,10 @@ df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
 
 df.index.names = ["Parameters", "Steps"]
 
-print(df)
+print(df[time_results])
+print("-"*20)
+print(df[time_per_step_results])
+print("-"*20)
+print(df[fom_results])
+print("-"*20)
+print(df[memory_results])
