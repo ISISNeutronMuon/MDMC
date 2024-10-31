@@ -50,9 +50,10 @@ df.insert(6, ("FoM", "refineGPR"), df.pop(("FoM", "refineGPR")))
 
 df.index.names = ["Parameters", "Steps"]
 
-cols = df.columns.to_list()
-
-#Quick and dirty way to group columns by benchmark
-df.insert(2, ("refineGPO", "FoM"), df.pop(("refineGPO", "FoM")))
-
-print(df)
+print(df[time_results])
+print("-"*20)
+print(df[time_per_step_results])
+print("-"*20)
+print(df[fom_results])
+print("-"*20)
+print(df[memory_results])
