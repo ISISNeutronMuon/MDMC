@@ -126,3 +126,30 @@ jobs:
       run: |
         cd MDMC
         mypy . --show-error-codes --pretty
+
+  benchmark:
+    name: Benchmark this commit against last
+    runs-on: ubuntu-22.04
+    needs: build
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup some dependencies
+        shell: bash -l {0}
+        run:
+          pip install asv
+
+      - name: Run benchmarks
+        shell: bash -l {0}
+        run: |
+          set -x
+
+          # ID this runner
+          asv machine --yes
+
+          # Run benchmarks for last commit against previous one
+          asv continuous --split --show-stderr 'HEAD^' 'HEAD'
