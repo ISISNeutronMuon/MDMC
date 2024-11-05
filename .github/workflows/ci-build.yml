@@ -1,7 +1,8 @@
 name: CI
 # contains jobs which run on every pull request
 on:
-  pull_request:
+  - pull_request
+  - workflow_dispatch
 
 jobs:
   build:
