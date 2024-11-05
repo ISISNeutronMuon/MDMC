@@ -1,7 +1,8 @@
 name: CI
 # contains jobs which run on every pull request
 on:
-  pull_request:
+  - pull_request
+  - workflow_dispatch
 
 jobs:
   build:
@@ -127,3 +128,40 @@ jobs:
       run: |
         cd MDMC
         mypy . --show-error-codes --pretty
+
+  benchmark:
+    name: Benchmark this commit against last
+    runs-on: ubuntu-22.04
+    needs: build
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: install openmpi headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run:
+          pip install asv pandas
+
+      - name: Run benchmarks
+        shell: bash -l {0}
+        run: |
+          set -x
+
+          # ID this runner
+          asv machine --yes
+
+          # Run benchmarks for new and previous commits
+          asv run HEAD^!
+          asv run HEAD~1^!
+
+          asv compare --only-changed --split HEAD^ HEAD
+
+          python3 benchmarks/scripts/results_parser.py $(git rev-parse --short HEAD)
