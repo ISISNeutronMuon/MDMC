@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
+from scipy.optimize import differential_evolution
 
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
@@ -83,10 +84,10 @@ class GPR(Minimizer):
             raise AttributeError("GPR requires that the number of refinement steps "
                                  "is set when initialising Control.") from error
 
-        lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
-        upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
+        self.lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
+        self.upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
 
-        latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
+        latin_points = st.qmc.scale(latin_points, self.lower_bounds, self.upper_bounds)
         return parameter_names, latin_points
 
     @staticmethod
@@ -267,8 +268,7 @@ class GPR(Minimizer):
 
         return fitted_GPR, min_FOM, min_pars
 
-    @staticmethod
-    def GPR_predict(input_regressor,
+    def GPR_predict(self, input_regressor,
                     points: Optional[float] = 100) -> 'tuple[list[tuple[float]], np.ndarray]':
         """
         Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
@@ -290,20 +290,14 @@ class GPR(Minimizer):
             A ``list`` of predicted figure of merit surface at each coordinate in the point_array
         """
 
-        regressor_points = input_regressor.X_train_
+        bounds = list(zip(self.lower_bounds, self.upper_bounds))
 
-        predictive_coordinates = []
+        result = differential_evolution(input_regressor.predict, bounds)
+        
+        params = result.x
+        fom = result.fun
 
-        for column in regressor_points.T:
-            min_point, max_point = np.min(column), np.max(column)
-            dense_array = np.linspace(min_point, max_point, points)
-            predictive_coordinates.append(dense_array)
-
-        point_array = list(itertools.product(*predictive_coordinates))
-        # predict method needs explicit array
-        prediction = input_regressor.predict(point_array, return_std=False)
-
-        return point_array, prediction
+        return params, fom
 
     @staticmethod
     def global_minimum_position(predicted_FOMs: np.ndarray,
