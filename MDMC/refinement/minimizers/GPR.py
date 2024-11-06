@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
-from scipy.optimize import differential_evolution
+from scipy.optimize import shgo
 
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
@@ -292,7 +292,9 @@ class GPR(Minimizer):
 
         bounds = list(zip(self.lower_bounds, self.upper_bounds))
 
-        result = differential_evolution(input_regressor.predict, bounds)
+        predict_wrapper = lambda x: input_regressor.predict([x])
+
+        result = shgo(predict_wrapper, bounds)
         
         params = result.x
         fom = result.fun
@@ -338,8 +340,8 @@ class GPR(Minimizer):
             Minimum predicted FoM
         """
         fit, min_FoM_measured, min_parameters_measured = self.GPR_fit()
-        points, FoMs = self.GPR_predict(fit)
-        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
+        min_parameters_predicted, min_FoM_predicted = self.GPR_predict(fit)
+
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
 
         min_parameters_measured = tuple(min_parameters_measured.iloc[0])
