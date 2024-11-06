@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import scipy.stats as st
 import pandas as pd
-from scipy.optimize import shgo
+from scipy.optimize import dual_annealing
 
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
@@ -294,7 +294,7 @@ class GPR(Minimizer):
 
         predict_wrapper = lambda x: input_regressor.predict([x])
 
-        result = shgo(predict_wrapper, bounds)
+        result = dual_annealing(predict_wrapper, bounds)
         
         params = result.x
         fom = result.fun
