@@ -2,25 +2,30 @@ import json
 import pandas as pd
 from itertools import product
 from pathlib import Path
-import glob
-import os
+import argparse
+
+parser = argparse.ArgumentParser(
+    prog='MDMC ASV results parser',
+    description='Parse the results of an MDMC benchmarking run to make it more human readable'
+)
+
+parser.add_argument("benchmark_commit")
+args = parser.parse_args()
+
+filename = f"{args.benchmark_commit}-virtualenv-py3.10.json"
 
 results_dir = Path(__file__).parent.parent.absolute() / "results/"
 
 #Assume we only have one machine
-machine_dir = [x.name for x in os.scandir(results_dir) if x.is_dir()][0]
+machine_dir = [x.name for x in results_dir.iterdir() if x.is_dir()][0]
 results_dir = results_dir / machine_dir
 
-filenames = glob.glob("*.json", root_dir=results_dir)
-filenames.remove("machine.json")
+filename = results_dir / filename
 
-#Assumes we only have one results file
-filename = results_dir / filenames[0]
-
-with open(filename) as json_file:
+with filename.open("r", encoding="utf-8") as json_file:
     data = json.load(json_file)
-
-results = {k.split(".")[-1]:v[0] for k, v in data["results"].items()}
+    
+results = {k.rsplit(".", 1)[1]: v[0] for k, v in data["results"].items()}
 
 #Take params from first benchmark's result
 #Tuple of (number of parameters, number of refinement steps)
@@ -29,15 +34,21 @@ params = list(product(*results_vals[0][1]))
 
 tuple_results = {}
 
-for k in results.keys():
+for k in results:
     result_type, result_name = k.split("_")
-    if result_type == "time":
-        tuple_results[(result_name, "Time")] = results[k]
-        
-        time_per_step = [r / int(p[1]) for r, p in zip(results[k], params)]
-        tuple_results[(result_name, "Time per step")] = time_per_step
-    elif result_type == "track":
-        tuple_results[(result_name, "FoM")] = results[k]
+    match result_type:
+        case "time":
+            tuple_results[("Time (s)", result_name)] = results[k]
+
+            time_per_step = [r / int(p[1]) if r is not None else r for r, p in zip(results[k], params)]
+            tuple_results[("Time per step (s)", result_name)] = time_per_step
+
+        case "peakmem":
+            mem_vals = [r / 1e+9 if r is not None else r for r in results[k] ]
+            tuple_results[("Peak Memory (GB)", result_name)] = mem_vals
+
+        case "track":
+            tuple_results[("FoM", result_name)] = results[k]
 
 
 cols = pd.MultiIndex.from_tuples(tuple_results.keys())
