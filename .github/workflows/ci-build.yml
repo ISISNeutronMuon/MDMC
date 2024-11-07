@@ -153,5 +153,10 @@ jobs:
           # ID this runner
           asv machine --yes
 
-          # Run benchmarks for last commit against previous one
-          asv continuous --split --show-stderr 'HEAD^' 'HEAD'
+          # Run benchmarks for new and previous commits
+          asv run HEAD^!
+          asv run HEAD~1^!
+
+          asv compare --only-changed --split HEAD^ HEAD
+
+          python3 benchmarks/scripts/results_parser.py $(git rev-parse --short HEAD)
