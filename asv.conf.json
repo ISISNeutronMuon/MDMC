@@ -35,7 +35,6 @@
     // Customizable commands for installing and uninstalling the project.
     // See asv.conf.json documentation.
     "install_command": [
-        "pip install -r requirements.txt",
         "pip install .[test]"
     ],
     // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
