@@ -36,7 +36,7 @@
     // See asv.conf.json documentation.
     "install_command": [
         "pip install -r requirements.txt",
-        "pip install .[ogpr]"
+        "pip install .[test]"
     ],
     // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
 
