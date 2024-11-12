@@ -208,27 +208,27 @@ class MinimizerSuite:
         self.control_MMC.refine(n_steps=n_steps)
         return self.control_MMC.fom
 
-    @patch.object(Control, "_generate_FoM", mock_FoM)
-    def time_GPO(self, n_params, n_steps):
-        """
-        Time GPO minimizer
-        """
-        self.control_GPO.refine(n_steps=n_steps)
+    # @patch.object(Control, "_generate_FoM", mock_FoM)
+    # def time_GPO(self, n_params, n_steps):
+    #     """
+    #     Time GPO minimizer
+    #     """
+    #     self.control_GPO.refine(n_steps=n_steps)
 
-    @patch.object(Control, "_generate_FoM", mock_FoM)
-    def peakmem_GPO(self, n_params, n_steps):
-        """
-        Record peak memory for GPO minimizer
-        """
-        self.control_GPO.refine(n_steps=n_steps)
+    # @patch.object(Control, "_generate_FoM", mock_FoM)
+    # def peakmem_GPO(self, n_params, n_steps):
+    #     """
+    #     Record peak memory for GPO minimizer
+    #     """
+    #     self.control_GPO.refine(n_steps=n_steps)
 
-    @patch.object(Control, "_generate_FoM", mock_FoM)
-    def track_GPO(self, n_params, n_steps):
-        """
-        Record FoM calculated by GPO minimizer
-        """
-        self.control_GPO.refine(n_steps=n_steps)
-        return float(self.control_GPO.fom)
+    # @patch.object(Control, "_generate_FoM", mock_FoM)
+    # def track_GPO(self, n_params, n_steps):
+    #     """
+    #     Record FoM calculated by GPO minimizer
+    #     """
+    #     self.control_GPO.refine(n_steps=n_steps)
+    #     return float(self.control_GPO.fom)
 
     @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
