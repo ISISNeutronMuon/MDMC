@@ -147,7 +147,8 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run:
-          pip install asv pandas
+          pip install asv
+          pip install -r requirements.txt
 
       - name: Run benchmarks
         shell: bash -l {0}
