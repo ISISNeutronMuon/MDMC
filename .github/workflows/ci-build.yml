@@ -147,7 +147,7 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run:
-          pip install asv pytest pandas
+          pip install asv pandas
 
       - name: Run benchmarks
         shell: bash -l {0}
