@@ -164,4 +164,4 @@ jobs:
 
           asv compare --only-changed --split HEAD^ HEAD
 
-          python3 benchmarks/scripts/results_parser.py $(git rev-parse --short HEAD)
+          python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
