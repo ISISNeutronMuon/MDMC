@@ -20,11 +20,6 @@ results_dir = Path(__file__).parent.parent.absolute() / "results/"
 machine_dir = [x.name for x in results_dir.iterdir() if x.is_dir()][0]
 results_dir = results_dir / machine_dir
 
-print(results_dir)
-
-for d in results_dir.iterdir():
-    print(d)
-
 filename = results_dir / filename
 
 with filename.open("r", encoding="utf-8") as json_file:
