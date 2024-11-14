@@ -75,6 +75,9 @@ class MinimizerSuite:
 
     #GPR benchmarks are skipped for larger parameter spaces due to its memory use
     gpr_skip_params = list(product([5, 10], n_steps))
+    
+    #GPO benchmarks are skipped for 100 steps due to its long run time
+    gpo_skip_params = list(product(n_params, [100]))
 
     params = (n_params, n_steps)
     param_names = ["Number of parameters", "Number of steps"]
@@ -208,6 +211,7 @@ class MinimizerSuite:
         self.control_MMC.refine(n_steps=n_steps)
         return self.control_MMC.fom
 
+    @skip_for_params(gpo_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def time_GPO(self, n_params, n_steps):
         """
@@ -215,6 +219,7 @@ class MinimizerSuite:
         """
         self.control_GPO.refine(n_steps=n_steps)
 
+    @skip_for_params(gpo_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def peakmem_GPO(self, n_params, n_steps):
         """
@@ -222,6 +227,7 @@ class MinimizerSuite:
         """
         self.control_GPO.refine(n_steps=n_steps)
 
+    @skip_for_params(gpo_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def track_GPO(self, n_params, n_steps):
         """
