@@ -1,10 +1,11 @@
-"""Modules relating to describing a molecular dynamics trajectory and
-calculating observables from them
+"""
+Modules relating to describing an MD trajectory and calculating observables.
 
 Contents
 --------
-observables
-trajectory
+
+- observables
+- trajectory
 """
 
 from . import observables

@@ -1,4 +1,6 @@
-"""Module for AbstractSQw and total SQw class"""
+"""
+Module for AbstractSQw and total SQw class.
+"""
 
 from typing import Optional
 
@@ -18,13 +20,26 @@ from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 class SQwMixins:
     """
-    A mixin class for properties used by both SQw and FQt objects
+    A mixin class for properties used by both SQw and FQt objects.
     """
 
     def minimum_frames(self, dt: float = None) -> int:
         r"""
-        The minimum number of ``CompactTrajectory`` frames needed to calculate the
-        ``dependent_variables`` depends on ``self.use_FFT``.
+        Compute minimum number of ``CompactTrajectory`` frames to calculate ``dependent_variables``.
+
+        Parameters
+        ----------
+        dt : float, optional
+            The time separation of frames in ``fs``, default is `None`.
+
+        Returns
+        -------
+        int
+            The minimum number of frames.
+
+        Notes
+        -----
+        Depends on ``self.use_FFT``.
 
         If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
         a reflection in time which only counts the end points once.
@@ -43,16 +58,6 @@ class SQwMixins:
         .. math::
 
             N = \frac{T_{min}}{2 \Delta t} + 1 = \frac{h}{2 \Delta t \Delta E_{min}} + 1
-
-        Parameters
-        ----------
-        dt : float, optional
-            The time separation of frames in ``fs``, default is `None`
-
-        Returns
-        -------
-        int
-            The minimum number of frames
         """
 
         nE = len(self.E)
@@ -74,19 +79,22 @@ class SQwMixins:
 
     def maximum_frames(self) -> Optional[int]:
         """
-        The maximum number of ``CompactTrajectory`` frames that can be used to
-        calculate the ``dependent_variables`` depends on ``self.use_FFT``.
+        Compute maximum number of ``CompactTrajectory`` frames to calculate ``dependent_variables``.
+
+        Returns
+        -------
+        int
+            The maximum number of frames.
+
+        Notes
+        -----
+        Depends on `self.use_FFT`.
 
         If `True`, it is the number of energy steps + 1, in order to allow for
         a reflection in time which only counts the end points once.
 
         Otherwise, there is no limit and all frames will contribute to the
         calculation.
-
-        Returns
-        -------
-        int
-            The maximum number of frames
         """
 
         if self.use_FFT and (self.E is not None):
@@ -98,12 +106,12 @@ class SQwMixins:
     @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self) -> Optional[np.array]:
         """
-        Get or set the momentum transfers
+        Get or set the momentum transfers.
 
         Returns
         -------
         numpy.array
-            1D array of Q `float` (in ``Ang^-1``)
+            1D array of Q `float` (in ``Ang^-1``).
         """
         try:
             return self.independent_variables['Q']
@@ -118,11 +126,17 @@ class SQwMixins:
 class AbstractSQw(SQwMixins, Observable):
 
     """
-    An abstract class for total, coherent and incoherent dynamic structure
-    factors. The equations used for calculating this are based on Kneller et
-    al. Comput. Phys. Commun. 91 (1995) 191-214.
+    An abstract class for total, coherent and incoherent dynamic structure factors.
 
-    Note that properties for MD frames & Q are found in the SQwMixins class.
+    The equations used for calculating this are based on Kneller *et al*. [Kneller]_.
+
+    .. note::
+
+       Properties for MD frames & Q are found in the :class:`SQwMixins` class.
+
+    References
+    ----------
+    .. [Kneller] Kneller *et al*. Comput. Phys. Commun. 91 (1995) 191-214.
     """
 
     def __init__(self):
@@ -138,13 +152,17 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     def independent_variables(self) -> dict:
         """
-        Get or set the independent variables: these are
-        the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
+        Get or set the independent variables.
+
+        These are:
+
+        - the frequency :math:`Q` (in ``Ang^-1``)
+        - energy :math:`E` (in``meV``)
 
         Returns
         -------
         dict
-            The independent variables
+            The independent variables.
         """
 
         return self._independent_variables
@@ -156,26 +174,30 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variables: this is SQw, the
-        dynamic structure factor (in ``arb``)
+        Get the dependent variables.
+
+        This is:
+
+        - SQw, the dynamic structure factor (in ``arb``)
 
         Returns
         -------
         dict
-            The dependent variables
+            The dependent variables.
         """
         return self._dependent_variables
 
     @property
     def errors(self) -> dict:
         """
-        Get or set the errors on the dependent variables, the dynamic
-        structure factor (in ``arb``)
+        Get or set the errors on the dependent variables.
+
+        The dynamic structure factor (in ``arb``)
 
         Returns
         -------
         dict
-            The errors on the ``dependent_variables``
+            The errors on the ``dependent_variables``.
         """
         return self._errors
 
@@ -187,12 +209,12 @@ class AbstractSQw(SQwMixins, Observable):
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
     def E(self) -> 'np.array':
         """
-        Get the energies
+        Get the energies.
 
         Returns
         -------
         numpy.array
-            1D array of energy `float` (in ``meV``)
+            1D array of energy `float` (in ``meV``).
         """
 
         if self.independent_variables:
@@ -206,12 +228,12 @@ class AbstractSQw(SQwMixins, Observable):
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self) -> 'np.array':
         """
-        Get the angular frequencies
+        Get the angular frequencies.
 
         Returns
         -------
         numpy.array
-            1D array of angular frequency `float` in units of ``1 / ps``
+            1D array of angular frequency (in ``1 / ps``).
         """
 
         return self.E / (h_bar * 1e15)
@@ -219,13 +241,13 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw(self) -> Optional[list[np.ndarray]]:
-        """
-        Get the dynamic structure factor, S(Q, w), in arb
+        r"""
+        Get the dynamic structure factor, :math:`S(Q, \omega{})` (in ``arb``).
 
         Returns
         -------
         list of numpy.ndarray
-            `list` of 2D arrays of S(Q, w) `float` with arbitrary units
+            `list` of 2D arrays of :math:`S(Q, \omega{})` (in arbitrary units).
         """
 
         try:
@@ -236,13 +258,13 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw_err(self) -> Optional[list[np.ndarray]]:
-        """
-        Get the errors on the dynamic structure factor in arb
+        r"""
+        Get the errors on the dynamic structure factor (in ``arb``).
 
         Returns
         -------
         list of numpy.ndarray
-            `list` of 2D array of S(Q, w) error `float` with arbitrary units
+            `list` of 2D arrays of :math:`S(Q, \omega{})` error (in arbitrary units).
         """
 
         try:
@@ -251,9 +273,14 @@ class AbstractSQw(SQwMixins, Observable):
             return None
 
     @property
-    def recreated_Q(self):
+    def recreated_Q(self) -> np.ndarray:
         """
         Get the indices of the recreated Q_values.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of recreated Q values.
         """
         return self._recreated_Q
 
@@ -263,6 +290,8 @@ class AbstractSQw(SQwMixins, Observable):
 
     def validate_energy(self, time_step: float = None):
         """
+        Ensure ``dt`` is valid for computing energies.
+
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
         changes the time step and trajectory step to fix this. The time step value is
@@ -270,19 +299,20 @@ class AbstractSQw(SQwMixins, Observable):
 
         Parameters
         ----------
-        time_step: float, optional
+        time_step : float, optional
             User specified length of time for each update of the atoms trajectories
             in the simulation, default is None.
 
         Returns
         -------
-        tuple
-            contains a boolean, and two floats (if traj_step and time_step have values)
-            or two NoneType (if traj_step and time_step were passed in as None).
-
-        Raises
-        ------
-        AssertionError
+        valid : bool
+            Whether ``dt`` is valid.
+        traj_step : Optional[int]
+            Ideal ``traj_step`` if provided.
+        time_step : Optional[float]
+            Ideal ``time_step`` if provided.
+        dt : float
+            Required ``dt``.
         """
 
         dt_required = self.calculate_dt()
@@ -298,58 +328,81 @@ class AbstractSQw(SQwMixins, Observable):
             return True, traj_step, time_step, dt_required
         return False, None, None, dt_required
 
-    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
-                         **settings: dict):
+    def calculate_from_MD(self,
+                          MD_input: CompactTrajectory,
+                          verbose: int = 0,
+                          **settings: dict):
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``CompactTrajectory``.
 
-        If the ``CompactTrajectory`` has more frames than the ``self.maximum_frames()``
-        that can be used to recreate the grid of energy points, it can slice the
-        ``CompactTrajectory`` into sub-trajectories of length ``self.maximum_frames()``,
-        with the slicing specified through the settings ``use_average`` and ``cont_slicing``.
+        If the ``CompactTrajectory`` has more frames than the
+        ``self.maximum_frames()`` that can be used to recreate the
+        grid of energy points, it can slice the ``CompactTrajectory``
+        into sub-trajectories of length ``self.maximum_frames()``,
+        with the slicing specified through the settings
+        ``use_average`` and ``cont_slicing``.
 
-        The ``independent_variable`` ``Q`` can either be set previously or defined within
-        ``**settings``.
+        The ``independent_variable`` ``Q`` can either be set
+        previously or defined within ``**settings``.
 
         Parameters
         ----------
         MD_input : CompactTrajectory
-            An MDMC ``CompactTrajectory`` from which to calculate ``SQw``
-        verbose: int, optional
+            An MDMC ``CompactTrajectory`` from which to calculate ``SQw``.
+        verbose : int, optional
             The level of verbosity:
-            Verbose level 0 gives no information.
-            Verbose level 1 gives final time for the whole method.
-            Verbose level 2 gives final time and also a progress bar.
-            Verbose level 3 gives final time, a progress bar, and time per step.
-        **settings
-            ``n_Q_vectors`` (`int`)
-                The maximum number of ``Q_vectors`` for any ``Q`` value. The
-                greater the number of ``Q_vectors``, the more accurate the
-                calculation, but the longer it will take.
-            ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
-                A 3 element `tuple` or ``array`` of `float` specifying the
-                dimensions of the ``Universe`` in units of ``Ang``
-            ``energy_resolution` (`dict`)
-                Optionally specify energy resolution and function in units of ueV (micro eV),
-                in the format of the one-line dict {'function': value}, where `function`
-                is the resolution function and `value` is the desired `FWHM`.
-                e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
-                Currently accepted functions are 'gaussian' and 'lorentzian'
-                Can also be 'lazily' given as `float`, in which case it is assumed to be Gaussian.
-            ``Q_values`` (`array`)
-                1D array of Q `float` (in ``Ang^-1``). (optional)
-            ``use_average`` (`bool`)
-                Optional parameter if a list of more than one ``Trajectory`` is used. If set to
-                True (default) then the mean value for S(Q, w) is calculated. Also, the errors
-                are set to the standard deviation calculated over the list of
-                ``CompactTrajectory`` objects.
-             ``cont_slicing`` (`bool`)
-                Flag to decide between two possible behaviours when the number of ``MD_steps`` is
-                larger than the minimum required to calculate the observables. If ``False``
-                (default) then the ``CompactTrajectory`` is sliced into non-overlapping
-                sub-``CompactTrajectory`` blocks for each of which the observable is calculated.
-                If ``True``, then the ``CompactTrajectory`` is sliced into as many non-identical
-                sub-``CompactTrajectory`` blocks as possible (with overlap allowed).
+
+            - Verbose level 0 gives no information.
+            - Verbose level 1 gives final time for the whole method.
+            - Verbose level 2 gives final time and also a progress bar.
+            - Verbose level 3 gives final time, a progress bar, and time per step.
+        **settings : dict
+            Extra options.
+
+        Other Parameters
+        ----------------
+        n_Q_vectors : int
+            The maximum number of ``Q_vectors`` for any ``Q`` value. The
+            greater the number of ``Q_vectors``, the more accurate the
+            calculation, but the longer it will take.
+        dimensions : list, tuple or numpy.ndarray
+            A 3 element `tuple` or ``array`` of `float` specifying the
+            dimensions of the ``Universe`` in units of ``Ang``.
+        energy_resolution : dict
+            Specify energy resolution and function in units
+            of ueV (micro eV), in the format of the one-line dict
+            {'function': value}, where `function` is the resolution
+            function and `value` is the desired `FWHM`.
+
+            For example, to pass a Gaussian resolution of 80ueV we use
+            {'gaussian': 80}.
+
+            Currently accepted functions are 'gaussian' and
+            'lorentzian' Can also be 'lazily' given as `float`, in
+            which case it is assumed to be Gaussian.
+        Q_values : numpy.ndarray
+            1D array of Q `float` (in ``Ang^-1``).
+        use_average : bool
+            Optional parameter if a list of more than one ``Trajectory``
+            is used.
+
+            If set to True (default) then the mean value for S(Q, w)
+            is calculated. Also, the errors are set to the standard
+            deviation calculated over the list of
+            ``CompactTrajectory`` objects.
+        cont_slicing : bool
+
+            Flag to decide between two possible behaviours when the
+            number of ``MD_steps`` is larger than the minimum required
+            to calculate the observables.
+
+            If ``False`` (default) then the ``CompactTrajectory`` is
+            sliced into non-overlapping sub-``CompactTrajectory``
+            blocks for each of which the observable is calculated.
+
+            If ``True``, then the ``CompactTrajectory`` is sliced into
+            as many non-identical sub-``CompactTrajectory`` blocks as
+            possible (with overlap allowed).
         """
 
         self._origin = 'MD'
@@ -392,19 +445,19 @@ class AbstractSQw(SQwMixins, Observable):
                 try:
                     self.universe_dimensions = np.array(settings['dimensions'])
                 except KeyError as error:
-                    raise AttributeError('Either trajectory requires a dimensions'
-                                        ' attribute or dimensions must be passed'
-                                        ' when calling calculate_from_MD') from error
-        else: # If the dimensions of the simulation box are not fixed, we use the first value
+                    raise AttributeError('Either trajectory requires a dimensions '
+                                         'attribute or dimensions must be passed '
+                                         'when calling calculate_from_MD') from error
+        else:  # If the dimensions of the simulation box are not fixed, we use the first value
             try:
                 self.universe_dimensions = MD_input.changing_dimensions[0]
             except AttributeError:
                 try:
                     self.universe_dimensions = np.array(settings['dimensions'])
                 except KeyError as error:
-                    raise AttributeError('Either trajectory requires a dimensions'
-                                        ' attribute or dimensions must be passed'
-                                        ' when calling calculate_from_MD') from error
+                    raise AttributeError('Either trajectory requires a dimensions '
+                                         'attribute or dimensions must be passed '
+                                         'when calling calculate_from_MD') from error
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
@@ -479,7 +532,12 @@ class AbstractSQw(SQwMixins, Observable):
 
     def _get_fqt_type(self) -> str:
         """
-        Gets the name of the FQt type associated with each SQw type.
+        Get the name of the FQt type associated with each SQw type.
+
+        Returns
+        -------
+        str
+            FQt associated with SQw.
         """
         fqt_types = {'SQw': 'FQt',
                      'SQwCoherent': 'FQt_coh',
@@ -489,13 +547,17 @@ class AbstractSQw(SQwMixins, Observable):
     @staticmethod
     def calculate_E(nE: int, dt: float) -> np.ndarray:
         r"""
-        Calculates an array of ``nE`` uniformly spaced energy values from the
-        time separation of the ``CompactTrajectory`` frames, ``dt``. The
-        frequencie are determined by the Fast Fourier Transform, as implemented
-        by numpy, for ``2 * nE`` points in time which we then crop to only
-        include ``nE`` positive frequencies. As we are dealing with frequency
-        rather than angular frequency here, the relation to between energy
-        is given by:
+        Compute energy from MD.
+
+        Calculate an array of ``nE`` uniformly spaced energy values from the
+        time separation of the ``CompactTrajectory`` frames, ``dt``.
+
+        The frequencies are determined by the fast Fourier transform,
+        as implemented by numpy, for ``2 * nE`` points in time which
+        are truncated to only include ``nE`` positive frequencies.
+
+        As we are dealing with frequency rather than angular frequency
+        here, the relation to between energy is given by:
 
         .. math::
 
@@ -504,14 +566,18 @@ class AbstractSQw(SQwMixins, Observable):
         Parameters
         ----------
         nE : int
-            The number of energy values to be calculated
+            The number of energy values to be calculated.
         dt : float
-            The step size between frames in ``fs``
+            The step size between frames in ``fs``.
 
         Returns
         -------
         numpy.ndarray
-            An ``array`` of `float` specifying the energy in units of ``meV``
+            An ``array`` of `float` specifying the energy in units of ``meV``.
+
+        See Also
+        --------
+        numpy.fft.fftfreq : Frequency calculation.
         """
 
         # h is in units of eV s whereas system units are meV fs, so apply a
@@ -520,21 +586,28 @@ class AbstractSQw(SQwMixins, Observable):
 
     def calculate_dt(self) -> float:
         r"""
-        Calculates the time separation of frames required by the experimental
-        dataset, assuming uniform spacing. Note that this may be different from
-        the time separation that the user has given as an input, as it only
-        depends on the current values for ``self.E``. The relationship between
-        time and energy comes from the numpy implementation of the FFT for
-        ``2 * nE`` points where:
+        Calculate timestep required by experimental dataset assuming uniform spacing.
 
-        .. math::
-            \nu_{max} &=& \frac{n_E - 1}{2 n_E \Delta t} \\\\
+        .. note::
+
+           This may be different from the time separation that the
+           user has given as an input, as it only depends on the
+           current values for ``self.E``.
+
+        The relationship between time and energy comes from the numpy
+        implementation of the FFT for ``2 * nE`` points where:
+
+        .. math:: \nu_{max} &=& \frac{n_E - 1}{2 n_E \Delta t} \\\\
             \therefore \Delta t &=& \frac{h (n_E - 1)}{2 n_E E_{max}}
 
         Returns
         -------
         float
-            The time separation required by the current values of ``self.E``
+            The time separation required by the current values of ``self.E``.
+
+        See Also
+        --------
+        numpy.fft.fft : Numpy FFT implementation.
         """
 
         # h is in units of eV s whereas system units are meV fs, so apply a
@@ -544,30 +617,40 @@ class AbstractSQw(SQwMixins, Observable):
 
     def calculate_resolution_functions(self, dt: float) -> dict:
         """
-        Generates a resolution function in momentum and time that can be used in the calculation of
-        SQw. Note that this uses the ``SQw`` values of the ``Observable`` it is called from, and so
-        should only be called for an observable which has been created from relevant resolution
-        data, i.e. a vanadium sample.
-
-        Note that if this resolution function is used on data outside its original range, then it
-        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
-        time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
-        appropriate for the data in question, this function should not be used.
-
+        Generate resolution function in momentum and time.
 
         Parameters
         ----------
         dt : float
-            The time spacing to use when performing the inverse Fourier transform in units of `fs`.
-            Ideally this should be the same as the frame separation expected when applying this
-            function.
+            The time spacing for the inverse Fourier transform (in ``fs``).
+
+            Ideally this should be the same as the frame separation
+            expected when applying this function.
 
         Returns
         -------
         dict
-            A dictionary with the key 'SQw' corresponding to function which accepts arrays of time
-            and momentum (respectively) and returns a 2D array of values for the instrument
+            A dictionary with the key 'SQw' corresponding to function
+            which accepts arrays of time and momentum (respectively)
+            and returns a 2D array of values for the instrument
             resolution.
+
+        Notes
+        -----
+        There are several caveats to this function a user should be aware of:
+
+        - This uses the ``SQw`` values of the ``Observable`` it is
+          called from, and so should only be called for an observable
+          which has been created from relevant resolution data,
+          i.e. a vanadium sample.
+        - If this resolution function is used on data outside
+          its original range, then it will use nearest neighbour
+          extrapolation.
+        - The input will be reflected in the time/energy domain as
+          symmetry about 0 is assumed.
+
+        If for whatever reason this is not appropriate for the data in
+        question, this function should not be used.
         """
 
         # NB: this function is only used by methods in the FileResolution object
@@ -619,7 +702,32 @@ class AbstractSQw(SQwMixins, Observable):
         # reverse the order of the x and y arrays for RectBivariateSpline.
         # RectBivariateSpline does not return complex numbers,
         # so define a new function that combines the real and imaginary parts
-        def data_interpol(t, Q):
+        def data_interpol(t, Q) -> np.ndarray:
+            """
+            Internal function for interpolating complex t & Q.
+
+            Parameters
+            ----------
+            t : numpy.ndarray
+                Time domain.
+            Q : numpy.ndarray
+                Momentum domain.
+
+            Returns
+            -------
+            np.ndarray
+                Interpolated complex t & Q data.
+
+            See Also
+            --------
+            scipy.interpolate.RectBivariateSpline : Interpolation mechanism.
+
+            Notes
+            -----
+            RectBivariateSpline does not return complex numbers, so
+            this function exists to emulate complex interpolation.
+            """
+
             real = RectBivariateSpline(t_array, Q_cropped, np.real(SQw_ift).T)
             imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift).T)
             return (real(t, Q) + 1j * imag(t, Q)).T
@@ -630,33 +738,39 @@ class AbstractSQw(SQwMixins, Observable):
     def dependent_variables_structure(self) -> dict[str, list]:
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
-        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for
-        given indices of self.Q and self.E
-        It also means that:
-        np.shape(self.SQw)=(np.size(self.Q), np.size(self.E))
 
         The purpose of this method is to ensure consistency
         between different readers/methods which create ``SQw`` objects.
 
-        Return
-        ------
-        Dict[str, list]
-            The shape of the SQw dependent variable
+        Returns
+        -------
+        dict[str, list]
+            The shape of the SQw dependent variable.
+
+        Notes
+        -----
+        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for
+        given indices of self.Q and self.E.
+
+        It also means that:
+        np.shape(self.SQw)=(np.size(self.Q), np.size(self.E)).
         """
         return {'SQw': ['Q', 'E']}
 
     @property
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
+        Get restrictions required for computing E & Q.
+
         Captures the current limitations on the energy 'E' and reciprocal
         lattice points 'Q' within the dynamic structure factor ``Observables``.
         If using FFT, then 'E' must be uniform and start at zero, otherwise it
         has no restrictions. 'Q' must be uniform but does not need to start at
         zero.
 
-        Return
-        ------
-        Dict[str, Dict[str, bool]]
+        Returns
+        -------
+        dict[str, dict[str, bool]]
             Dictionary of uniformity restrictions for 'E' and 'Q'.
         """
 
@@ -670,9 +784,8 @@ class AbstractSQw(SQwMixins, Observable):
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
 class SQw(AbstractSQw):
-
     """
-    A class for the total dynamic structure factor
+    A class for the total dynamic structure factor.
 
     Calculation is done in the respective FQt object, and this is
     just a reference to get the correct FQt object.
@@ -684,9 +797,8 @@ class SQw(AbstractSQw):
                              'SQwCoh',
                              'SQw_coh'))
 class SQwCoherent(AbstractSQw):
-
     """
-    A class for the coherent dynamic structure factor
+    A class for the coherent dynamic structure factor.
     """
 
 
@@ -695,7 +807,6 @@ class SQwCoherent(AbstractSQw):
                              'SQwIncoh',
                              'SQw_incoh'))
 class SQwIncoherent(AbstractSQw):
-
     """
-    A class for the incoherent dynamic structure factor
+    A class for the incoherent dynamic structure factor.
     """

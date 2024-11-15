@@ -1,26 +1,27 @@
-"""Factory class for generating observables"""
+"""
+Factory class for generating observables.
+"""
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Callable, Iterable, Type, Union
-    from MDMC.trajectory_analysis.observables.obs import Observable
+from typing import Callable, Iterable
+from MDMC.trajectory_analysis.observables.obs import Observable
 
 
 class ObservableFactory:
 
     """
-    Provides a factory for creating an ``Observable``.  Any module within the
-    observables submodule can be created with a string of the class name, as
-    long as it is a subclass of ``Observable``.
+    Provide a factory for creating an :class:`Observable`.
+
+    Any module within the observables submodule can be created with a
+    string of the class name, as long as it is a subclass of
+    ``Observable``.
     """
 
-    registry: 'dict[str, Observable]' = {}
+    registry: dict[str, Observable] = {}
 
     @classmethod
-    def register(cls, names: 'Union[str, Iterable]') -> 'Callable':
+    def register(cls, names: str | Iterable[str]) -> Callable:
         """
-        A class level decorator for registering Observable classes
+        A class level decorator for registering Observable classes.
 
         The names of the modules with which the Observable is registered
         should be the parameter passed to the decorator.
@@ -28,20 +29,24 @@ class ObservableFactory:
         Parameters
         ----------
         names : str
-            The names of the modules with which the Observable is registered
+            The names of the modules with which the Observable is registered.
 
-        Example
+        Returns
         -------
+        Callable
+            Wrapped class having been added to registry.
+
+        Examples
+        --------
         To register the ``SQw`` class with ``ObservableFactory``:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. code-block:: python
 
-                @ObservableFactory.register('SQw')
-                class SQw(Observable):
+            @ObservableFactory.register('SQw')
+            class SQw(Observable):
         """
 
-        def class_wrapper(wrapped_class: 'Observable') -> 'Callable':
+        def class_wrapper(wrapped_class: Observable) -> Callable:
 
             if isinstance(names, str):
                 cls.registry[names] = wrapped_class
@@ -53,40 +58,40 @@ class ObservableFactory:
         return class_wrapper
 
     @classmethod
-    def create_observable(cls, name: str) -> 'Observable':
+    def create_observable(cls, name: str) -> Observable:
         """
-        Creates an ``Observable`` object from a module name
+        Create an ``Observable`` object from a module name.
 
         The ``Observable`` object must be registered with the
-        ``ObservableFactory``
+        ``ObservableFactory``.
 
         Parameters
         ----------
         name : str
-            The name of the module with which the ``Observable`` is registered
+            The name of the module with which the ``Observable`` is registered.
 
         Returns
         -------
         Observable
-            An ``Observable`` object
+            An ``Observable`` object.
         """
 
         return cls.get_observable(name)()
 
     @classmethod
-    def get_observable(cls, name: str) -> 'Type[Observable]':
+    def get_observable(cls, name: str) -> type[Observable]:
         """
-        Gets an ``Observable`` class from a registry name
+        Get an ``Observable`` class from a registry name.
 
         Parameters
         ----------
         name : str
-            The name of the module with which the ``Observable`` is registered
+            The name of the module with which the ``Observable`` is registered.
 
         Returns
         -------
         cls
-            A subclass of ``Observable``
+            A subclass of ``Observable``.
         """
 
         observable = cls.registry[name]

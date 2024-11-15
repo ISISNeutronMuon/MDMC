@@ -1,38 +1,39 @@
-"""Module for ``Configuration`` and related classes"""
-from typing import TYPE_CHECKING
+"""
+Module for ``Configuration`` and related classes.
+"""
 import weakref
+from collections.abc import Callable
+from typing import Literal, Optional, TYPE_CHECKING
 
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.MD.structures import Atom, Molecule, Structure
 
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Universe
-    from MDMC.MD.structures import Atom, Molecule, Structure
-    from typing import Any, Optional
-    from builtins import function
-
 
 # pylint: disable=abstract-method
 # as __sub__ and scale() are not implemented
 
 
 class AtomCollection:
-
-    """Base class for ``Configurations``"""
+    """
+    Base class for ``Configurations``.
+    """
 
     __slots__ = ('_universe', )
 
     @property
-    def universe(self) -> 'Optional[Universe]':
+    def universe(self) -> Optional['Universe']:
         """
-        Get or set the ``Universe`` in which the ``AtomCollection`` exists
+        Get or set the ``Universe`` in which the ``AtomCollection`` exists.
 
         Returns
         -------
         Universe
             The ``Universe`` in which the ``AtomCollection`` exists, or `None`
-            if it has not been set
+            if it has not been set.
         """
 
         # Call the weakref to return the universe as an object. If the use of
@@ -57,13 +58,12 @@ class AtomCollection:
     @property
     def dimensions(self) -> 'np.ndarray':
         """
-        Get the ``dimensions`` of the ``Universe`` in which the
-        ``AtomCollection`` exists
+        Get the ``dimensions`` of the ``Universe`` in which the ``AtomCollection`` exists.
 
         Returns
         -------
-        array : numpy.ndarray
-            The ``dimensions`` of the ``Universe``
+        snumpy.ndarray
+            The ``dimensions`` of the ``Universe``.
         """
 
         return self.universe.dimensions
@@ -73,37 +73,38 @@ class AtomCollection:
 class Configuration(AtomCollection):
 
     """
-    A ``Configuration`` stores ``Atom`` objects and their positions and
-    velocities
+    A ``Configuration`` stores ``Atom`` objects and their positions and velocities.
 
     Parameters
     ----------
     *structures
-        Zero or more ``Structure`` objects to be added to the
-        ``Configuration``
-    **settings
-        ``universe`` (``Universe``)
-            The ``Universe`` of the ``Configuration``
+        Zero or more ``Structure`` objects to be added to the ``Configuration``.
+    **settings : dict
+        Extra options.
 
     Attributes
     ----------
     element_set : set
         `set` of the elements in the ``Configuration``
-    universe : Universe or None
-    data : *structures
+    data : tuple[Structure, ...]
+         Tuple of all contained structures.
+
+    Other Parameters
+    ----------------
+    universe : Universe
+        The ``Universe`` of the ``Configuration``.
     """
 
     __slots__ = ('_data', 'element_set', '_structure_list')
 
-    def __init__(self, *structures: 'Structure', **settings: dict):
+    def __init__(self, *structures: Structure, **settings: dict):
 
-        try:
+        if "universe" in settings:
             self.universe = settings['universe']
-        except KeyError:
-            try:
-                self.universe = structures[0].universe
-            except IndexError:
-                self.universe = None
+        elif structures:
+            self.universe = structures[0].universe
+        else:
+            self.universe = None
         self.data = structures
         self.element_set = set(self.element_list)
 
@@ -128,80 +129,77 @@ class Configuration(AtomCollection):
         return False
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
-        Get the `list` of ``Atom`` which belong to the ``Configuration``
+        Get the `list` of ``Atom`` which belong to the ``Configuration``.
 
         Returns
         -------
-        list
-            A `list` of ``Atom``
+        list[Atom]
+            A `list` of all ``Atom`` s in ``Configuration``.
         """
-
         return self.data['atom']
 
     @property
-    def atom_positions(self) -> list:
+    def atom_positions(self) -> list[np.ndarray]:
         """
-        Get the `list` of ``Atom.position`` which belong to the
-        ``Configuration``
+        Get the `list` of ``Atom.position`` which belong to the ``Configuration``.
 
         Returns
         -------
-        list
-            A `list` of ``Atom.position``
+        list[numpy.ndarray]
+            A `list` of ``Atom.position`` s in ``Configuration``.
         """
         return self.data['position']
 
     @property
-    def atom_velocities(self) -> list:
+    def atom_velocities(self) -> list[np.ndarray]:
         """
-        Get the `list` of ``Atom.velocity`` which belong to the
-        ``Configuration``
+        Get the `list` of ``Atom.velocity`` which belong to the ``Configuration``.
 
         Returns
         -------
-        list
-            A `list` of ``Atom.velocity`
+        list[numpy.ndarray]
+            A `list` of ``Atom.velocity` s in ``Configuration``.
         """
 
         return self.data['velocity']
 
     @property
-    def element_list(self) -> list:
+    def element_list(self) -> list[str]:
         """
-        Get the `list` of ``Atom.element.symbol`` which belong to the ``Configuration``
+        Get the `list` of ``Atom.element.symbol`` which belong to the ``Configuration``.
 
         Returns
         -------
-        list
-            A `list` of `str` for the elements
+        list[str]
+            A `list` of `str` of element abbreviations.
         """
 
         return [atom.element.symbol for atom in self.atoms]
 
     @property
-    def molecule_list(self) -> 'list[Molecule]':
+    def molecule_list(self) -> list[Molecule]:
         """
-        Get the `list` of ``Molecule`` which belong to the ``Configuration``
+        Get the `list` of ``Molecule`` which belong to the ``Configuration``.
 
         Returns
         -------
-        list
-            A `list` of ``Molecule``
+        list[Molecule]
+            A `list` of ``Molecule``.
         """
 
         return self.filter_structures(lambda x: x.structure_type == 'Molecule')
 
     @property
-    def structure_list(self) -> 'list[Structure]':
+    def structure_list(self) -> list[Structure]:
         """
-        Get the `list` of ``Structure`` which belong to the ``Configuration``
+        Get the `list` of ``Structure`` which belong to the ``Configuration``.
 
         Returns
         -------
-        list
-            A `list` of ``Structure``
+        list[Structure]
+            A `list` of ``Structure``.
         """
 
         # Call the weakref to return the structures as an object. If the
@@ -212,16 +210,14 @@ class Configuration(AtomCollection):
     @property
     def data(self) -> np.ndarray:
         """
-        Get or set the ``Atom``, ``Atom.position``, and ``Atom.velocity`` which
-        belong to the ``Configuration``
+        Get or set the ``Atom`` properties of the ``Configuration``.
 
         Returns
         -------
         numpy.ndarray
             A structured NumPy ``array`` with ``'atom'``, ``'position'``, and
-            ``'velocity'`` fields
+            ``'velocity'`` fields.
         """
-
         return np.array([(atom, atom.position, atom.velocity)
                          for atom in self._data],
                         dtype=[('atom', 'object'),
@@ -235,14 +231,14 @@ class Configuration(AtomCollection):
         for unit in structures:
             self.add_structure(unit)
 
-    def add_structure(self, structures: 'Structure') -> None:
+    def add_structure(self, structures: Structure) -> None:
         """
-        Adds the ``Atom`` objects from a ``Structure`` to the data
+        Add the ``Atom`` objects from a ``Structure`` to the data.
 
         Parameters
         ----------
         structures : Structure
-            The ``Structure`` to add
+            The ``Structure`` to add.
         """
 
         self.validate_structure(structures)
@@ -252,32 +248,32 @@ class Configuration(AtomCollection):
         self._structure_list.append(weakref.ref(structures))
         self._data.extend(list(structures.atoms))
 
-    def validate_structure(self, structure: 'Structure') -> None:
+    def validate_structure(self, structure: Structure) -> None:
         """
-        Validates the structure by testing that it belongs to the same
-        ``Universe`` as the ``Configuration``
+        Validate the structure by testing that it belongs to the same ``Universe``.
 
         Parameters
         ----------
         structure : Structure
-            The ``Structure`` to validate
+            The ``Structure`` to validate.
 
         Raises
         ------
         AssertionError
             If the ``Structure`` does not belong to the same ``Universe``
-            as the ``Configuration``
+            as the ``Configuration``.
         """
 
         # Test that all structural units are from the same universe
         try:
             assert structure.universe is self.universe
         except AssertionError as error:
-            raise AssertionError(
-                'Atoms are not all from same universe') from error
+            raise AssertionError('Atoms are not all from same universe') from error
 
     def __add__(self, configuration: 'Configuration') -> 'Configuration':
         """
+        Add the structures from the other ``Configuration`` into this one.
+
         Returns
         -------
         Configuration
@@ -300,100 +296,109 @@ class Configuration(AtomCollection):
         Raises
         ------
         NotImplementedError
-            THIS HAS NOT BEEN IMPLEMENTED
+            THIS HAS NOT BEEN IMPLEMENTED.
         """
 
         raise NotImplementedError
 
     def __len__(self) -> int:
         """
+        Get the number of atoms in this ``Configuration``.
+
         Returns
         -------
         int
-            The number of ``Atom`` objects in the ``Configuration``
+            The number of ``Atom`` objects in the ``Configuration``.
         """
 
         return len(self.atoms)
 
-    def __getitem__(self, item: str) -> np.ndarray:
+    def __getitem__(self, item: Literal['atom', 'position', 'velocity']) -> np.ndarray:
         """
+        Parameters
+        ----------
+        item : {'atom', 'position', 'velocity'}
+
+
         Returns
         -------
         numpy.ndarray
-            A NumPy ``array`` containing a slice from the data. The same fields
+            A numpy ``array`` containing a slice from the data. The same fields
             can be accessed with ``'atom'``, ``'position'``, and ``'velocity'``.
         """
 
         return self.data[item]
 
-    def filter_structures(self, predicate: 'function') -> 'list[Structure]':
+    def filter_structures(self, predicate: Callable[[Structure], bool]) -> list[Structure]:
         """
-        Filters the `list` of ``Structures`` using the predicate
+        Filter the `list` of ``Structures`` using the predicate.
 
         Parameters
         ----------
-        predicate : function
-            A function which returns a `bool` when passed a ``Structure``
+        predicate : Callable[[Structure], bool]
+            A function which returns a `bool` when passed a ``Structure``.
 
         Returns
         -------
         list
             A `list` of ``Structures`` which are `True` for the given
-            predicate
+            predicate.
         """
 
         return list(filter(predicate, self.structure_list))
 
-    def filter_atoms(self, predicate: 'function') -> 'list[Atom]':
+    def filter_atoms(self, predicate: Callable[[Atom], bool]) -> list[Atom]:
         """
-        Filters the `list` of ``Atom`` using the predicate
+        Filter the `list` of ``Atom`` using the predicate.
 
         Parameters
         ----------
-        predicate : function
-            A function which returns a `bool` when passed an ``Atom``
+        predicate : Callable[[Atom], bool]
+            A function which returns a `bool` when passed an ``Atom``.
 
         Returns
         -------
         list
-            A `list` of ``Atom`` which are `True` for the given predicate
+            A `list` of ``Atom`` which are `True` for the given predicate.
         """
 
         return list(filter(predicate, self.atoms))
 
-    def filter_by_element(self, element: str) -> 'list[Atom]':
+    def filter_by_element(self, element: str) -> list[Atom]:
         """
-        Filter the ``Configuration`` using an ``element``
+        Filter the ``Configuration`` using an ``element``.
 
         Parameters
         ----------
-        element: str
+        element : str
             An elemental symbol of the same format as is used for creating
-            ``Atom`` objects
+            ``Atom`` objects.
 
         Returns
         -------
         list
-            A `list` of ``Atom`` of the specified ``element``
+            A `list` of ``Atom`` of the specified ``element``.
         """
 
         return self.filter_atoms(lambda x: x.element.symbol == element)
 
-    def scale(self, factor: float, vectors: str = 'positions') -> None:
+    def scale(self,
+              factor: float,
+              vectors: Literal['positions', 'velocities'] = 'positions') -> None:
         """
-        Scales either ``atom_positions`` or ``atom_velocities`` by a factor
+        Scale either ``atom_positions`` or ``atom_velocities`` by a factor.
 
         Parameters
         ----------
         factor : float
-            Factor by which the vector is scaled
-        vectors : str, optional
-            ``'positions'`` (default) or ``'velocities'``
+            Factor by which the vector is scaled.
+        vectors : {'positions', 'velocities'}
+            Vectors to rescale.
 
         Raises
         ------
         NotImplementedError
-            THIS IS NOT IMPEMENTED
+            THIS IS NOT IMPEMENTED.
         """
 
         raise NotImplementedError
@@ -403,19 +408,21 @@ class Configuration(AtomCollection):
 class TemporalConfiguration(Configuration):
 
     """
-    A configuration which has a time associated with it
+    A configuration which has a time associated with it.
 
     Parameters
     ----------
     time : float
-        The time of the ``TemporalConfiguration`` in ``fs``
-    *structure_units
-        Zero or more ``Structures``
+        The time of the ``TemporalConfiguration`` in ``fs``.
+    *structures : Structure
+        Zero or more ``Structures``.
+    **settings : dict
+        Extra options to pass to superclass.
     """
 
     __slots__ = ('time', )
 
-    def __init__(self, time: float, *structures: 'Structure', **settings: dict) -> None:
+    def __init__(self, time: float, *structures: Structure, **settings: dict) -> None:
 
         super().__init__(*structures, **settings)
         self.time = time
@@ -426,7 +433,7 @@ class TemporalConfiguration(Configuration):
         -------
         TemporalConfiguration
             New ``TemporalConfiguration`` from the sum of the
-            ``TemporalConfigurations``
+            ``TemporalConfigurations``.
         """
 
         time = np.mean([self.time, configuration.time])

@@ -110,7 +110,8 @@ pygments_style = None
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy/', None),
                        'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-                       'ase': ('https://wiki.fysik.dtu.dk/ase/', None)}
+                       'ase': ('https://wiki.fysik.dtu.dk/ase/', None),
+                       'periodictable': ('https://periodictable.readthedocs.io/en/latest/', None)}
 
 # -- Options for HTML output -------------------------------------------------
 

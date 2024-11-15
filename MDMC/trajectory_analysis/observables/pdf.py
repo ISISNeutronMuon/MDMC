@@ -1,8 +1,10 @@
-"""Module for calculating the total pair distribution function (PDF)"""
+"""
+Module for calculating the total pair distribution function (PDF).
+"""
 from collections import defaultdict
 from itertools import (chain, combinations_with_replacement,
                        product)
-from typing import Optional
+from typing import Generator, Optional
 import warnings
 
 import numpy as np
@@ -18,40 +20,44 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
     r"""
-    A class for containing, calculating and reading a pair distribution function (PDF).
+    Class for processing a pair distribution function (PDF).
 
-    We derive our definitions for this from the following publication:
-    "A comparison of various commonly used correlation functions for describing total scattering"
-    Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
-    DOI: https://doi.org/10.1107/S0021889800019993
+    We derive our definitions for this from [Keen]_:
 
-    We employ the following mathematical form for the total pair distribution function (``PDF``):
+    We employ the following mathematical form for the total pair
+    distribution function (``PDF``):
 
-        .. math::
+    .. math::
 
-            G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
+        G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
 
-
-        where :math:`c_i` is the number concentration of element :math:`i`,
-        :math:`b_i` is the (coherent) scattering length of element :math:`i`.
-        (This corresponds to equation 8 in the above publication)
-
+    where :math:`c_i` is the number concentration of element :math:`i`,
+    :math:`b_i` is the (coherent) scattering length of element :math:`i`.
+    (This corresponds to equation 8 in the above publication)
 
     The partial pair distribution, :math:`g_{ij}`, is:
 
-        .. math::
+    .. math::
 
-            g_{ij}(r) = \frac{h_{ij}(r)}{4 \pi r^2 \rho_{j} \Delta{r}}
+        g_{ij}(r) = \frac{h_{ij}(r)}{4 \pi r^2 \rho_{j} \Delta{r}}
 
-        where :math:`h_{ij}`` is the histogram of distances of :math:`j` element
-        atoms around atoms of element :math:`i`, with bins of size
-        :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
-        atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
-        :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
-        (This corresponds to equation 10 in the above publication)
+    where :math:`h_{ij}`` is the histogram of distances of :math:`j` element
+    atoms around atoms of element :math:`i`, with bins of size
+    :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
+    atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
+    :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
+    (This corresponds to equation 10 in the above publication)
 
-    The total PDF is contained in ``PDF`` and the partial pair PDFs (if calculated or imported)
-    are contained in ``partial_pdfs``.
+    The total PDF is contained in ``PDF`` and the partial pair PDFs
+    (if calculated or imported) are contained in ``partial_pdfs``.
+
+    References
+    ----------
+    .. [Keen] Keen, D. A.,
+       "A comparison of various commonly used correlation functions for describing total scattering"
+       J. Appl. Cryst. 34 (2001) 172-177.
+
+       DOI: https://doi.org/10.1107/S0021889800019993
     """
 
     def __init__(self):
@@ -72,13 +78,14 @@ class PairDistributionFunction(Observable):
     @property
     def independent_variables(self) -> dict:
         """
-        Get or set the independent variable: this is
-        the atomic separation distance r (in ``Ang``)
+        Get or set the independent variables.
+
+        This is the atomic separation distance r (in ``Ang``).
 
         Returns
         -------
         dict
-            The independent variables
+            The independent variables.
         """
 
         return self._independent_variables
@@ -90,27 +97,29 @@ class PairDistributionFunction(Observable):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variables: these are PDF, the pair distribution function (in ``barn``)
+        Get the dependent variables.
+
+        This is the pair distribution function (in ``barn``).
 
         Returns
         -------
         dict
-            The dependent variables
+            The dependent variables.
         """
 
         return self._dependent_variables
 
-
     @property
     def errors(self) -> dict:
         """
-        Get or set the errors on the dependent variables, the pair distribution function
-        (in ``arb``)
+        Get or set the errors on the dependent variables.
+
+        This is the pair distribution function (in ``barn``)
 
         Returns
         -------
         dict
-            The errors on the ``dependent_variables``
+            The errors on the ``dependent_variables``.
         """
 
         return self._errors
@@ -121,38 +130,46 @@ class PairDistributionFunction(Observable):
 
     def minimum_frames(self, dt: float = None) -> int:
         """
-        The minimum number of ``CompactTrajectory`` frames needed to
-        calculate the ``dependent_variables`` is 1
+        The minimum number of frames needed to calculate the ``dependent_variables``.
+
+        For PDF, this is 1.
 
         Parameters
         ----------
         dt : float, optional
             The time separation of frames in ``fs``, default is `None`, not
-            used
+            used.
 
         Returns
         -------
         int
-            The minimum number of frames
+            The minimum number of frames.
         """
-
         return 1
 
     def maximum_frames(self) -> None:
         """
-        There is no hard limit on the number of frames that can be used, so
-        return None
+        The maximum number of frames needed to calculate the ``dependent_variables``.
 
         Returns
         -------
         None
+            There is no hard limit on the number of frames that can be used, so
+            return None.
         """
 
         return None
 
     @property
     def r(self) -> Optional[float]:
-        """Get or set the value of the atomic separation distance (in ``Ang``)"""
+        """
+        Get or set the value of the atomic separation distance (in ``Ang``).
+
+        Returns
+        -------
+        float
+            The atomic separation distance.
+        """
         try:
             return self.independent_variables['r']
         except KeyError:
@@ -170,7 +187,14 @@ class PairDistributionFunction(Observable):
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
     def PDF(self) -> Optional[float]:
-        """Get the value of the total pair distribution function (in ``barn``)"""
+        """
+        Get the value of the total pair distribution function (in ``barn``).
+
+        Returns
+        -------
+        float
+            The total PDF.
+        """
         try:
             return self._dependent_variables['PDF']
         except KeyError:
@@ -179,19 +203,29 @@ class PairDistributionFunction(Observable):
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
     def PDF_err(self) -> Optional[float]:
-        """Get the errors on the total pair distribution function (in ``barn``)"""
+        """
+        Get the errors on the total pair distribution function (in ``barn``).
+
+        Returns
+        -------
+        float
+            The error on the PDF.
+        """
         try:
             return self.errors['PDF']
         except KeyError:
             return None
 
-
-    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0, **settings: dict):
+    def calculate_from_MD(
+            self,
+            MD_input: CompactTrajectory,
+            verbose: int = 0,
+            **settings: dict
+    ):
         r"""
-        Calculate the pair distribution function, :math:`G(r)`` from a
-        ``CompactTrajectory``
+        Calculate the pair distribution function, :math:`G(r)` from a ``CompactTrajectory``.
 
-        The partial pair distribution for a pair i-j, :math:`g_{ij}`, is:
+        The partial pair distribution (from __) for a pair i-j, :math:`g_{ij}`, is:
 
         .. math::
 
@@ -201,13 +235,7 @@ class PairDistributionFunction(Observable):
         atoms around atoms of element :math:`i`, with bins of size
         :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
         atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
-        :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
-
-        This corresponds to the equation (8) in the following paper:
-        "A comparison of various commonly used correlation functions for
-         describing total scattering"
-        Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
-        DOI: https://doi.org/10.1107/S0021889800019993
+        :math:`G(0) = -\sum\limits_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
 
         The total pair distribution function (``pdf.PDF``) has the form:
 
@@ -231,94 +259,97 @@ class PairDistributionFunction(Observable):
         Parameters
         ----------
         MD_input : CompactTrajectory
-             A single ``CompactTrajectory`` object.
-        verbose: int
+            A single ``CompactTrajectory`` object.
+        verbose : int
             Verbose print settings. Not currently implemented for PDF.
         **settings
-            n_frames : int
-                The number of frames from which the pdf and its error are
-                calculated. These frames are selected uniformly, and the step is taken to be
-                n_frames / total number of frames rounded to the nearest positive integer.
-                If this is not passed, 1% of the total number of frames are used
-                (rounded up to the nearest positive integer).
-            use_average : bool
-                Optional parameter. If set to True then the mean value for PDF is
-                calculated across selected frames from the trajectory. Also, the errors
-                are set to the standard deviation calculated over the multiple frames.
-                If set to False (default), only the last frame of the trajectory is used and
-                n_frames will be ignored.
-            subset : list of tuples
-                The subset of element pairs from which the PDF is calculated.
-                This can be used to calculate the partial PDFs of a
-                multicomponent system. If this is not passed, all combinations
-                of elements are used i.e. the PDF is the total PDF.
-            b_coh : dict
-                A dictionary containing coherent scattering length values for one or more elements.
-                This can be used to calculate the PDF of a system where one or more elements
-                has a coherent scattering length different from the coherent scattering lengths
-                from periodictable.
-            r_min : float
-                The minimum ``r`` (atomic separation) in Angstrom for which the PDF will be
-                calculated. If this, ``r_max``, and ``r_step`` are passed then
-                these will create a range for the independent variable ``r``,
-                which will overwrite any ``r`` which has previously been
-                defined. This cannot be passed if ``r`` is passed.
-            r_max : float
-                The maximum ``r`` (atomic separation) in Angstrom for which the PDF will be
-                calculated. If this, ``r_min``, and ``r_step`` are passed then
-                these will create a range for the independent variable ``r``,
-                which will overwrite any ``r`` which has previously been
-                defined. This cannot be passed if ``r`` is passed.
-            r_step : float
-                The step size of ``r`` (atomic separation) for which the PDF
-                will be calculated. If this, ``r_min``, and ``r_max`` are passed
-                then these will create a range for the independent variable
-                ``r``, which will overwrite any ``r`` which has previously been
-                defined. This cannot be passed if ``r`` is passed.
-            r : numpy.ndarray
-                The uniform ``r`` values in Angstrom for which the PDF will be calculated.
-                This cannot be passed if ``r_min``, ``r_max``, and ``r_step``
-                are passed.
-            dimensions : array-like
-                A 3 element `array-like` (`list`, `tuple`) with the dimensions
-                of the ``Universe`` in Angstrom.
+            Extra options.
 
+        Other Parameters
+        ----------------
+        n_frames : int
+            The number of frames from which the PDF and its error are
+            calculated. These frames are selected uniformly, and the
+            step is taken to be n_frames / total number of frames
+            rounded to the nearest positive integer.
+
+            If this is not passed, 1% of the total number of frames
+            are used (rounded up).
+        use_average : bool
+            If set to `False` (default), only the last frame of the
+            trajectory is used and n_frames will be ignored.
+
+            If set to `True` then the mean value for PDF is calculated
+            across selected frames from the trajectory. Also, the
+            errors are set to the standard deviation calculated over
+            the multiple frames.
+        subset : list of tuples
+            The subset of element pairs from which the PDF is calculated.
+
+            This can be used to calculate the partial PDFs of a
+            multicomponent system. If this is not passed, all combinations
+            of elements are used i.e. the PDF is the total PDF.
+        b_coh : dict
+            A dictionary containing coherent scattering length values
+            for one or more elements.
+
+            This can be used to calculate
+            the PDF of a system where one or more elements has a
+            coherent scattering length different from the coherent
+            scattering lengths from ``periodictable``.
+        r_min : float
+            The minimum ``r`` (atomic separation) in Angstrom for
+            which the PDF will be calculated.
+        r_max : float
+            The maximum ``r`` (atomic separation) in Angstrom for
+            which the PDF will be calculated.
+        r_step : float
+            The step size of ``r`` (atomic separation) for which the PDF
+            will be calculated.
+        r : numpy.ndarray
+            The uniform ``r`` values in Angstrom for which the PDF
+            will be calculated.
+        dimensions : array-like
+            A 3 element `array-like` (`list`, `tuple`) with the
+            dimensions of the ``Universe`` in Angstrom.
+
+        Notes
+        -----
+        If this, ``r_min``, ``r_max``, and ``r_step`` are passed then these
+        will create a range for the independent variable ``r``,
+        which will overwrite any ``r`` which has previously been
+        defined. These cannot be passed if ``r`` is passed.
 
         Examples
         --------
         To calculate the O-O partial PDF from a simulation of water, use the
         subset keyword:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. code-block:: python
 
             pdf.calculate_from_MD(trajectory, subset=[(O, O)])
 
         To calculate the sum of the H-O and O-O partial PDFs:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. code-block:: python
 
             pdf.calculate_from_MD(trajectory, subset=[(O, O), (H, O)])
 
         To calculate the total PDF for sodium chloride with 37Cl:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. code-block:: python
 
             pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08})
 
         To calculate the total PDF for r values of [1., 2., 3., 4.]:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. code-block:: python
 
             pdf.calculate_from_MD(trajectory, r=[1., 2., 3., 4.])
 
         To calculate the total PDF over an average of 5 frames:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. code-block:: python
 
             pdf.calculate_from_MD(trajectory, use_average=True, n_frames=5)
         """
@@ -354,15 +385,15 @@ class PairDistributionFunction(Observable):
 
     def _calculate_partial_pdfs(self, trajectory: CompactTrajectory) -> None:
         """
-        Calculate the partial PDFs for each partial pairing
+        Calculate the partial PDFs for each partial pairing.
 
         This uses equation (8) in the paper with an additional normalisation factor
         to achieve proper normalisation behaviour.
 
         Parameters
         ----------
-        trajectory: CompactTrajectory
-            The sliced up trajectory to be used to calculate PDFs
+        trajectory : CompactTrajectory
+            The sliced up trajectory to be used to calculate PDFs.
         """
 
         # Calculate histograms for each frame in trajectory
@@ -387,9 +418,13 @@ class PairDistributionFunction(Observable):
 
     def _calculate_total_pdf(self) -> None:
         """
-        Calculate the total pdf from the partial pairs
-        This function calculates the total PDF in accordance with equation (10)
-        This calculation is done in-place
+        Calculate the total pdf from the partial pairs.
+
+        This function calculates the total PDF in accordance with equation (10).
+
+        Notes
+        -----
+        This calculation is done in-place.
         """
         total_number_of_particles = np.sum(list(self.numbers_of_atoms.values()))
         self._dependent_variables['PDF'] = np.zeros_like(self.r)
@@ -413,28 +448,34 @@ class PairDistributionFunction(Observable):
 
             self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
 
-
-    def _slice_trajectory(self, trajectory: CompactTrajectory, **settings: dict) \
-            -> CompactTrajectory:
+    def _slice_trajectory(
+            self,
+            trajectory: CompactTrajectory,
+            **settings: dict
+    ) -> CompactTrajectory:
         """
-        Slice the trajectory into frames used to calculate an average total PDF
+        Slice the trajectory into frames used to calculate an average total PDF.
 
         Parameters
         ----------
-        trajectory: CompactTrajectory
-            The trajectory to slice
-        settings: dict
-            A dictionary of kwargs used for the pdf calculation
-            n_frames : int
-                The number of frames from which the pdf and its error are
-                calculated. These frames are selected uniformly, and the step is taken to be
-                n_frames / total number of frames rounded to the nearest positive integer.
-                If this is not passed, 1% of the total number of frames are used
-                (rounded up to the nearest positive integer).
+        trajectory : CompactTrajectory
+            The trajectory to slice.
+        **settings : dict
+            A dictionary of kwargs used for the pdf calculation.
+
         Returns
         -------
         CompactTrajectory
-            The slices of the trajectory (selected frames) to use
+            The slices of the trajectory (selected frames) to use.
+
+        Other Parameters
+        ----------------
+        n_frames : int
+            The number of frames from which the pdf and its error are
+            calculated. These frames are selected uniformly, and the step is taken to be
+            n_frames / total number of frames rounded to the nearest positive integer.
+            If this is not passed, 1% of the total number of frames are used
+            (rounded up to the nearest positive integer).
         """
         # np.max ensures that n_frames is at least 1 (relevant if total_n_frames < 100)
         total_n_frames = len(trajectory)
@@ -447,37 +488,36 @@ class PairDistributionFunction(Observable):
                       else ((total_n_frames - 1) // n_frames) + 1)
         return trajectory[0:total_n_frames:frame_step]
 
-
     def _parse_apply_MD_settings(self, trajectory: CompactTrajectory, settings: dict) -> None:
         """
-        Parses the MD settings and applies them to the class
+        Parse the MD settings and apply them to the class.
 
         This includes setting:
-            - the number of evenly spaced frames for which the ``PDF`` will be
-              averaged
-            - the partial pairs for which ``PDF`` will be calculated
-            - the elements involved in the ``PDF``
-            - the weights for each element
-            - the volume of the universe
-            - the independent variables (``r``)
-        and slicing the trajectory as requested by the user
+
+        - the number of evenly spaced frames for which the ``PDF`` will be
+          averaged.
+        - the partial pairs for which ``PDF`` will be calculated.
+        - the elements involved in the ``PDF``.
+        - the weights for each element.
+        - the volume of the universe.
+        - the independent variables (``r``).
+        - slicing the trajectory as requested by the user
 
         Parameters
         ----------
-        trajectory: CompactTrajectory
-            A `CompactTrajectory` object to be used for the PDF calculations
-
+        trajectory : CompactTrajectory
+            A `CompactTrajectory` object to be used for the PDF calculations.
         settings : dict
-            A `dict` of settings to be parsed
+            A `dict` of settings to be parsed.
 
         Raises
         ------
         ValueError
             If ``n_frames`` is less than 1 or greater than the number of frames
-            in the ``CompactTrajectory``
+            in the ``CompactTrajectory``.
         TypeError
             If ``r`` is in settings as well any of ``r_min``, ``r_max``, and
-            ``r_step``
+            ``r_step``.
 
         Warnings
         --------
@@ -542,20 +582,35 @@ class PairDistributionFunction(Observable):
 
         self._dependent_variables = {}
 
-
     def _calculate_histogram(self, trajectory: CompactTrajectory) -> None:
         """
-        Partitions the atomic positions into regions where they are within
-        ``r_max`` from all other atoms
+        Partition the atomic positions into regions of ``r_max`` from other atoms.
+
+        Parameters
+        ----------
+        trajectory : CompactTrajectory
+            A `CompactTrajectory` object to be used for the PDF calculations.
         """
         def get_component_lengths(universe_dim: float) -> np.ndarray:
             """
-            Use ``r`` values for each component that are at least as big as
-            ``r_max``, but that are a factor of the dimensions
+            Get maximum lengths as limited by ``Universe``.
+
+            Use ``r`` values for each component that is at least as big as
+            ``r_max``, but that is a factor of the dimensions.
 
             When ``r > r_max``, some atom pairs within each partition will have
             separations which will not be histogrammed (as they are
-            ``> r_max``), however this is unavoidable
+            ``> r_max``), however this is unavoidable.
+
+            Parameters
+            ----------
+            universe_dim : float
+                Maximum dimension of universe.
+
+            Returns
+            -------
+            numpy.ndarray
+                Maximum component length.
             """
 
             r_max = np.max(self.independent_variables['r'])
@@ -570,7 +625,7 @@ class PairDistributionFunction(Observable):
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
         partitions = self._partition(trajectory,
-                                    part_comps)
+                                     part_comps)
         # Get the partition_indexes and the pairs of partitions. As well as
         # calculating atom pairs within a partition, each partition will have 26
         # neighbors for which atom pairs must be calculated.
@@ -584,9 +639,10 @@ class PairDistributionFunction(Observable):
             elem_A, elem_B = partial_string
 
             # And here we iterate over possible pairs of neighbouring partitions
-            for part1, part2 in partition_pair_indexes + [(x,x) for x in partition_indexes]:
+            for part1, part2 in partition_pair_indexes + [(x, x) for x in partition_indexes]:
                 distance_squared = self._calculate_squared_distances(elem_A, elem_B,
-                                                  part1, part2, partitions)
+                                                                     part1, part2,
+                                                                     partitions)
                 if distance_squared is not None:
                     histogram, _ = np.histogram(distance_squared, bins=bin_edges_squared)
                     self.partial_pdfs[partial_string] += histogram
@@ -594,13 +650,43 @@ class PairDistributionFunction(Observable):
             if elem_A != elem_B:
                 for part1, part2 in partition_pair_indexes:
                     distance_squared = self._calculate_squared_distances(elem_B, elem_A,
-                                                    part1, part2, partitions)
+                                                                         part1, part2,
+                                                                         partitions)
                     if distance_squared is not None:
                         histogram, _ = np.histogram(distance_squared, bins=bin_edges_squared)
                         self.partial_pdfs[partial_string] += histogram
 
-    def _calculate_squared_distances(self, elem1: str, elem2: str,
-                                     part1: tuple, part2: tuple, partitions: dict):
+    def _calculate_squared_distances(
+            self,
+            elem1: str,
+            elem2: str,
+            part1: tuple,
+            part2: tuple,
+            partitions: dict
+    ) -> float:
+        """
+        Calculate square distances between 2 atoms.
+
+        Parameters
+        ----------
+        elem1 : str
+            Atom 1.
+        elem2 : str
+            Atom 2.
+        part1 : tuple
+            Position 1.
+        part2 : tuple
+            Position 2.
+        partitions : dict
+            Dictionary of atomic positions as returned by
+            :meth:`_partition`.
+
+        Returns
+        -------
+        float
+            Distance squared between two atoms.
+        """
+
         distance_squared = None
         array1 = partitions[elem1][part1]
         array2 = partitions[elem2][part2]
@@ -609,52 +695,45 @@ class PairDistributionFunction(Observable):
 
         n_at_array1 = len(array1)
         n_at_array2 = len(array2)
-        array1 = array1.reshape(1,n_at_array1,3)
-        array2 = array2.reshape(n_at_array2,1,3)
+        array1 = array1.reshape(1, n_at_array1, 3)
+        array2 = array2.reshape(n_at_array2, 1, 3)
         difference = array1 - array2
         # this calculated the difference in coordinates between every atom
         # in array1 and every element in array2
         for dim in range(3):
-            temp_array = difference[:,:,dim]
+            temp_array = difference[:, :, dim]
             box_side = abs(self.universe_dimensions[dim])
             # Correct for periodic boundary conditions
             crit1 = np.where(temp_array > 0.5*box_side)
             crit2 = np.where(temp_array < -0.5*box_side)
             temp_array[crit1] -= box_side
             temp_array[crit2] += box_side
-            difference[:,:,dim] = temp_array
+            difference[:, :, dim] = temp_array
 
-        if elem1==elem2 and np.all(part1 == part2):
-            temp = np.sum(difference**2, axis = 2)
+        if elem1 == elem2 and np.all(part1 == part2):
+            temp = np.sum(difference**2, axis=2)
             temp = np.triu(temp, k=1)
             # now the array contains only the part above the diagonal
             # and this way we avoid double counting.
             distance_squared = temp.ravel()
         else:
-            distance_squared = np.sum(difference**2, axis = 2).ravel()
+            distance_squared = np.sum(difference**2, axis=2).ravel()
 
         return distance_squared
 
-
     def _partition(self, trajectory: CompactTrajectory, part_comps: np.ndarray) -> dict:
         """
-        Partitions the atomic positions into paritions of dimensions specified
-        by ``part_comps``
+        Partition atomic positions into regions of dimensions specified by ``part_comps``.
 
-        ``Atom`` objects are grouped in partitions by ``Atom.element.symbol``
+        ``Atom`` objects are grouped in partitions by ``Atom.element.symbol``.
 
         Parameters
         ----------
-        positions : numpy.ndarray
-            the full CompactTrajectory.positions array, with the
-            shape = (num_time_steps, num_atoms, 3)
-        element_list : list
-            A `list` of `str` with the same length as ``positions``. Each `str`
-            specifies the ``Atom.element.symbol`` for the corresponding index in
-            ``positions``.
+        trajectory : CompactTrajectory
+            The CompactTrajectory containing atoms and positions arrays.
         part_comps : numpy.ndarray
             A 3 element array specifying the length of each component for all
-            partitions
+            partitions.
 
         Returns
         -------
@@ -693,16 +772,18 @@ class PairDistributionFunction(Observable):
 
     def _get_partition_pairs(self, partition_components: np.ndarray) -> list[tuple]:
         """
-        Calculates which partitions are neighbours and pairs them. This includes
-        partitions that are neighbours due to periodic boundary conditions.
+        Calculate neighbouring partitions and pair them.
+
+        This includes partitions that are neighbours due to periodic
+        boundary conditions.
 
         Parameters
         ----------
         partition_components : numpy.ndarray
             3 element ``array`` of `float`, where each `float` is the length of
             one component of a partition. For example (1., 2., 3.) would mean
-            that every component was length 1. in the x direction, 2. in the y
-            direction, and 3. in the z direction.
+            that every component was length ``1.`` in the x direction,
+            ``2.`` in the y direction, and ``3.`` in the z direction.
 
         Returns
         -------
@@ -711,7 +792,6 @@ class PairDistributionFunction(Observable):
             are 3 element arrays with the indexes of the partition. Each pair of
             partitions are neighbours.
         """
-
         p_indexes = self._calculate_partition_indexes(partition_components)
         max_indices = (self.universe_dimensions
                        / partition_components).astype('int32') - 1
@@ -730,56 +810,75 @@ class PairDistributionFunction(Observable):
 
         return pairs
 
-    def _calculate_partition_indexes(self, partition_components: np.ndarray) -> 'product[tuple]':
-        return product(*map(np.arange, (self.universe_dimensions
-                                        / partition_components).astype('int32'))
+    def _calculate_partition_indexes(
+            self, partition_components: np.ndarray
+    ) -> Generator[tuple, None, None]:
+        """
+        Compute the partition indices.
+
+        Parameters
+        ----------
+        partition_components : numpy.ndarray
+            3 element ``array`` of `float`, where each `float` is the length of
+            one component of a partition. For example (1., 2., 3.) would mean
+            that every component was length ``1.`` in the x direction,
+            ``2.`` in the y direction, and ``3.`` in the z direction.
+
+        Returns
+        -------
+        itertools.product[tuple[float, float, float]]
+            Generator of evenly spaced grid-points in ``Universe``.
+        """
+        return product(*map(np.arange,
+                            (self.universe_dimensions / partition_components).astype('int32'))
                        )
 
     @staticmethod
     def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
         """
-        Sets the weights for each element
+        Set the weights for each element.
 
         Uses any scattering lengths passed in b_coh, but defaults to values from
-        the imported periodictable module.
+        the imported :any:`periodictable` module.
 
         Parameters
         ----------
         unique_elements : list of str
-            Where each `str` specifies an element
+            Where each `str` specifies an element.
         b_coh : dict
-            ``(element:b_c)`` where ``element`` is a `str` specifying an element
+            ``{element: b_c}`` where ``element`` is a `str` specifying an element
             occuring in ``unique_elements``, and ``b_c`` is the weight (coherent
-            scattering length) to be set for that element
+            scattering length) to be set for that element.
 
         Returns
         -------
         dict
-            ``(element:weight)`` where ``element`` is a `str` and ``weight`` is
-            the corresponding weight
+            ``{element: weight}`` where ``element`` is a `str` and ``weight`` is
+            the corresponding weight.
         """
-
-        return {element: b_coh.get(element, periodictable.elements.symbol(element).neutron.b_c\
-            if periodictable.elements.symbol(element).neutron.b_c is not None else 0) for element
-                in unique_elements}
+        elem_getter = periodictable.elements.symbol
+        return {element: b_coh.get(element, elem_getter(element).neutron.b_c
+                                   if elem_getter(element).neutron.b_c is not None
+                                   else 0)
+                for element in unique_elements}
 
     @staticmethod
     def _set_numbers(unique_elements: list[str], element_list: list[str]) -> dict:
         """
-        Sets the number of atoms of each element
+        Set the number of atoms of each element.
 
         Parameters
         ----------
         unique_elements : list of str
-            Where each `str` specifies an element
+            Where each `str` specifies an element.
         element_list : list of str
-            A `list` of the elements for every ``Atom`` in the ``CompactTrajectory``
+            A `list` of the elements for every ``Atom`` in the ``CompactTrajectory``.
 
         Returns
         -------
         dict
-            ``(element:number)`` where ``element`` is a `str` and ``number`` is
-            the number of atoms of the that element in the ``element_list``
+            ``{element: number}`` where ``element`` is a `str` and ``number`` is
+            the number of atoms of the that element in the ``element_list``.
         """
 
         return {element: element_list.count(element) for element
@@ -788,25 +887,26 @@ class PairDistributionFunction(Observable):
     @property
     def dependent_variables_structure(self) -> dict[str, list]:
         """
-        The shape of the 'PDF' dependent variable in terms of 'r'':
-        np.shape(self.PDF)=(np.size(self.r))
+        The shape of the 'PDF' dependent variable in terms of 'r'.
 
-        Return
-        ------
-        dict
-            The shape of the PDF dependent variable
+        Where ``np.shape(self.PDF) == (np.size(self.r))``.
+
+        Returns
+        -------
+        dict[str, list[str]]
+            The shape of the PDF dependent variable.
         """
         return {'PDF': ['r']}
 
     @property
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
-        Defines the current limitations on the atomic separation distance 'r'
-        of the ``PairDistributionFunction`` ``Observable.
+        Define the current limitations on the atomic separation distance 'r'.
+
         The requirement is that 'r' must be uniform, but it does not have to start at zero.
 
-        Return
-        ------
+        Returns
+        -------
         dict[str, dict[str, bool]]
             Dictionary of uniformity restrictions for 'r'.
         """
