@@ -537,6 +537,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         with open(self.trajectory_file.name, 'rb') as file_handler:
             file_generator = _make_gen(file_handler.raw.read)
             line_count = sum( buf.count(b'\n') for buf in file_generator )
+
+        if line_count == 0:
+            raise IOError("Trajectory file empty, run may have failed"
+                          " or run length may be less than dump frequency.")
+
         # And header_size will tell us how many lines per frame
         # are added on top of the atom positions
         header_size = 0
