@@ -2,19 +2,21 @@
 
 import os
 from concurrent.futures import ThreadPoolExecutor
-from typing import Generator, List
+from itertools import islice
+from typing import Iterable, TypeVar
+
+
+T = TypeVar('T')
 
 
 def create_executor() -> ThreadPoolExecutor:
     """
-    Creates a ThreadPoolExecutor with the
-    relevant number of workers (according to
-    the number of cores specified).
+    Create a ``ThreadPoolExecutor`` with the relevant number of workers.
 
     Returns
     -------
     ThreadPoolExecutor
-        A thread pool executor with max_workers=`OMP_NUM_THREADS`
+        A thread pool executor with max_workers=`OMP_NUM_THREADS` or 1 if not set.
     """
 
     # we use a ThreadPoolExecutor as most of the concurrent operations
@@ -24,37 +26,33 @@ def create_executor() -> ThreadPoolExecutor:
     return ThreadPoolExecutor(max_workers=num_cores)
 
 
-def core_batch(generator: Generator) -> Generator[List, None, None]:
+def core_batch(generator: Iterable[T]) -> Iterable[tuple[T, ...]]:
     """
-    Turn a generator into a new generator that yields in batches according
-    to the number of available cores, `OMP_NUM_THREADS`.
-
-    Example:
-    >>> core_batch((i for i in range (10))
-    on 1 core produces [0], [1], [2], [3], [4], [5], [6], [7], [8], [9]
-    on 4 cores produces [0, 1, 2, 3], [4, 5, 6, 7], [8, 9].
+    Batch generator according to the number of available cores, `OMP_NUM_THREADS`.
 
     Parameters
     ----------
-    generator: Generator
+    generator : Iterable[T]
         The generator to batch.
 
-    Returns
-    -------
-    Generator
-        A generator which iterates in batches of size `OMP_NUM_THREADS`.
-    """
+    Yields
+    ------
+    tuple[T]
+        Batches of size `OMP_NUM_THREADS`.
 
+    See Also
+    --------
+    itertools.batched : Standard implementation from 3.12.
+
+    Examples
+    --------
+
+        >>> core_batch(range(10))
+        on 1 core produces [0], [1], [2], [3], [4], [5], [6], [7], [8], [9]
+        on 4 cores produces [0, 1, 2, 3], [4, 5, 6, 7], [8, 9].
+    """
     num_cores = int(os.environ.get("OMP_NUM_THREADS", 1))
 
-    generator_not_exhausted = True
-
-    while generator_not_exhausted:
-        batch = []
-        for _ in range(num_cores):
-            try:
-                batch.append(next(generator))
-            except StopIteration:
-                generator_not_exhausted = False
-                break
+    iterator = iter(generator)
+    while batch := tuple(islice(iterator, num_cores)):
         yield batch
