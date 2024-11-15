@@ -14,19 +14,28 @@ otherwise, please do not hesitate to ask us questions about this.
 The following installation instructions will enable MDMC to run using the Docker
 container. This will allow molecular visualization using the :code:`'X3DOM'`
 viewer, which displays within a Jupyter notebook (which is automatically started
-by the Docker container). However, to use the external :code:`'ASE'` viewer for
-molecular visualization, X11 forwarding must additionally be enabled **before**
-the instructions below are followed. The difference between
-these viewers is explained in the
-`Molecular Visualization <../use-MDMC/notebooks/molecular-visualization.ipynb>`__
-tutorial. Instructions on how to enable X11 forwarding are in
-:ref:`x11-forwarding-label`.  X11 forwarding occurs by default on Linux, so
-on that platform no additional steps are required.
+by the Docker container).
 
-As MDMC is currently private, Github credentials are required for access. This is via a personal access token that you can generate on Github.com. `Instructions are here <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`, or short instructions are the following:
+.. warning::
+
+    To use the external :code:`'ASE'` viewer for
+    molecular visualization, X11 forwarding must additionally be enabled **before**
+    the instructions below are followed.
+
+    The difference between these viewers is explained in the
+    `Molecular Visualization <../use-MDMC/notebooks/molecular-visualization.ipynb>`__
+    tutorial.
+
+.. note::
+
+    Instructions on how to enable X11 forwarding are in
+    :ref:`x11-forwarding-label`.  X11 forwarding occurs by default on
+    Linux, so on that platform no additional steps are required.
+
+As MDMC is currently private, Github credentials are required for access. This is via a personal access token that you can generate on Github.com. `Instructions are here <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`__, or short instructions are the following:
 
  * Log into Github.com.
- * Go to `https://github.com/settings/tokens <https://github.com/settings/tokens>`.
+ * Go to `https://github.com/settings/tokens <https://github.com/settings/tokens>`__.
  * Click 'Generate new token' and enter your password.
  * In the 'note' field, enter "MDMC access"
  * Let the expiration time be whatever you want (although we highly advise against making it permanent, for user security)
@@ -138,4 +147,3 @@ Linux
 ^^^^^
 As X11 is built-in to Linux, no additional software needs to be installed for
 X11 forwarding.
-
