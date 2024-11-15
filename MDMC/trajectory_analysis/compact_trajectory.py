@@ -187,7 +187,7 @@ class CompactTrajectory:
 
         See Also
         --------
-        CompaceTrajectory._get_dtype : Type getter.
+        CompactTrajectory._get_dtype : Type getter.
         """
         self.dtype = self._get_dtype(bytes_per_number)
         if len(self) > 0:
@@ -308,7 +308,7 @@ class CompactTrajectory:
         Returns
         -------
         ~numpy.ndarray
-            Valocities array.
+            Velocities array.
         """
         return self.velocity
 
@@ -582,7 +582,7 @@ class CompactTrajectory:
         we cannot process the results using the ``CompactTrajectory``
         object, and the validation will return ``False``.
         It is up to the engine facade to decide what to do
-        if ``valideTypes`` returns ``False``.
+        if ``validateTypes`` returns ``False``.
 
         Parameters
         ----------
