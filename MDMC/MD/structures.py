@@ -5,31 +5,32 @@ defined.  All shared behaviour is included within the ``Structure`` base
 class."""
 from __future__ import annotations
 
+import logging
+import re
+import warnings
+import weakref
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
+from contextlib import suppress
 from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count
 from math import gcd
-from typing import Callable, Union, TYPE_CHECKING
-import warnings
-import weakref
-import re
-import logging
-import numpy as np
-from scipy.spatial.transform import Rotation
-import periodictable
+from typing import TYPE_CHECKING, Callable, Union
 
-from MDMC.MD.interactions import Coulombic, BondedInteraction
-from MDMC.common.decorators import repr_decorator, unit_decorator,\
-    unit_decorator_getter
+import numpy as np
+import periodictable
+from scipy.spatial.transform import Rotation
+
 from MDMC.common import units
+from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
+from MDMC.MD.interactions import BondedInteraction, Coulombic
 
 if TYPE_CHECKING:
-    from MDMC.MD.simulation import Universe
     from MDMC.MD.interactions import Interaction, NonBondedInteraction
+    from MDMC.MD.simulation import Universe
 
 
 LOGGER = logging.getLogger(__name__)
@@ -1524,8 +1525,7 @@ def get_reduced_chemical_formula(symbols: 'list[str]',
 
     reduced_symbols_count = OrderedDict()
     # Use keys of OrderedDict to maintain order (and backwards compatibility)
-    for symbol in OrderedDict((symbol, None) for symbol
-                              in reduced_symbols).keys():
+    for symbol in reduced_symbols:
         number = reduced_symbols.count(symbol)
         reduced_symbols_count[symbol] = str(number) if number != 1 else ''
 
@@ -1533,10 +1533,8 @@ def get_reduced_chemical_formula(symbols: 'list[str]',
         reduced_formula = ''
         if 'C' in reduced_symbols_count:
             reduced_formula = 'C' + reduced_symbols_count.pop('C')
-            try:
+            with suppress(KeyError):
                 reduced_formula += 'H' + reduced_symbols_count.pop('H')
-            except KeyError:
-                pass
 
         reduced_formula += ''.join(sorted([symbol + count for symbol, count
                                            in reduced_symbols_count.items()]))

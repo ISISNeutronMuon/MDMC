@@ -1,16 +1,13 @@
 """Module for reading pdb files"""
 # pylint: disable=no-name-in-module
 import itertools
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import numpy as np
 
 from MDMC.MD.interactions import Bond
-from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.structures import Atom
-
-if TYPE_CHECKING:
-    from MDMC.MD.interactions import BondedInteraction
+from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
 
 class ProteinDataBankReader(ConfigurationReader):
@@ -44,13 +41,13 @@ class ProteinDataBankReader(ConfigurationReader):
         # pylint: disable=unused-variable
         # as molecule_id is unused but is part of the standard!
         molecule = {}
-        molecule_id = 0
+        _molecule_id = 0
         for line in self.file:
             record_name = line[0:6]
             if record_name in ("ATOM  ", "HETATM"):
                 # chars 23-26 identify molecule
                 atom_id = int(line[6:12].split()[-1])
-                molecule_id = int(line[22:26].split()[-1])
+                _molecule_id = int(line[22:26].split()[-1])
                 element = line[76:78].split()[-1]
                 current_atom_pos = [float(pos.split()[-1]) for pos in
                                     (line[30:38], line[38:46], line[46:54])]  # xyz positions

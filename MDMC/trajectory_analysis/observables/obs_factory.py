@@ -3,6 +3,7 @@ Factory class for generating observables.
 """
 
 from typing import Callable, Iterable
+
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 

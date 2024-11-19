@@ -2,16 +2,13 @@
 Reads a .cif file into an MDMC molecule, optionally ignoring symmetry data.
 Adapted from https://wiki.fysik.dtu.dk/ase/_modules/ase/io/cif.html#read_cif.
 """
-from typing import TYPE_CHECKING
 
 from ase.io.cif import parse_cif
 
 from MDMC.MD.ase.convert import ASE_to_MDMC
-from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.ase import ASEReader
+from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
-if TYPE_CHECKING:
-    from MDMC.MD import Atom
 
 class CIFReader(ConfigurationReader):
     """

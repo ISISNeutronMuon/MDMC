@@ -1,6 +1,10 @@
 """A module for force field classes."""
-from . import ff
-from . import force_field_factory
-from . import OPLSAA
-from . import SPC
-from . import SPCE
+from . import OPLSAA, SPC, SPCE, ff, force_field_factory
+
+__all__ = [
+    "OPLSAA",
+    "SPC",
+    "SPCE",
+    "ff",
+    "force_field_factory",
+]

@@ -1,7 +1,7 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-from typing import List, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List
 
-from MDMC.MD.structures import Molecule, Atom
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
 if TYPE_CHECKING:
@@ -80,7 +80,7 @@ class PackmolPDBReader(ConfigurationReader):
             'atom_position': tuple(float(pos) for pos in [line[30:38],
                                                           line[38:46],
                                                           line[46:54]]),
-            'element_symbol': line[76:78].split()[-1]
+            'element_symbol': line[76:78].split()[-1],
         }
         return record
 

@@ -14,13 +14,12 @@ This includes:
 These tests exist so that a user can test their installation of MDMC.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from glob import glob
 from importlib import import_module
-import logging
 from os.path import basename, dirname, join
-from typing import Callable, Dict, Optional, Literal
-
+from typing import Callable, Dict, Literal, Optional
 
 LOGGER = logging.getLogger(__name__)
 
@@ -297,7 +296,7 @@ class InstlTestX11Forwarding(InstlTestBase):
     def run(self) -> None:
 
         try:
-            from tkinter import Tk, TclError
+            from tkinter import TclError, Tk
         except ImportError:
             self._success = False
             LOGGER.error('%s %s installation test failed because tkinter could'
@@ -340,9 +339,9 @@ class InstlTestDynamicPlottingDependencies(InstlTestBase):
     def run(self) -> None:
 
         try:
-            import jupyter
-            import matplotlib
-            import ipywidgets
+            import ipywidgets  # noqa: F401
+            import jupyter  # noqa: F401
+            import matplotlib  # noqa: F401
         except ImportError as err:
             self._success = False
             # err.name for an ImportError is the name of the missing library

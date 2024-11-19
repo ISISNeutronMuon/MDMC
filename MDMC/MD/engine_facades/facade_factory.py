@@ -1,10 +1,10 @@
 """Factory class for generating MD engine facades"""
 
 from importlib import import_module
-from inspect import isclass, isabstract, getmembers
+from inspect import getmembers, isabstract, isclass
 from types import ModuleType
-from MDMC.MD.engine_facades.facade import MDEngine
 
+from MDMC.MD.engine_facades.facade import MDEngine
 
 ENGINES = {'lammps_engine': 'LAMMPSEngine',
            'dlpoly_engine': 'DLPOLYEngine'}

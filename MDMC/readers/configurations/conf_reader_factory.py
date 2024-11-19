@@ -4,12 +4,13 @@ from inspect import getmembers, isabstract, isclass
 
 from ase.io.formats import ioformats
 
- # pylint: disable=cyclic-import
- # this is handled!
 import MDMC.readers.configurations
-from MDMC.readers.reader_factory import ReaderFactory
-from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.ase import ASEReader
+from MDMC.readers.configurations.conf_reader import ConfigurationReader
+from MDMC.readers.reader_factory import ReaderFactory
+
+# pylint: disable=cyclic-import
+# this is handled!
 
 
 class ConfigurationReaderFactory(ReaderFactory):

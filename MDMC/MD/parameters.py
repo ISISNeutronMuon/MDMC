@@ -11,18 +11,17 @@ from __future__ import annotations
 
 import ast
 import logging
-import re
-from collections.abc import Iterable
-from itertools import chain, count
 import operator
-from typing import Callable, NoReturn, Union, Any, Optional, TYPE_CHECKING
+import re
 import warnings
 import weakref
+from collections.abc import Iterable
+from itertools import chain, count
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, Optional, Union
 
 import numpy as np
 
-from MDMC.common.decorators import repr_decorator, unit_decorator, \
-    unit_decorator_getter
+from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 
 if TYPE_CHECKING:
     from MDMC.MD.interactions import Interaction
@@ -61,10 +60,7 @@ class Parameter:
         self.ID = self._generate_ID()
         self.name = name + f" (#{self.ID})"
         self.type = name
-        try:
-            self.unit = settings['unit'] if 'unit' in settings else value.unit
-        except AttributeError:
-            self.unit = None
+        self.unit = settings.get('unit', getattr(value, 'unit', None))
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
@@ -509,9 +505,8 @@ class Parameters(dict):
 
         return self.filter(lambda p:
                            value in [getattr(atom, attribute)
-                                     for int in p.interactions
-                                     for atom
-                                     in flatten(int.atoms)])
+                                     for interaction in p.interactions
+                                     for atom in flatten(interaction.atoms)])
 
     def filter_structure(self, structure_name: str) -> Parameters:
         """
@@ -596,9 +591,8 @@ class Parameters(dict):
         """
         if isinstance(x, Parameter):
             return [x]
-        if isinstance(x, list):
-            if all(isinstance(i, Parameter) for i in x):
-                return x
+        if isinstance(x, list) and all(isinstance(i, Parameter) for i in x):
+            return x
 
         raise TypeError("Input into a Parameters object must be either a Parameter "
                         "or a list of Parameters.")

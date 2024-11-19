@@ -6,10 +6,11 @@ for initating ``SolventConfig``. It has a number of private functions for
 finding ``SolventConfig`` subclasses and ``WaterModel`` subclasses which can be
 used as solvents."""
 
+from contextlib import suppress
 from glob import glob
 from importlib import import_module
-from inspect import isclass, isabstract, getmembers
-from os.path import dirname, basename, isfile, join
+from inspect import getmembers, isabstract, isclass
+from os.path import basename, dirname, isfile, join
 
 from MDMC.MD import force_fields
 from MDMC.MD.force_fields.ff import WaterModel
@@ -36,15 +37,13 @@ def _get_water_models():
     for module in modules:
         # try/except for modules which have no subclasses of SolventConfig and
         # so return an empty list
-        try:
+        with suppress(IndexError):
             w_models.append(getmembers(module,
                                        lambda m: (isclass(m)
                                                   and not isabstract(m)
                                                   and issubclass(m,
                                                                  WaterModel)
                                                   ))[0][1])
-        except IndexError:
-            pass
 
     return w_models
 
@@ -99,15 +98,13 @@ def _get_solvent_configs():
     for module in modules:
         # try/except for modules which have no subclasses of SolventConfig and
         # so return an empty list
-        try:
+        with suppress(IndexError):
             s_configs.append(getmembers(module,
                                         lambda m: (isclass(m)
                                                    and not isabstract(m)
                                                    and issubclass(m,
                                                                   SolventConfig)
                                                    ))[0][1])
-        except IndexError:
-            pass
     return {s_config.__name__: s_config for s_config in s_configs}
 
 
@@ -151,7 +148,7 @@ def get_solvent_names():
 
     return list(set(list(WATER_MODELS.keys())
                     + [name.replace('Config', '') for name
-                       in _get_solvent_configs().keys()]))
+                       in _get_solvent_configs()]))
 
 
 SOLVENT_CONFIGS = _get_solvent_configs()

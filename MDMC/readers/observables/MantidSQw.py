@@ -1,7 +1,9 @@
 """Readers for dynamic data"""
 
 import logging
+from contextlib import suppress
 from typing import IO
+
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
@@ -58,10 +60,8 @@ class MantidSQw(SQwReader):
         """Closes variable and detector files after parsing"""
 
         self.file_variables.close()
-        try:
+        with suppress(AttributeError):
             self.file_detectors.close()
-        except AttributeError:
-            pass
 
     def parse(self, **settings: dict) -> None:
         """

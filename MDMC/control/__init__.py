@@ -9,3 +9,5 @@ Control
 
 from .control import Control
 from .plot_results import PlotResults
+
+__all__ = ["Control", "PlotResults"]

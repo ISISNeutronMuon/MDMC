@@ -1,4 +1,10 @@
 """A module for refinement minimizers."""
-from . import MMC, GPR, GPO
-from . import minimizer_abs
-from . import minimizer_factory
+from . import GPO, GPR, MMC, minimizer_abs, minimizer_factory
+
+__all__ = [
+    "GPO",
+    "GPR",
+    "MMC",
+    "minimizer_abs",
+    "minimizer_factory",
+]

@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import islice
 from typing import Iterable, TypeVar
 
-
 T = TypeVar('T')
 
 

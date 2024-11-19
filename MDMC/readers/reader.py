@@ -1,7 +1,6 @@
 """Module for reader abstract class"""
-from typing import IO
-
 from abc import ABC, abstractmethod
+from typing import IO
 
 from MDMC.common.decorators import repr_decorator
 

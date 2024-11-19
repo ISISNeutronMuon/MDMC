@@ -2,7 +2,7 @@
 Contains some utility functions related to pd.DataFrames, including filtering functions.
 """
 
-from typing import overload, Sequence
+from typing import Sequence, overload
 
 import pandas as pd
 
@@ -86,7 +86,7 @@ def filter_dataframe(values: Sequence,
         concat_filtered_dataframe = filter_dataframe(
             values[1:],
             concat_filtered_dataframe,
-            column_names=column_names
+            column_names=column_names,
         )
     return concat_filtered_dataframe.drop_duplicates()
 

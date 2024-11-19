@@ -1,6 +1,7 @@
 """A module for Figure of Merits"""
 
 from abc import ABC, abstractmethod
+
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
@@ -174,10 +175,7 @@ class ObservablePair:
                                       ' origin')
 
         try:
-            if obs.origin == 'MD':
-                other_obs = self.exp_obs
-            else:
-                other_obs = self.MD_obs
+            other_obs = self.exp_obs if obs.origin == 'MD' else self.MD_obs
         except AttributeError:
             other_obs = None
 
@@ -188,7 +186,7 @@ class ObservablePair:
             indep_e_mess = 'Independent variables must be identical'
             assert (obs.independent_variables.keys() ==
                     other_obs.independent_variables.keys()), indep_e_mess
-            for k in obs.independent_variables.keys():
+            for k in obs.independent_variables:
                 assert np.all(obs.independent_variables[k] ==
                               other_obs.independent_variables[k]), indep_e_mess
 

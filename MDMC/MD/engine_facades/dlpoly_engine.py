@@ -7,7 +7,6 @@ the Python wrapper dlpoly-py that can interface with it.
 from __future__ import annotations
 
 import logging
-from abc import ABC
 from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
@@ -16,7 +15,6 @@ import dlpoly.control
 import numpy as np
 from ase import Atom, Atoms
 from ase.io import write
-
 from dlpoly import DLPoly
 from dlpoly.config import Config
 from dlpoly.field import Bond, Field, Molecule, Potential
@@ -46,18 +44,18 @@ POTENTIAL_REF = {
     'HarmonicPotential': 'harm',
     'Buckingham': 'buck',
     'Coulomb': 'coul',
-    'Periodic': 'cos'
+    'Periodic': 'cos',
     }
 BOND_CLASS_REF = {
     'Bond': 'bonds',
     'BondAngle': 'angles',
-    'DihedralAngle': 'dihedrals'
+    'DihedralAngle': 'dihedrals',
     }
 
 
 # Disable pylint issues related to using 'dlpoly' as a name for the attribute
 # pylint: disable=redefined-outer-name
-class DLPOLYAttribute(ABC):
+class DLPOLYAttribute:
     # pylint: disable=too-few-public-methods
     """
     A class which has a ``dlpoly-py`` object as an
@@ -445,10 +443,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             # the next line gives the position of the atom
             pos = read_line_as(f, float)
             # the next line, if it exists, gives the velocity of the atom
-            if level_of_detail > 0:
-                vel = read_line_as(f, float)
-            else:
-                vel = None
+            vel = read_line_as(f, float) if level_of_detail > 0 else None
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
                 _ = read_line_as(f, float)  # this is actually force acting on the atom, never used
@@ -769,7 +764,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             curr_atom = [spec[atm] for parm in disp.atom_types for atm in parm]
             pot = Potential('vdw', [*curr_atom,
                                     POTENTIAL_REF[disp.function.name],
-                                    *map(lambda x: str(x.value.real), disp.parameters.values())
+                                    *map(lambda x: str(x.value.real), disp.parameters.values()),
                                     ])
             out.add_potential(curr_atom, pot)
 
@@ -842,13 +837,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
                 pot = Bond('constraints',
                            ['',
                             *map(str, current_atom),
-                            str(list(bond.parameters.values())[0].value.real)
+                            str(list(bond.parameters.values())[0].value.real),
                             ])
             else:
                 pot = Bond(BOND_CLASS_REF[type(bond).__name__],
                            [POTENTIAL_REF[bond.function.name],
                             *map(str, current_atom),
-                            *map(lambda x: str(x.value.real), bond.parameters.values())
+                            *map(lambda x: str(x.value.real), bond.parameters.values()),
                             ])
             new_molecule.add_potential(current_atom, pot)
 
@@ -1226,7 +1221,7 @@ SYSTEM = {
     'TEMPERATURE': units.Unit('K'),
     'ENERGY': units.Unit('kcal') / units.Unit('mol'),
     'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('katm')
+    'PRESSURE': units.Unit('katm'),
 }
 
 
@@ -1400,7 +1395,7 @@ def convert_unit(value: Union[np.ndarray, float],
             l_sys['ANGLE'] = units.Unit('rad')
 
         expanded_unit = expand_components(unit, units.SYSTEM)
-        system_inv = {unit: property for property, unit in units.SYSTEM.items()}
+        system_inv = {unit: prop for prop, unit in units.SYSTEM.items()}
         # Apply inversion to all components
         unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
                                                         for comp in comp_list],

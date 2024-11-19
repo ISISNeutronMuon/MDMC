@@ -18,8 +18,8 @@ For instance an SQw observable can be instantiated using either of the aliases:
     sqw = observables.DynamicStructureFactor()  # ...is equivalent to this line
 """
 from collections import defaultdict
-from pathlib import Path
 from importlib import import_module
+from pathlib import Path
 
 from . import obs_factory
 
@@ -62,4 +62,4 @@ for name in OBS_NAMES:
 # There is a one to many mapping from classes to names (due to aliases), so
 # merge these and insert them into the module docstring
 OBS_ALIASES = _merge_obs_aliases(OBS_REGISTRY)
-__doc__ = __doc__.replace('DYNAMIC_OBS_ALIASES', '\n'.join(OBS_ALIASES))
+__doc__ = __doc__.replace('DYNAMIC_OBS_ALIASES', '\n'.join(OBS_ALIASES))  # noqa: A001

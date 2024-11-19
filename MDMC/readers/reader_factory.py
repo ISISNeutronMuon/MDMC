@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from importlib import import_module
-from inspect import isclass, isabstract, getmembers, getmodule
+from inspect import getmembers, getmodule, isabstract, isclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class ReaderFactory(ABC):
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m,
-                                                               cls.base_class()
+                                                               cls.base_class(),
                                                                )))
 
         return classes[0][1](file_name)

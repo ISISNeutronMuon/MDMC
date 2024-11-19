@@ -13,12 +13,26 @@ obs_reader
 xml_SQw
 """
 
-from . import LAMPSQw
-from . import LAMPPDF
-from . import MantidSQw
-from . import MDANSESQw
-from . import netCDFSQw
-from . import netCDFPDF
-from . import obs_reader_factory
-from . import obs_reader
-from . import xml_SQw
+from . import (
+    LAMPPDF,
+    LAMPSQw,
+    MantidSQw,
+    MDANSESQw,
+    netCDFPDF,
+    netCDFSQw,
+    obs_reader,
+    obs_reader_factory,
+    xml_SQw,
+)
+
+__all__ = [
+    "LAMPPDF",
+    "LAMPSQw",
+    "MantidSQw",
+    "MDANSESQw",
+    "netCDFPDF",
+    "netCDFSQw",
+    "obs_reader",
+    "obs_reader_factory",
+    "xml_SQw",
+]

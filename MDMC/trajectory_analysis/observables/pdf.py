@@ -1,20 +1,19 @@
 """
 Module for calculating the total pair distribution function (PDF).
 """
-from collections import defaultdict
-from itertools import (chain, combinations_with_replacement,
-                       product)
-from typing import Generator, Optional
 import warnings
+from collections import defaultdict
+from itertools import chain, combinations_with_replacement, product
+from typing import Generator, Optional
 
 import numpy as np
 import periodictable
 
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
@@ -220,7 +219,7 @@ class PairDistributionFunction(Observable):
             self,
             MD_input: CompactTrajectory,
             verbose: int = 0,
-            **settings: dict
+            **settings: dict,
     ):
         r"""
         Calculate the pair distribution function, :math:`G(r)` from a ``CompactTrajectory``.
@@ -441,17 +440,14 @@ class PairDistributionFunction(Observable):
             # Partials of differing elements need to be scaled by 2 when added to total,
             # as only one of the indentical pairs is considered
             # (e.g. for water H-O is added but not O-H)
-            if len(set(partial_name)) == 1:
-                norm_fac = 1.
-            else:
-                norm_fac = 2.
+            norm_fac = 1. if len(set(partial_name)) == 1 else 2.
 
             self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
 
     def _slice_trajectory(
             self,
             trajectory: CompactTrajectory,
-            **settings: dict
+            **settings: dict,
     ) -> CompactTrajectory:
         """
         Slice the trajectory into frames used to calculate an average total PDF.
@@ -560,13 +556,13 @@ class PairDistributionFunction(Observable):
         # independent variable. If one or two are in settings, warn the user
         # that all three are required to set r.
         r_kwargs = ['r_min', 'r_max', 'r_step']
-        r_kwarg_defined = any(r_kw in settings.keys() for r_kw in r_kwargs)
+        r_kwarg_defined = any(r_kw in settings for r_kw in r_kwargs)
         if 'r' in settings:
             self.r = settings.get('r')
             if r_kwarg_defined:
                 raise TypeError('r cannot be passed if r_min, r_max or r_step'
                                 ' are passed')
-        if all(r_kw in settings.keys() for r_kw in r_kwargs):
+        if all(r_kw in settings for r_kw in r_kwargs):
             self.r = np.arange(settings['r_min'],
                                settings['r_max'] + settings['r_step'],
                                settings['r_step'])
@@ -662,7 +658,7 @@ class PairDistributionFunction(Observable):
             elem2: str,
             part1: tuple,
             part2: tuple,
-            partitions: dict
+            partitions: dict,
     ) -> float:
         """
         Calculate square distances between 2 atoms.
@@ -811,7 +807,7 @@ class PairDistributionFunction(Observable):
         return pairs
 
     def _calculate_partition_indexes(
-            self, partition_components: np.ndarray
+            self, partition_components: np.ndarray,
     ) -> Generator[tuple, None, None]:
         """
         Compute the partition indices.
@@ -830,7 +826,7 @@ class PairDistributionFunction(Observable):
             Generator of evenly spaced grid-points in ``Universe``.
         """
         return product(*map(np.arange,
-                            (self.universe_dimensions / partition_components).astype('int32'))
+                            (self.universe_dimensions / partition_components).astype('int32')),
                        )
 
     @staticmethod

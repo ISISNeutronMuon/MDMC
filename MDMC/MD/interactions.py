@@ -2,23 +2,24 @@
 
  ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
 
-from typing import NoReturn, Set, Union, TYPE_CHECKING
+import logging
 import weakref
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from itertools import permutations
 from types import MethodType
-import logging
+from typing import TYPE_CHECKING, NoReturn, Set, Union
 
 import numpy as np
 
-from MDMC.utilities.structures import is_atom
-from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
+from MDMC.MD.interaction_functions import Coulomb
+from MDMC.utilities.structures import is_atom
 
 if TYPE_CHECKING:
-    from MDMC.MD.parameters import Parameters
     from MDMC.MD.interaction_functions import InteractionFunction
+    from MDMC.MD.parameters import Parameters
     from MDMC.MD.simulation import Universe
     from MDMC.MD.structures import Atom
 
@@ -866,10 +867,8 @@ class BondedInteraction(Interaction):
             self._add_interaction_atoms(tpl)
 
             # Add interaction to Universe (pass if no universe exists)
-            try:
+            with suppress(AttributeError):
                 self._add_to_universe(self.universe, tpl)
-            except AttributeError:
-                pass
 
     @property
     def atom_types(self) -> Set[Union[int, None]]:

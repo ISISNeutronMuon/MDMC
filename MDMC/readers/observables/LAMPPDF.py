@@ -1,6 +1,7 @@
 """Reader for pair distribution function data from LAMP's ascii files"""
 
 from typing import TYPE_CHECKING
+
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import PDFReader
@@ -79,7 +80,7 @@ class LAMPPDF(PDFReader):
                 #extract column headers if needed
                 if self.partial_strings is None:
                     self.partial_strings = columns[4:]
-            if i == 3:
+            elif i == 3:
                 #the 4th line contains information on the time-step and number of rows/distances
                 r_array = np.zeros(int(columns[1]))
             elif i > 3:

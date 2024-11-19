@@ -6,10 +6,13 @@ import numpy as np
 import periodictable
 
 from MDMC.common.mathematics import faster_autocorrelation
-from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
-from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
+from MDMC.trajectory_analysis.observables.concurrency_tools import core_batch, create_executor
+from MDMC.trajectory_analysis.observables.fqt import (
+    AbstractFQt,
+    calc_incoherent_scatt_length,
+    calculate_rho,
+)
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.observables.fqt import calc_incoherent_scatt_length
 
 
 @ObservableFactory.register(('IncoherentIntermediateScatteringFunction',
