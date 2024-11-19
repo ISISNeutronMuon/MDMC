@@ -189,7 +189,7 @@ class MinimizerSuite:
 
     timeout = 10000
     n_params = [1, 3, 5, 10]
-    n_steps = [1, 10, 50]
+    n_steps = [5, 10, 50]
 
     #GPR benchmarks are skipped for larger parameter spaces due to its memory use
     gpr_skip_params = list(product([5, 10], n_steps))
