@@ -129,7 +129,7 @@ jobs:
         mypy . --show-error-codes --pretty
 
   benchmark:
-    name: Benchmark this commit against last
+    name: Benchmark
     runs-on: ubuntu-22.04
     needs: build
     
