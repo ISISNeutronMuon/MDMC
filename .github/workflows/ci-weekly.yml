@@ -1,4 +1,4 @@
-name: CI
+name: Weekly
 # contains jobs which run weekly
 
 on:
