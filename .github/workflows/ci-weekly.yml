@@ -1,0 +1,71 @@
+name: Weekly
+# contains jobs which run weekly
+
+on:
+    schedule:
+      - cron: 0 0 * * 0
+    workflow_dispatch:
+    push:
+      branches: ['asv-benchmarking']
+
+jobs:
+    build:
+        name: Build docker container
+        runs-on: ubuntu-22.04
+        # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
+            - name: fetch  # grabs master to compare if Docker build files changed
+              run: git fetch origin master
+    
+            - name: Check and build container
+              env:
+                DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+                BRANCH: ${{ github.head_ref }}
+              run: source .github/scripts/build_container.sh
+
+    benchmark:
+        name: Benchmark
+        runs-on: ubuntu-22.04
+        needs: build
+        
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 2
+        
+        - name: install openmpi headers
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y libopenmpi-dev
+    
+        - name: Install dependencies
+          shell: bash -l {0}
+          run:
+            pip install asv pandas
+    
+        - name: Run benchmarks
+          shell: bash -l {0}
+          run: |
+            set -x
+    
+            # ID this runner
+            asv machine --yes
+    
+            # Run benchmarks for new and previous commits
+            # Exclude the long benchmarks
+            asv run -b '.*_long\(' HEAD^!
+            asv run -b '.*_long\(' HEAD~1^!
+    
+            echo "BENCHMARKS CHANGED FROM MAIN"
+            echo "==============================="
+
+            asv compare --only-changed --split HEAD^ HEAD
+
+            echo "BENCHMARKS RESULTS FOR THIS COMMIT"
+            echo "==============================="
+    
+            python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)

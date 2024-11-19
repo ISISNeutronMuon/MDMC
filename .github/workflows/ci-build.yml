@@ -130,7 +130,7 @@ jobs:
         mypy . --show-error-codes --pretty
 
   benchmark:
-    name: Benchmark this commit against last
+    name: Benchmark
     runs-on: ubuntu-22.04
     needs: build
     
@@ -163,6 +163,12 @@ jobs:
           asv run -b '.*(?<!_long)\(' HEAD^!
           asv run -b '.*(?<!_long)\(' HEAD~1^!
 
+          echo "BENCHMARKS CHANGED FROM MAIN"
+          echo "==============================="
+
           asv compare --only-changed --split HEAD^ HEAD
+
+          echo "BENCHMARKS RESULTS FOR THIS COMMIT"
+          echo "==============================="
 
           python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
