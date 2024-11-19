@@ -159,8 +159,9 @@ jobs:
           asv machine --yes
 
           # Run benchmarks for new and previous commits
-          asv run HEAD^!
-          asv run HEAD~1^!
+          # Exclude the long benchmarks
+          asv run -b '.*(?<!_long)\(' HEAD^!
+          asv run -b '.*(?<!_long)\(' HEAD~1^!
 
           asv compare --only-changed --split HEAD^ HEAD
 

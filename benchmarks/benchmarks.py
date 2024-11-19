@@ -60,6 +60,124 @@ class MockSimulation(Simulation):
     def auto_equilibrate(self, *args, **kwargs):
         self.auto_equilibrated = True
         self.engine.run()
+        
+def setup_controls(n_params, n_steps):
+    """
+    Setup method, to be called by asv before each benchmark is run.
+    Sets up control objects for each minimizer type.
+
+    Parameters
+    ----------
+    n_params: int
+        Number of parameters to use in the benchmark
+
+    n_steps : int
+        Number of steps to run the refinement for in the benchmark
+        
+    Returns
+        -------
+        control_MMC : MDMC.control.Control
+            A control object with MD mocked out and an MMC minimizer
+            
+        control_GPR : MDMC.control.Control
+            A control object with MD mocked out and an GPR minimizer
+            
+        control_GPO : MDMC.control.Control
+            A control object with MD mocked out and an GPO minimizer
+    Examples
+    --------
+    Setup a benchmark with 5 parameters and 100 steps:
+
+        .. highlight:: python
+        .. code-block:: python
+
+        minimizer_suite.setup(5, 100)
+    """
+
+    os.environ["OMP_NUM_THREADS"] = "8"
+    density = 0.0176
+
+    universe = Universe(dimensions=10.)
+
+    Ar = Atom('Ar', charge=0.)
+
+    n_ar_atoms = int(density * np.prod(universe.dimensions))
+
+    universe.fill(Ar, num_struc_units=(n_ar_atoms))
+
+    simulation = MockSimulation(universe,
+                    time_step=10.188949,
+                    temperature=120.,
+                    traj_step=15)
+
+    params = {str(i): np.random.uniform(-1., 1.) for i in range(n_params)}
+
+    interactions = InteractionFunction(params)
+
+    for p in interactions.parameters.values():
+        p.constraints = (-1., 1.)
+
+    _ = Dispersion(universe,
+                        (Ar.atom_type, Ar.atom_type),
+                        cutoff=8.,
+                        vdw_tail_correction=True,
+                        function=interactions)
+
+    data_path = Path(__file__).with_name("data")
+    input_file_path = data_path.joinpath("Well_s_q_omega_Ar_data.xml")
+
+    exp_datasets = [
+        {
+            'file_name':input_file_path.absolute(),
+            'type':'SQw',
+            'reader':'xml_SQw',
+            'weight':1.,
+            'resolution':None
+        }
+    ]
+
+    control_MMC = Control(
+        simulation=simulation,
+        exp_datasets=exp_datasets,
+        fit_parameters=universe.parameters,
+        MD_steps=570,
+        minimizer_type="MMC",
+        n_steps=n_steps
+    )
+
+    control_GPR = Control(
+        simulation=simulation,
+        exp_datasets=exp_datasets,
+        fit_parameters=universe.parameters,
+        MD_steps=570,
+        minimizer_type="GPR",
+        n_steps=n_steps
+    )
+
+    control_GPO = Control(
+        simulation=simulation,
+        exp_datasets=exp_datasets,
+        fit_parameters=universe.parameters,
+        MD_steps=570,
+        minimizer_type="GPO",
+        n_steps=n_steps
+    )
+    
+    return control_MMC, control_GPR, control_GPO
+
+def mock_FoM(self):
+    """
+    Mock figure of merit method.
+    Calculates the sum of the squared parameters in the control
+    object it is mocking.
+    """
+    self.fom = 0
+
+    for v in self.fit_parameters.values():
+        self.fom += v.value ** 2
+
+    return self.fom
+
 
 class MinimizerSuite:
     """
@@ -71,121 +189,16 @@ class MinimizerSuite:
 
     timeout = 10000
     n_params = [1, 3, 5, 10]
-    n_steps = [5, 10, 50, 100]
+    n_steps = [1, 10, 50]
 
     #GPR benchmarks are skipped for larger parameter spaces due to its memory use
     gpr_skip_params = list(product([5, 10], n_steps))
-    
-    #GPO benchmarks are skipped for 100 steps due to its long run time
-    gpo_skip_params = list(product(n_params, [100]))
 
     params = (n_params, n_steps)
     param_names = ["Number of parameters", "Number of steps"]
 
     def setup(self, n_params, n_steps):
-        """
-        Setup method, called by asv before each benchmark is run.
-        Sets up control objects for each minimizer type.
-
-        Parameters
-        ----------
-        n_params: int
-            Number of parameters to use in the benchmark
-
-        n_steps : int
-            Number of steps to run the refinement for in the benchmark
-
-        Examples
-        --------
-        Setup a benchmark with 5 parameters and 100 steps:
-
-            .. highlight:: python
-            .. code-block:: python
-
-            minimizer_suite.setup(5, 100)
-        """
-
-        os.environ["OMP_NUM_THREADS"] = "8"
-        density = 0.0176
-
-        self.universe = Universe(dimensions=10.)
-
-        Ar = Atom('Ar', charge=0.)
-
-        n_ar_atoms = int(density * np.prod(self.universe.dimensions))
-
-        self.universe.fill(Ar, num_struc_units=(n_ar_atoms))
-
-        self.simulation = MockSimulation(self.universe,
-                        time_step=10.188949,
-                        temperature=120.,
-                        traj_step=15)
-
-        params = {str(i): np.random.uniform(-1., 1.) for i in range(n_params)}
-
-        interactions = InteractionFunction(params)
-
-        for p in interactions.parameters.values():
-            p.constraints = (-1., 1.)
-
-        _ = Dispersion(self.universe,
-                           (Ar.atom_type, Ar.atom_type),
-                           cutoff=8.,
-                           vdw_tail_correction=True,
-                           function=interactions)
-
-        data_path = Path(__file__).with_name("data")
-        input_file_path = data_path.joinpath("Well_s_q_omega_Ar_data.xml")
-
-        self.exp_datasets = [
-            {
-                'file_name':input_file_path.absolute(),
-                'type':'SQw',
-                'reader':'xml_SQw',
-                'weight':1.,
-                'resolution':None
-            }
-        ]
-
-        self.control_MMC = Control(
-            simulation=self.simulation,
-            exp_datasets=self.exp_datasets,
-            fit_parameters=self.universe.parameters,
-            MD_steps=570,
-            minimizer_type="MMC",
-            n_steps=n_steps
-        )
-
-        self.control_GPR = Control(
-            simulation=self.simulation,
-            exp_datasets=self.exp_datasets,
-            fit_parameters=self.universe.parameters,
-            MD_steps=570,
-            minimizer_type="GPR",
-            n_steps=n_steps
-        )
-
-        self.control_GPO = Control(
-            simulation=self.simulation,
-            exp_datasets=self.exp_datasets,
-            fit_parameters=self.universe.parameters,
-            MD_steps=570,
-            minimizer_type="GPO",
-            n_steps=n_steps
-        )
-
-    def mock_FoM(self):
-        """
-        Mock figure of merit method.
-        Calculates the sum of the squared parameters in the control
-        object it is mocking.
-        """
-        self.fom = 0
-
-        for v in self.fit_parameters.values():
-            self.fom += v.value ** 2
-
-        return self.fom
+        self.control_MMC, self.control_GPR, self.control_GPO = setup_controls(n_params, n_steps)
 
     #Although the benchmarks don't use n_params, asv will still pass it
     #so it needs to be included as an argument
@@ -211,7 +224,6 @@ class MinimizerSuite:
         self.control_MMC.refine(n_steps=n_steps)
         return self.control_MMC.fom
 
-    @skip_for_params(gpo_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def time_GPO(self, n_params, n_steps):
         """
@@ -219,7 +231,6 @@ class MinimizerSuite:
         """
         self.control_GPO.refine(n_steps=n_steps)
 
-    @skip_for_params(gpo_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def peakmem_GPO(self, n_params, n_steps):
         """
@@ -227,7 +238,6 @@ class MinimizerSuite:
         """
         self.control_GPO.refine(n_steps=n_steps)
 
-    @skip_for_params(gpo_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def track_GPO(self, n_params, n_steps):
         """
@@ -255,6 +265,99 @@ class MinimizerSuite:
     @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def track_GPR(self, n_params, n_steps):
+        """
+        Record FoM calculated by GPR minimizer
+        """
+        self.control_GPR.refine(n_steps=n_steps)
+        return float(self.control_GPR.fom)
+
+class MinimizerSuiteLong:
+    """
+    Suite of asv (https://asv.readthedocs.io/en/latest/) benchmarks
+    Tests the performance of the different minimizers available:
+    MMC, GPO and GPR.
+    Uses a mocked FoM calculation so time spent on MD is not included.
+    Runs benchmarks with more steps that would take too long to run for every PR
+    """
+
+    timeout = 10000
+    n_params = [1, 3, 5, 10]
+    n_steps = [100]
+
+    #GPR benchmarks are skipped for larger parameter spaces due to its memory use
+    gpr_skip_params = list(product([5, 10], n_steps))
+
+    params = (n_params, n_steps)
+    param_names = ["Number of parameters", "Number of steps"]
+
+    def setup(self, n_params, n_steps):
+        self.control_MMC, self.control_GPR, self.control_GPO = setup_controls(n_params, n_steps)
+
+    #Although the benchmarks don't use n_params, asv will still pass it
+    #so it needs to be included as an argument
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def time_MMC_long(self, n_params, n_steps):
+        """
+        Time MMC minimizer
+        """
+        self.control_MMC.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def peakmem_MMC_long(self, n_params, n_steps):
+        """
+        Record peak memory for MMC minimizer
+        """
+        self.control_MMC.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def track_MMC_long(self, n_params, n_steps):
+        """
+        Record FoM calculated by MMC minimizer
+        """
+        self.control_MMC.refine(n_steps=n_steps)
+        return self.control_MMC.fom
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def time_GPO_long(self, n_params, n_steps):
+        """
+        Time GPO minimizer
+        """
+        self.control_GPO.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def peakmem_GPO_long(self, n_params, n_steps):
+        """
+        Record peak memory for GPO minimizer
+        """
+        self.control_GPO.refine(n_steps=n_steps)
+
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def track_GPO_long(self, n_params, n_steps):
+        """
+        Record FoM calculated by GPO minimizer
+        """
+        self.control_GPO.refine(n_steps=n_steps)
+        return float(self.control_GPO.fom)
+
+    @skip_for_params(gpr_skip_params)
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def time_GPR_long(self, num_params, n_steps):
+        """
+        Time GPR minimizer
+        """
+        self.control_GPR.refine(n_steps=n_steps)
+
+    @skip_for_params(gpr_skip_params)
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def peakmem_GPR_long(self, num_params, n_steps):
+        """
+        Record peak memory for GPR minimizer
+        """
+        self.control_GPR.refine(n_steps=n_steps)
+
+    @skip_for_params(gpr_skip_params)
+    @patch.object(Control, "_generate_FoM", mock_FoM)
+    def track_GPR_long(self, n_params, n_steps):
         """
         Record FoM calculated by GPR minimizer
         """
