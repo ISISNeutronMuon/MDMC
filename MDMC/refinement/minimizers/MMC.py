@@ -1,15 +1,15 @@
 """The Metropolis-Hastings minimizer class"""
-from typing import TYPE_CHECKING, Union, Optional
 from pathlib import Path
 from textwrap import dedent
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
-    from MDMC.MD import Parameters
     from MDMC.control import Control
+    from MDMC.MD import Parameters
 
 class MMC(Minimizer):
 

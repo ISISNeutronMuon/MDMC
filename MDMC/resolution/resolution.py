@@ -1,9 +1,7 @@
 """The Resolution abstract base class."""
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    import numpy as np
+import numpy as np
 
 
 class Resolution(ABC):
@@ -13,7 +11,7 @@ class Resolution(ABC):
     # pylint: disable=too-few-public-methods
 
     @abstractmethod
-    def apply(self, FQt: 'np.ndarray', t: 'np.ndarray', Q: 'np.ndarray') -> 'np.ndarray':
+    def apply(self, FQt: np.ndarray, t: np.ndarray, Q: np.ndarray) -> np.ndarray:
         """
         Apply resolution to an FQt array.
 

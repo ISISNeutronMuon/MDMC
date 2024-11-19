@@ -2,8 +2,8 @@
 
 from glob import glob
 from importlib import import_module
-from inspect import isclass, isabstract, getmembers
-from os.path import basename, dirname, join, isfile
+from inspect import getmembers, isabstract, isclass
+from os.path import basename, dirname, isfile, join
 
 from MDMC.MD.force_fields.ff import ForceField
 

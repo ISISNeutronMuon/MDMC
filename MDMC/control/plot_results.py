@@ -1,13 +1,12 @@
 """A module for plotting data and results of a minimization."""
+import logging
+import os
 from abc import ABC, abstractmethod
 
-import os
-import logging
-import numpy as np
-import pandas as pd
 import corner
 import IPython.display
-
+import numpy as np
+import pandas as pd
 from skopt import Optimizer
 
 
@@ -52,8 +51,9 @@ class PlotResults():
                                        acq_func="gp_hedge", acq_optimizer="sampling",
                                          model_queue_size=1)
             if len(self.FoMs) < old_optimizer_min:
-                logging.warning("You have only used %d refinement steps," \
-                      " use a larger number for more meaningful plots.", (len(self.FoMs)))
+                logging.warning("You have only used %d refinement steps,"
+                                " use a larger number for more meaningful plots.",
+                                len(self.FoMs))
         except ValueError as error:
             raise ValueError("Insufficient number of refinement steps,"
                              " please use at least 10.") from error
@@ -253,5 +253,5 @@ class IPythonDataPrinter(DataPrinter):
 
 data_printers = {
     'plaintext': PlaintextDataPrinter,
-    'ipython': IPythonDataPrinter
+    'ipython': IPythonDataPrinter,
 }

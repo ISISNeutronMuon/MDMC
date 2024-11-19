@@ -22,15 +22,16 @@ Mar 2020 release.
 """
 from __future__ import annotations
 
+import logging
+import os
 import warnings
 from collections import defaultdict, namedtuple
+from contextlib import suppress
 from copy import copy
 from itertools import chain, combinations, count, product
-import logging
 from random import randint
 from tempfile import NamedTemporaryFile
-from typing import Union, Any
-import os
+from typing import Any, Union
 
 import numpy as np
 
@@ -39,18 +40,22 @@ try:
 except ModuleNotFoundError as err:
     raise ModuleNotFoundError('The Python interface for LAMMPS (lammps.py) is'
                               ' not in the PYTHONPATH. See LAMMPS documentation'
-                              ' on Python to rectify this.'
-                              ).with_traceback(err.__traceback__)
+                              ' on Python to rectify this.',
+                              ) from err
 
-from MDMC.common.units import Unit
 from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    repr_decorator
-from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
+from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
+from MDMC.common.units import Unit
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.interactions import (
+    Bond,
+    BondAngle,
+    BondedInteraction,
+    Interaction,
+    NonBondedInteraction,
+)
+from MDMC.MD.simulation import ConstraintAlgorithm, KSpaceSolver, Universe
 from MDMC.MD.structures import Atom
-from MDMC.MD.interactions import BondedInteraction, Interaction, \
-    NonBondedInteraction, Bond, BondAngle
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
 
@@ -606,10 +611,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # optional
                         i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
                                                in ['id', 'type', pos_string]]
-                        if 'vx' in splt:
-                            i_vel = splt.index('vx')
-                        else:
-                            i_vel = None
+                        i_vel = splt.index('vx') if 'vx' in splt else None
 
                         # now we try to get the correct number of frames in the trajectory
                         real_n_steps = 1 + line_count // (n_atoms + header_size)
@@ -934,7 +936,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                             'extra/bond/per/atom', max_bonds_per_atom,
                             'extra/angle/per/atom', max_angles_per_atom,
                             'extra/dihedral/per/atom', max_dihedrals_per_atom,
-                            'extra/improper/per/atom', max_impropers_per_atom
+                            'extra/improper/per/atom', max_impropers_per_atom,
                             )
 
     # ID is an acronym
@@ -973,7 +975,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # that it is possible to index into atom_type_properties with
         # atom_type - 1 (where the -1 is to account for 0 indexing on lists)
         self.atom_type_properties = [(atom[0].element, atom[0].mass)
-                                     for type, atom
+                                     for _, atom
                                      in sorted(self.atom_types.items())]
 
         LOGGER.info('%s Add atoms to LAMMPS',
@@ -1316,10 +1318,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # If bonds already exist, new bond IDs are generated from lowest unused
         # integer
-        if ID_attr:
-            start = max(ID_attr.values()) + 1
-        else:
-            start = 1
+        start = max(ID_attr.values()) + 1 if ID_attr else 1
+
         for ID, b_i in enumerate(bonded_interactions, start=start):
             # Create the bonded interaction coefficients
             coeff_function(ID, *parse_bonded_coefficients(b_i))
@@ -1485,11 +1485,9 @@ class LAMMPSSimulation(PyLammpsAttribute):
     def time_step(self, value: float) -> None:
 
         self._time_step = value
-        try:
+        with suppress(ValueError):
             # Set the timestep in LAMMPS wrapper
             self.lmp.timestep(convert_unit(self._time_step))
-        except ValueError:
-            pass
 
     @property
     def temperature(self) -> float:
@@ -1630,12 +1628,10 @@ class LAMMPSSimulation(PyLammpsAttribute):
     def neighbor_steps(self, value: int) -> None:
 
         self._neighbor_steps = value
-        try:
+        with suppress(TypeError):
             # Set the modifiers to the neighbor list in the LAMMPS wrapper
             self.lmp.neigh_modify('every', int(self.neighbor_steps), 'delay', 0,
                                   'check', 'yes')
-        except TypeError:
-            pass
 
     @property
     def lin_momentum_steps(self) -> int:
@@ -2181,7 +2177,7 @@ SYSTEM = {
     'TEMPERATURE': units.Unit('K'),
     'ENERGY': units.Unit('kcal') / units.Unit('mol'),
     'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('atm')
+    'PRESSURE': units.Unit('atm'),
 }
 
 
@@ -2643,10 +2639,8 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> 'dict[tupl
                 combined_parsed_inters[tuple(
                     indiv_cmd + [cutoffs])] = list(mod)
                 for key in [int1, int2]:
-                    try:
+                    with suppress(KeyError):
                         del combined_parsed_inters[key]
-                    except KeyError:
-                        pass
 
     return combined_parsed_inters
 

@@ -2,8 +2,8 @@
 TimeKeeper class designed to track per-function level execution time.
 """
 
-from time import time
 from collections import defaultdict
+from time import time
 
 
 class TimeKeeper:
@@ -72,10 +72,10 @@ class TimeKeeper:
         results = []
         for kk, nc in self.number_of_calls.items():
             strk = str(kk)
-            if strk in self.execution_time.keys():
+            if strk in self.execution_time:
                 results.append([strk,
-                               nc,
-                               self.execution_time[kk]])
+                                nc,
+                                self.execution_time[kk]])
         return results
 
     def total_time(self) -> float:

@@ -2,6 +2,7 @@
 
 import logging
 from typing import IO, Iterable
+
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
@@ -117,7 +118,7 @@ class LAMPSQw(SQwReader):
                 _ = next(file)
                 break
 
-        file_split = iter([str for line in file for str in line.split(" ")
+        file_split = iter([word for line in file for word in line.split(" ")
                            if "Y_COORDINATES" not in line])
 
         X = self._get_data(file_split, self._X_dim)
@@ -140,7 +141,7 @@ class LAMPSQw(SQwReader):
             A 2d array with dimensions of the two independent variables
         """
 
-        file_split = iter([str for line in file for str in line.split(" ")])
+        file_split = iter([word for line in file for word in line.split(" ")])
         dep = self._get_data(file_split, self._Y_dim, self._X_dim)
         return dep
 

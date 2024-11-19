@@ -6,28 +6,31 @@ import logging
 import warnings
 from collections import defaultdict
 from itertools import count, filterfalse, product
-from typing import Union, Tuple, TYPE_CHECKING
-
-from statsmodels.tsa.stattools import kpss
+from typing import TYPE_CHECKING, Tuple, Union
 
 import numpy as np
+from statsmodels.tsa.stattools import kpss
 from verbosemanager import VerboseManager
 
-from MDMC.common.decorators import unit_decorator_getter, \
-    mod_docstring, repr_decorator, unit_decorator
 from MDMC.common import units
+from MDMC.common.decorators import (
+    mod_docstring,
+    repr_decorator,
+    unit_decorator,
+    unit_decorator_getter,
+)
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
+from MDMC.MD.interactions import Coulombic, Dispersion
 from MDMC.MD.parameters import Parameters
-from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
+from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
 from MDMC.MD.structures import Structure
-from MDMC.MD.interactions import Dispersion, Coulombic
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 if TYPE_CHECKING:
-    from MDMC.MD.structures import Molecule, Atom
     from MDMC.MD.interactions import Interaction
+    from MDMC.MD.structures import Atom, Molecule
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
@@ -1070,8 +1073,8 @@ class Universe(AtomContainer):
             box_dimensions = orig_box_dimensions * dim_scaling
             num_tiles = np.array(self.dimensions / box_dimensions)
             # Binary list for axes along which whole num of tiles are used.
-            wrap = np.array([1 if dir.is_integer() else 0
-                             for dir in num_tiles])
+            wrap = np.array([1 if direc.is_integer() else 0
+                             for direc in num_tiles])
             num_tiles = np.ceil(num_tiles).astype(int)
 
             mols = []
@@ -1226,10 +1229,8 @@ class PPPM(KSpaceSolver):
 
         if not isinstance(other, self.__class__):
             return False
-        for k, v in self.__dict__.items():
-            if v != getattr(other, k):
-                return False
-        return True
+        return all(v == getattr(other, k)
+                   for k, v in self.__dict__.items())
 
     def __ne__(self, other) -> bool:
 
@@ -1537,10 +1538,7 @@ class Simulation:
             Working directory for the MD engine to write to. Default is `None`.
         """
 
-        if equilibration:
-            process = 'equilibration'
-        else:
-            process = 'simulation'
+        process = 'equilibration' if equilibration else 'simulation'
 
         verbose_manager = VerboseManager.instance()
         # to match legacy use of verbose on this function (where verbose was bool) we use bool
@@ -1563,7 +1561,7 @@ class Simulation:
     # but we don't mutate the list anywhere in the function, so
     # this is safe and has better readability
     def auto_equilibrate(self,
-                         variables: list[str] = ['temp', 'pe'],
+                         variables: list[str] = ('temp', 'pe'),
                          eq_step: int = 10,
                          window_size: int = 100,
                          tolerance: float = 0.01) -> Tuple[int, dict]:

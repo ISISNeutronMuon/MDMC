@@ -8,20 +8,19 @@ is self contained, although adding a new force field may require changes to the
 MD engine facades, so that a correspondence is established between the MDMC
 force field and the MD engine equivalent."""
 
+import logging
+import os
 from abc import ABC, abstractmethod
 from inspect import signature
 from itertools import chain, permutations
-import logging
-import os
 from re import escape, sub
 
 import pandas as pd
 
 from MDMC.common.decorators import repr_decorator, weakref_cache
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
-from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.MD import interaction_functions
-
+from MDMC.MD.interactions import BondedInteraction, Coulombic
 
 LOGGER = logging.getLogger(__name__)
 
@@ -549,7 +548,7 @@ class FileForceField(ForceField):
         parameter_names = self._get_parameter_names(function_type)
 
         unique_parameters = list(chain.from_iterable([matching_disps[n].unique()
-                                                      for n in parameter_names])
+                                                      for n in parameter_names]),
                                  )
         self._check_nonbonded_parameters(unique_parameters, parameter_names,
                                          matching_disps)

@@ -1,10 +1,10 @@
 """Factory class for generating minimizers"""
-from typing import TYPE_CHECKING
 from glob import glob
-from pathlib import Path
 from importlib import import_module
-from inspect import isclass, isabstract, getmembers
-from os.path import basename, dirname, join, isfile
+from inspect import getmembers, isabstract, isclass
+from os.path import basename, dirname, isfile, join
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 

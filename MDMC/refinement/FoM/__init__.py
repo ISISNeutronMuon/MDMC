@@ -1,5 +1,9 @@
 """A module for Figure of Merit calculation"""
-from . import RSquared_noneerror
-from . import ChiSquared_experror
-from . import FoM_abs
-from . import FoM_factory
+from . import ChiSquared_experror, FoM_abs, FoM_factory, RSquared_noneerror
+
+__all__ = [
+    "ChiSquared_experror",
+    "FoM_abs",
+    "FoM_factory",
+    "RSquared_noneerror",
+]

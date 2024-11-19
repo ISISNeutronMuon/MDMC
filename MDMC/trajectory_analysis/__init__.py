@@ -8,5 +8,6 @@ Contents
 - trajectory
 """
 
-from . import observables
-from . import compact_trajectory
+from . import compact_trajectory, observables
+
+__all__ = ["observables", "compact_trajectory"]

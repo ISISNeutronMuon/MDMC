@@ -12,3 +12,5 @@ Contents
 """
 
 from .installation_tests import run_installation_tests
+
+__all__ = ["run_installation_tests"]

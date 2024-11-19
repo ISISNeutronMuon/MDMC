@@ -3,11 +3,12 @@
 # pylint: disable=cyclic-import
 # as this is a factory class
 
-from inspect import getmembers, isclass, isabstract
-from typing import Any, Union
 import warnings
+from inspect import getmembers, isabstract, isclass
+from typing import Any, Union
 
 import MDMC.resolution
+
 
 class ResolutionFactory:
     """

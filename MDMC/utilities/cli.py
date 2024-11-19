@@ -5,8 +5,8 @@ Notes
 -----
 This is only used to provide a simple method for users to run installation tests.
 """
-from argparse import ArgumentParser, RawTextHelpFormatter
 import sys
+from argparse import ArgumentParser, RawTextHelpFormatter
 from textwrap import dedent
 
 from MDMC.utilities.installation_tests import run_installation_tests

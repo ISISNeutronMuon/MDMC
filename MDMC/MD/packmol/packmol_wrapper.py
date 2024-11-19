@@ -1,15 +1,14 @@
 """A module that integrates packmol into MDMC"""
+import os
 import re
 import shutil
 import subprocess
-import os
-
 from typing import List
 
-from MDMC.MD.packmol.packmol_setup import PackmolSetup
-from MDMC.MD import Universe, Molecule, Atom, Structure
 from MDMC.exporters.configurations.ase import ASEExporter
 from MDMC.exporters.configurations.packmol_input import PackmolInputExporter
+from MDMC.MD import Atom, Molecule, Structure, Universe
+from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 

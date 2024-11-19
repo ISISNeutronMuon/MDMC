@@ -1,27 +1,33 @@
 """
 Module for Intermediate Scattering Function class.
 """
+import logging
 from abc import abstractmethod
 from collections.abc import Callable
+from contextlib import suppress
 from itertools import product
 from typing import Generator, Literal, Optional
 
-import logging
 import numpy as np
 import periodictable
 
 from MDMC.common import units
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-from MDMC.common.mathematics import (faster_correlation,
-                                     faster_autocorrelation,
-                                     UNIT_VECTOR)
+from MDMC.common.mathematics import (
+    UNIT_VECTOR,
+    faster_autocorrelation,
+    faster_correlation,
+)
 from MDMC.resolution import Resolution
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+from MDMC.trajectory_analysis.observables.concurrency_tools import (
+    core_batch,
+    create_executor,
+)
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
-from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 # pylint: disable=c-extension-no-member
 ThreeVec = tuple[float, float, float]
@@ -181,10 +187,8 @@ class AbstractFQt(SQwMixins, Observable):
         self._origin = "MD"
 
         # if Q_values are specified, set Q to them
-        try:
+        with suppress(KeyError):
             self.Q = np.array(settings['Q_values'])
-        except KeyError:
-            pass
 
         self.t = MD_input.times - MD_input.times[0]
         self._trajectory = MD_input
@@ -218,7 +222,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # Get the positions of the recreated_q_values
         if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
-            self.recreated_Q.extend(np.where(self.Q == value)[0][0]
+            self.recreated_Q.extend(np.where(value == self.Q)[0][0]
                                     for value in self.Q_values)
             self.Q = [val for val in self.Q if val in self.Q_values]
 
@@ -321,7 +325,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # get all vectors that fit our requirements
         for vector in vectors:
-            if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
+            if Q_min < np.linalg.norm(vector) <= Q_max and vector.all != 0:
                 # add vector and all its symmetries
                 Q_vectors.extend(wyckoff_symmetries(vector, point_group))
             if len(Q_vectors) >= self.n_Q_vectors:
@@ -823,7 +827,7 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
                  (x, z, y), (-x, z, -y), (-z, -y, x), (-z, y, -x), (z, -y, -x), (z, y, x)})
 
     def tetragonal(
-            unique_side: Literal['x', 'y', 'z']
+            unique_side: Literal['x', 'y', 'z'],
     ) -> Callable[[ThreeVec], set[ThreeVec]]:
         """
         The symmetries of a point in a tetragonal group.

@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, List
 
 import ase.io
 
-from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.ase.convert import ASE_to_MDMC
+from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
 if TYPE_CHECKING:
     from MDMC.MD import Atom

@@ -44,8 +44,7 @@ test = ["pytest==8.3.2",
         "pytest-cov==5.0.0",
         "pytest-cases==3.8.5",
         "pytest-profiling==1.7.0"]
-lint = ["pylint==3.2.6",
-        "pylint-exit==1.2.0"]
+lint = ["ruff==0.5.7"]
 typecheck = ["mypy"]
 docs = ["sphinx==7.4.7",
         "nbsphinx==0.9.4",
@@ -59,7 +58,6 @@ all = ["MDMC[LAMMPS,DLPOLY,test,lint,typecheck,docs]"]
 
 [project.scripts]
 MDMC = "MDMC.utilities.cli:main"
-
 
 [tool.setuptools.packages.find]
 include = ["MDMC*"]
@@ -81,3 +79,58 @@ override_SS05 = [  # override SS05 to allow docstrings starting with these words
     '^Access ',
     '^Class ',
 ]
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+line-length = 100
+indent-width = 4
+target-version = "py310"
+
+# Exclude a variety of commonly ignored directories.
+extend-exclude = [
+    ".#*",
+    "__pycache__",
+]
+
+
+[tool.ruff.lint]
+# Allow unused variables when underscore-prefixed.
+select = [
+    "PLE", # Pylint errors
+    "E",   # Pycodestyle
+    "W",   # Pycodestyle warnings
+    "F",   # Pyflakes
+    "B",   # Flake8 bugbear
+    "SIM", # Flake8 Simplify
+    "A",   # Flake8 builtins
+    "COM", # Flake8 commas
+    "FA",  # Flake8 future
+    "ISC", # Flake8 implicit string concat
+    "RSE", # Flake8 raise
+    "I",   # Isort
+#    "RUF", # Ruff specific
+#    "FURB",# Refurb
+#    "PERF",# Perflint
+#    "PL",  # Pylint
+#    "NPY", # Numpy specific warnings
+#    "PTH", # Flake8 use pathlib
+#    "D",   # Pydocstyle
+#    "UP",  # Pyupgrade
+#    "FBT", # Flake8 boolean trap
+#    "C4",  # Flake8 comprehensions
+#    "PT",  # Flake8 pytest style
+#    "Q",   # Flake8 Quotes
+#    "RET", # Flake8 return
+#    "ARG", # Flake8 unused args
+
+]
+ignore = [
+    "B028",  # No stacklevel in Warning
+    "B905",  # No strict in zip
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.isort]
+profile = "black"

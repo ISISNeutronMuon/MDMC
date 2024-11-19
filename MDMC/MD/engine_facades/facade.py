@@ -1,11 +1,11 @@
 """Module containing an abstract base class for MD engine facades"""
-from typing import TYPE_CHECKING, Any
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Simulation
-    from MDMC.trajectory_analysis.trajectory import Configuration
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+    from MDMC.trajectory_analysis.trajectory import Configuration
 
 
 class MDEngine(ABC):

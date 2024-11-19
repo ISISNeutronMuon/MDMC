@@ -796,12 +796,7 @@ class CompactTrajectory:
                 raise ValueError("The specified time range contains no MD frames")
             return self.subtrajectory(index[0], index[0]+1)
 
-        index = np.where(
-            np.logical_and(
-                self.time >= start,
-                self.time < end
-            )
-        )[0].ravel()
+        index = np.where((self.time >= start) & (self.time < end))[0].ravel()
         if not index.size:
             raise ValueError("The specified time range contains no MD frames")
         return self.subtrajectory(index[0], len(index))
@@ -899,7 +894,7 @@ class CompactTrajectory:
 
 
 def configurations_as_compact_trajectory(
-        *configs: list[TemporalConfiguration]
+        *configs: list[TemporalConfiguration],
 ) -> CompactTrajectory:
     """
     Populate ``CompactTrajectory`` arrays from list of ``TemporalConfiguration``.

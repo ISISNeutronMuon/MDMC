@@ -2,6 +2,7 @@
 Module for AbstractSQw and total SQw class.
 """
 
+from contextlib import suppress
 from typing import Optional
 
 import numpy as np
@@ -12,9 +13,9 @@ from MDMC.common import units
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
@@ -468,10 +469,8 @@ class AbstractSQw(SQwMixins, Observable):
         else:
             self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt)}
         # Overwrite independent variable 'Q' if it already exists
-        try:
+        with suppress(KeyError):
             self.independent_variables['Q'] = np.array(settings['Q_values'])
-        except KeyError:
-            pass
 
         # Slice trajectory up if possible and requested by user:
         if self.maximum_frames() and use_average:

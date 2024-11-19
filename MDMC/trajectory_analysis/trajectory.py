@@ -3,7 +3,7 @@ Module for ``Configuration`` and related classes.
 """
 import weakref
 from collections.abc import Callable
-from typing import Literal, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Optional
 
 import numpy as np
 

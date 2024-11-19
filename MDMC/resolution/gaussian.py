@@ -1,9 +1,9 @@
 """The Gaussian resolution subclass"""
 import numpy as np
 
-from MDMC.resolution.resolution import Resolution
 from MDMC.common.constants import h_bar
 from MDMC.common.resolution_functions import gaussian
+from MDMC.resolution.resolution import Resolution
 
 
 class GaussianResolution(Resolution):

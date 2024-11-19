@@ -1,15 +1,15 @@
 """Converts ASE Atoms objects into MDMC Molecules."""
-from typing import TYPE_CHECKING, List, Union, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
-import numpy as np
 import ase
+import numpy as np
 from ase.geometry.analysis import Analysis
 
-from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle
+from MDMC.MD.structures import Atom, Molecule
 
 if TYPE_CHECKING:
-    from MDMC.MD import Structure, Universe, BondedInteraction
+    from MDMC.MD import BondedInteraction, Structure, Universe
 
 def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
     """
@@ -106,6 +106,6 @@ def MDMC_to_ASE(structure: Union['Structure', 'Universe', List[Atom]],
         structure = Molecule(atoms=structure)
 
     if cell is None:
-        cell = np.array([0., 0., 0.,])
+        cell = np.array([0., 0., 0.])
 
     return ase.Atoms([_convert_to_ase_atom(atom) for atom in structure.atoms], cell=cell)

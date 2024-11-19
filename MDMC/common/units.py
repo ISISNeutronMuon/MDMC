@@ -20,7 +20,6 @@ from typing import Literal, Union
 import numpy as np
 from pandas import Series
 
-
 # pylint: disable=no-member
 # as it raises a false positive for components
 
@@ -41,7 +40,7 @@ CODATA = {
              '_mp': 1.672621898e-27,
              '_Nav': 6.022140857e23,
              '_k': 1.38064852e-23,
-             '_amu': 1.660539040e-27}
+             '_amu': 1.660539040e-27},
 }
 
 
@@ -240,10 +239,8 @@ class Unit(str):
             element in the ``components`` ``numerator`` `list`).
         """
 
-        if (not self.components['denominator']
-                and self.components['numerator'] == [self]):
-            return True
-        return False
+        return (not self.components['denominator'] and
+                self.components['numerator'] == [self])
 
     @property
     def conversion_factor(self) -> float:
@@ -535,7 +532,7 @@ SYSTEM = {
     'FORCE': Unit('kJ') / (Unit('Ang') * Unit('mol')),
     'PRESSURE': Unit('Pa'),
     'ENERGY_TRANSFER': Unit('meV'),
-    'ARBITRARY': Unit('arb')
+    'ARBITRARY': Unit('arb'),
 }
 
 
@@ -557,7 +554,7 @@ def create_units(codata_version: str) -> dict[Unit, float]:
     # SYSTEM units are defined to 1.0, and have the physical properties they
     # measure defined (e.g. {'Ang': 'LENGTH', ...})
     units = {unit: 1.0 for unit in SYSTEM.values()}
-    unit_properties = {unit: property for property, unit in SYSTEM.items()}
+    unit_properties = {unit: prop for prop, unit in SYSTEM.items()}
 
     # CODATA version
     codata = CODATA[codata_version]
