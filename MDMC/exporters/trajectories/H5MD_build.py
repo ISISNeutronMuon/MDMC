@@ -1,15 +1,15 @@
 """
 A module for writing and saving a H5MD file.
 """
+from datetime import datetime
 from pathlib import Path
 
-from datetime import datetime
-import numpy as np
 import h5py
+import numpy as np
 import periodictable
 
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.common import units
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 #: Generic H5MD information like, version of H5MD and any H5MD `modules` used.
 H5MD_DATA = {
@@ -18,7 +18,7 @@ H5MD_DATA = {
     'h5md_version': [1, 1],
     'module_name': ['units'],
     'module_version': [[1, 0]],
-    'loc': 'h5md'
+    'loc': 'h5md',
 }
 
 ROOT_TRAJECTORY = 'particles/all'
@@ -223,7 +223,7 @@ def write_H5MD(trajectory: CompactTrajectory,
                           trajectory.position_unit,
                           time_increment,step_increment,
                           time_offset,
-                          step_offset]
+                          step_offset],
         }
         if trajectory.has_velocity:
             simulation_data['velocity'] = [trajectory.velocity,

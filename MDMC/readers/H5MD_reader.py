@@ -188,6 +188,6 @@ def read_all_data(filename: str) -> dict:
             'position_unit': read_units(file, 'position'),
             'velocity_unit': read_units(file, 'velocity'),
             'mass_unit': read_units(file, 'mass'),
-            'charge_unit': read_units(file, 'charge')
+            'charge_unit': read_units(file, 'charge'),
         }
     return all_data
