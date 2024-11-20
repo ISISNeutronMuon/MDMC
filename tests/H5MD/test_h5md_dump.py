@@ -1,17 +1,17 @@
 """Tests that h5md_dumper is dumping the correct files that are requested.
 """
 from pathlib import Path
+
 import h5py
 import pytest
 
 from MDMC.control import Control
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.control.control import Dump
 from MDMC.readers import H5MD_reader
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
-
-FILE_NAME = 'test_file.h5'
+FILE_NAME = Path('test_file.h5')
 
 FOM = [40, 10, 88,77]
 
@@ -27,6 +27,8 @@ class MockControl(Control):
         self.h5md_filename = h5md_filename
         self.h5md_file_loc = h5md_file_loc
         self.h5md_timestamp = h5md_timestamp
+        self.h5md_creator = "test"
+        self.h5md_email = "test@test"
 
     def _generate_FoM(self) -> tuple[float,CompactTrajectory]:
         """A function that overrides the original _generate_FoM

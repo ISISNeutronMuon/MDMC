@@ -1,12 +1,13 @@
 """A module for performing the refinement"""
+import getpass
 import logging
 import statistics
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Union
-from enum import Enum
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.control.plot_results import PlotResults, data_printers
+from MDMC.exporters.trajectories import H5MD_build
 from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -22,10 +24,10 @@ from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.MD.engine_facades.facade import MDEngineError
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+
 
 class Dump(Enum):
     """
@@ -236,6 +238,15 @@ class Control:
         self.h5md_filename = h5md_filename
         self.h5md_timestamp = h5md_timestamp
         self.h5md_file_loc = h5md_file_loc
+        self.h5md_creator = settings.get("h5md_creator_name", getpass.getuser())
+        self.h5md_email = settings.get("h5md_creator_email",
+                                       f"{getpass.getuser()}@unknown")
+        if self.h5md_dump is not Dump.NONE and "h5md_creator_name" not in settings:
+            logging.warning("`h5md_creator_name` not set, defaulting to: %s",
+                            self.h5md_creator)
+        if self.h5md_dump is not Dump.NONE and "h5md_creator_name" not in settings:
+            logging.warning("`h5md_creator_email` not set, defaulting to: %s",
+                            self.h5md_email)
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         # if a Parameters object, convert to list first for comprehension
@@ -662,8 +673,7 @@ class Control:
         elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
             fom, trj = self._generate_FoM()
-            if (self.h5md_dump is Dump.EVERY
-                or self.h5md_dump is Dump.BEST):
+            if self.h5md_dump in (Dump.EVERY, Dump.BEST):
                 self.dump_h5md(trj)
         else:
             # assuming params are bad so use max FoM available
@@ -709,12 +719,16 @@ class Control:
             H5MD_build.write_H5MD(trj,
                                   filename=self.h5md_filename,
                                   file_loc=self.h5md_file_loc,
-                                  timestamp=self.h5md_timestamp)
+                                  timestamp=self.h5md_timestamp,
+                                  creator_name=self.h5md_creator,
+                                  creator_email=self.h5md_email)
         elif self.h5md_dump is Dump.BEST and self.minimizer.is_best_FoM():
             H5MD_build.write_H5MD(trj,
                                   filename=self.h5md_filename,
                                   file_loc=self.h5md_file_loc,
-                                  timestamp=False)
+                                  timestamp=False,
+                                  creator_name=self.h5md_creator,
+                                  creator_email=self.h5md_email)
 
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
