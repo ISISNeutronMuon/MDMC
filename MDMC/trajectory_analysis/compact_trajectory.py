@@ -18,6 +18,7 @@ limits of performance that we can achieve within Python.
 # by numpy.
 
 import numpy as np
+
 from MDMC.common import units
 from MDMC.MD.structures import Atom
 from MDMC.readers import H5MD_reader
