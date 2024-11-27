@@ -1,4 +1,6 @@
-"""A module for a class to export a packmol input file"""
+"""
+A module for a class to export a packmol input file.
+"""
 from __future__ import annotations
 
 from copy import copy
@@ -9,27 +11,36 @@ from MDMC.exporters.exporter import Exporter
 if TYPE_CHECKING:
     from MDMC.MD.packmol.packmol_setup import PackmolSetup
 
-#pylint: disable=arguments-differ, too-few-public-methods
+
+# pylint: disable=arguments-differ, too-few-public-methods
+
 
 class PackmolInputExporter(Exporter):
-    """A class to export `PackmolSetup` objects into packmol input files"""
+    """
+    A class to export `PackmolSetup` objects into packmol input files.
+    """
     INDENT = "  "
 
-    def write(self, setup: PackmolSetup,
-              structure_file_names: dict,
-              output_name: str = "output_file.pdb",
-              **settings: dict) -> None:
+    def write(
+            self,
+            setup: PackmolSetup,
+            structure_file_names: dict,
+            output_name: str = "output_file.pdb",
+            **settings: dict,
+    ) -> None:
         """
-        Write the data contained in a `PackmolSetup` object to a packmol input file
+        Write the data contained in a `PackmolSetup` object to a packmol input file.
 
         Parameters
         ----------
-        setup: PackmolSetup
+        setup : PackmolSetup
             A `PackmolSetup` object which contains the molecules and constraints for the setup.
-        output_name: str
+        output_name : str
             The filename of the output file.
-        structure_file_names: dict
+        structure_file_names : dict
             A dictionary mapping structures in the system to corresponding file names.
+        **settings : dict
+            Not used in this method.
         """
         system_settings, mol_settings = setup.get_settings()
         tol = system_settings["tolerance"]
