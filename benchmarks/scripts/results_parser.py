@@ -35,7 +35,7 @@ params = list(product(*results_vals[0][1]))
 tuple_results = {}
 
 for k in results:
-    result_type, result_name = k.split("_")
+    result_type, result_name = k.split("_", 1)
     match result_type:
         case "time":
             tuple_results[("Time (s)", result_name)] = results[k]
