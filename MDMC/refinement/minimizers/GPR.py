@@ -120,9 +120,12 @@ class GPR(Minimizer):
             lower_bound = parameter.constraints[0]
             upper_bound = parameter.constraints[1]
         except TypeError as error:
-            if parameter.value != 0:
+            if parameter.value > 0:
                 lower_bound = parameter.value*(1.0 - fraction)
                 upper_bound = parameter.value*(1.0 + fraction)
+            elif parameter.value < 0:
+                lower_bound = parameter.value*(1.0 + fraction)
+                upper_bound = parameter.value*(1.0 - fraction)
             else:
                 raise ValueError(f'You have set parameter {parameter.name} value to zero and \
                     have no constraints set for it. Please set constraints for it') from error
