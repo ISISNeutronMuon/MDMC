@@ -36,28 +36,39 @@ tuple_results = {}
 
 for k in results:
     result_type, result_name = k.split("_")
-    if result_type == "time":
-        tuple_results[(result_name, "Time")] = results[k]
-        
-        time_per_step = [r / int(p[1]) for r, p in zip(results[k], params)]
-        tuple_results[(result_name, "Time per step")] = time_per_step
-    elif result_type == "track":
-        tuple_results[(result_name, "FoM")] = results[k]
+    match result_type:
+        case "time":
+            tuple_results[("Time (s)", result_name)] = results[k]
 
+            time_per_step = [r / int(p[1]) if r is not None else r for r, p in zip(results[k], params)]
+            tuple_results[("Time per step (s)", result_name)] = time_per_step
 
-cols = pd.MultiIndex.from_tuples(tuple_results.keys())
+        case "peakmem":
+            mem_vals = [r / 1e+9 if r is not None else r for r in results[k] ]
+            tuple_results[("Peak Memory (GB)", result_name)] = mem_vals
+
+        case "track":
+            tuple_results[("FoM", result_name)] = results[k]
+
+#Get columns in order
+time_results = [t for t in tuple_results if t[0] == "Time (s)"]
+time_per_step_results = [t for t in tuple_results if t[0] == "Time per step (s)"]
+fom_results = [t for t in tuple_results if t[0] == "FoM"]
+memory_results = [t for t in tuple_results if t[0] == "Peak Memory (GB)"]
+
+col_order = time_results + time_per_step_results + fom_results + memory_results
+
+cols = pd.MultiIndex.from_tuples(col_order)
 rows = pd.MultiIndex.from_tuples(params)
 
 df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
 
-df.insert(3, ("Peak Memory (GB)", "refineGPR"), df.pop(("Peak Memory (GB)", "refineGPR")))
-df.insert(6, ("FoM", "refineGPR"), df.pop(("FoM", "refineGPR")))
-
 df.index.names = ["Parameters", "Steps"]
 
-cols = df.columns.to_list()
-
-#Quick and dirty way to group columns by benchmark
-df.insert(2, ("refineGPO", "FoM"), df.pop(("refineGPO", "FoM")))
-
-print(df)
+print(df[time_results])
+print("-"*20)
+print(df[time_per_step_results])
+print("-"*20)
+print(df[fom_results])
+print("-"*20)
+print(df[memory_results])
