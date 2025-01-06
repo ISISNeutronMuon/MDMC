@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: fetch  # grabs master to compare if Docker build files changed
         run: git fetch origin master
 
@@ -27,12 +27,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11.2'
           architecture: x64
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Pull Docker Image
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -57,7 +57,7 @@ jobs:
           python3 .github/scripts/process_prof_data.py prof/ || exit 1
 
       - name: Upload code coverage report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
@@ -67,12 +67,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11.2'
         architecture: x64
     - name: Checkout repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: apt-get
       run: |
@@ -91,13 +91,13 @@ jobs:
       run: pip3 uninstall -y MDMC
 
   windows:
-    name: Python 3.9.0 on Windows (installation check only)
+    name: Python 3.10.11 on Windows (installation check only)
     runs-on: windows-latest
     steps:
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.11.2'
+        python-version: '3.10.11'
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v3
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: '1.13'
       - name: Get Singularity requirements
@@ -125,7 +125,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.1 libarchive-dev libgpgme11-dev libseccomp-dev
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Singularity
         run: source .github/scripts/singularity_setup.sh
@@ -145,12 +145,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
             python-version: '3.11.2'
             architecture: x64
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Pull Docker Image
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -169,7 +169,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload code coverage report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
@@ -177,10 +177,10 @@ jobs:
   documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Pull Docker Image
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
