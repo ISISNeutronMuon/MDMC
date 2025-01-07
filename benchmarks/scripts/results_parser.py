@@ -50,8 +50,15 @@ for k in results:
         case "track":
             tuple_results[("FoM", result_name)] = results[k]
 
+#Get columns in order
+time_results = [t for t in tuple_results if t[0] == "Time (s)"]
+time_per_step_results = [t for t in tuple_results if t[0] == "Time per step (s)"]
+fom_results = [t for t in tuple_results if t[0] == "FoM"]
+memory_results = [t for t in tuple_results if t[0] == "Peak Memory (GB)"]
 
-cols = pd.MultiIndex.from_tuples(tuple_results.keys())
+col_order = time_results + time_per_step_results + fom_results + memory_results
+
+cols = pd.MultiIndex.from_tuples(col_order)
 rows = pd.MultiIndex.from_tuples(params)
 
 df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
