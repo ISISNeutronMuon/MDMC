@@ -525,6 +525,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         start: int = 0,
         stop: int = None,
         step: int = 1,
+        *,
+        scaled_positions: bool = False,
         **settings: Any,
     ) -> CompactTrajectory:
         """
@@ -567,7 +569,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         """
 
         # Change expected position string if scaled positions are used
-        pos_string = "xs" if settings.get("scaled_positions", False) else "x"
+        pos_string = "xs" if scaled_positions else "x"
 
         traj_dimensions = np.zeros(3)
         frame_n = start
@@ -587,10 +589,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Yields:
                 bytes: a byte string read from the file
             """
-            b = reader(1024 * 1024)
-            while b:
+            while b := reader(1024 * 1024):
                 yield b
-                b = reader(1024 * 1024)
 
         # here we check how long the trajectory really is
         with open(self.trajectory_file.name, "rb") as file_handler:
@@ -665,9 +665,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         splt = line.split()
                         # Requires id, type and position to be defined, velocity is
                         # optional
-                        i_id, i_type, i_pos = (
+                        i_id, i_type, i_pos = [
                             splt.index(prop) - 2 for prop in ["id", "type", pos_string]
-                        )
+                        ]
                         i_vel = splt.index("vx") if "vx" in splt else None
 
                         # now we try to get the correct number of frames in the trajectory
@@ -704,18 +704,23 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         if not traj.validateTypes(atom_types):
                             raise TypeError("CompactTrajectory received wrong atom type array")
 
+                        positions = sorted_lines[:, i_pos : i_pos + 3]
+                        if scaled_positions:
+                            # Always cubic, but will support other cells.
+                            positions = np.dot(positions, np.diag(traj_dimensions).T)
+
                         if i_vel is not None:
                             traj.writeOneStep(
                                 step_num=frame_n,
                                 time=frame * self.time_step,
-                                positions=sorted_lines[:, i_pos : i_pos + 3],
+                                positions=positions,
                                 velocities=sorted_lines[:, i_vel : i_vel + 3],
                             )
                         else:
                             traj.writeOneStep(
                                 step_num=frame_n,
                                 time=frame * self.time_step,
-                                positions=sorted_lines[:, i_pos : i_pos + 3],
+                                positions=positions,
                             )
 
                         traj.setDimensions(traj_dimensions, step_num=frame_n)
