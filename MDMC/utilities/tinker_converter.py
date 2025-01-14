@@ -226,8 +226,8 @@ def write_data(
     Which define the presence of parameters and the function to compute them.
     """
     inter_types = ['disps', 'bonds', 'angles', 'propers', 'impropers']
-    disps, bonds, angles, propers, impropers = [settings.get(inter_type, []) for
-                                                inter_type in inter_types]
+    disps, bonds, angles, propers, impropers = (settings.get(inter_type, []) for
+                                                inter_type in inter_types)
 
     inter_functions = [settings.get(inter_type[:-1] + '_function') for
                        inter_type in inter_types]
@@ -242,11 +242,10 @@ def write_data(
     description = (f'Atoms={len(atoms)} Dispersions={len(disps)} Bonds={len(bonds)} '
                    f'BondAngles={len(angles)} Propers={len(propers)} Impropers={len(impropers)}\n')
     # Second line describes types of interactions
-    inter_functions = ('Dispersion={0} Bond={1} BondAngle={2} Proper={3}'
-                       ' Improper={4}\n'.format(*inter_functions))
+    inter_functions = ('Dispersion={} Bond={} BondAngle={} Proper={}'
+                       ' Improper={}\n'.format(*inter_functions))
     # Metadata about the file
-    original_file_str = (' It was generated from {0}\n'.format(orig_file)
-                         if orig_file else '\n')
+    original_file_str = f' It was generated from {orig_file}\n' if orig_file else '\n'
     date = datetime.today().strftime('%Y-%m-%d')
     metadata = wrap_docstring(f'\nThis file contains the {fname} force field. It was'
                               f' created on {date}.'
@@ -284,7 +283,7 @@ def dummy_headers(start: int, end: int) -> list[str]:
         A `str` (``c{i}``) for each i between start and end (exclusive).
     """
 
-    return ['c{0}'.format(i) for i in range(start, end)]
+    return [f'c{i}' for i in range(start, end)]
 
 
 def parse_dataframe(dataframe: pd.DataFrame, drop: list, names: list) -> pd.DataFrame:

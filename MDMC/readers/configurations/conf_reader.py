@@ -1,5 +1,7 @@
 """Module for observable reader abstract class"""
-from typing import TYPE_CHECKING, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
@@ -19,10 +21,10 @@ class ConfigurationReader(Reader):
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._atoms: List['Atom'] = []
+        self._atoms: list[Atom] = []
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         The `Atom` objects parsed from the file.
         """

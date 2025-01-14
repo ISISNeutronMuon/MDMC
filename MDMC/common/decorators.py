@@ -5,16 +5,16 @@ Module which defines decorators.
 import functools
 import textwrap
 import weakref
+from collections.abc import Callable
 from functools import wraps
 from time import time
 from types import FunctionType
-from typing import Callable, Optional, Union
 
 from MDMC.common.time_keeper import TimeKeeper
 from MDMC.common.units import UnitFloat, unit_array
 
 
-def unit_decorator(unit: Union[str, None]) -> Callable:
+def unit_decorator(unit: str | None) -> Callable:
     """
     Decorate ``property.setter`` methods to add units.
 
@@ -80,7 +80,7 @@ def unit_decorator(unit: Union[str, None]) -> Callable:
     return decorator
 
 
-def unit_decorator_getter(unit: Union[str, None]) -> Callable:
+def unit_decorator_getter(unit: str | None) -> Callable:
     """
     Decorate ``property.getter`` methods to add units.
 
@@ -384,7 +384,7 @@ def wrap_docstring(docstring: str, line_length: int) -> str:
     return ''.join(wrapped)
 
 
-def repr_decorator(attribute: str, *attributes: Optional[str]):
+def repr_decorator(attribute: str, *attributes: str | None):
     """
     Implement ``__repr__`` for a class using passed attributes (including properties).
 

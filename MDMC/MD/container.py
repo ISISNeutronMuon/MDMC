@@ -1,8 +1,7 @@
-"""Module for the AtomContainer class
-"""
+"""Module for the AtomContainer class."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
     from MDMC.MD.structures import Atom
@@ -24,7 +23,7 @@ class AtomContainer(ABC):
 
     @property
     @abstractmethod
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         Returns
         -------
@@ -34,7 +33,12 @@ class AtomContainer(ABC):
 
         raise NotImplementedError
 
-    def __getitem__(self, index: Union[int, slice]) -> Union['Atom', 'list[Atom]']:
+    @overload
+    def __getitem__(self, index: int) -> Atom: ...
+    @overload
+    def __getitem__(self, index: slice) -> list[Atom]: ...
+
+    def __getitem__(self, index: int | slice) -> Atom | list[Atom]:
         """
         Returns
         -------

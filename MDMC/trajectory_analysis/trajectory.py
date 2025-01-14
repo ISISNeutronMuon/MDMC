@@ -3,7 +3,7 @@ Module for ``Configuration`` and related classes.
 """
 import weakref
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
@@ -25,7 +25,7 @@ class AtomCollection:
     __slots__ = ('_universe', )
 
     @property
-    def universe(self) -> Optional['Universe']:
+    def universe(self) -> Universe | None:
         """
         Get or set the ``Universe`` in which the ``AtomCollection`` exists.
 
@@ -45,7 +45,7 @@ class AtomCollection:
             return None
 
     @universe.setter
-    def universe(self, universe: 'Universe') -> None:
+    def universe(self, universe: Universe) -> None:
 
         # Create a weakref of the universe for _universe. If the use of weakref
         # causes issues with prematurely garbage collecting the universe,
@@ -56,13 +56,13 @@ class AtomCollection:
             self._universe = None
 
     @property
-    def dimensions(self) -> 'np.ndarray':
+    def dimensions(self) -> np.ndarray:
         """
         Get the ``dimensions`` of the ``Universe`` in which the ``AtomCollection`` exists.
 
         Returns
         -------
-        snumpy.ndarray
+        numpy.ndarray
             The ``dimensions`` of the ``Universe``.
         """
 

@@ -15,9 +15,9 @@ import operator
 import re
 import warnings
 import weakref
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from itertools import chain, count
-from typing import TYPE_CHECKING, Any, Callable, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import numpy as np
 
@@ -165,7 +165,7 @@ class Parameter:
         return [interaction() for interaction in self._interactions]
 
     @interactions.setter
-    def interactions(self, interaction: 'Interaction') -> None:
+    def interactions(self, interaction: Interaction) -> None:
 
         # Test if interaction is of the same type as any interactions already
         # stored
@@ -183,7 +183,7 @@ class Parameter:
         self._interactions.append(weakref.ref(interaction))
 
     @property
-    def tie(self) -> Union[float, None]:
+    def tie(self) -> float | None:
         """
         Get the ``value`` of a the ``Parameter`` that this ``Parameter`` is tied
         to
@@ -309,7 +309,7 @@ class Parameters(dict):
         An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
 
-    def __init__(self, init_parameters: Optional[Union[Parameter, 'list[Parameter]']] = None):
+    def __init__(self, init_parameters: list[Parameter] | Parameter | None = None):
         super().__init__()
         if init_parameters is not None:
             init_parameters = self._check_input(init_parameters)
@@ -320,7 +320,7 @@ class Parameters(dict):
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
-    def __getitem__(self, key: str) -> Union[Parameter, 'list[Parameter]']:
+    def __getitem__(self, key: str) -> list[Parameter] | Parameter:
         try:
             return super().__getitem__(key)
         except KeyError as error:
@@ -343,7 +343,7 @@ class Parameters(dict):
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
 
-    def append(self, parameters: Union['list[Parameter]', Parameter]) -> None:
+    def append(self, parameters: list[Parameter] | Parameter) -> None:
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
         with the parameter name as its key.
@@ -475,7 +475,7 @@ class Parameters(dict):
 
         return self.filter(lambda p: p.functions_name == function_name)
 
-    def filter_atom_attribute(self, attribute: str, value: Union[str, float]) -> Parameters:
+    def filter_atom_attribute(self, attribute: str, value: str | float) -> Parameters:
         """
         Filters based on the attribute of ``Atom`` objects which have each
         ``Parameter`` applied to them
@@ -564,7 +564,7 @@ class Parameters(dict):
         print("Details on which Parameter corresponds to each ID have been written to the log.")
 
     @staticmethod
-    def _check_input(x: Any) -> 'list[Parameter]':
+    def _check_input(x: Any) -> list[Parameter]:
         """
         Ensures that input to a Parameters object is in the correct form.
 

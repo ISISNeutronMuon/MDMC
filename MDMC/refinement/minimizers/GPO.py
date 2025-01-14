@@ -1,7 +1,7 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 from skopt import Optimizer
@@ -61,8 +61,8 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: Optional[Union[Path, str]] = None, **settings: Any):
+    def __init__(self, control: Control, parameters: Parameters,
+                 previous_history: Path | str | None = None, **settings: dict):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
@@ -74,8 +74,8 @@ class GPO(Minimizer):
         self.predicted_FoM = 1e9
         self.predicted_min_pos = []
         # Ensure all parameters have bounds
-        self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) \
-                                for parameter in parameters.values()]
+        self.parameter_bounds = [tuple(GPR.create_bounds(parameter))
+                                 for parameter in parameters.values()]
 
         self.parameter_names = [str(name) for name in parameters]
 
@@ -97,7 +97,7 @@ class GPO(Minimizer):
             n_initial_points=initial_points, model_queue_size=1)
 
     @property
-    def history_columns(self) -> 'list[str]':
+    def history_columns(self) -> list[str]:
         """
         Returns column labels of the history
 
@@ -122,7 +122,7 @@ class GPO(Minimizer):
         """
         return len(self.history) >= self.control.n_steps + self.previous_steps
 
-    def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
+    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
         Assigns a new value to each parameter (specified by the parameter.name)
 
@@ -149,8 +149,6 @@ class GPO(Minimizer):
 
     def reset_parameters(self) -> None:
         """Not necessary for this minimizer"""
-        # pylint: disable=unnecessary-pass
-        pass
 
     def step(self, FoM: float) -> None:
         """
@@ -165,7 +163,7 @@ class GPO(Minimizer):
         """
 
         self.FoM = FoM
-        values = list((self.parameters[p].value for p in self.parameters))
+        values = [param.value for param in self.parameters.values()]
 
         self.optimizer.tell(values, float(self.FoM))
 
@@ -191,8 +189,8 @@ class GPO(Minimizer):
         """
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
-        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
         # the [0][0][4:] is just to get the parameters from the _history
+        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
 
         return [
             tuple(min_parameters_measured),
@@ -216,10 +214,8 @@ class GPO(Minimizer):
             and predicted points
         """
 
-        if self.has_converged():
-            converged_message = 'The refinement has finished.'
-        else:
-            converged_message = "The refinement has not finished."
+        finished = "finished" if self.has_converged() else "not finished"
+        converged_message = f"The refinement has {finished}."
 
         output_string = f"""
                         {converged_message}

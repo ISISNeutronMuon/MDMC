@@ -1,5 +1,5 @@
 """Converts ASE Atoms objects into MDMC Molecules."""
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING
 
 import ase
 import numpy as np
@@ -11,7 +11,7 @@ from MDMC.MD.structures import Atom, Molecule
 if TYPE_CHECKING:
     from MDMC.MD import BondedInteraction, Structure, Universe
 
-def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
+def ASE_to_MDMC(atoms: ase.Atoms) -> list[Atom]:
     """
     Convert an ASE Atoms object to a list of Atoms.
 
@@ -33,7 +33,7 @@ def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
     # unique_angles and unique_dihedrals contain Bond, BondAngle and DihedralAngle
     # information respectively.
     analysis = Analysis(atoms)
-    interactions_list: List['BondedInteraction'] = []
+    interactions_list: list[BondedInteraction] = []
 
     # ase bond lists have the following structure:
     # index X of the list contains all bonds that start at atom number X.
@@ -83,8 +83,8 @@ def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
                          charge=atom.charge)
 
 
-def MDMC_to_ASE(structure: Union['Structure', 'Universe', List[Atom]],
-                cell: Optional[np.ndarray] = None) -> ase.Atoms:
+def MDMC_to_ASE(structure: Structure | Universe | list[Atom],
+                cell: np.ndarray | None = None) -> ase.Atoms:
     """
     Convert an MDMC Structure into an ase.Atoms object.
     Note that ASE infers bonds from the atoms' covalent radius.

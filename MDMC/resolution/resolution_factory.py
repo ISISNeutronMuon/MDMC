@@ -1,7 +1,6 @@
 """A factory pattern for instantiating Resolution objects."""
 import warnings
-from functools import singledispatchmethod
-from pathlib import Path
+from inspect import getmembers, isabstract, isclass
 from typing import Any
 
 from MDMC.common.factory import ModuleFactory
@@ -19,10 +18,20 @@ class ResolutionFactory(ModuleFactory[Resolution]):
     curr_pack = __package__
     exclude = (curr_path / "__init__.py", curr_path / "resolution_factory.py")
 
-    @classmethod
-    def create_instance(cls,
-                        resolution: dict | float | str | None,
-                        *args: Any) -> Resolution:
+    def __init__(self):
+        self._load_resolutions()
+
+    def _load_resolutions(self):
+        resolutions = getmembers(MDMC.resolution,
+                                 lambda m: isclass(m) and not isabstract(m))
+
+        for name, _type in resolutions:
+            if isclass(_type) and issubclass(_type, MDMC.resolution.Resolution):
+                self.resolutions.update([[name, _type]])
+
+    def create_instance(self,
+                        resolution: dict | float | str,
+                        *args: Any) -> MDMC.resolution.Resolution:
         """
         Create a Resolution object from a dictionary.
 
@@ -99,19 +108,9 @@ class ResolutionFactory(ModuleFactory[Resolution]):
             res = {list(resolution.keys())[0]: list(resolution.values())[0]}
         else:
             res = resolution
-        if list(resolution.keys())[0].lower() == "from_file":
-            res = {"file": list(resolution.values())[0]}
-        return res
-
-    @_standardise_input.register
-    @staticmethod
-    def _(resolution: str) -> dict:
-        return {'file': resolution}
-
-    @_standardise_input.register(int)
-    @_standardise_input.register(float)
-    @staticmethod
-    def _(resolution: float) -> dict:
+    elif isinstance(resolution, str):
+        res = {'file': resolution}
+    elif isinstance(resolution, float):
         warnings.warn("Assuming energy resolution is Gaussian. To change this,"
                       " input energy resolution as {'function': 'value'}, where"
                       " 'function' is your desired resolution approximation function.",

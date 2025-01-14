@@ -37,13 +37,13 @@ class LAMPPDF(PDFReader):
     """
 
     def __init__(self, file_name: str, pdf_col: int = 3,
-                partial_strings: 'list[tuple]' = None):
+                partial_strings: list[tuple] = None):
         super().__init__(file_name)
         self.pdf_col = pdf_col
         self.partial_pdfs = {}
         self.partial_strings = partial_strings
 
-    def assign(self, observable: 'PairDistributionFunction') -> None:
+    def assign(self, observable: PairDistributionFunction) -> None:
         # disable pylint warning about writing to the `Observable`
         #pylint: disable=protected-access
         """

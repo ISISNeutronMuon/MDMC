@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import cma
 import numpy as np
@@ -50,9 +50,9 @@ class CMAES(Minimizer):
 
     def __init__(
         self,
-        control: "Control",
-        parameters: "Parameters",
-        previous_history: Optional[Union[Path, str]] = None,
+        control: Control,
+        parameters: Parameters,
+        previous_history: Path | str | None = None,
         **settings: Any,
     ):
         super().__init__(control, parameters, previous_history)
@@ -91,7 +91,7 @@ class CMAES(Minimizer):
         self.used_parameters, self.used_values = [], []
 
     @property
-    def history_columns(self) -> "list[str]":
+    def history_columns(self) -> list[str]:
         """
         Returns column labels of the history
 
@@ -185,7 +185,7 @@ class CMAES(Minimizer):
         """
         pass
 
-    def extract_result(self) -> "list[str]":
+    def extract_result(self) -> list[str]:
         """
         Extracts the result data from the history of the minimizer run
 

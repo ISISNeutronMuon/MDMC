@@ -1,7 +1,7 @@
 """Module for observable reader abstract class"""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -21,7 +21,7 @@ class ObservableReader(Reader):
     ObservableReaders are created using ObservableReaderFactory
     """
 
-    def assign(self, observable: 'Observable') -> None:
+    def assign(self, observable: Observable) -> None:
         # disable pylint warning about writing to the `Observable`
         #pylint: disable=protected-access
         """
@@ -96,7 +96,7 @@ class ObservableReader(Reader):
         raise NotImplementedError
 
     @staticmethod
-    def _make_float(i: Any) -> Union[float, None]:
+    def _make_float(i: Any) -> float | None:
         """
         Casts the input to a `float`, or passes if the input cannot be cast
 

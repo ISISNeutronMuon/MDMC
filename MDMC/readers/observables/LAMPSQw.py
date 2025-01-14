@@ -1,7 +1,8 @@
 """Readers for dynamic data"""
 
 import logging
-from typing import IO, Any, Iterable
+from collections.abc import Iterable
+from typing import IO
 
 import numpy as np
 
@@ -79,7 +80,7 @@ class LAMPSQw(SQwReader):
                 this is an issue"
             logger.warning(msg)
 
-    def parse_indep_var(self, file: IO) -> 'tuple[np.ndarray, np.ndarray]':
+    def parse_indep_var(self, file: IO) -> tuple[np.ndarray, np.ndarray]:
         """
         Parses the independent variables
 

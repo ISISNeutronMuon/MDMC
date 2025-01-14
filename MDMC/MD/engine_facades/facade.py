@@ -25,7 +25,7 @@ class MDEngine(ABC):
 
     @property
     @abstractmethod
-    def saved_config(self) -> 'Configuration':
+    def saved_config(self) -> Configuration:
         """
         Get the saved configuration of the atomic positions
 
@@ -38,7 +38,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @property
-    def parent_simulation(self) -> 'Simulation':
+    def parent_simulation(self) -> Simulation:
         """
         Get or set the simulation that created this engine facade
 
@@ -56,7 +56,7 @@ class MDEngine(ABC):
                                  "") from error
 
     @parent_simulation.setter
-    def parent_simulation(self, value: 'Simulation') -> None:
+    def parent_simulation(self, value: Simulation) -> None:
         # pylint: disable=attribute-defined-outside-init
         # as this is internal and abstract
         self._parent_simulation = value
@@ -163,7 +163,7 @@ class MDEngine(ABC):
 
     @abstractmethod
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: Any) -> 'CompactTrajectory':
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 

@@ -115,7 +115,7 @@ select = [
 #    "NPY", # Numpy specific warnings
 #    "PTH", # Flake8 use pathlib
 #    "D",   # Pydocstyle
-#    "UP",  # Pyupgrade
+    "UP",  # Pyupgrade
 #    "FBT", # Flake8 boolean trap
 #    "C4",  # Flake8 comprehensions
 #    "PT",  # Flake8 pytest style
@@ -128,6 +128,7 @@ ignore = [
     "B028",  # No stacklevel in Warning
     "B905",  # No strict in zip
     "A003",  # Shadowing by attribute
+    "UP015", # Don't use 'r' mode parameter
 ]
 
 [tool.ruff.lint.pydocstyle]

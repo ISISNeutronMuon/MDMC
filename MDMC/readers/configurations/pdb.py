@@ -1,7 +1,6 @@
 """Module for reading pdb files"""
 # pylint: disable=no-name-in-module
 import itertools
-from typing import Any, List
 
 import numpy as np
 
@@ -32,7 +31,7 @@ class ProteinDataBankReader(ConfigurationReader):
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._bonds: List['Bond'] = []
+        self._bonds: list[Bond] = []
 
     def parse(self, **settings: Any) -> None:
         # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
@@ -84,11 +83,11 @@ class ProteinDataBankReader(ConfigurationReader):
             self._bonds += [Bond((atom1, atom2))]
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         return self._atoms
 
     @property
-    def bonds(self) -> 'list[Bond]':
+    def bonds(self) -> list[Bond]:
         """Returns the bonds within the molecule,
         as specified by "CONECT" statements in the pdb file"""
         return self._bonds

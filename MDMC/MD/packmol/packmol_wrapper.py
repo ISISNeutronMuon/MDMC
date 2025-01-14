@@ -3,7 +3,6 @@ import os
 import re
 import shutil
 import subprocess
-from typing import List
 
 from MDMC.exporters.configurations.ase import ASEExporter
 from MDMC.exporters.configurations.packmol_input import PackmolInputExporter
@@ -162,7 +161,7 @@ class PackmolFiller:
         """
         return self._packmol_files_path
 
-    def _read_packmol_output(self) -> List[Structure]:
+    def _read_packmol_output(self) -> list[Structure]:
         """
         A function to read in the packmol output and return the molecules read in
 
@@ -177,7 +176,7 @@ class PackmolFiller:
             output_structures = reader.structures
         return output_structures
 
-    def _fill_universe(self, output_structures: List[Structure]) -> Universe:
+    def _fill_universe(self, output_structures: list[Structure]) -> Universe:
         """
         A function to fill in the universe with the output data from packmol.
 
@@ -233,7 +232,7 @@ class PackmolFiller:
         return universe
 
     #TODO possibly move this to common or utils?
-    def _call_external_program(self, command_list: List[str], work_dir: str=None) -> None:
+    def _call_external_program(self, command_list: list[str], work_dir: str=None) -> None:
         """
         A function to call an external program in a specific working directory - defaults to
         current working directory as a failsafe

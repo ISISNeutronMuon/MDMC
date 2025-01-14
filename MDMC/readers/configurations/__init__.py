@@ -1,6 +1,6 @@
 """A subpackage for reading files containing atomic configurations"""
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
 from . import conf_reader, conf_reader_factory
 from .ase import ASEReader
@@ -11,7 +11,7 @@ from .pdb import ProteinDataBankReader
 if TYPE_CHECKING:
     from MDMC.MD.structures import Atom
 
-def read(file: str, docstring: bool = False, **settings: Any) -> Optional[list['Atom']]:
+def read(file: str, docstring: bool = False, **settings: dict) -> list[Atom] | None:
     """
     Reads a configuration file and returns a list of atoms corresponding to the
     atoms in the file

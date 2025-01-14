@@ -2,7 +2,8 @@
 Contains some utility functions related to pd.DataFrames, including filtering functions.
 """
 
-from typing import Sequence, overload
+from collections.abc import Sequence
+from typing import overload
 
 import pandas as pd
 
