@@ -66,10 +66,12 @@ df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
 
 df.index.names = ["Parameters", "Steps"]
 
-with open("benchmark_results.md", "w") as f:
+md_filename = f"benchmark_results_{args.benchmark_commit}.md"
+
+with open(md_filename, "w") as f:
     pass
 
 for c in col_groups:
-    df[c].to_markdown("benchmark_results.md", mode="a")
-    with open("benchmark_results.md", "a") as f:
+    df[c].to_markdown(md_filename, mode="a")
+    with open(md_filename, "a") as f:
         f.write("\n\n\n")
