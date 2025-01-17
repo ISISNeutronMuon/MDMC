@@ -38,3 +38,5 @@ prof
 benchmarks/results
 
 benchmarks/env
+
+benchmarks/*.md
