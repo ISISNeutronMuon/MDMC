@@ -57,6 +57,7 @@ fom_results = [t for t in tuple_results if t[0] == "FoM"]
 memory_results = [t for t in tuple_results if t[0] == "Peak Memory (GB)"]
 
 col_order = time_results + time_per_step_results + fom_results + memory_results
+col_groups = [time_results, time_per_step_results, fom_results, memory_results]
 
 cols = pd.MultiIndex.from_tuples(col_order)
 rows = pd.MultiIndex.from_tuples(params)
@@ -65,10 +66,10 @@ df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
 
 df.index.names = ["Parameters", "Steps"]
 
-print(df[time_results])
-print("-"*20)
-print(df[time_per_step_results])
-print("-"*20)
-print(df[fom_results])
-print("-"*20)
-print(df[memory_results])
+with open("benchmark_results.md", "w") as f:
+    pass
+
+for c in col_groups:
+    df[c].to_markdown("benchmark_results.md", mode="a")
+    with open("benchmark_results.md", "a") as f:
+        f.write("\n\n\n")
