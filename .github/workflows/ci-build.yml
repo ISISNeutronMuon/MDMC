@@ -178,4 +178,4 @@ jobs:
         with:
           name: benchmark_results
           path: |
-            benchmarks/*.md
+            benchmark_results_*
