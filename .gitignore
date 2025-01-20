@@ -40,3 +40,5 @@ benchmarks/results
 benchmarks/env
 
 benchmarks/*.md
+
+benchmark_results_*
