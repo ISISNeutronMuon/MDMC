@@ -175,7 +175,11 @@ jobs:
       
       - name: Get hashes for benchmark results
         run: echo "HEAD_HASH=$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
+
       - name: Create comment
+        env:
+          PR_NUMBER: ${{ github.event.number }}
         uses: peter-evans/create-or-update-comment@v4
         with:
-          body-path: 'benchmark_results_${{env.HEAD_HASH}}.md'
+          issue-number: ${{env.PR_NUMBER}}
+          body-path: benchmark_results_${{env.HEAD_HASH}}.md
