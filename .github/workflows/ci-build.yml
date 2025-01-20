@@ -175,4 +175,4 @@ jobs:
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v4
         with:
-          body-path: 'benchmark_results_$(git rev-parse --short=8 HEAD).md'
+          body-path: 'benchmark_results_${{git rev-parse --short=8 HEAD}}.md'
