@@ -173,7 +173,7 @@ jobs:
           python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
       
       - name: Get hashes for benchmark results
-        run: echo "HEAD_HASH=$(echo git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
+        run: echo "HEAD_HASH=$(git rev-parse --short=8 HEAD)" >> $GITHUB_ENV
       - name: Create comment
         uses: peter-evans/create-or-update-comment@v4
         with:
