@@ -32,46 +32,41 @@ results = {k.rsplit(".", 1)[1]: v[0] for k, v in data["results"].items()}
 results_vals = list(data["results"].values())
 params = list(product(*results_vals[0][1]))
 
-tuple_results = {}
+results_dict = {
+    "Time (s)": {},
+    "Peak Memory (GB)": {},
+    "FoM": {},
+}
 
 for k in results:
     result_type, result_name = k.split("_", 1)
     match result_type:
         case "time":
-            tuple_results[("Time (s)", result_name)] = results[k]
-
-            time_per_step = [r / int(p[1]) if r is not None else r for r, p in zip(results[k], params)]
-            tuple_results[("Time per step (s)", result_name)] = time_per_step
+            results_dict["Time (s)"][result_name] = results[k]
 
         case "peakmem":
             mem_vals = [r / 1e+9 if r is not None else r for r in results[k] ]
-            tuple_results[("Peak Memory (GB)", result_name)] = mem_vals
+            results_dict["Peak Memory (GB)"][result_name] = mem_vals
 
         case "track":
-            tuple_results[("FoM", result_name)] = results[k]
-
-#Get columns in order
-time_results = [t for t in tuple_results if t[0] == "Time (s)"]
-time_per_step_results = [t for t in tuple_results if t[0] == "Time per step (s)"]
-fom_results = [t for t in tuple_results if t[0] == "FoM"]
-memory_results = [t for t in tuple_results if t[0] == "Peak Memory (GB)"]
-
-col_order = time_results + time_per_step_results + fom_results + memory_results
-col_groups = [time_results, time_per_step_results, fom_results, memory_results]
-
-cols = pd.MultiIndex.from_tuples(col_order)
-rows = pd.MultiIndex.from_tuples(params)
-
-df = pd.DataFrame(tuple_results,  columns=cols, index=rows)
-
-df.index.names = ["Parameters", "Steps"]
+            results_dict["FoM"][result_name] = results[k]
 
 md_filename = f"benchmark_results_{args.benchmark_commit}.md"
 
 with open(md_filename, "w") as f:
-    pass
+    f.write("# Benchmark results\n\n")
 
-for c in col_groups:
-    df[c].to_markdown(md_filename, mode="a")
+
+#Construct dataframe for each result type and save as markdown
+rows = pd.MultiIndex.from_tuples(params, names=["Parameters", "Steps"])
+
+for k, v in results_dict.items():
+    df = pd.DataFrame(v, index=rows)
+
+    with open(md_filename, "a") as f:
+        f.write(f"# {k}\n\n")
+
+    df.to_markdown(md_filename, index=True, mode="a")
+
     with open(md_filename, "a") as f:
         f.write("\n\n\n")
