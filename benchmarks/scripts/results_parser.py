@@ -32,7 +32,11 @@ results = {k.rsplit(".", 1)[1]: v[0] for k, v in data["results"].items()}
 results_vals = list(data["results"].values())
 params = list(product(*results_vals[0][1]))
 
-tuple_results = {}
+results_dict = {
+    "Time (s)": {},
+    "Peak Memory (GB)": {},
+    "FoM": {},
+}
 
 for k in results:
     result_type, result_name = k.split("_")
