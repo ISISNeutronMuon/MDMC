@@ -173,9 +173,7 @@ jobs:
 
           python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Create comment
+        uses: peter-evans/create-or-update-comment@v4
         with:
-          name: benchmark_results
-          path: |
-            benchmark_results_*
+          body-path: 'benchmark_results_$(git rev-parse --short=8 HEAD).md'
