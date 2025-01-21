@@ -51,10 +51,10 @@ for k in results:
         case "track":
             results_dict["FoM"][result_name] = results[k]
 
-md_filename = f"benchmark_results_{args.benchmark_commit}.md"
+md_filename = f"benchmark_results.md"
 
-with open(md_filename, "w") as f:
-    f.write("# Benchmark results\n\n")
+with open(md_filename, "a") as f:
+    f.write("# Full benchmark results\n\n")
 
 
 #Construct dataframe for each result type and save as markdown
