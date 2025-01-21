@@ -54,7 +54,7 @@ for k in results:
 md_filename = f"benchmark_results.md"
 
 with open(md_filename, "a") as f:
-    f.write("# Full benchmark results\n\n")
+    f.write("<details><summary># Full benchmark results<\summary>")
 
 
 #Construct dataframe for each result type and save as markdown
@@ -70,3 +70,6 @@ for k, v in results_dict.items():
 
     with open(md_filename, "a") as f:
         f.write("\n\n\n")
+        
+with open(md_filename, "a") as f:
+    f.write("<\details>")
