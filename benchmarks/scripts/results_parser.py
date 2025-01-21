@@ -54,7 +54,7 @@ for k in results:
 md_filename = f"benchmark_results.md"
 
 with open(md_filename, "a") as f:
-    f.write("<details><summary># Full benchmark results<\summary>")
+    f.write("<details> <summary> Full benchmark results <\summary> \n\n")
 
 
 #Construct dataframe for each result type and save as markdown
@@ -64,7 +64,7 @@ for k, v in results_dict.items():
     df = pd.DataFrame(v, index=rows)
 
     with open(md_filename, "a") as f:
-        f.write(f"## {k}\n\n")
+        f.write(f"{k}\n\n")
 
     df.reset_index().to_markdown(md_filename, index=False, mode="a", tablefmt='github')
 
