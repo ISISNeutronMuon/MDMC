@@ -66,7 +66,7 @@ for k, v in results_dict.items():
     with open(md_filename, "a") as f:
         f.write(f"# {k}\n\n")
 
-    df.to_markdown(md_filename, index=True, mode="a")
+    df.reset_index().to_markdown(md_filename, index=False, mode="a", tablefmt='github')
 
     with open(md_filename, "a") as f:
         f.write("\n\n\n")
