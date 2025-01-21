@@ -163,8 +163,9 @@ jobs:
           asv run -b '.*(?<!_long)\(' HEAD^!
           asv run -b '.*(?<!_long)\(' HEAD~1^!
           
-          echo "# Benchmark changes from master" > benchmark_results.md
+          echo "<details> <summary>Benchmark changes from master</summary>" > benchmark_results.md
           asv compare --only-changed --split HEAD^ HEAD >> benchmark_results.md
+          echo "</details>" >> benchmark_results.md
 
           python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
 
