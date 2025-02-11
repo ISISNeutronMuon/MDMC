@@ -651,7 +651,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         if self.universe.electrostatic_solver:
             self.dlpoly.control['coul_method'] = settings.get('coul_method', 'spme')
-            self.dlpoly.control['ewald_precision'] = self.universe.electrostatic_solver.accuracy
+            self.dlpoly.control['spme_precision'] = self.universe.electrostatic_solver.accuracy
         else:
             self.dlpoly.control['coul_method'] = settings.get('coul_method', 'off')
 
