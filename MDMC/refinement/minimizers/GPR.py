@@ -212,8 +212,7 @@ class GPR(Minimizer):
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
-    def GPR_fit(self, filename: Optional[str] = None,
-                alpha: Optional[float] = 5, length_scale: Optional[float] = 4):
+    def GPR_fit(self, filename: Optional[str] = None):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement
         and can be read into a dataframe with the relevant parameters. Uses the recorded points
@@ -227,13 +226,6 @@ class GPR(Minimizer):
             The filename or full path to a comma separated value file containing
             the full output of the refinement. Defaults to None, but if results_filename is set by
             Control then this is passed into GPR as self.results_filename and used here.
-        alpha: float, optional
-            Hyperparameter for the fitting, which can represent Gaussian noise in measurement
-            points, e.g. how much variation in the output you expect between MD runs.
-            Defaults to 5.
-        length_scale: float, optional
-            Hyperparameter for the fitting, which can represent how quickly the kernel is able
-            to change/oscillate. Defaults to 4.0.
 
         Returns
         -------
@@ -263,8 +255,8 @@ class GPR(Minimizer):
 
         coordinates = records.values.tolist()
 
-        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
-        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+        kernel = kernels.Matern(length_scale = np.ones(len(coordinates[0]))) + kernels.WhiteKernel()
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = 0.)
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
