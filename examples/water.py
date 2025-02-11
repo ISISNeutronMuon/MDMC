@@ -59,7 +59,7 @@ exp_dataset_ISIS = [{'file_name':data.READER_DATA['MantidSQw_one_file'],
                  'type':'SQw',
                  'reader':'MantidSQw',
                  'weight':1.,
-                 'resolution':data._ABS_DIR_PATH+'/experimental_data/IRIS_26173_water_data_resolution.dat'}]
+                 'resolution': str(data._ABS_DIR_PATH / 'experimental_data/IRIS_26173_water_data_resolution.dat')}]
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters.as_array:
@@ -80,4 +80,4 @@ control.minimize(n_steps=5000)
 control.equilibrate(n_steps=25000)
 
 # Run refinement
-control.refine(n_steps=0)
+control.refine(n_steps=3)
