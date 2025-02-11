@@ -58,7 +58,7 @@ ArKr_dispersion = Dispersion(universe,
 # If time_step is descreased by a factor consider increasing traj_step by the
 # same factor.
 simulation = Simulation(universe,
-                        engine="dlpoly",
+                        engine="lammps",
                         time_step=10.18893,
                         temperature=100.,
                         traj_step=15)
