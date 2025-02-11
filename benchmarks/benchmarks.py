@@ -110,12 +110,12 @@ def setup_controls(n_params, n_steps):
                     temperature=120.,
                     traj_step=15)
 
-    params = {str(i): np.random.uniform(-1., 1.) for i in range(n_params)}
+    params = {str(i): np.random.uniform(400., 450.) for i in range(n_params)}
 
     interactions = InteractionFunction(params)
 
     for p in interactions.parameters.values():
-        p.constraints = (-1., 1.)
+        p.constraints = (400., 450.)
 
     _ = Dispersion(universe,
                         (Ar.atom_type, Ar.atom_type),
@@ -168,16 +168,26 @@ def setup_controls(n_params, n_steps):
 def mock_FoM(self):
     """
     Mock figure of merit method.
-    Calculates the sum of the squared parameters in the control
+    Calculates the Schwefel function of the parameters in the control
     object it is mocking.
     """
-    self.fom = 0
-
-    for v in self.fit_parameters.values():
-        self.fom += v.value ** 2
-
+    vals = np.array([v.value for v in self.fit_parameters.values()])
+    
+    self.fom = schwefel(vals)
+    
     return self.fom
 
+
+def schwefel(x):
+    """
+    Calculates the Scwefel function (https://www.sfu.ca/~ssurjano/schwef.html) 
+    of a given set of parameters.
+    Provides a relatively complex function to optimise whilst still having a known global minimum.
+    """
+    d = x.size
+
+    return (418.9829 * d) - np.sum(x * np.sin(np.sqrt(np.abs(x))))
+    
 
 class MinimizerSuite:
     """
