@@ -278,10 +278,10 @@ class GPR(Minimizer):
 
         Returns
         -------
-        point_array : list[tuple[float]]
-            The ``list`` of coordinates at which the predictions are made
-        prediction : numpy.ndarray
-            A ``list`` of predicted figure of merit surface at each coordinate in the point_array
+        min_params : numpy.ndarray
+            The ``list`` of coordinates at which the best FoM was found
+        min_fom : float
+            The best FoM found by the optimizer
         """       
         predict_wrapper = lambda x: input_regressor.predict([x])
         
