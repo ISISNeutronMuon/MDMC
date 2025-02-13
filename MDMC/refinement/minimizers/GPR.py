@@ -458,16 +458,16 @@ class GPR(Minimizer):
         for x, y in regressor_points:
             idx_x = np.argmin(np.abs(predictive_coordinates[0]-x))
             idx_y = np.argmin(np.abs(predictive_coordinates[1]-y))
-            overlay[idx_x, idx_y, 3] = 1
+            overlay[idx_x, idx_y, 3] = 1.
 
         #Get position of predicted minimum
         idx_x = np.argmin(np.abs(predictive_coordinates[0] - min_parameters_predicted[0]))
         idx_y = np.argmin(np.abs(predictive_coordinates[1] - min_parameters_predicted[1]))
 
-        overlay[idx_x, idx_y, 0] = 256
+        overlay[idx_x, idx_y, 0] = 1.
         overlay[idx_x, idx_y, 1] = 0
-        overlay[idx_x, idx_y, 2] = 128
-        overlay[idx_x, idx_y, 3] = 1
+        overlay[idx_x, idx_y, 2] = 0.5
+        overlay[idx_x, idx_y, 3] = 1.
 
         ax = fig.add_subplot(111)
         cax = ax.matshow(prediction.reshape(100, 100))
@@ -475,8 +475,13 @@ class GPR(Minimizer):
 
         ax.imshow(overlay, interpolation="nearest")
 
-        ax.set_xticklabels(['']+["{:.5f}".format(x) for x in labels[0]])
-        ax.set_yticklabels(['']+["{:.5f}".format(x) for x in labels[1]])
+        ticks = np.linspace(0, n_points-1, n_labels)
+
+        ax.set_xticks(ticks)
+        ax.set_yticks(ticks)
+
+        ax.set_xticklabels(["{:.5f}".format(x) for x in labels[1]])
+        ax.set_yticklabels(["{:.5f}".format(x) for x in labels[0]])
 
         plt.savefig("prediction.png")
 
@@ -487,7 +492,10 @@ class GPR(Minimizer):
 
             fig.colorbar(cax)
 
-            ax.set_xticklabels(['']+["{:.5f}".format(x) for x in labels[0]])
-            ax.set_yticklabels(['']+["{:.5f}".format(x) for x in labels[1]])
+            ax.set_xticks(ticks)
+            ax.set_yticks(ticks)
+
+            ax.set_xticklabels(['']+["{:.5f}".format(x) for x in labels[1]])
+            ax.set_yticklabels(['']+["{:.5f}".format(x) for x in labels[0]])
 
             plt.savefig("prediction_std.png")
