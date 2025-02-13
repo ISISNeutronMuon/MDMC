@@ -51,7 +51,7 @@ for k in results:
         case "track":
             results_dict["FoM"][result_name] = results[k]
 
-md_filename = f"benchmark_results.md"
+md_filename = "benchmark_results.md"
 
 with open(md_filename, "a") as f:
     f.write("<details> <summary> Full benchmark results </summary> \n\n")
