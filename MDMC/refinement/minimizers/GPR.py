@@ -1,5 +1,4 @@
 """The Gaussian-Process-Regression minimizer class"""
-import itertools
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Optional, Union
@@ -7,10 +6,9 @@ from typing import TYPE_CHECKING, Optional, Union
 import numpy as np
 import pandas as pd
 import scipy.stats as st
-from scipy.ndimage import minimum, minimum_position
+from scipy.optimize import direct
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
-from scipy.optimize import direct
 
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -50,7 +48,7 @@ class GPR(Minimizer):
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
-        self.results_filename = settings.get('results_filename', None)
+        self.results_filename = settings.get('results_filename')
         self.change_parameters()
         self.previous_history = previous_history
         self.state_changed = False
@@ -265,9 +263,9 @@ class GPR(Minimizer):
     def GPR_predict(self, input_regressor) -> 'tuple[list[tuple[float]], np.ndarray]':
         """
         Takes a fitted Gaussian process regressor from GPR_fit, and uses the DIRECT
-        global optimization algorithm 
-        (https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.direct.html#id1) to find the minimum FoM according to the 
-        regressor's predictions.
+        global optimization algorithm
+        (https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.direct.html#id1)
+        to find the minimum FoM according to the regressor's predictions.
 
         Parameters
         ----------
@@ -282,16 +280,16 @@ class GPR(Minimizer):
             The ``list`` of coordinates at which the best FoM was found
         min_fom : float
             The best FoM found by the optimizer
-        """       
-        predict_wrapper = lambda x: input_regressor.predict([x])
-        
+        """
+        def predict_wrapper(x): return input_regressor.predict([x])
+
         bounds = list(zip(self.lower_bounds, self.upper_bounds))
-        
+
         optimizer_result = direct(predict_wrapper, bounds)
 
         min_params = optimizer_result.x
         min_fom = optimizer_result.fun
-        
+
         return min_params, min_fom
 
     def extract_result(self) -> list:
