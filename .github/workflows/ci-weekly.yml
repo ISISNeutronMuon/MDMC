@@ -69,3 +69,5 @@ jobs:
             echo "==============================="
     
             python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
+
+            echo "$(<benchmark_results.md)"
