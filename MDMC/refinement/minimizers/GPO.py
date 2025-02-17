@@ -93,7 +93,7 @@ class GPO(Minimizer):
 
         self.optimizer = Optimizer(
             self.parameter_bounds, "GP", acq_func="gp_hedge",
-            acq_optimizer="lbgfs", initial_point_generator= "lhs",
+            acq_optimizer="lbfgs", initial_point_generator= "lhs",
             n_initial_points=initial_points, model_queue_size=1)
 
     @property
