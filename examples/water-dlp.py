@@ -56,17 +56,15 @@ simulation = Simulation(universe,
 
 # in general exp_datasets is a list of dictionaries with one dictionary per experimental dataset
 # below are 2 separate objects for the 2 datasets as they were measured at different temperatures
-exp_dataset_ILL = [{'file_name':'../doc/tutorials/data/263K05Awat_LAMP',
+exp_dataset_ILL = [{'file_name':data.READER_DATA['LAMPSQw'],
                  'type':'SQw',
                  'reader':'LAMPSQw',
-                 'auto_scale':True,
                  'weight':1.}]
-exp_dataset_ISIS = [{'file_name':'../doc/tutorials/data/IRIS_26176_water_data.dat',
+exp_dataset_ISIS = [{'file_name':data.READER_DATA['MantidSQw_one_file'],
                  'type':'SQw',
                  'reader':'MantidSQw',
-                 'auto_scale':True,
                  'weight':1.,
-                 'resolution':'../doc/tutorials/data/IRIS_26173_water_data_resolution.dat'}]
+                 'resolution': str(data._ABS_DIR_PATH / 'experimental_data/IRIS_26173_water_data_resolution.dat')}]
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters.as_array:
