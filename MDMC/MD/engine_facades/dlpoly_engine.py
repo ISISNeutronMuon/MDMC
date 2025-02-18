@@ -820,7 +820,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         mapping = {}
         for ind, atm in enumerate(structure.atoms, 1):
-            MDMC_spec = universe.element_dict[atm.element]
+            MDMC_spec = universe.element_dict[str(atm.element)]
             new_species = Species(atm.element, ind,
                                   MDMC_spec.charge, MDMC_spec.mass)
             new_molecule.species[ind] = new_species
@@ -877,9 +877,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
             current_atom = [spec[atm]
                             for parm in disp.atom_types
                             for atm in parm]
-            current_pot = next(self.dlpoly.field.get_pot(species=current_atom,
-                                                         pot_type='lj'))
-            current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters.values())]
+            pot_iter = self.dlpoly.field.get_pot(species=current_atom,
+                                                         pot_type='lj')
+            
+            if pot_iter:
+                current_pot = next(pot_iter)
+                current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters.values())]
 
     def _update_bonded_interactions(self) -> None:
 
@@ -898,14 +901,19 @@ class DLPOLYUniverse(DLPOLYAttribute):
             for bond, atms in structure.bonded_interaction_pairs:
                 current_atom = [mapping[atm.ID] for atm in atms]
                 if bond.constrained:
-                    pot = next(mol.get_pot(species=current_atom))
-                    pot.params = str(list(bond.parameters.values())[0].value.real)
+                    pot_iter = mol.get_pot(species=current_atom)
+                    if pot_iter:
+                        pot = next(pot_iter)
+                        pot.params = str(list(bond.parameters.values())[0].value.real)
 
                 else:
-                    pot = next(mol.get_pot(species=current_atom,
-                                           potClass=BOND_CLASS_REF[type(bond).__name__],
-                                           potType=POTENTIAL_REF[bond.function.name]))
-                    pot.params = [*map(lambda x: str(x.value.real), bond.parameters.values())]
+                    pot_iter = mol.get_pot(species=current_atom,
+                                           pot_class=BOND_CLASS_REF[type(bond).__name__],
+                                           pot_type=POTENTIAL_REF[bond.function.name])
+                    
+                    if pot_iter:
+                        pot = next(pot_iter)
+                        pot.params = [*map(lambda x: str(x.value.real), bond.parameters.values())]
 
     def apply_constraints(self) -> None:
         """
