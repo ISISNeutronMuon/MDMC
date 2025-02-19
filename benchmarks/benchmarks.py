@@ -5,7 +5,6 @@ from pathlib import Path
 from itertools import product
 
 import numpy as np
-from asv_runner.benchmarks.mark import skip_for_params
 
 from MDMC.control import Control
 from MDMC.MD import Atom, Simulation, Universe, InteractionFunction
@@ -201,9 +200,6 @@ class MinimizerSuite:
     n_params = [1, 3, 5, 10]
     n_steps = [5, 10, 50]
 
-    #GPR benchmarks are skipped for larger parameter spaces due to its memory use
-    gpr_skip_params = list(product([5, 10], n_steps))
-
     params = (n_params, n_steps)
     param_names = ["Number of parameters", "Number of steps"]
 
@@ -256,7 +252,6 @@ class MinimizerSuite:
         self.control_GPO.refine(n_steps=n_steps)
         return float(self.control_GPO.fom)
 
-    @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def time_GPR(self, num_params, n_steps):
         """
@@ -264,7 +259,6 @@ class MinimizerSuite:
         """
         self.control_GPR.refine(n_steps=n_steps)
 
-    @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def peakmem_GPR(self, num_params, n_steps):
         """
@@ -272,7 +266,6 @@ class MinimizerSuite:
         """
         self.control_GPR.refine(n_steps=n_steps)
 
-    @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def track_GPR(self, n_params, n_steps):
         """
@@ -293,9 +286,6 @@ class MinimizerSuiteLong:
     timeout = 10000
     n_params = [1, 3, 5, 10]
     n_steps = [100]
-
-    #GPR benchmarks are skipped for larger parameter spaces due to its memory use
-    gpr_skip_params = list(product([5, 10], n_steps))
 
     params = (n_params, n_steps)
     param_names = ["Number of parameters", "Number of steps"]
@@ -349,7 +339,6 @@ class MinimizerSuiteLong:
         self.control_GPO.refine(n_steps=n_steps)
         return float(self.control_GPO.fom)
 
-    @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def time_GPR_long(self, num_params, n_steps):
         """
@@ -357,7 +346,6 @@ class MinimizerSuiteLong:
         """
         self.control_GPR.refine(n_steps=n_steps)
 
-    @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def peakmem_GPR_long(self, num_params, n_steps):
         """
@@ -365,7 +353,6 @@ class MinimizerSuiteLong:
         """
         self.control_GPR.refine(n_steps=n_steps)
 
-    @skip_for_params(gpr_skip_params)
     @patch.object(Control, "_generate_FoM", mock_FoM)
     def track_GPR_long(self, n_params, n_steps):
         """
