@@ -163,7 +163,7 @@ jobs:
           asv run -b '.*(?<!_long)\(' HEAD^!
           asv run -b '.*(?<!_long)\(' HEAD~1^!
           
-          echo "<details> <summary>Benchmark changes from master</summary>" > benchmark_results.md
+          echo -e "<details> <summary>Benchmark changes from master</summary>\n" > benchmark_results.md
           asv compare --only-changed --split HEAD^ HEAD >> benchmark_results.md
           echo "</details>" >> benchmark_results.md
 
