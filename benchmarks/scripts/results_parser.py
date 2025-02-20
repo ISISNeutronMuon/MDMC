@@ -9,10 +9,20 @@ parser = argparse.ArgumentParser(
     description='Parse the results of an MDMC benchmarking run to make it more human readable'
 )
 
-parser.add_argument("benchmark_commit")
+parser.add_argument(
+    "benchmark_commit",
+    help="commit get results for (8 character hash)"
+)
+
+parser.add_argument(
+    "--python_version", 
+    default="3.10", 
+    help="python version benchmarks were run with. Defaults to 3.10"
+)
+
 args = parser.parse_args()
 
-filename = f"{args.benchmark_commit}-virtualenv-py3.10.json"
+filename = f"{args.benchmark_commit}-virtualenv-py{args.python_version}.json"
 
 results_dir = Path(__file__).parent.parent.absolute() / "results/"
 
