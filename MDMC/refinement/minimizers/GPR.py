@@ -495,7 +495,7 @@ class GPR(Minimizer):
             ax.set_xticks(ticks)
             ax.set_yticks(ticks)
 
-            ax.set_xticklabels(['']+["{:.5f}".format(x) for x in labels[1]])
-            ax.set_yticklabels(['']+["{:.5f}".format(x) for x in labels[0]])
+            ax.set_xticklabels(["{:.5f}".format(x) for x in labels[1]])
+            ax.set_yticklabels(["{:.5f}".format(x) for x in labels[0]])
 
             plt.savefig("prediction_std.png")
