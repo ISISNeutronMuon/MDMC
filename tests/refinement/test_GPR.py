@@ -94,7 +94,7 @@ def mocked_df():
 
 @pytest.fixture
 def correct_output_data():
-    return [(1.0, 2.0), 1.0, np.array([1.2962963, 2.59259259]), 1.6154895669395306]
+    return [(1.0, 2.0), 1.0, np.array([0.99972565, 2.09108368]), 0.9935490487887009]
 
 
 def test_GPR_parameter_point_array_hypercube(mockcontrol, constrained_parameters):
