@@ -254,9 +254,9 @@ class GPR(Minimizer):
         coordinates = records.values.tolist()
 
         kernel = kernels.Matern(length_scale = np.ones(len(coordinates[0]))) + kernels.WhiteKernel()
-        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = 0.)
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = 0., normalize_y=True)
 
-        fitted_GPR = gpr.fit(coordinates, FOMs, normalize_y=True)
+        fitted_GPR = gpr.fit(coordinates, FOMs)
 
         return fitted_GPR, min_FOM, min_pars
 
