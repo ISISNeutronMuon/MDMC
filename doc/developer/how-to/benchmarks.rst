@@ -23,6 +23,8 @@ Benchmarking is run using the `airspeed velocity <https://asv.readthedocs.io/en/
 asv is primarily designed to track the performance of a repository over time, so works by benchmarking individual commits.
 Benchmarks are configured to run in Github actions on every pull request, with longer benchmarks
 run weekly.
+Benchmarks are run with varying numbers of parameters to fit and refinement steps.
+The starting values of the parameters are randomised at the start of each refinement.
 
 The benchmark suite can also be run locally using the command:
 
@@ -60,7 +62,7 @@ Running:
 Will generate a ``benchmark_results.md`` file with more human-friendly formatting for comparing results.
 ``commit`` must be the 8-character short hash for the commit you wish to benchmark.
 If you have run the benchmarks using a version of python that is not ``3.10``, you will also have to
-add the ``--python_version`` argument to the command and specify your version.
+specify your version with the ``--python_version`` argument.
 
 To compare the results of different commits use:
 
@@ -72,12 +74,12 @@ Adding new benchmarks
 ---------------------
 
 Benchmark functions are defined in ``benchmarks/benchmarks.py``.
-asv runs all functions in the benchmark folder with one of its accepted prefixes, listed 
+asv runs all functions in the top level of the benchmark directory with one of its accepted prefixes, listed 
 `here <https://asv.readthedocs.io/en/latest/writing_benchmarks.html#benchmark-types>`_.
 
-Different suites of benchmarks can be separated by making them methods of different classes.
-Each class can also include a ``setup`` method which is run before each benchmark.
-You can also define a set of parameters in the class to run benchmarks with.
+Different suites of benchmarks can be separated into classes.
+Each class includes benchmarks as methods, and can also include a ``setup`` method which is run before each benchmark.
+You can also define a list of parameters in the class to run benchmarks with.
 Parameters are passed as positional arguments to each benchmark function, as well as ``setup``.
 
 For more information on writing benchmarks, see the 
@@ -86,5 +88,5 @@ For more information on writing benchmarks, see the
 asv configuration
 -----------------
 
-Configuration for asv runs, such as installation commands for the virtual environment and results folders is stored in ``asv.conf.json``.
+Configuration for asv runs, such as installation commands for the virtual environment and results directories is stored in ``asv.conf.json``.
 See the `docs <https://asv.readthedocs.io/en/latest/asv.conf.json.html>`_ for more information.
