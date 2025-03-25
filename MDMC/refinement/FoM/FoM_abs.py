@@ -18,6 +18,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+from typing import Union
 
 import numpy as np
 

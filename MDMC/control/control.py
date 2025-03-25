@@ -148,6 +148,7 @@ class Control:
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
           - ``auto_scale`` (str or :class:`AutoScale`, optional, defaults to `CONSTANT`)
+            The method for automatically setting the rescale factor.
             See :class:`AutoScale` documentation for more information.
           - ``use_FFT`` (`bool`, optional, defaults to `True`) whether to use
             Fast Fourier Transforms in the calculation of dependent variables.
