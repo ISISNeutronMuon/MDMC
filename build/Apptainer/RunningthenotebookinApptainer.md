@@ -2,7 +2,7 @@
 
 
 ```bash
-http://127.0.0.1:8888/tree?token=13af9f23709bfd667054930d617ced4a4ba591c5c21d8f4c
+Apptainer> jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root
 ```bash
 
 
