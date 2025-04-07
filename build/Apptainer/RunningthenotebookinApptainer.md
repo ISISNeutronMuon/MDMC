@@ -1,4 +1,4 @@
-#Type in the terminal the following line.
+## Type in the terminal the following line.
 
 
 ```bash
