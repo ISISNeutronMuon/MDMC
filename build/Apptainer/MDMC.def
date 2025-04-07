@@ -1,0 +1,31 @@
+Bootstrap: docker
+From: mdmc/mdmc
+
+%labels
+    Author YourName
+    Version 1.0
+
+%post
+    # Install necessary packages
+    apt-get update && apt-get install -y git python3-pip
+
+    # Set up environment variables
+    echo "export DISPLAY=\$DISPLAY" >> /environment
+
+    # Clone the repository and install the package using the token
+    TOKEN=<write your token>
+    git clone --depth=1 https://$TOKEN@github.com/MDMCproject/MDMCv0.2_pilot
+    pip3 install ./MDMCv0.2_pilot
+
+    # Create the target directory before copying
+    mkdir -p /mdmc/notebooks/mdmc_tutorials
+    # Copy tutorials into the volume directory
+    cp -RT ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
+
+%environment
+    export DISPLAY=$DISPLAY
+
+%runscript
+    cd /mdmc/notebooks
+    jupyter trust /mdmc/notebooks/mdmc_tutorials/*.ipynb
+    exec jupyter notebook --ip 0.0.0.0 --allow-root
