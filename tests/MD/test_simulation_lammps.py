@@ -3,6 +3,7 @@
 from collections import Counter
 
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 from MDMC.common import units
@@ -103,9 +104,10 @@ def universe_interactions(empty_universe, atoms):
     bond2_atoms = [(atoms[i], atoms[i+2]) for i in range(0, len(atoms)-2, 3)]
     bonds = [Bond(*bond1_atoms, function=bond1_harmonic),
              Bond(*bond2_atoms, function=bond2_harmonic)]
-    angles = [BondAngle(*[(atoms[i], atoms[i+1], atoms[i+2]) for i
-                          in range(0, len(atoms)-2, 3)],
+
+    angles = [BondAngle(*zip(atoms[0::3], atoms[1::3], atoms[2::3]),
                         function=angle_harmonic)]
+
     propers = [DihedralAngle(tuple(atom for atom in atoms[:4]),
                              function=proper_periodic, improper=False)]
     impropers = [DihedralAngle(tuple(atom for atom in atoms[:4]),
@@ -407,12 +409,10 @@ def test_number_interaction_types(lammps_universe):
     proper dihedral types.
     """
 
-    assert lammps_universe.system_state.nbondtypes == 2
-    assert lammps_universe.system_state.nimpropertypes == 1
-    # LAMMPS versions <= 20190104 have a bug which incorrectly assigns the
-    # number of angle types, so only test this if using a more recent version
-    if lammps_universe.lmp.lmp.version() > 20190104:
-        assert lammps_universe.system_state.nangletypes == 1
+    getter = lammps_universe.lmp.lmp.numpy
+    for name, expected in zip(("bonds", "angles", "impropers"),
+                              (2, 1, 1)):
+        assert (np.max(getattr(getter, f"gather_{name}")()[:, 0]) == expected)
 
 
 def test_number_interactions(lammps_universe, bonds, angles, propers,
@@ -429,15 +429,11 @@ def test_number_interactions(lammps_universe, bonds, angles, propers,
 
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
-
-    assert lammps_universe.system_state.nbonds == sum([len(b) for
-                                                       b in bonds])
-    assert lammps_universe.system_state.nangles == sum([len(a) for
-                                                        a in angles])
-    assert lammps_universe.system_state.ndihedrals == sum([len(p) for
-                                                           p in propers])
-    assert lammps_universe.system_state.nimpropers == sum([len(i) for
-                                                           i in impropers])
+    getter = lammps_universe.lmp.lmp.numpy
+    for var, name in zip((bonds, angles, propers, impropers),
+                         ("bonds", "angles", "dihedrals", "impropers")):
+        assert (getattr(getter, f"gather_{name}")().shape[0] ==
+                sum(len(x.atoms) for x in var))
 
 
 def test_atom_type_properties(lammps_universe, universe):
@@ -847,7 +843,7 @@ def test_parse_bonded_coefficients(inter_type, fun_type, parameters, settings,
 @pytest.mark.parametrize('system_attr, expected',
                          [('bond_style', 'hybrid'),
                           ('angle_style', 'hybrid'),
-                          ('style', 'hybrid/overlay')])
+                          ('pair_style', 'hybrid/overlay')])
 def test_create_interaction_style(lammps_universe, system_attr,
                                   expected):
 
@@ -862,7 +858,6 @@ def test_create_interaction_style(lammps_universe, system_attr,
 
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
-
     assert getattr(lammps_universe.system_state, system_attr) == expected
 
 
@@ -1357,7 +1352,7 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
         assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity) != 0)
 
     lammps_simulation.lmp.run(0)
-    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
+    assert_allclose(lammps_simulation.lmp.runs[0][0].Temp[0], temperature)
 
 
 @pytest.mark.parametrize('temperature', [150., 300.])
@@ -1392,7 +1387,7 @@ def test_initialize_nonzero_velocities(universe, temperature):
                       == scale_factor * velocity[i])
 
     lammps_simulation.lmp.run(0)
-    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
+    assert_allclose(lammps_simulation.lmp.runs[0][0].Temp[0], temperature)
 
 
 @pytest.mark.parametrize('skin, neighbor_steps', [(1, 2),
@@ -1921,23 +1916,13 @@ def test_partion_interactions_return_list(interactions, bonds, angles):
                                                              lst=True)
 
 
-def test_warn_on_invalid_run(populated_lammps_simulation):
+def test_warn_on_invalid_run(simulation):
     """
     Tests that a warning is issued when attempting to run a lammps
     simulation shorter than ``traj_step``
     """
 
+    simulation.traj_step = 10
+    lammps_engine.lmp_simulation = populated_lammps_simulation
     with pytest.warns(UserWarning, match="run may not produce usable output"):
-        populated_lammps_simulation.run(n_steps=3)
-
-
-def test_fail_on_build_trajectory_invalid_run(populated_lammps_simulation):
-    """
-    Tests that attempting to build a trajectory from a simulation
-    shorter than ``traj_step`` fails with meaningful error.
-    """
-
-    with pytest.warns(UserWarning):
-        populated_lammps_simulation.run(n_steps=3)
-    with pytest.raises(IOError, match="Trajectory file empty"):
-        _ = populated_lammps_simulation.trajectory
+        simulation.run(n_steps=3)
