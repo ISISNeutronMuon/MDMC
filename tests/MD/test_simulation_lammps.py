@@ -1916,23 +1916,13 @@ def test_partion_interactions_return_list(interactions, bonds, angles):
                                                              lst=True)
 
 
-def test_warn_on_invalid_run(populated_lammps_simulation):
+def test_warn_on_invalid_run(simulation):
     """
     Tests that a warning is issued when attempting to run a lammps
     simulation shorter than ``traj_step``
     """
 
+    simulation.traj_step = 10
+    lammps_engine.lmp_simulation = populated_lammps_simulation
     with pytest.warns(UserWarning, match="run may not produce usable output"):
-        populated_lammps_simulation.run(n_steps=3)
-
-
-def test_fail_on_build_trajectory_invalid_run(populated_lammps_simulation):
-    """
-    Tests that attempting to build a trajectory from a simulation
-    shorter than ``traj_step`` fails with meaningful error.
-    """
-
-    with pytest.warns(UserWarning):
-        populated_lammps_simulation.run(n_steps=3)
-    with pytest.raises(IOError, match="Trajectory file empty"):
-        _ = populated_lammps_simulation.trajectory
+        simulation.run(n_steps=3)

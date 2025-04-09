@@ -1689,12 +1689,13 @@ class LAMMPSSimulation(PyLammpsAttribute):
         elif self.lin_momentum_steps == self.ang_momentum_steps:
             self.lmp.fix('RemoveMomentum', 'all', 'momentum',
                          self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
-        elif self.lin_momentum_steps:
-            self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
-                         self.lin_momentum_steps, 'linear', 1, 1, 1)
-        elif self.ang_momentum_steps:
-            self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
-                         self.ang_momentum_steps, 'angular')
+        else:
+            if self.lin_momentum_steps:
+                self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
+                             self.lin_momentum_steps, 'linear', 1, 1, 1)
+            if self.ang_momentum_steps:
+                self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
+                             self.ang_momentum_steps, 'angular')
 
     def _set_kspace_solver(self) -> None:
         """
