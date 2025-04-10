@@ -181,7 +181,7 @@ def write_H5MD(trajectory: CompactTrajectory,
 
     if timestamp:
         time_stamp = datetime.now().strftime('%d%m%y-%H.%M.%S.%f')
-        filename = filename.with_stem(f'{time_stamp}_{filename}')
+        filename = filename.with_stem(f'{filename.stem}_{time_stamp}')
 
     file_path_name = file_loc / filename
 
