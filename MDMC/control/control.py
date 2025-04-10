@@ -556,6 +556,21 @@ class Control:
             raise Exception('Minimization failed, please check the parameter values.') from exc
 
 
+    def auto_equilibrate(self):
+        """
+        Run auto-equilibration phase using settings defined in self.
+
+        Notes
+        -----
+        Auto equilibrate settings are prefixed with "auto_equil_" and
+        these settings will be passed through to :func:`Simulation.auto_equilibrate`.
+        """
+        auto_eq_settings = {key.removeprefix("auto_equil_"): val
+                            for key, val in self.settings.items()
+                            if key.startswith("auto_equil_")}
+        self.simulation.auto_equilibrate(**auto_eq_settings)
+
+
     def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
@@ -580,7 +595,7 @@ class Control:
 
         try:
             if not n_steps:
-                self.simulation.auto_equilibrate()
+                self.auto_equilibrate()
             else:
                 self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
         except MDEngineError:
@@ -1133,7 +1148,7 @@ class Control:
 
             try:
                 if not n_steps:
-                    self.simulation.auto_equilibrate()
+                    self.auto_equilibrate()
                 else:
                     self.simulation.run(n_steps,True, verbose, output_log, work_dir,**settings)
                 equil_works = True
