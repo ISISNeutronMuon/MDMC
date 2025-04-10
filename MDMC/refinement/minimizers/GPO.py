@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from MDMC.control import Control
     from MDMC.MD.parameters import Parameters
 
-
 class GPO(Minimizer):
     """
     ``Minimizer`` which uses Gaussian process optimisation to find the global minimum
@@ -152,7 +151,7 @@ class GPO(Minimizer):
         # pylint: disable=unnecessary-pass
         pass
 
-    def step(self, FoM: float) -> None:
+    def step(self, FoM: float, refit: bool) -> None:
         """
         Increments the minimization by a step, tells the optimizer the most recent measured point
         asks for the coordinates of the next point, updates the history, checks for convergance
@@ -167,7 +166,7 @@ class GPO(Minimizer):
         self.FoM = FoM
         values = list((self.parameters[p].value for p in self.parameters))
 
-        self.optimizer.tell(values, float(self.FoM))
+        self.optimizer.tell(values, float(self.FoM), fit=refit)
 
         self.predicted_FoM = self.optimizer.get_result()['fun']
         self.predicted_min_pos = self.optimizer.get_result()['x']

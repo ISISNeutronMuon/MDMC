@@ -192,6 +192,7 @@ class Control:
                  print_all_settings: bool = False,
                  **settings: dict):
 
+        self.minimizer_type = minimizer_type
         self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
@@ -224,8 +225,8 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
-                                                           previous_history, **settings)
+        self.minimizer = MinimizerFactory.create_minimizer(self.minimizer_type, self,
+                                                           self.fit_parameters, **settings)
         self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
@@ -339,7 +340,7 @@ class Control:
         # setup the dataframe for stdout
         data_array = [
             ["-"],
-            [minimizer_type],
+            [self.minimizer_type],
             [self.FoM_calculator.__class__.__name__],
             [len(self.observable_pairs)],
             [len(self.fit_parameters)],
@@ -403,7 +404,7 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
-    def refine(self, n_steps: int = None) -> None:
+    def refine(self, n_steps: int = None, batch_steps: int = None) -> None:
         """
         Refines the specified potential parameters
 
@@ -441,6 +442,8 @@ class Control:
 
         count = -1
 
+        batch_steps, batch_compatible = self.check_minimzer_batch_compatibility(batch_steps=
+                                                                                batch_steps)
         if self.verbose != -1:
             self.data_printer.print_header(self.minimizer.history)  # creates stdout header
             verbose_manager = VerboseManager.instance()
@@ -455,8 +458,12 @@ class Control:
                         self.reset_engine()
 
                 verbose_manager.header(f"Step {count + 1}")
-                # advance the refinement by one step
-                self.step(bad_param_location=bad_param_location)
+
+                if batch_compatible and (count % batch_steps == 0):
+                    self.step(bad_param_location=bad_param_location,refit=True)  # advance the refinement by one step, refitting model
+                else:
+                    self.step(bad_param_location=bad_param_location)  # advance the refinement by one step
+
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                     print("")
@@ -593,7 +600,7 @@ class Control:
                 raise MDEngineError from exc
 
 
-    def step(self, bad_param_location: bool = False) -> None:
+    def step(self, bad_param_location: bool = False, refit: bool = False) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
@@ -621,7 +628,7 @@ class Control:
 
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
-        self.minimizer.step(fom)
+        self.minimizer.step(fom, refit=refit)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
         # When reset_config=true reset the MD (phasespace) back if the
@@ -1031,7 +1038,6 @@ class Control:
         """
 
         with suppress(AttributeError):
-
             changed, traj_step, time_step, self.dt_required \
                   = obs.validate_energy(self.simulation.time_step)
             if changed:
@@ -1196,3 +1202,18 @@ class Control:
         self.observable_pairs[0].MD_obs._dependent_variables = None
 
         return max_FoM
+
+    def check_minimzer_batch_compatibility(self, batch_steps: int = None):
+        """
+        """
+        batch_compatible_minimizers = ['GPO']
+        batch_compatible = False
+        if str(self.minimizer_type) in batch_compatible_minimizers:
+            batch_compatible = True
+            if not batch_steps:
+                batch_steps = 1
+        else:
+            logging.warning("The minimizer chosen is not compatible with any value for" 
+                                "'batch_steps' and so that parameter will be ignored. ")
+
+        return batch_steps, batch_compatible  
