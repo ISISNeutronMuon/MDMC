@@ -41,7 +41,7 @@ DLPOLY = ["dlpoly-py @ git+https://gitlab.com/ccp5/dlpoly-py.git"]
 ###
 
 test = ["pytest==8.3.2",
-        "pytest-cov==5.0.0",
+        "pytest-cov==6.1.1",
         "pytest-cases==3.8.5",
         "pytest-profiling==1.7.0"]
 lint = ["ruff==0.5.7"]
