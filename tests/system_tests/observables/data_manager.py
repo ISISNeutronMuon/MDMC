@@ -26,8 +26,8 @@ def trajectory():
     """
 
     # Unzip and unpickle the trajectory
-    compressed_trajectory = open(data.OBJECT_DATA['compact_trajectory'], 'rb').read()
-    pickled_trajectory = zlib.decompress(compressed_trajectory)
+    with open(data.OBJECT_DATA['compact_trajectory'], 'rb') as compressed_trajectory:
+        pickled_trajectory = zlib.decompress(compressed_trajectory.read())
     return pickle.loads(pickled_trajectory, encoding='latin-1')
 
 
