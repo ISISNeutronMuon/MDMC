@@ -46,11 +46,11 @@ test = ["pytest==8.3.5",
         "pytest-profiling==1.7.0"]
 lint = ["ruff==0.5.7"]
 typecheck = ["mypy"]
-docs = ["sphinx==7.4.7",
-        "nbsphinx==0.9.4",
+docs = ["sphinx==8.2.3",
+        "nbsphinx==0.9.7",
         "sphinx-rtd-theme==2.0.0",
-        "docutils==0.20.1",
-        "jupyter==1.0.0",
+        "docutils==0.21.2",
+        "jupyter==1.1.1",
         "nbmake==1.5.4",
         "nbconvert==7.16.4",
         "lxml[html_clean]"]
