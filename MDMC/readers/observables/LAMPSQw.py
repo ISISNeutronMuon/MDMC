@@ -175,7 +175,7 @@ class LAMPSQw(SQwReader):
 
             return row_data
 
-        var = np.empty(dimensions)
+        var = np.zeros(dimensions)
 
         if len(dimensions) == 1:
             var = get_row_data(dimensions[0])
