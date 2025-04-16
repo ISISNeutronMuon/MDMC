@@ -1,7 +1,7 @@
 netCDF4==1.7.2
 numpy==2.2.4
 mypy==1.15.0
-pandas==2.2.2
+pandas==2.2.3
 scipy==1.15.2
 ase==3.24.0
 mpi4py==4.0.0
