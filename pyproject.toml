@@ -43,7 +43,7 @@ DLPOLY = ["dlpoly-py @ git+https://gitlab.com/ccp5/dlpoly-py.git"]
 test = ["pytest==8.3.5",
         "pytest-cov==6.1.1",
         "pytest-cases==3.8.6",
-        "pytest-profiling==1.7.0"]
+        "pytest-profiling==1.8.1"]
 lint = ["ruff==0.5.7"]
 typecheck = ["mypy"]
 docs = ["sphinx==8.1.3",
