@@ -48,10 +48,10 @@ def create_metadata_group(open_file: h5py.File, *,
     ----------
     open_file : h5py.File
         A pre-opened file that the data is being written into
-    creator_name : str, optional
-        Name of person running the MDMC simulation, by default 'Unknown'
-    creator_email : str, optional
-        Email of the person running the MDMC simulation, by default 'Unknown'
+    creator_name : str
+        Name of person running the MDMC simulation.
+    creator_email : str
+        Email of the person running the MDMC simulation.
     """
     group = open_file[H5MD_DATA['loc']]
     group.attrs['version'] = H5MD_DATA['h5md_version']
