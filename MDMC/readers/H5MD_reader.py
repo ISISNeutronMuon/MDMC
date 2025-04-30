@@ -78,7 +78,7 @@ def read_units(file: h5py.File, data_name: str) -> str:
     Returns
     -------
     str
-        String abbreviation of the units
+        String abbreviation of the units.
     """
     key = list(file['particles'].keys())[0]
 

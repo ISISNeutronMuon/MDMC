@@ -2,6 +2,7 @@
 """
 
 import logging
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,6 +11,8 @@ from typing import List
 from unittest.mock import Mock, ANY
 
 from MDMC.control import Control
+from MDMC.control.control import Dump
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter, Parameters
@@ -110,7 +113,6 @@ class MockParameters(dict):
         for p in parameters_list:
             self[p.name] = p
 
-
 class MockMinimizer:
 
     def __init__(self, history):
@@ -135,7 +137,7 @@ class MockMinimizer:
 
 
 def mock_generate_FoM(self):
-    return 1000
+    return 1000, None
 
 def mock_update_engine_parameters(self):
     pass
