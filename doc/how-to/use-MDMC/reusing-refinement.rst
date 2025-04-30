@@ -1,8 +1,8 @@
 .. _reusing-refinement-label:
 .. _H5MD Website: https://h5md.nongnu.org/h5md.html
 .. _MDANSE: https://mdanse.readthedocs.io/en/latest/index.html
-.. _MDANCE install docs: https://mdanse.readthedocs.io/en/latest/pages/H_start.html
-.. _MDANCE Turorials: https://mdanse.readthedocs.io/en/latest/pages/T_sim.html
+.. _MDANSE install docs: https://mdanse.readthedocs.io/en/latest/pages/H_start.html
+.. _MDANSE Turorials: https://mdanse.readthedocs.io/en/latest/pages/T_sim.html
 
 Reusing Refinements
 ===================
@@ -44,7 +44,7 @@ Examples
 --------
 .. code-block::
 
-        control = Control(simulation=simulation,https://mdanse.readthedocs.io/en/latest/pages/T_sim.html
+        control = Control(simulation=simulation,
                     exp_datasets=exp_datasets,
                     fit_parameters=fit_parameters,
                     MD_steps=570,
@@ -89,7 +89,7 @@ Once ``MDANSE`` is installed, you can use the User Interface to visualise the tr
 3. Chose an analysis type and configer the paramiters.
 4. Run analysis with the run button.
 
-``MDANSE`` has futher fcuntionality and for more infomation use the MDANCE documentation `MDANSE`_ or the MDANCE Tutorials `MDANCE Turorials`_.
+``MDANSE`` has futher fcuntionality and for more infomation use the MDANSE documentation `MDANSE`_ or the MDANSE Tutorials `MDANSE Turorials`_.
 
 Useful Links
 ------------
