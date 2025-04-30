@@ -30,7 +30,7 @@ Optional
 ^^^^^^^^
 Optionally, additional parameters can be used to change how or where the File is created:
 
-* ``h5md_file_name`` can be set to a preferred name of the H5MD trajectory files,
+* ``h5md_filename`` can be set to a preferred name of the H5MD trajectory files.
 * ``h5md_file_loc`` can be set to change where the file is stored,
 * ``h5md_timestamp`` can be set to True or False, adding or removing the time stamp at the end of the file name respectively.
 
@@ -42,21 +42,37 @@ Optionally, additional parameters can be used to change how or where the File is
 
 Examples
 --------
-.. code-block::
 
-        control = Control(simulation=simulation,
-                    exp_datasets=exp_datasets,
-                    fit_parameters=fit_parameters,
-                    MD_steps=570,
-                    h5md_dump=Dump.BEST)
+This example shows how to set up a ``Control`` object to dump the best trajectory in a subfolder of the folder in which you are running
+MDMC, called ``trajectories``; i.e. if you are running a refinement in a folder ``my_refinement_folder``, this would dump the trajectory
+to the file ``my_refinement_folder/trajectories/best_trajectory.h5``.
 
-        control.refine(n_steps=10,
-                    h5md_file_name='best_trajectory',
-                    h5md_file_loc='files/files/filed',
-                    h5md_timestamp=False)
+.. code-block:: Python
 
-This code snippet shows an example of the parameters that may be used to get a file containing the best H5MD trajectory.
-As can be seen in the example code, a :class:`~MDMC.MD.simulation.Simulation` needs to be created as explained in :ref:`simulation-label`.
+  control = Control(simulation=simulation,
+              exp_datasets=exp_datasets,
+              fit_parameters=fit_parameters,
+              MD_steps=570,
+              h5md_dump="best",
+              h5md_file_loc="./trajectories"
+              h5md_filename="best_trajectory.h5",
+              h5md_timestamp=False)
+
+We can set h5md_dump to dump every trajectory created by the analysis with a timestamp. This example ``Control`` object would dump trajectories
+to the same ``trajectories`` subfolder as previously, with the name ``traj_DDMMYYYY-HH.MM.SS``, i.e. trajectory dumped
+at 12:23:15pm on the 18th of October 2025, the name would be ``traj_18102025-12.23.15``.
+
+.. code-block:: Python
+
+  control = Control(simulation=simulation,
+              exp_datasets=exp_datasets,
+              fit_parameters=fit_parameters,
+              MD_steps=570,
+              h5md_dump="best",
+              h5md_file_loc="./trajectories"
+              h5md_filename="traj",
+              h5md_timestamp=True)
+
 
 .. warning::
 
