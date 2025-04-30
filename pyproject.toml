@@ -46,13 +46,13 @@ test = ["pytest==8.3.5",
         "pytest-profiling==1.7.0"]
 lint = ["ruff==0.5.7"]
 typecheck = ["mypy"]
-docs = ["sphinx==7.4.7",
-        "nbsphinx==0.9.4",
-        "sphinx-rtd-theme==2.0.0",
-        "docutils==0.20.1",
-        "jupyter==1.0.0",
+docs = ["sphinx==8.1.3",
+        "nbsphinx==0.9.7",
+        "sphinx-rtd-theme==3.0.2",
+        "docutils==0.21.2",
+        "jupyter==1.1.1",
         "nbmake==1.5.4",
-        "nbconvert==7.16.4",
+        "nbconvert==7.16.6",
         "lxml[html_clean]"]
 all = ["MDMC[LAMMPS,DLPOLY,test,lint,typecheck,docs]"]
 
