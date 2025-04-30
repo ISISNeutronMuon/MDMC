@@ -9,7 +9,6 @@ from itertools import product
 from typing import Generator, Literal, Optional
 
 import numpy as np
-import periodictable
 
 from MDMC.common import units
 from MDMC.common.constants import h_bar
@@ -19,6 +18,7 @@ from MDMC.common.mathematics import (
     faster_autocorrelation,
     faster_correlation,
 )
+from MDMC.common.periodictable_objects import create_list_of_element_objects
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.concurrency_tools import (
@@ -647,14 +647,14 @@ class FQt(AbstractFQt):
         --------
         periodictable.nsf : Source for neutron scattering factors.
         """
-        elem_getter = periodictable.elements.symbol
-        self.weights = {element: {'coh': (elem_getter(element).neutron.b_c
-                                          if elem_getter(element).neutron.b_c is not None
-                                          else 0),
-                                  'incoh': (elem_getter(element).neutron.b_c_i
-                                            if elem_getter(element).neutron.b_c_i is not None
-                                            else calc_incoherent_scatt_length(element))}
-                        for element in self._trajectory.element_set}
+
+        elements_list = create_list_of_element_objects(self._trajectory.element_set)
+
+        self.weights = {str(element): {'coh': element.neutron.b_c if element.neutron.b_c \
+                                       is not None else 0,
+                                       'incoh': element.neutron.b_c_i if element.neutron.b_c_i \
+                                       is not None else calc_incoherent_scatt_length(str(element))}
+                                       for element in elements_list}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
@@ -936,7 +936,7 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
     return groups[point_group](point)
 
 
-def calc_incoherent_scatt_length(element):
+def calc_incoherent_scatt_length(element: str) -> float:
     """
     Calculate incoherent scattering length from incoherent scattering cross section.
 
@@ -952,8 +952,10 @@ def calc_incoherent_scatt_length(element):
         Incoherent scattering length of chemical symbol passed in.
     """
 
-    xs_incoh = periodictable.elements.symbol(element).neutron.incoherent
-    b_incoh = periodictable.elements.symbol(element).neutron.b_c_i
+    element_object = create_list_of_element_objects([element])[0]
+
+    xs_incoh = element_object.neutron.incoherent
+    b_incoh = element_object.neutron.b_c_i
 
     if xs_incoh is not None and not b_incoh:
         b_incoh = float(np.sqrt(100 * xs_incoh / (4 * np.pi)))

@@ -3,9 +3,9 @@ Module for coherent FQt class.
 """
 
 import numpy as np
-import periodictable
 
 from MDMC.common.mathematics import faster_correlation
+from MDMC.common.periodictable_objects import create_list_of_element_objects
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
@@ -21,10 +21,10 @@ class FQtCoherent(AbstractFQt):
 
     def _set_weights(self) -> None:
         """Calculate the neutron weighting for coherent scattering."""
-        elem_getter = periodictable.elements.symbol
-        self.weights = {element: elem_getter(element).neutron.b_c
-                        if elem_getter(element).neutron.b_c is not None
-                        else 0 for element in self._trajectory.element_set}
+        elements_list = create_list_of_element_objects(self._trajectory.element_set)
+
+        self.weights = {str(element): element.neutron.b_c if element.neutron.b_c is not None \
+                        else 0 for element in elements_list}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
