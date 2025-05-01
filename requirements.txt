@@ -3,7 +3,7 @@ numpy==2.2.5
 mypy==1.15.0
 pandas==2.2.3
 scipy==1.15.2
-ase==3.24.0
+ase==3.25.0
 mpi4py==4.0.3
 scikit-learn==1.6.1
 scikit-optimize==0.10.2
