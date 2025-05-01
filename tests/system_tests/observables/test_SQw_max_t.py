@@ -71,7 +71,7 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     E_RES = 49.99998257
     DIMENSIONS = [39.42210674, 39.42210674, 39.42210674]
 
-    SQw_observable = ObservableFactory.create_observable(SQw_type)
+    SQw_observable = ObservableFactory.create(SQw_type)
     SQw_observable.independent_variables = independent_variables
     n = len(trajectory.times) // 2
 

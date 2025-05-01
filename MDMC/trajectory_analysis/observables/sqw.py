@@ -508,7 +508,7 @@ class AbstractSQw(SQwMixins, Observable):
 
             fqt_type = self._get_fqt_type()
             # instantiate an FQt object for FQt calculations
-            FQt = ObservableFactory.create_observable(fqt_type)
+            FQt = ObservableFactory.create(fqt_type)
             FQt.Q = self.Q
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)

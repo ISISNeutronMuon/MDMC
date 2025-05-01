@@ -40,7 +40,7 @@ Can deal with multiple obs_pair inputs
 @pytest.fixture
 def SQw_from_exp():
 
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
     return SQw
 
@@ -48,14 +48,14 @@ def SQw_from_exp():
 def SQw_from_exp_diff():
 
     # SQw objects from files cannot be deepcopied so add a new fixture
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
     return SQw
 
 @pytest.fixture
 def SQw_from_MD(SQw_from_exp):
 
-    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create('SQw')
     SQw._origin = 'MD'
     SQw.independent_variables = SQw_from_exp.independent_variables
     SQw._dependent_variables = SQw_from_exp.dependent_variables
@@ -74,7 +74,7 @@ def SQw_dict():
     DEP = np.arange(0., 200., 2.)
     ERR = DEP / 10.
 
-    from_exp = of.ObservableFactory.create_observable('SQw')
+    from_exp = of.ObservableFactory.create('SQw')
     from_exp._origin = 'experiment'
     from_exp.independent_variables = {'indep':INDEP}
     from_exp._dependent_variables = {'dep':DEP}
@@ -108,7 +108,7 @@ def pairs():
 
         obs_duo = []
         for obs_info in pair_info:
-            obs = of.ObservableFactory.create_observable('SQw')
+            obs = of.ObservableFactory.create('SQw')
             obs._origin = obs_info[0]
             obs.independent_variables = {'indep':obs_info[1]}
             obs._dependent_variables = {'dep':obs_info[2]}
@@ -219,7 +219,7 @@ def test_OP_types(SQw_from_exp, observable_pair):
     """
 
     # Create an incoherent SQw
-    SQw_incoh_from_MD = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh_from_MD = of.ObservableFactory.create('SQw_incoh')
     SQw_incoh_from_MD._origin = 'MD'
     SQw_incoh_from_MD.independent_variables = SQw_from_exp.independent_variables
     SQw_incoh_from_MD._dependent_variables = SQw_from_exp.dependent_variables
@@ -228,7 +228,7 @@ def test_OP_types(SQw_from_exp, observable_pair):
     init_exception_check(AssertionError, SQw_from_exp, SQw_incoh_from_MD)
 
     # Create a coherent SQw
-    SQw_coh_from_exp = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh_from_exp = of.ObservableFactory.create('SQw_coh')
     SQw_coh_from_exp._origin = 'experiment'
     SQw_coh_from_exp.independent_variables = SQw_from_exp.independent_variables
     SQw_coh_from_exp._dependent_variables = SQw_from_exp.dependent_variables
@@ -321,7 +321,7 @@ def test_error_calculation(SQw_dict):
     assert (np.all(rescaled_pair.calculate_errors()
             == ((ERR_NEG * 0.75) ** 2 + ERR_NEG ** 2) ** 0.5))
 
-@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.available_names())
 def test_FoM_calculation(FoM_calculator, pairs):
 
     """
@@ -329,11 +329,11 @@ def test_FoM_calculation(FoM_calculator, pairs):
     a non-negative float
     """
 
-    calculator = FoMFactory.create_FoM(FoM_calculator,pairs)
+    calculator = FoMFactory.create(FoM_calculator,pairs)
     assert calculator.calculate() >= 0
 
 
-@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names() )
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.available_names() )
 def test_multiple_FoM_calculation(FoM_calculator, pairs):
 
     """
@@ -342,11 +342,11 @@ def test_multiple_FoM_calculation(FoM_calculator, pairs):
     """
 
     pairs += pairs
-    calculator = FoMFactory.create_FoM(FoM_calculator,pairs)
+    calculator = FoMFactory.create(FoM_calculator,pairs)
     assert calculator.calculate() >= 0
 
 
-@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.available_names())
 def test_FoM_calculation_data_point_norm(FoM_calculator, pairs):
 
     """
@@ -368,12 +368,12 @@ def test_FoM_calculation_data_point_norm(FoM_calculator, pairs):
         error_array_MD = pair.MD_obs._errors['err']
         pair.MD_obs._errors = {'err': np.append(error_array_MD, error_array_MD)}
 
-    calculator = FoMFactory.create_FoM(FoM_calculator,pairs, norm='data_points')
-    calculator_large = FoMFactory.create_FoM(FoM_calculator,pairs_large, norm='data_points')
+    calculator = FoMFactory.create(FoM_calculator,pairs, norm='data_points')
+    calculator_large = FoMFactory.create(FoM_calculator,pairs_large, norm='data_points')
     assert np.isclose(calculator.calculate(), calculator_large.calculate())
 
 
-@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.available_names())
 def test_FoM_calculation_dof_norm(FoM_calculator, pairs):
 
     """
@@ -384,13 +384,13 @@ def test_FoM_calculation_dof_norm(FoM_calculator, pairs):
 
     # Set n_parameters to be half the dataset size, so in the second case we normalise by
     # `dataset_size - dataset_size / 2 = dataset_size / 2` giving twice the FoM
-    calculator =FoMFactory.create_FoM(FoM_calculator,pairs, norm='dof', n_parameters=0)
-    calculator_dof = FoMFactory.create_FoM(FoM_calculator,pairs, norm='dof', n_parameters=dataset_size / 2)
+    calculator =FoMFactory.create(FoM_calculator,pairs, norm='dof', n_parameters=0)
+    calculator_dof = FoMFactory.create(FoM_calculator,pairs, norm='dof', n_parameters=dataset_size / 2)
 
     assert calculator.calculate() == calculator_dof.calculate() / 2
 
 
-@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.available_names())
 def test_FoM_calculation_no_norm(FoM_calculator, pairs):
 
     """
@@ -412,12 +412,12 @@ def test_FoM_calculation_no_norm(FoM_calculator, pairs):
         error_array_MD = pair.MD_obs._errors['err']
         pair.MD_obs._errors = {'err': np.append(error_array_MD, error_array_MD)}
 
-    calculator = FoMFactory.create_FoM(FoM_calculator,pairs, norm='none')
-    calculator_large = FoMFactory.create_FoM(FoM_calculator,pairs_large, norm='none')
+    calculator = FoMFactory.create(FoM_calculator,pairs, norm='none')
+    calculator_large = FoMFactory.create(FoM_calculator,pairs_large, norm='none')
     assert np.isclose(calculator.calculate(), calculator_large.calculate() / 2)
 
 
-@pytest.mark.parametrize('FoM_calculator',FoMFactory.get_FoM_names())
+@pytest.mark.parametrize('FoM_calculator',FoMFactory.available_names())
 def test_FoM_calculation_raises_errors(FoM_calculator, pairs):
 
     """
@@ -427,14 +427,14 @@ def test_FoM_calculation_raises_errors(FoM_calculator, pairs):
 
     # Unrecognised option for the norm
     with pytest.raises(ValueError):
-        FoMFactory.create_FoM(FoM_calculator,pairs, norm='unrecognised')
+        FoMFactory.create(FoM_calculator,pairs, norm='unrecognised')
 
     # DoF normalisation without providing number of parameters
     with pytest.raises(ValueError):
-        FoMFactory.create_FoM(FoM_calculator,pairs, norm='dof')
+        FoMFactory.create(FoM_calculator,pairs, norm='dof')
 
 
-@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.available_names())
 @pytest.mark.parametrize('weight', [0.1, 1., 10.])
 def test_weighted_FoM_calculation(FoM_calculator, weight, pairs):
 
@@ -443,7 +443,7 @@ def test_weighted_FoM_calculation(FoM_calculator, weight, pairs):
     """
 
     normal_weight = pairs[0].weight
-    calculator = FoMFactory.create_FoM(FoM_calculator,pairs)
+    calculator = FoMFactory.create(FoM_calculator,pairs)
     normal_FoM = calculator.calculate()
 
     # Create datasets with the same dependent variable for MD and exp (which
@@ -454,7 +454,7 @@ def test_weighted_FoM_calculation(FoM_calculator, weight, pairs):
         SQw_array = pair.MD_obs._dependent_variables['dep']
         pair.exp_obs._dependent_variables = {'dep':SQw_array}
 
-    calculator_weighted =FoMFactory.create_FoM(FoM_calculator,pairs + pairs_weighted)
+    calculator_weighted =FoMFactory.create(FoM_calculator,pairs + pairs_weighted)
     weighted_FoM = calculator_weighted.calculate()
 
     assert weighted_FoM == normal_FoM / (normal_weight + weight)
@@ -475,7 +475,7 @@ def test_errors_ChiSquaredExpError(exp_error, MD_error, pairs):
         pair.exp_obs._errors = {'err':np.ones(error_shape)}
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
 
-    calculator = FoMFactory.create_FoM('exp',pairs)
+    calculator = FoMFactory.create('exp',pairs)
     normal_FoM = calculator.calculate()
 
     # Create datasets with scaled errors
@@ -485,7 +485,7 @@ def test_errors_ChiSquaredExpError(exp_error, MD_error, pairs):
         pair.exp_obs._errors = {'err':np.full(error_shape, exp_error)}
         pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
 
-    calculator_weighted = FoMFactory.create_FoM('exp',pairs_scaled_error)
+    calculator_weighted = FoMFactory.create('exp',pairs_scaled_error)
     scaled_FoM = calculator_weighted.calculate()
 
     assert np.isclose(scaled_FoM, normal_FoM / exp_error ** 2)
@@ -506,7 +506,7 @@ def test_errors_RSquaredNoError(exp_error, MD_error, pairs):
         pair.exp_obs._errors = {'err':np.ones(error_shape)}
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
 
-    calculator = FoMFactory.create_FoM('none',pairs)
+    calculator = FoMFactory.create('none',pairs)
     normal_FoM = calculator.calculate()
 
     # Create datasets with scaled errors
@@ -516,7 +516,7 @@ def test_errors_RSquaredNoError(exp_error, MD_error, pairs):
         pair.exp_obs._errors = {'err':np.full(error_shape, exp_error)}
         pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
 
-    calculator_weighted = FoMFactory.create_FoM('none',pairs_scaled_error)
+    calculator_weighted = FoMFactory.create('none',pairs_scaled_error)
     scaled_FoM = calculator_weighted.calculate()  # I don't think this is a good test, comparing values up to 5e8 different...
 
     assert np.isclose(scaled_FoM, normal_FoM)
@@ -531,7 +531,7 @@ def test_zero_error_RSquaredNoError(pairs):
         pair.exp_obs._errors = {'err':np.zeros(error_shape)}
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
 
-    calculator = FoMFactory.create_FoM('none',pairs)
+    calculator = FoMFactory.create('none',pairs)
     expected_FoM = np.sum(pair.calculate_difference() ** 2)/21  # 21 points
     normal_FoM = calculator.calculate()
 
@@ -548,7 +548,7 @@ def test_zero_error_ChiSquared(pairs):
         pair.exp_obs._errors = {'err':np.zeros(error_shape)}
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
 
-    calculator = FoMFactory.create_FoM('exp',pairs)
+    calculator = FoMFactory.create('exp',pairs)
     assert np.isinf(calculator.calculate())
 
 

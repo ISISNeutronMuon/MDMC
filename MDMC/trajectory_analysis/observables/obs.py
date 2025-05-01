@@ -186,7 +186,7 @@ class Observable(ABC):
         """
 
         self._origin = 'experiment'
-        self.reader = ObservableReaderFactory.create_reader(reader, file_name)
+        self.reader = ObservableReaderFactory.create(reader, file_name)
         with self.reader:
             self.reader.parse()
             self.reader.assign(observable=self)

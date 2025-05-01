@@ -268,8 +268,8 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
-                                                           previous_history, **settings)
+        self.minimizer = MinimizerFactory.create(minimizer_type, self,self.fit_parameters,
+                                                 previous_history, **settings)
         self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
@@ -331,9 +331,9 @@ class Control:
         else:
             FoM_norm = FoM_options.get('norm')
 
-        self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
-                                                    norm=FoM_norm,
-                                                    n_parameters=len(self.fit_parameters))
+        self.FoM_calculator = FoMFactory.create(FoM_error, self.observable_pairs,
+                                                norm=FoM_norm,
+                                                n_parameters=len(self.fit_parameters))
         self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
@@ -366,11 +366,11 @@ class Control:
 
             if 'resolution' not in dset:
                 # create list of user keys for resolutions to add to the error
-                userkeys = []
-                for setting in resolution_factory.resolutions:
-                    userkeys.append(setting.lower().replace('resolution', ''))
-                raise KeyError("A resolution function must be added. Recognised functions are " +
-                               str(userkeys) +
+                userkeys = [setting.lower().replace('resolution', '')
+                            for setting in resolution_factory.registry]
+
+                raise KeyError("A resolution function must be added. Recognised functions are: " +
+                               ", ".join(userkeys) +
                                ". If you meant to apply no resolution,"
                                " then specify resolution as None for the exp_dataset parameters.")
 
@@ -820,7 +820,7 @@ class Control:
             An ``Observable`` of specified ``type``
         """
 
-        observable = ObservableFactory.create_observable(obstype)
+        observable = ObservableFactory.create(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
         observable.use_FFT = use_FFT
         return observable
@@ -846,7 +846,7 @@ class Control:
             ``origin == 'MD'``
         """
 
-        observable = ObservableFactory.create_observable(exp_observable.name)
+        observable = ObservableFactory.create(exp_observable.name)
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)

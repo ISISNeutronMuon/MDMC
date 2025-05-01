@@ -54,7 +54,7 @@ __all__ = []
 
 for name in OBS_NAMES:
     # Add names (and corresponding classes) to module namespace
-    globals()[name] = obs_factory.ObservableFactory.get_observable(name)
+    globals()[name] = obs_factory.ObservableFactory.get(name)
     # Add to __all__ so that help(MDMC.trajectory_analysis.observables) has
     # class definitions
     __all__.append(name)

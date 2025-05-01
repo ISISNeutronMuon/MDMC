@@ -94,7 +94,7 @@ def correct_output_data():
 def test_GPO_has_converged(mockcontrol, mock_history, expected):
     """Test that the array of points to be simulated is created correctly"""
     parameter = Parameters(Parameter(name='A', value=1))
-    gpo = MinimizerFactory.create_minimizer('GPO', mockcontrol(n_steps=4), parameter)
+    gpo = MinimizerFactory.create('GPO', mockcontrol(n_steps=4), parameter)
     gpo._history = mock_history
     assert gpo.has_converged() == expected
 
@@ -102,7 +102,7 @@ def test_GPO_has_converged(mockcontrol, mock_history, expected):
 def test_GPO_step(mockcontrol):
     """Tests GPO is able to find the minima of a single cycle of a cosine function"""
     parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
-    gpo = MinimizerFactory.create_minimizer('GPO', mockcontrol(n_steps=100), parameter, n_points=100)
+    gpo = MinimizerFactory.create('GPO', mockcontrol(n_steps=100), parameter, n_points=100)
     gpo._history=[]
     for _ in range(25):
         x = parameter['a'].value
@@ -114,7 +114,7 @@ def test_GPO_step(mockcontrol):
 def test_GPO_set_parameter_values(mockcontrol, constrained_parameters):
     """Tests set_parameter_values can set values correctly"""
 
-    gpo = MinimizerFactory.create_minimizer('GPO', mockcontrol(), constrained_parameters,
+    gpo = MinimizerFactory.create('GPO', mockcontrol(), constrained_parameters,
                                             n_points=3)
     gpo.set_parameter_values(['parameter1'], [1.9])
     assert gpo.parameters['parameter1'].value == 1.9

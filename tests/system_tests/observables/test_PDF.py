@@ -50,7 +50,7 @@ def PDF(trajectory, PDF_file):
 
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
-    pdf = ObservableFactory.create_observable('PDF')
+    pdf = ObservableFactory.create('PDF')
     pdf.calculate_from_MD(trajectory, n_frames=5, r=r, use_average=False, dimensions=[39.4221067]*3)
     return pdf
 
@@ -69,7 +69,7 @@ def averaged_PDF(trajectory, PDF_file):
 
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
-    pdf = ObservableFactory.create_observable('PDF')
+    pdf = ObservableFactory.create('PDF')
     pdf.calculate_from_MD(trajectory, n_frames=5, r=r, use_average=True, dimensions=[39.4221067]*3)
     return pdf
 
@@ -199,7 +199,7 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
 def test_slice_trajectory(trajectory):
     """Tests that the sliced trajectory contains the correct frames from the right times"""
     # 5 Frames are picked from a 50-frame trajectory
-    pdf = ObservableFactory.create_observable('PDF')
+    pdf = ObservableFactory.create('PDF')
     sliced = pdf._slice_trajectory(trajectory, n_frames=5)
     assert len(trajectory) == 50
     assert len(sliced) == 5
