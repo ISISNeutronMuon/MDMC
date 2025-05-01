@@ -60,7 +60,7 @@ class Unit(str):
         specify powers. It can contain `int` which are used to specify order of
         magnitude (e.g. ``10^6 Pa``).  It can also contain negative powers, but
         there must not be a space between the negative sign and the number
-        (e.g. ``Angstrom ^ -1`` NOT ``Angstrom ^ - 1``). Brackets and parentheses are not
+        (e.g. ``Ang ^ -1`` NOT ``Ang ^ - 1``). Brackets and parentheses are not
         supported, and any of the characters ``[]()`` will be ignored.
     components : defaultdict[list], optional
         Sets the ``components`` attribute (see Attributes).  Default is `None`.
@@ -98,7 +98,7 @@ class Unit(str):
 
     Units raised to a power can be set with ``^``::
 
-    >>> volume_unit = Unit('Angstrom ^ 3')
+    >>> volume_unit = Unit('Ang ^ 3')
 
     Compound units can be set with a combination of these operands::
 
@@ -137,7 +137,7 @@ class Unit(str):
         if not components:
             components = defaultdict(list)
             # String is compound if it contains either ' ', '/' or '^' (e.g.
-            # 'Angstrom^2')
+            # 'Ang^2')
             if any(x in string for x in [' ', '/', '^']):
                 num, denom = unit._parse_unit_string(string)
                 components['numerator'] = num
@@ -458,7 +458,7 @@ class Unit(str):
             string : str
                 A compound ``Unit`` `str` containing zero or more powers
                 (with powers specified by ``^``) but no denominators (i.e.
-                ``/``), such as ``Angstrom``, ``Angstrom mol``, ``Angstrom ^ 2 mol kJ^2``.
+                ``/``), such as ``Ang``, ``Ang mol``, ``Ang ^ 2 mol kJ^2``.
 
             Returns
             -------
@@ -469,14 +469,14 @@ class Unit(str):
 
             Examples
             --------
-            Parse ``Angstrom ^ 2 mol kJ^-2``::
-                >>> parse_powers('Angstrom ^ 2 mol kJ^2')
-                [Unit('Angstrom'), Unit('Angstrom'), Unit('mol)'], [Unit('kJ'), Unit('kJ')]
+            Parse ``Ang ^ 2 mol kJ^-2``::
+                >>> parse_powers('Ang ^ 2 mol kJ^2')
+                [Unit('Ang'), Unit('Ang'), Unit('mol)'], [Unit('kJ'), Unit('kJ')]
             """
 
             if '^' in string:
                 # Joining with ' ' before stripping out spaces means that
-                # 'Angstrom ^ 2' and 'Angstrom^2' are equivalent
+                # 'Ang ^ 2' and 'Ang^2' are equivalent
                 string = ' '.join(string.split('^'))
             splt_space = string.split(' ')
             # Strip out spaces
@@ -522,14 +522,14 @@ class Unit(str):
 
 # Define the unit system used in MDMC
 SYSTEM = {
-    'LENGTH': Unit('Angstrom'),
+    'LENGTH': Unit('Ang'),
     'TIME': Unit('fs'),
     'MASS': Unit('amu'),
     'CHARGE': Unit('e'),
     'ANGLE': Unit('deg'),
     'TEMPERATURE': Unit('K'),
     'ENERGY': Unit('kJ') / Unit('mol'),
-    'FORCE': Unit('kJ') / (Unit('Angstrom') * Unit('mol')),
+    'FORCE': Unit('kJ') / (Unit('Ang') * Unit('mol')),
     'PRESSURE': Unit('Pa'),
     'ENERGY_TRANSFER': Unit('meV'),
     'ARBITRARY': Unit('arb'),
@@ -552,7 +552,7 @@ def create_units(codata_version: str) -> dict[Unit, float]:
     """
 
     # SYSTEM units are defined to 1.0, and have the physical properties they
-    # measure defined (e.g. {'Angstrom': 'LENGTH', ...})
+    # measure defined (e.g. {'Ang': 'LENGTH', ...})
     units = {unit: 1.0 for unit in SYSTEM.values()}
     unit_properties = {unit: prop for prop, unit in SYSTEM.items()}
 
@@ -560,22 +560,22 @@ def create_units(codata_version: str) -> dict[Unit, float]:
     codata = CODATA[codata_version]
 
     # Length
-    # 1 m = 1e10 Angstrom
-    units['m'] = units['Angstrom'] * 1e10
+    # 1 m = 1e10 Ang
+    units['m'] = units['Ang'] * 1e10
     unit_properties['m'] = 'LENGTH'
-    # 1 cm = 1e8 Angstrom
-    units['cm'] = units['Angstrom'] * 1e8
+    # 1 cm = 1e8 Ang
+    units['cm'] = units['Ang'] * 1e8
     unit_properties['cm'] = 'LENGTH'
-    # 1 nm = 1e1 Angstrom
-    units['nm'] = units['Angstrom'] * 1e1
+    # 1 nm = 1e1 Ang
+    units['nm'] = units['Ang'] * 1e1
     unit_properties['nm'] = 'LENGTH'
-    # 1 AA = 1 Angstrom
-    units['AA'] = units['Angstrom']
+    # 1 AA = 1 Ang
+    units['AA'] = units['Ang']
     unit_properties['AA'] = 'LENGTH'
 
     # Area
-    # 1 barn = 1e-28 m^2 = 1e-8 Angstrom^2
-    units['barn'] = units['Angstrom'] * units['Angstrom'] * 1e8
+    # 1 barn = 1e-28 m^2 = 1e-8 Ang^2
+    units['barn'] = units['Ang'] * units['Ang'] * 1e8
 
     # Time
     # 1 s = 1e15 fs
@@ -618,9 +618,9 @@ def create_units(codata_version: str) -> dict[Unit, float]:
     unit_properties['ueV'] = 'ENERGY_TRANSFER'
 
     # Force
-    # 1 kcal Angstrom^-1 mol^-1 = 4.184 kJ Angstrom^-1 mol^-1
-    units['kcal / Angstrom mol'] = units['kJ / Angstrom mol'] * 4.184
-    unit_properties['kcal / Angstrom mol'] = 'FORCE'
+    # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
+    units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
+    unit_properties['kcal / Ang mol'] = 'FORCE'
 
     # Pressure
     # 1 atm = 101325 Pa
