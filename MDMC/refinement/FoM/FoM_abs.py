@@ -17,12 +17,11 @@
 """A module for Figure of Merits"""
 
 from abc import ABC, abstractmethod
-from enum import Enum, auto
-from typing import Union
 
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.refinement.FoM import AutoScale
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
@@ -533,6 +532,6 @@ class FigureOfMerit(ABC):
             case AutoScale.MATCH_ABS_SUM:
                 fac = sum(np.abs(obs.sum()) for obs in dep_vars)
             case _:
-                fac = 1.
+                fac = 1.0
 
         return fac

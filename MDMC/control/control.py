@@ -38,7 +38,7 @@ from MDMC.exporters.trajectories import H5MD_build
 from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
-from MDMC.refinement.FoM.FoM_abs import AutoScale, ObservablePair
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory

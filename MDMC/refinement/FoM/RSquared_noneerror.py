@@ -79,11 +79,10 @@ class RSquared_noneerror(FigureOfMerit):
         float
             Computed auto_scale factor to minimise the FoM.
         """
-        exp_values = np.array(
-            *obs_pair.exp_obs.dependent_variables.values())
+        exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
         MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
         A = np.sum(MD_values * exp_values)
-        B = np.sum(exp_values ** 2)
+        B = np.sum(exp_values**2)
         return A / B
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
