@@ -40,7 +40,7 @@ LAMMPS = ["pylammps"]
 DLPOLY = ["dlpoly-py @ git+https://gitlab.com/ccp5/dlpoly-py.git"]
 ###
 
-test = ["pytest==8.3.5",
+test = ["pytest==8.4.0",
         "pytest-cov==6.1.1",
         "pytest-cases==3.8.6",
         "pytest-profiling==1.8.1"]
