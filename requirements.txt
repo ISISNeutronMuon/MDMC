@@ -1,5 +1,5 @@
 netCDF4==1.7.2
-numpy==2.2.5
+numpy==2.2.6
 mypy==1.16.0
 pandas==2.2.3
 scipy==1.15.3
@@ -8,7 +8,7 @@ mpi4py==4.0.3
 scikit-learn==1.6.1
 scikit-optimize==0.10.2
 verbosemanager==1.3.0
-ipython==8.36.0
+ipython==8.37.0
 ipykernel==6.29.5
 corner==2.2.2
 periodictable==1.7.1
