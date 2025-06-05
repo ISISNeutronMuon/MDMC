@@ -173,9 +173,10 @@ def mock_FoM(self):
     """
     vals = np.array([v.value for v in self.fit_parameters.values()])
     
-    self.fom = schwefel(vals)
+    trj = self._calculate_observables(self.simulation, self.observable_pairs)
+    fom = schwefel(vals)
     
-    return self.fom
+    return fom, trj
 
 
 def schwefel(x):
