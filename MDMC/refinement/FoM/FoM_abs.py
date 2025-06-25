@@ -1,6 +1,7 @@
 """A module for Figure of Merits"""
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator

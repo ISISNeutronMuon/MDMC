@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import chain, combinations_with_replacement, product
 from typing import Generator, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from MDMC.common import units

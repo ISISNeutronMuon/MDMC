@@ -3,11 +3,11 @@ Module for AbstractSQw and total SQw class.
 """
 
 from contextlib import suppress
-from typing import Optional
+from typing import Optional, Tuple
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
 import numpy as np
+from matplotlib.widgets import Slider
 from numpy.testing import assert_allclose
 from scipy.interpolate import RectBivariateSpline
 
@@ -1014,7 +1014,7 @@ class AbstractSQw(SQwMixins, Observable):
                                   f' {independent_variable.unit}')
             fig.canvas.draw_idle()
             ax.set_ylim(0,
-                        max(np.max(dependent_variable_list[0][0, val]) + 0.1, 1e-5)
+                        max(np.max(dependent_variable_list[0][0, val]) + 0.1, 1e-5),
                         )
 
         slider.on_changed(Q_on_changed)

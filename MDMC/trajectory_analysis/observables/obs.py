@@ -3,6 +3,7 @@ Module defining a class for processing observables from MD trajectories.
 """
 
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 from typing import Literal
 
 from MDMC.common.decorators import repr_decorator
