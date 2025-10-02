@@ -1,10 +1,13 @@
-"""A module for plotting data and results of a minimization."""
+"""
+A module for plotting data and results of a minimization.
+"""
 import logging
 import os
 from abc import ABC, abstractmethod
 
 import corner
 import IPython.display
+import matplotlib
 import numpy as np
 import pandas as pd
 from skopt import Optimizer
@@ -12,32 +15,39 @@ from skopt import Optimizer
 
 class PlotResults():
     """
-    A class to read in any completed refinement history file, create a Gaussain Process Optimizer
-    and then do sampling on the result to create a corner plot.
+    A class to read in any completed refinement history file.
 
-    Parameters:
-    -----------
+    Create a Gaussian Process Optimizer and then do sampling
+    on the result to create a corner plot.
+
+    Parameters
+    ----------
     filename : str
-        path to the file to load in the refinement history
+        Path to the file to load in the refinement history.
     quantiles : list, optional
-        optional, list of the quantiles to be plotted on the corner plot, defaults
-        to [0.34, 0.5, 0.68], e.g. 1-sigma
+        List of the quantiles to be plotted on the corner plot, defaults
+        to [0.34, 0.5, 0.68], i.e. 1 standard deviation.
     MH_norm : float, optional
         The Metropolis-Hastings normalising factor to determine if points should be
-        kept or not, defaults to 20
+        kept or not, defaults to 20.
     points : int, optional
-        Number of points to plot on the corner plot, defaults to 100,000
+        Number of points to plot on the corner plot, defaults to 100,000.
     """
 
-    def __init__(self, filename: str, quantiles: 'list[float]'=None,
-                 MH_norm: float=20, points: int =100000):
+    def __init__(
+            self,
+            filename: str,
+            quantiles: list[float] = None,
+            MH_norm: float = 20,
+            points: int = 100000,
+    ):
         self.filename = filename
         self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
         self.MH_norm = MH_norm
         self.points = points
 
-        self.parameter_names, self.parameter_coords,\
-        self.minmax_coords, self.FoMs = self.get_measured_points()
+        self.parameter_names, self.parameter_coords, \
+            self.minmax_coords, self.FoMs = self.get_measured_points()
 
         # Create the optimizer
         try:
@@ -46,10 +56,12 @@ class PlotResults():
             # for 'meaningful' plots, but technically anything with 2 points can be minimised and
             # shouldn't cause an error.
             old_optimizer_min = 10
-            self.optimizer = Optimizer(self.minmax_coords,"GP",
+            self.optimizer = Optimizer(self.minmax_coords,
+                                       "GP",
                                        n_initial_points=min(old_optimizer_min, len(self.FoMs)),
-                                       acq_func="gp_hedge", acq_optimizer="sampling",
-                                         model_queue_size=1)
+                                       acq_func="gp_hedge",
+                                       acq_optimizer="sampling",
+                                       model_queue_size=1)
             if len(self.FoMs) < old_optimizer_min:
                 logging.warning("You have only used %d refinement steps,"
                                 " use a larger number for more meaningful plots.",
@@ -62,11 +74,22 @@ class PlotResults():
         self.optimizer.tell(self.parameter_coords, self.FoMs)
 
     def get_measured_points(self) -> tuple:
-        """Opens the dataframe in `filename` and extracts the measured parameters names, values
+        """
+        Extract measured points from `self.filename`.
+
+        Open the dataframe in `filename` and extracts the measured parameters names, values
         and associated figures of merit.
-        Returns:
-        --------
-        tuple of (parameter names, parameter coordinates, min and max parameters, FoM's)
+
+        Returns
+        -------
+        names : list[str]
+            Parameter names.
+        coordinates : list[tuple[float, float]]
+            Parameter coordinates.
+        minmax_coordinates : list[tuple[np.typing.NDArray, np.typing.NDArray]]
+            Min and max parameters.
+        FoMs : list[float]
+            Figures of merit.
         """
         records = pd.read_csv(self.filename, delimiter=',')
         records = records.astype(dtype=float, errors='ignore')
@@ -82,23 +105,26 @@ class PlotResults():
                                max(np.array(coord))) for coord in np.array(coordinates).T]
         return names, coordinates, minmax_coordinates, FoMs
 
-
-    def _expected_minimum_random_sampling(self) -> 'tuple[list, float, list, list[list]]':
+    def _expected_minimum_random_sampling(self) -> tuple[list, float, list, list[list]]:
         """
-        This is almost verbatim a copy of code from scikit-optimize but with the samples as
-        an additional output:
-        https://github.com/scikit-optimize/scikit-optimize/blob/de32b5fd2205a1e58526f3cacd0422a26d315d0f/skopt/utils.py#L259
+        Extract minimum random sampling.
 
         Returns
         -------
         min_x : list
-            location of the minimum.
+            Location of the minimum.
         y_random[index_best_objective] : float
-            the surrogate function value at the minimum.
+            The surrogate function value at the minimum.
         y_random : np.array
-            An array of length "self.points" containing surrogate function values at each point
+            An array of length "self.points" containing surrogate function values at each point.
         random_samples : list[list]
-            A list of length "self.points" containing the coordinates of each prediction
+            A list of length "self.points" containing the coordinates of each prediction.
+
+        Notes
+        -----
+        This is almost verbatim a copy of code from scikit-optimize but with the samples as
+        an additional output:
+        https://github.com/scikit-optimize/scikit-optimize/blob/de32b5fd2205a1e58526f3cacd0422a26d315d0f/skopt/utils.py#L259
         """
 
         # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
@@ -112,10 +138,12 @@ class PlotResults():
 
         return min_x, y_random[index_best_objective], y_random, random_samples
 
-
-    def _remove_points(self, chi_squared: 'list[float]',
-                       coords: 'list[list]') -> 'tuple[list, list]':
+    def _remove_points(self,
+                       chi_squared: list[float],
+                       coords: list[list]) -> tuple[list, list]:
         """
+        Filter points.
+
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
         where the likelihood of keeping a point is dependent on the exponent of the difference
         between its figure of merit, and that of the best one found, divided by MH_norm.
@@ -123,29 +151,31 @@ class PlotResults():
         Parameters
         ----------
         chi_squared : list[float]
-            A list of the predicted chi-squared value at each coordinate
+            A list of the predicted chi-squared value at each coordinate.
         coords : list[list]
-            A list of the coordinates at which all of the chi-squared predictions are made
+            A list of the coordinates at which all of the chi-squared predictions are made.
 
         Returns
         -------
         reduced_chi : list
-            A list of the remaining chi-squared points
+            A list of the remaining chi-squared points.
         reduced_coords : list[list]
-            A list of the remaining coordinates
+            A list of the remaining coordinates.
         """
         np.random.seed(16)  # Set for reproducible output - will always retain same points
         lowest_chi = min(chi_squared)
 
         points_to_keep = np.random.random(size=chi_squared.shape) < \
-                         np.exp((lowest_chi - chi_squared)/(lowest_chi/self.MH_norm))
-        reduced_chi=chi_squared[points_to_keep]
+            np.exp((lowest_chi - chi_squared)/(lowest_chi/self.MH_norm))
+        reduced_chi = chi_squared[points_to_keep]
         reduced_coords = np.array(coords)[points_to_keep]
 
         return reduced_chi, reduced_coords
 
-    def create_cornerplot(self) -> None:
+    def create_cornerplot(self) -> matplotlib.figure.Figure:
         """
+        Sample data to create corner-plot.
+
         Performs a random sample across the coordinate space giving a predicted figure of merit at
         every point. Then removes points with poor figures of merit, according to a
         Metropolis-Hastings type rule, where the likelihood of keeping a point is dependant on the
@@ -155,13 +185,12 @@ class PlotResults():
 
         Returns
         -------
-        corner plot : Matplotlib.figure.Figure
-            A plot displaying every parameter combination with their variances and covariances
+        matplotlib.figure.Figure
+            A plot displaying every parameter combination with their variances and covariances.
         """
 
         try:
-            _, _, y_random, coords = \
-            self._expected_minimum_random_sampling()
+            _, _, y_random, coords = self._expected_minimum_random_sampling()
         except IndexError:
             msg = (f"\n \n Your data file, {os.path.abspath(f'{self.filename}')},"
                    " appears not to have any points in, please check you have"
@@ -173,10 +202,10 @@ class PlotResults():
 
         data = np.empty(shape=np.array(reduced_coordinate_list).shape)
         for i in range(np.array(reduced_coordinate_list).shape[1]):
-            data[:,i] = np.array(reduced_coordinate_list)[:,i]
+            data[:, i] = np.array(reduced_coordinate_list)[:, i]
 
         labels = [str(name) for name in self.parameter_names]
-        cornerplot = corner.corner(data, labels = labels, quantiles = [0.34, 0.5, 0.68])
+        cornerplot = corner.corner(data, labels=labels, quantiles=[0.34, 0.5, 0.68])
 
         mean, std = np.mean(data, axis=0), np.std(data, axis=0)
 
@@ -193,7 +222,8 @@ class DataPrinter(ABC):
         """
         Update table at the end of a refinement step.
 
-        Parameters:
+        Parameters
+        ----------
         history
             The history of the minimizer data is printed from.
         """
@@ -204,7 +234,8 @@ class DataPrinter(ABC):
         """
         Create table headers at the start of refinement.
 
-        Parameters:
+        Parameters
+        ----------
         history
             The history of the minimizer data is printed from.
         """
@@ -215,6 +246,14 @@ class PlaintextDataPrinter(DataPrinter):
     """Plaintext data printer."""
 
     def print_data(self, history) -> None:
+        """
+        Update table at the end of a refinement step.
+
+        Parameters
+        ----------
+        history
+            The history of the minimizer data is printed from.
+        """
         with pd.option_context('display.max_colwidth', 12,
                                'display.precision', 5,
                                'display.float_format', '{:.4g}'.format):
@@ -225,7 +264,28 @@ class PlaintextDataPrinter(DataPrinter):
             print(data)
 
     def print_header(self, history) -> None:
-        def format_column(column):
+        """
+        Create table headers at the start of refinement.
+
+        Parameters
+        ----------
+        history
+            The history of the minimizer data is printed from.
+        """
+        def format_column(column) -> str:
+            """
+            Wrap line if over standard column width.
+
+            Parameters
+            ----------
+            column : str
+                Column to wrap.
+
+            Returns
+            -------
+            str
+                Wrapped column string.
+            """
             column = column if len(column) < 13 else column[:9] + '...'
             return ' ' * (12 - len(column)) + column
 
@@ -241,12 +301,28 @@ class IPythonDataPrinter(DataPrinter):
         self.display = IPython.display.DisplayHandle()
 
     def print_data(self, history) -> None:
+        """
+        Update table at the end of a refinement step.
+
+        Parameters
+        ----------
+        history
+            The history of the minimizer from which data are printed.
+        """
         history_table = pd.DataFrame(history,
                                      columns=history.columns)
         history_table.index.name = "Step"
         self.display.update(history_table)
 
     def print_header(self, history) -> None:
+        """
+        Create table headers at the start of refinement.
+
+        Parameters
+        ----------
+        history
+            The history of the minimizer from which data are printed.
+        """
         history_table = pd.DataFrame(columns=history.columns)
         self.display.display(history_table)
 
