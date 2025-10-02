@@ -142,7 +142,7 @@ class ObservablePair:
              The computed residual between experimental and simulated
              ``Observable``
         """
-        new_obs = ObservableFactory.create_observable(self.MD_obs.name)
+        new_obs = ObservableFactory.create(self.MD_obs.name)
 
         new_obs.dependent_variables = {self.MD_obs.name: np.abs(self.calculate_difference())}
         new_obs.errors = {self.MD_obs.name: self.calculate_errors()}
@@ -473,7 +473,7 @@ class ObservablePair:
                      variable is the heat, independent on axis.
         '''
         # Parse from str
-        if isinstance(plot_type, PlotTypes):
+        if isinstance(plot_type, str):
             plot_type = PlotTypes[plot_type.upper()]
 
         if plot_type is PlotTypes.DEFAULT:
