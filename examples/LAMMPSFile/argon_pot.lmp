@@ -1,0 +1,16 @@
+log {_output_log}
+
+units		real
+atom_style	charge
+atom_modify map array
+boundary        p p p
+
+read_data {_struct_file}
+
+pair_style lj/cut 5.0
+pair_coeff 1 1 {eps: 30.0} {sig: 3.405} 5.0
+
+neighbor 1.0 bin
+neigh_modify every 20 delay 0 check no
+
+timestep {_time_step}

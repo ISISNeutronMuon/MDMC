@@ -22,6 +22,7 @@ in the following pages:
    :caption: Simulation
 
    use-MDMC/simulations
+   use-MDMC/file-based
    use-MDMC/notebooks/creating-atomic-configurations.ipynb
    use-MDMC/notebooks/defining-molecule-interactions.ipynb
    use-MDMC/notebooks/solvating-a-universe.ipynb
@@ -36,4 +37,3 @@ in the following pages:
    use-MDMC/parameter-refinement
    use-MDMC/notebooks/selecting-fitting-parameters.ipynb
    ../../tutorials/running-a-refinement.ipynb
-

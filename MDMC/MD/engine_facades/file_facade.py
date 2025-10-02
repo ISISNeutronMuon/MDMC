@@ -1,0 +1,211 @@
+"""
+Parametrised file parser facade for generalised input files.
+"""
+
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any
+
+from MDMC.common.decorators import repr_decorator
+from MDMC.MD.parameters import Parameters
+from MDMC.readers.simulations.param_file import ParamFileParser, PathsDict
+
+
+@repr_decorator('files')
+class FileSimulation(ABC):
+    """
+    Base class for setting up generalised jobs using a parametrised files.
+
+    Attributes
+    ----------
+    parser : ParamFileParser
+        Parser to read parametrised files.
+    settings : dict[str, Any]
+        Extra settings passed by users.
+    known_params : dict_keys
+
+
+    Notes
+    -----
+    If all parameters must be set in dumped files, it is advisable to add
+    `time_step` and `traj_step` as required parameters in the `ParamFileParser`.
+    """
+    def __init__(self,
+                 files: PathsDict,
+                 traj_step: None = None,
+                 time_step: None = None,
+                 **settings):
+        """
+        Base class for setting up generalised jobs using a parametrised files.
+
+        Parameters
+        ----------
+        files : PathsDict
+            Files to load and parse for user parameters.
+        traj_step : None
+            Default number of iterations between dumping data.
+        time_step : None
+            Initial timestep.
+        **settings : dict[str, Any]
+            Extra user arguments.
+        """
+        self.parser = ParamFileParser(files)
+        self.settings = settings
+        self._temp_files = ()
+
+    def _setup(self) -> None:
+        """
+        Parse configuration files and load parameters into self.
+        """
+        self.parser.parse()
+
+    @property
+    def known_params(self) -> set[str]:
+        """
+        Parameters known to the parser.
+
+        Used for determining which params can be set from ``settings``.
+
+        Returns
+        -------
+        set[str]
+            Set of parameters known to parser.
+        """
+        return set(self.parser.param_dict.keys())
+
+    def update_vals_from_settings(self, settings: dict):
+        """
+        Set file parameters from those provided in settings.
+
+        Parameters
+        ----------
+        settings : dict
+            Settings to put into file dump.
+        """
+        params = {}
+        for key, val in settings.items():
+            if key in self.known_params:
+                params[key] = val
+        self.parser.update_param_dict(params)
+
+    @abstractmethod
+    def minimize(self, n_steps: int, **settings: dict) -> None:
+        """
+        Minimize the simulation energy.
+
+        Parameters
+        ----------
+        n_steps : int
+            Maximum number of steps for the MD run.
+        **settings
+            Extra options.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def run(self, n_steps: int, **settings: dict) -> None:
+        """
+        Run the MD simulation for the specified number of steps.
+
+        Trajectories for the simulation are only saved when
+        ``equilibration`` is `False`.  Additionally running
+        equilibration for an NVE system (neither barostat nor
+        thermostat set) will temporarily apply a Berendsen thermostat
+        (it is removed from the simulation after the run is
+        completed).
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run.
+        **settings
+            Extra options.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def save_config(self) -> None:
+        """
+        Set ``self.saved_config`` to the current configuration.
+        """
+
+    @abstractmethod
+    def reset_config(self) -> None:
+        """
+        Reset the configuration of the simulation to that in ``saved_config``.
+        """
+
+    @abstractmethod
+    def convert_trajectory(self):
+        """
+        Convert trajectory to MDMC trajectory.
+        """
+        raise NotImplementedError
+
+    @property
+    def files(self) -> dict[str, Path]:
+        """
+        Parametrised files used in specifying job.
+
+        Returns
+        -------
+        dict[str, Path]
+            Dictionary of internal references to file-paths.
+        """
+        return self.parser.file_name
+
+    @property
+    def parameters(self) -> Parameters:
+        """
+        `Parameters` object containing parameters to fit.
+
+        Returns
+        -------
+        Parameters
+            Fit parameters to modify.
+        """
+
+        return self.parser.as_parameters
+
+    @property
+    def param_dict(self) -> dict[str, Any]:
+        """
+        `Parameters` object as bare dict.
+
+        Returns
+        -------
+        dict[str, Any]
+            Fit parameters as ordinary dictionary.
+        """
+        return self.parser.param_dict
+
+    def update_parameters(self) -> None:  # noqa: B027
+        """
+        Dummy function as not needed for file dump type.
+        """
+
+    @property
+    def universe(self):
+        """
+        Dummy property as not needed for file dump type.
+
+        Returns
+        -------
+        self
+            All properties which would be on `Universe` subclasses
+            are on this class.
+        """
+        return self
+
+    @property
+    def engine(self):
+        """
+        Dummy property as not needed for file dump type.
+
+        Returns
+        -------
+        self
+            All properties which would be on `Universe` subclasses
+            are on this class.
+        """
+        return self

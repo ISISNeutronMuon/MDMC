@@ -1,0 +1,9 @@
+include {_pot_file}
+
+fix 1 all nve
+fix 2 all langevin 300.0 300.0 10.0 13571
+
+dump traj1 all custom {_traj_step} {_traj_file} id type x y z vx vy vz mass element q
+dump_modify traj1 element Ar
+
+run {_n_steps}
