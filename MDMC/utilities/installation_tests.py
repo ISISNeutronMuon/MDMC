@@ -19,7 +19,9 @@ from abc import ABC, abstractmethod
 from glob import glob
 from importlib import import_module
 from os.path import basename, dirname, join
-from typing import Callable, Dict, Literal, Optional
+from typing import Dict, Literal, Optional
+
+from MDMC.common.factory import RegisterFactory
 
 LOGGER = logging.getLogger(__name__)
 
@@ -87,7 +89,7 @@ class InstlTestBase(ABC):
         raise NotImplementedError
 
 
-class InstlTestFactory:
+class InstlTestFactory(RegisterFactory[InstlTestBase]):
 
     """
     Testing factory class.
@@ -99,43 +101,7 @@ class InstlTestFactory:
     registry: Dict[str, InstlTestBase] = {}
 
     @classmethod
-    def register(cls, name: str) -> Callable:
-        """
-        Decorator for registering installation test classes.
-
-        The name with which the test is registered should be the parameter
-        passed to the decorator.
-
-        Parameters
-        ----------
-        name : str
-            The name with which the test is registered.
-
-        Returns
-        -------
-        `function`
-            Wrapped class registered in factory.
-
-        Examples
-        --------
-        To register the ``InstlTestCore`` class with ``InstlTestFactory``:
-
-            .. highlight:: python
-            .. code-block:: python
-
-                @InstlTestFactory.register('core')
-                class InstlTestCore(InstlTestBase):
-        """
-
-        def class_wrapper(wrapped_class: InstlTestBase) -> Callable:
-
-            cls.registry[name] = wrapped_class
-            return wrapped_class
-
-        return class_wrapper
-
-    @classmethod
-    def create_instl_test(cls, name: str) -> InstlTestBase:
+    def create(cls, key: str, *args, **kwargs) -> InstlTestBase:
         """
         Instantiate the installation test for the class `name`.
 
@@ -150,8 +116,8 @@ class InstlTestFactory:
             Corresponding class with name `name`.
         """
 
-        instl_test = cls.registry[name]()
-        instl_test.name = name
+        instl_test = super().create(key)
+        instl_test.name = key
         return instl_test
 
 
@@ -159,9 +125,8 @@ def run_installation_tests():
     """
     Run all installation tests and print the result for each test.
     """
-
     for name in InstlTestFactory.registry:
-        instl_test = InstlTestFactory.create_instl_test(name)
+        instl_test = InstlTestFactory.create(name)
         instl_test.run()
         # Padded with spaces to ensure alignment
         print('{0: <30}   {1}'.format(instl_test.name, instl_test.success))

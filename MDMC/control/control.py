@@ -1,9 +1,11 @@
 """A module for performing the refinement"""
+import getpass
 import logging
 import statistics
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -14,6 +16,7 @@ from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.control.plot_results import PlotResults, data_printers
+from MDMC.exporters.trajectories import H5MD_build
 from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -21,9 +24,21 @@ from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
+
+class Dump(Enum):
+    """
+    Enum for deciding how often the trajectory should be dumped in H5MD format.
+    """
+    #: Dump only the best by FoM.
+    BEST = -1
+    #: Dump no h5md trajectories.
+    NONE = 0
+    #: Dump all h5md trajectories.
+    EVERY = 1
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
@@ -82,6 +97,14 @@ class Control:
         All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
         ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
         Those with ``constraints`` set are still passed.
+    h5md_dump : Dump | str, optional
+        Defines how often the trajectory should be dumped to a H5MD file. Default is `Dump.NONE`
+    h5md_file_loc: Path, optional
+        Location the H5MD file should be stored. Default is `Path('.')`
+    h5md_timestamp: bool, optional
+        True if a time stamp should be added to the end of the H5MD file name. Default is `True`
+    h5md_filename: str, optional
+        The name the dumped H5MD file should be. Default is ``trajectory``
     minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'MMC'.
     FoM_options : dict of {str : str}, optional
@@ -190,6 +213,10 @@ class Control:
                  previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
+                 h5md_dump: Dump = Dump.NONE,
+                 h5md_file_loc: Path = Path('.'),
+                 h5md_timestamp: bool = True,
+                 h5md_filename: str = 'trajectory',
                  **settings: dict):
 
         self.previous_history = previous_history
@@ -203,6 +230,23 @@ class Control:
                         'FoM_calculator': [],
                         'minimizer': [],
                         'TOTAL STEP': []}
+
+        if isinstance(h5md_dump, str):
+            self.h5md_dump = Dump[h5md_dump.upper()]
+        else:
+            self.h5md_dump = h5md_dump
+        self.h5md_filename = h5md_filename
+        self.h5md_timestamp = h5md_timestamp
+        self.h5md_file_loc = h5md_file_loc
+        self.h5md_creator = settings.get("h5md_creator_name", getpass.getuser())
+        self.h5md_email = settings.get("h5md_creator_email",
+                                       f"{getpass.getuser()}@unknown")
+        if self.h5md_dump is not Dump.NONE and "h5md_creator_name" not in settings:
+            logging.warning("`h5md_creator_name` not set, defaulting to: %s",
+                            self.h5md_creator)
+        if self.h5md_dump is not Dump.NONE and "h5md_creator_name" not in settings:
+            logging.warning("`h5md_creator_email` not set, defaulting to: %s",
+                            self.h5md_email)
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         # if a Parameters object, convert to list first for comprehension
@@ -224,8 +268,8 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,self.fit_parameters,
-                                                           previous_history, **settings)
+        self.minimizer = MinimizerFactory.create(minimizer_type, self,self.fit_parameters,
+                                                 previous_history, **settings)
         self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
@@ -287,9 +331,9 @@ class Control:
         else:
             FoM_norm = FoM_options.get('norm')
 
-        self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
-                                                    norm=FoM_norm,
-                                                    n_parameters=len(self.fit_parameters))
+        self.FoM_calculator = FoMFactory.create(FoM_error, self.observable_pairs,
+                                                norm=FoM_norm,
+                                                n_parameters=len(self.fit_parameters))
         self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
@@ -322,11 +366,11 @@ class Control:
 
             if 'resolution' not in dset:
                 # create list of user keys for resolutions to add to the error
-                userkeys = []
-                for setting in resolution_factory.resolutions:
-                    userkeys.append(setting.lower().replace('resolution', ''))
-                raise KeyError("A resolution function must be added. Recognised functions are " +
-                               str(userkeys) +
+                userkeys = [setting.lower().replace('resolution', '')
+                            for setting in resolution_factory.registry]
+
+                raise KeyError("A resolution function must be added. Recognised functions are: " +
+                               ", ".join(userkeys) +
                                ". If you meant to apply no resolution,"
                                " then specify resolution as None for the exp_dataset parameters.")
 
@@ -556,6 +600,21 @@ class Control:
             raise Exception('Minimization failed, please check the parameter values.') from exc
 
 
+    def auto_equilibrate(self):
+        """
+        Run auto-equilibration phase using settings defined in self.
+
+        Notes
+        -----
+        Auto equilibrate settings are prefixed with "auto_equil_" and
+        these settings will be passed through to :func:`Simulation.auto_equilibrate`.
+        """
+        auto_eq_settings = {key.removeprefix("auto_equil_"): val
+                            for key, val in self.settings.items()
+                            if key.startswith("auto_equil_")}
+        self.simulation.auto_equilibrate(**auto_eq_settings)
+
+
     def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
@@ -580,7 +639,7 @@ class Control:
 
         try:
             if not n_steps:
-                self.simulation.auto_equilibrate()
+                self.auto_equilibrate()
             else:
                 self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
         except MDEngineError:
@@ -604,7 +663,6 @@ class Control:
         bad_param_location : bool
             Represents whether the equilibration at these parameter value failed or not.
             If equilibration failed, value is True.
-
         """
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
@@ -614,7 +672,9 @@ class Control:
             self.first_loaded_step = False
         elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
-            fom = self._generate_FoM()
+            fom, trj = self._generate_FoM()
+            if self.h5md_dump in (Dump.EVERY, Dump.BEST):
+                self.dump_h5md(trj)
         else:
             # assuming params are bad so use max FoM available
             fom = self.max_FoM
@@ -622,6 +682,7 @@ class Control:
         verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
+
         # Update the MD engine with new parameters
         self._update_engine_parameters()
         # When reset_config=true reset the MD (phasespace) back if the
@@ -639,6 +700,35 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
+    def dump_h5md(self, trj: CompactTrajectory):
+        """
+        Dump the trajectory as an H5MD file.
+
+        Parameters
+        ----------
+        trj : CompactTrajectory
+            The compact trajectory from the current step
+
+        Notes
+        -----
+        When Dumping "EVERY" trajectory timestamp should be true
+        or the file name must be different for each trajectory,
+        as if not the file will be continually overwritten.
+        """
+        if self.h5md_dump is Dump.EVERY:
+            H5MD_build.write_H5MD(trj,
+                                  filename=self.h5md_filename,
+                                  file_loc=self.h5md_file_loc,
+                                  timestamp=self.h5md_timestamp,
+                                  creator_name=self.h5md_creator,
+                                  creator_email=self.h5md_email)
+        elif self.h5md_dump is Dump.BEST and self.minimizer.is_best_FoM():
+            H5MD_build.write_H5MD(trj,
+                                  filename=self.h5md_filename,
+                                  file_loc=self.h5md_file_loc,
+                                  timestamp=False,
+                                  creator_name=self.h5md_creator,
+                                  creator_email=self.h5md_email)
 
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
@@ -685,13 +775,13 @@ class Control:
         """
         try:
             self._run_MD()
-            self._calculate_observables(self.simulation, self.observable_pairs)
+            trj = self._calculate_observables(self.simulation, self.observable_pairs)
             self._trim_dependent_variables()
             FoM_value = self.FoM_calculator.calculate()
         except MDEngineError:
             FoM_value = self.max_FoM
 
-        return FoM_value
+        return FoM_value, trj
 
     def _run_MD(self) -> None:
         """
@@ -730,7 +820,7 @@ class Control:
             An ``Observable`` of specified ``type``
         """
 
-        observable = ObservableFactory.create_observable(obstype)
+        observable = ObservableFactory.create(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
         observable.use_FFT = use_FFT
         return observable
@@ -756,7 +846,7 @@ class Control:
             ``origin == 'MD'``
         """
 
-        observable = ObservableFactory.create_observable(exp_observable.name)
+        observable = ObservableFactory.create(exp_observable.name)
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
@@ -796,6 +886,7 @@ class Control:
                         self.timings[key] = []
                     self.timings[key] += value
         verbose_manager.finish("Calculating observables")
+        return trj
 
     def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
         """
@@ -1133,7 +1224,7 @@ class Control:
 
             try:
                 if not n_steps:
-                    self.simulation.auto_equilibrate()
+                    self.auto_equilibrate()
                 else:
                     self.simulation.run(n_steps,True, verbose, output_log, work_dir,**settings)
                 equil_works = True

@@ -92,7 +92,7 @@ def FQt_obs(monkeymodule, trajectory, Q_vectors):
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
-    FQt_total = of.ObservableFactory.create_observable('FQt')
+    FQt_total = of.ObservableFactory.create('FQt')
     FQt_total.use_FFT = True
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_total.calculate_from_MD(trajectory,
@@ -106,7 +106,7 @@ def FQt_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
-    FQt_total = of.ObservableFactory.create_observable('FQt')
+    FQt_total = of.ObservableFactory.create('FQt')
     FQt_total.use_FFT = False
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_total.calculate_from_MD(trajectory,
@@ -124,7 +124,7 @@ def FQt_incoh_obs(monkeymodule, trajectory, Q_vectors):
     using the same base class as FQt_obs
     """
 
-    FQt_incoh = of.ObservableFactory.create_observable('FQt_incoh')
+    FQt_incoh = of.ObservableFactory.create('FQt_incoh')
     FQt_incoh.use_FFT = True
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_incoh.calculate_from_MD(trajectory,
@@ -142,7 +142,7 @@ def FQt_incoh_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
     using the same base class as FQt_obs
     """
 
-    FQt_incoh = of.ObservableFactory.create_observable('FQt_incoh')
+    FQt_incoh = of.ObservableFactory.create('FQt_incoh')
     FQt_incoh.use_FFT = False
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     FQt_incoh.calculate_from_MD(trajectory,
@@ -160,7 +160,7 @@ def FQt_coh_obs(trajectory, Q_vectors):
     using the same base class as FQt_obs
     """
 
-    FQt_coh = of.ObservableFactory.create_observable('FQt_coh')
+    FQt_coh = of.ObservableFactory.create('FQt_coh')
     FQt_coh.use_FFT = True
     FQt_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,
@@ -177,7 +177,7 @@ def FQt_coh_obs_no_FFT(trajectory, Q_vectors):
     using the same base class as FQt_obs
     """
 
-    FQt_coh = of.ObservableFactory.create_observable('FQt_coh')
+    FQt_coh = of.ObservableFactory.create('FQt_coh')
     FQt_coh.use_FFT = False
     FQt_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,

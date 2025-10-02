@@ -21,6 +21,7 @@ import numpy as np
 
 from MDMC.common import units
 from MDMC.MD.structures import Atom
+from MDMC.readers import H5MD_reader
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 
 
@@ -165,6 +166,39 @@ class CompactTrajectory:
         if bpn > 2:
             return np.float32
         return np.float16
+
+    @staticmethod
+    def create_from_h5md(file_name: str):
+        """
+        Create a CompactTrajectory from an H5MD file.
+
+        Parameters
+        ----------
+        file_name : str
+            Path to the H5MD file containing the desired trajectory.
+
+        Returns
+        -------
+        CompactTrajectory
+            The trajectory described by the file.
+        """
+        new_ct = CompactTrajectory()
+        all_data = H5MD_reader.read_all_data(file_name)
+        n_atoms = len(all_data['species'])
+        n_steps = all_data['no_steps']
+        new_ct.preAllocate(n_atoms=n_atoms,
+                           n_steps=n_steps,
+                           useVelocity=True)
+        new_ct.time = all_data['time']
+        new_ct.setCharge(all_data["charge"])
+        new_ct.setDimensions(all_data["box_dimension"])
+        new_ct.position = all_data['position']
+        new_ct.velocity = all_data['velocity']
+        new_ct.atom_masses = all_data['mass']
+        new_ct.atom_types = new_ct.validateTypes(all_data['atom_symbol'])
+        new_ct.element_list = all_data['atom_symbol']
+        new_ct.element_set = list(set(all_data['atom_symbol']))
+        return new_ct
 
     def setBytesPerNumber(self, bytes_per_number: int = 8):
         """

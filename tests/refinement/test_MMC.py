@@ -93,7 +93,7 @@ def test_mmc_step_accepted(monkeypatch, mockcontrol, parameters):
     # mock_change_parameters)
     original_values = [parameters[p].value for p in parameters]
     changed_values = [parameters[p].value * 2 for p in parameters]
-    mmc = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
+    mmc = MinimizerFactory.create('MMC', mockcontrol, parameters)
 
     # Monkeypatch both the state change and the parameter change
     monkeypatch.setattr(minimizers.MMC.MMC, 'change_state', mock_change_state)
@@ -129,7 +129,7 @@ def test_mmc_step_rejected(monkeypatch, mockcontrol, parameters):
     # changed values should be 2x the old values which the MMC already
     # possesses.  As these are not set when MMC is initialised, set these
     # manually to something arbitrary.
-    mmc = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
+    mmc = MinimizerFactory.create('MMC', mockcontrol, parameters)
     mmc.parameters_old_values = {p: v for p, v in zip(parameters, np.arange(len(parameters)))}
     original_FoM = mmc.FoM_old
     original_values = [parameters[p].value for p in parameters]
@@ -173,9 +173,9 @@ def test_MMC_has_converged(mockcontrol, mock_history, min_steps, expected):
     """
     parameter = Parameters(Parameter(name='A', value=None))
     if min_steps:
-        minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameter, min_steps=min_steps)
+        minim = MinimizerFactory.create('MMC', mockcontrol, parameter, min_steps=min_steps)
     else:
-        minim = MinimizerFactory.create_minimizer('MMC',  mockcontrol, parameter)
+        minim = MinimizerFactory.create('MMC',  mockcontrol, parameter)
     minim._history = mock_history
     assert minim.has_converged() == expected
 
@@ -190,7 +190,7 @@ def test_MMC_change_parameter(mockcontrol, parameters):
     def mock_distribution(low: float, high: float, size: int):
         return np.ones(size)
 
-    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
+    minim = MinimizerFactory.create('MMC', mockcontrol, parameters)
     expected_values = {p: 2 * parameters[p].value for p in parameters}
     minim.distribution = mock_distribution
     minim.change_parameters()
@@ -204,7 +204,7 @@ def test_MMC_change_parameter(mockcontrol, parameters):
                              Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
     # Expect values to be set to the upper/lower limit
     expected_values = [1.5, 0.5]
-    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
+    minim = MinimizerFactory.create('MMC', mockcontrol, parameters)
     minim.distribution = mock_distribution2
     minim.change_parameters()
     assert [p.value for p in minim.parameters.values()] == expected_values
@@ -229,7 +229,7 @@ def test_MMC_change_state_FoM_gt(monkeypatch, mockcontrol, parameters, FoM, FoM_
     def mock_random():
         return 0.5
 
-    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters, MC_norm=MC_norm)
+    minim = MinimizerFactory.create('MMC', mockcontrol, parameters, MC_norm=MC_norm)
     minim.FoM_old = FoM_old
     minim.FoM = FoM
     monkeypatch.setattr(np.random, 'random', mock_random)
@@ -252,7 +252,7 @@ def test_MMC_change_state_FoM_le(monkeypatch, mockcontrol, parameters, FoM, FoM_
     def mock_random():
         return 0.999999
 
-    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters, MC_norm=1.0)
+    minim = MinimizerFactory.create('MMC', mockcontrol, parameters, MC_norm=1.0)
     minim.FoM_old = FoM_old
     minim.FoM = FoM
     monkeypatch.setattr(np.random, 'random', mock_random)
@@ -310,7 +310,7 @@ class TestParametrized:
             with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
                        new_callable=PropertyMock) as columns:
                 columns.return_value = list(mock_history.columns)
-                mmc = MinimizerFactory().create_minimizer("MMC", mockcontrol, params)
+                mmc = MinimizerFactory().create("MMC", mockcontrol, params)
                 output_data = mmc.extract_result()
                 assert FoMs[0] in output_data
                 assert FoMs[1] in output_data
@@ -325,7 +325,7 @@ class TestParametrized:
             with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
                        new_callable=PropertyMock) as columns:
                 columns.return_value = list(mock_history.columns)
-                mmc = MinimizerFactory().create_minimizer("MMC", mockcontrol, params)
+                mmc = MinimizerFactory().create("MMC", mockcontrol, params)
                 output_string = mmc.present_result()
                 assert str(expected[0]) in output_string
                 assert str(expected[1]) in output_string

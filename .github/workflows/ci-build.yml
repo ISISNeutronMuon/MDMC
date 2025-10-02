@@ -12,7 +12,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: fetch  # grabs master to compare if Docker build files changed
         run: git fetch origin master
 
@@ -32,7 +32,7 @@ jobs:
         testset: ["not lammps and not dlpoly"]
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11.2'
           architecture: x64
@@ -56,7 +56,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload code coverage report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: apt get
         run: |
           sudo apt-get update
@@ -88,9 +88,9 @@ jobs:
     needs: build
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11.2'
           architecture: x64
@@ -108,14 +108,14 @@ jobs:
       - name: Convert Notebooks
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/notebook-test-config.py"
       - name: Test Notebooks
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "pytest --nbmake --nbmake-timeout=2000 -k '.nbconvert.ipynb'"
 
   type-checking:
     name: Mypy
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: apt get
       run: |
         sudo apt-get update

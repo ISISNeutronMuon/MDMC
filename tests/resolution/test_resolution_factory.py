@@ -7,16 +7,14 @@ import pytest
 import MDMC.resolution as res
 from tests.test_data import data
 
-rf = res.ResolutionFactory()
+rf = res.ResolutionFactory
 
 # turns the dict of resolution functions into a list of tuples for case parameterisation;
 # first entry is the user string input to get the resolution type, the second is the function.
 # this means that new resolution types are automatically added to the parameterisation when they are implemented.
-resdict = rf.resolutions
-reslist = []
-for key, value in resdict.items():
-    stripped_key = key.lower().replace('resolution', '')
-    reslist.append((stripped_key, value))
+resdict = rf.registry
+reslist = [(key.lower().replace('resolution', ''), value)
+           for key, value in resdict.items()]
 
 
 @pytest.mark.parametrize('resolution, expected', reslist)
@@ -25,9 +23,9 @@ def test_resolution_factory(resolution, expected):
     Tests that input of working functions to the resolution factory gives the correct result.
     """
 
-    if resolution == 'file':
+    if resolution in ("file", "from_file", "From_FileResolution"):
         resolution_function = rf.create_instance({resolution: data.RESOLUTION_DATA['LAMPSQw']},
-                                        'SQw', 'LAMPSQw', 1055.8303421611213)
+                                                 'SQw', 'LAMPSQw', 1055.8303421611213)
     else:
         resolution_function = rf.create_instance({resolution: 84})
 

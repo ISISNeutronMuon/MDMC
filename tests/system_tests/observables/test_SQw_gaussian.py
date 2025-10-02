@@ -102,7 +102,7 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
-    SQw_total = of.ObservableFactory.create_observable('SQw')
+    SQw_total = of.ObservableFactory.create('SQw')
     SQw_total.use_FFT = True
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     SQw_total.calculate_from_MD(trajectory,
@@ -117,7 +117,7 @@ def SQw_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
-    SQw_total = of.ObservableFactory.create_observable('SQw')
+    SQw_total = of.ObservableFactory.create('SQw')
     SQw_total.use_FFT = False
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     SQw_total.calculate_from_MD(trajectory,
@@ -136,7 +136,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
     using the same base class as SQw_obs
     """
 
-    SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh = of.ObservableFactory.create('SQw_incoh')
     SQw_incoh.use_FFT = True
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     SQw_incoh.calculate_from_MD(trajectory,
@@ -155,7 +155,7 @@ def SQw_incoh_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
     using the same base class as SQw_obs
     """
 
-    SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh = of.ObservableFactory.create('SQw_incoh')
     SQw_incoh.use_FFT = False
     monkeymodule.setattr(periodictable.elements.symbol('O').neutron,"b_c_i",0)
     SQw_incoh.calculate_from_MD(trajectory,
@@ -174,7 +174,7 @@ def SQw_coh_obs(trajectory, Q_vectors):
     using the same base class as SQw_obs
     """
 
-    SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh = of.ObservableFactory.create('SQw_coh')
     SQw_coh.use_FFT = True
     SQw_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,
@@ -192,7 +192,7 @@ def SQw_coh_obs_no_FFT(trajectory, Q_vectors):
     using the same base class as SQw_obs
     """
 
-    SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh = of.ObservableFactory.create('SQw_coh')
     SQw_coh.use_FFT = False
     SQw_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,

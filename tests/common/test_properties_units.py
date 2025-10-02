@@ -152,8 +152,8 @@ def reader_info(request):
     and the names, values and units of the properties for testing
     """
 
-    reader = ObservableReaderFactory.create_reader(request.param[0],
-                                                   data.READER_DATA[request.param[1]])
+    reader = ObservableReaderFactory.create(request.param[0],
+                                            data.READER_DATA[request.param[1]])
     for prop in request.param[2]:
         setattr(reader, prop['name'], prop['value'])
 

@@ -66,7 +66,7 @@ jobs:
     steps:
     - name: Download master profiling for comparison
       # regular download artifact can only get artifacts from latest run
-      uses: dawidd6/action-download-artifact@v2
+      uses: dawidd6/action-download-artifact@v7
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
         workflow: ci-cron.yml
@@ -76,7 +76,7 @@ jobs:
       run: mv cron-total-profiling.csv master-profiling.csv
 
     - name: Upload as master profiling
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: master-profiling
         path: master-profiling.csv
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Build documentation
       run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install .[docs] && sphinx-apidoc $(pwd)/MDMC -o $(pwd)/doc/reference/api/ && make -d -C $(pwd)/doc html"
     - name: Deploy
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Prune images
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

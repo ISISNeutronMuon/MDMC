@@ -55,7 +55,7 @@ def unparsed_reader(reader_info):
         reader_data = data.READER_DATA[reader_info['data_lookup']]
     except KeyError:
         reader_data = data.OBS_DATA[reader_info['data_lookup']]
-    reader = ObservableReaderFactory.create_reader(reader_info['reader'], reader_data)
+    reader = ObservableReaderFactory.create(reader_info['reader'], reader_data)
     return reader
 
 @pytest.fixture()
@@ -65,7 +65,7 @@ def parsed_reader(reader_info):
     except KeyError:
         reader_data = data.OBS_DATA[reader_info['data_lookup']]
 
-    reader = ObservableReaderFactory.create_reader(reader_info['reader'], reader_data)
+    reader = ObservableReaderFactory.create(reader_info['reader'], reader_data)
     with reader:
         reader.parse()
     return reader
@@ -140,9 +140,9 @@ def test_parse_incorrect_partial_pdfs(unparsed_reader):
                 assert len(partial[1]) == len(reader.r)
 
 mdanse_data_ascii_output = """# variable name: s(q,f)_total
-# 	type: surface
-# 	axis: q|omega
-# 	units: nm2/ps
+#       type: surface
+#       axis: q|omega
+#       units: nm2/ps
 
 # 1st column: q (1/nm)
 # 1st row: omega (rad/ps)
@@ -187,7 +187,7 @@ def mdanse_plotterfile():
     target.close()
 
 def read_and_parse(file_obj: tempfile._TemporaryFileWrapper):
-    reader = ObservableReaderFactory.create_reader('MDANSESQw', file_obj.name)
+    reader = ObservableReaderFactory.create('MDANSESQw', file_obj.name)
     with reader:
         reader.parse()
     return reader
@@ -209,7 +209,7 @@ def test_axes(parsed_textfile, parsed_plotterfile):
     e_axis_2 = parsed_plotterfile.independent_variables['E']
     assert np.allclose(q_axis_1, q_axis_2, rtol=1e-4, atol = 1e-3)
     assert np.allclose(e_axis_1, e_axis_2, rtol=1e-4, atol = 1e-3)
-     
+
 def test_data(parsed_textfile, parsed_plotterfile):
     data_1 = parsed_textfile.SQw
     data_2 = parsed_plotterfile.SQw

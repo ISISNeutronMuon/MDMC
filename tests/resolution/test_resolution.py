@@ -13,7 +13,7 @@ from tests.test_data import data
 
 # we get the list of resolution functions from the module and use it to automatically create our `parametrize` cases.
 # This means that new functions will automatically be added to the tests when implemented.
-resdict = res.ResolutionFactory().resolutions
+resdict = res.ResolutionFactory.registry
 resparms = list(resdict.values())
 
 

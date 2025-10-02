@@ -326,6 +326,26 @@ def test_set_weights(PDF, unique_elements, b_cohs, expected):
     assert PDF._set_weights(unique_elements, b_cohs) == expected
 
 
+@pytest.mark.parametrize('unique_elements, b_cohs, expected',
+                         [(['H[2]', 'O[17]', 'C[13]'],
+                           {'17-O':6.0, '13-C':6.2},
+                           {'17-O':6.0, '13-C':6.2, 'D':6.674}),
+                          (['H[2]', 'O[17]', 'C[13]'],
+                           {'D':6.7},
+                           {'D':6.7, '17-O':5.6, '13-C':6.19}),
+                          (['H[2]', 'O[17]', 'C[13]'],
+                           {},
+                           {'D':6.674, '17-O':5.6, '13-C': 6.19})])
+def test_set_weights_isotopes(PDF, unique_elements, b_cohs, expected):
+
+    """
+    Tests that the correct weights of isotopes are determined. Numbers differ in tests
+    due to testing that the periodictable element is access peroperly as well as ensuring a
+    previously set value is used.
+    """
+    assert PDF._set_weights(unique_elements, b_cohs) == expected
+
+
 @pytest.mark.parametrize('unique_element_dict, element_list',
                          [({'H':3, 'O':2, 'C':1},
                            ['H', 'H', 'H', 'O', 'O', 'C']),

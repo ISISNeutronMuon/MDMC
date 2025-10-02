@@ -93,7 +93,7 @@ def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str,
     This may not be supported for all ``Observable`` types.
     """
 
-    resolution_obs = ObservableFactory.create_observable(file_type)
+    resolution_obs = ObservableFactory.create(file_type)
     try:
         resolution_obs.read_from_file(reader=file_reader, file_name=file_name)
     # if file not found, check if it is in pwd (i.e. user put in filename rather than path)

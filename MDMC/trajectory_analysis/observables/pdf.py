@@ -7,10 +7,10 @@ from itertools import chain, combinations_with_replacement, product
 from typing import Generator, Optional
 
 import numpy as np
-import periodictable
 
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.periodictable_objects import create_list_of_element_objects
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -852,11 +852,11 @@ class PairDistributionFunction(Observable):
             ``{element: weight}`` where ``element`` is a `str` and ``weight`` is
             the corresponding weight.
         """
-        elem_getter = periodictable.elements.symbol
-        return {element: b_coh.get(element, elem_getter(element).neutron.b_c
-                                   if elem_getter(element).neutron.b_c is not None
-                                   else 0)
-                for element in unique_elements}
+        elements_list = create_list_of_element_objects(unique_elements)
+
+        return {str(element): b_coh.get(str(element), element.neutron.b_c\
+            if element.neutron.b_c is not None else 0) for element
+                in elements_list}
 
     @staticmethod
     def _set_numbers(unique_elements: list[str], element_list: list[str]) -> dict:

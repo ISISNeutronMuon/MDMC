@@ -1,0 +1,10 @@
+# Created by MDMC
+tolerance 2.0
+filetype pdb
+output output_example.pdb
+
+structure water.pdb
+  number 200
+  inside cube 0.0 0.0 0.0 30.0
+end structure
+
