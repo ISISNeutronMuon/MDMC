@@ -1,8 +1,10 @@
 """The Gaussian-Process-Regression minimizer class"""
+from __future__ import annotations
+
 import itertools
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pandas as pd
@@ -42,7 +44,7 @@ class GPR(Minimizer):
     """
 
     def __init__(self, control: Control, parameters: Parameters,
-                 previous_history: Path | str | None = None, **settings: dict):
+                 previous_history: Path | str | None = None, **settings: Any):
 
         super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests

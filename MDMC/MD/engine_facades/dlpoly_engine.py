@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from copy import copy
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import dlpoly.control
 import numpy as np
@@ -92,13 +92,13 @@ class DLPOLYAttribute:
                      self.dlpoly,
                      'added to class' if dlpoly else 'created by class')
 
-    def read_settings(self, settings: dict) -> None:
+    def read_settings(self, settings: Any) -> None:
         """
         Read DLP parameters from a settings dict
 
         Parameters
         ----------
-        settings : dict
+        settings : Any
             MDMC settings dictionary to read parameters from.
         """
         new_opt = DLPControl.from_dict(settings, strict=False)
@@ -245,7 +245,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.ensemble.barostat = value
 
-    def setup_universe(self, universe: Universe, **settings: dict) -> None:
+    def setup_universe(self, universe: Universe, **settings: Any) -> None:
 
         """
         Creates the simulation box, the atomic configuration, and the topology
@@ -540,7 +540,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         raise NotImplementedError("DLPolyEngine does not support eval")
 
-    def _pass_settings_to_control(self, settings: dict,
+    def _pass_settings_to_control(self, settings: Any,
                                   control: dlpoly.control.Control) -> None:
         """Pass excess settings through to dlpoly control object.
 
@@ -582,7 +582,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
     There might be a lot of Attributes needed (see DL_POLYUniverse for example)
     """
 
-    def __init__(self, universe: Universe, dlpoly: DLPoly = None, **settings: dict):
+    def __init__(self, universe: Universe, dlpoly: DLPoly = None, **settings: Any):
 
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
@@ -679,7 +679,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         LOGGER.info('%s configuration written in %s',
                     self.__class__, config_filename)
 
-    def _add_topology(self, universe: Universe, **settings: dict) -> None:
+    def _add_topology(self, universe: Universe, **settings: Any) -> None:
 
         """
         Add the bonded and nonbonded interactions to DL_POLY
@@ -707,7 +707,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
-    def _create_field(self, universe: Universe, **settings: dict) -> Field:
+    def _create_field(self, universe: Universe, **settings: Any) -> Field:
         """
         Creates a dlpoly Field object
 
@@ -962,7 +962,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
     """
 
     def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., dlpoly=None, **settings: dict):
+                 time_step: float = 1., dlpoly=None, **settings: Any):
 
         super().__init__(dlpoly=dlpoly)
 

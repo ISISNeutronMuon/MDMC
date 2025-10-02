@@ -11,13 +11,12 @@ import warnings
 import weakref
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
-from collections.abc import Callable
 from contextlib import suppress
 from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count
 from math import gcd
-from typing import TYPE_CHECKING, Annotated, Literal
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -31,10 +30,12 @@ from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.interactions import BondedInteraction, Coulombic
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from MDMC.MD.interactions import Interaction, NonBondedInteraction
     from MDMC.MD.simulation import Universe
 
-ThreeVec = Annotated[npt.ArrayLike[float], Literal[3]]
+ThreeVec = npt.NDArray[np.floating]
 LOGGER = logging.getLogger(__name__)
 
 
@@ -729,7 +730,7 @@ class Atom(Structure):
     def __init__(self, element: str,
                  position: ThreeVec = (0., 0., 0.),
                  velocity: ThreeVec = (0., 0., 0.),
-                 charge: float | None = None, **settings: dict):
+                 charge: float | None = None, **settings: Any):
 
         self.universe = None
 
@@ -1205,7 +1206,7 @@ class Molecule(CompositeStructure):
                  position: ThreeVec | None = None,
                  velocity: ThreeVec = (0, 0, 0),
                  name: str | None = None,
-                 **settings: dict):
+                 **settings: Any):
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:

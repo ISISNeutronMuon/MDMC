@@ -1,4 +1,5 @@
 """Reader for pair distribution function data from LAMP's ascii files"""
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 

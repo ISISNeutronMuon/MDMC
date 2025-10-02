@@ -1,6 +1,7 @@
 """Module for reading pdb files"""
 # pylint: disable=no-name-in-module
 import itertools
+from typing import Any
 
 import numpy as np
 

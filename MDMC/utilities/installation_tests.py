@@ -16,11 +16,12 @@ These tests exist so that a user can test their installation of MDMC.
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from glob import glob
 from importlib import import_module
 from os.path import basename, dirname, join
 from typing import Literal
+
+from MDMC.common.factory import RegisterFactory
 
 LOGGER = logging.getLogger(__name__)
 

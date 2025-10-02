@@ -1,7 +1,7 @@
 """Covariance Matrix Adaptation Evolution Strategy minimiser."""
 
-from collections.abc import Sequence
-from pathlib import Path
+from __future__ import annotations
+
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
@@ -11,6 +11,9 @@ import numpy as np
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
+
     from MDMC.control import Control
     from MDMC.MD import Parameters
 

@@ -1,6 +1,7 @@
 """Module in which all interactions between structural units are defined.
 
  ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
+from __future__ import annotations
 
 import logging
 import weakref
@@ -8,7 +9,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from itertools import permutations
 from types import MethodType
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import numpy as np
 
@@ -407,7 +408,7 @@ class Dispersion(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: Universe, *atom_types: int, **settings: dict):
+    def __init__(self, universe: Universe, *atom_types: int, **settings: Any):
 
         # Ignore pylint warning for inner function docstring
         # pylint: disable=missing-docstring
@@ -420,7 +421,7 @@ class Dispersion(NonBondedInteraction):
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
                                  ' atom types')
-            if not all(isinstance(atom_type, int | np.integer) for atom_type
+            if not all(isinstance(atom_type, (int, np.integer)) for atom_type
                        in atom_type_pair):
                 raise TypeError('Each atom type must be int')
             return atom_type_pair
@@ -578,7 +579,7 @@ class Coulombic(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: Universe = None, **settings: dict):
+    def __init__(self, universe: Universe = None, **settings: Any):
         # pylint: disable=not-callable
         # as it raises a false positive on self.add_atoms
 
@@ -587,7 +588,7 @@ class Coulombic(NonBondedInteraction):
             if settings.get('atoms'):
                 raise TypeError('Cannot pass both atoms and atom_types '
                                 'as parameters.')
-            if isinstance(atom_types, int | np.integer):
+            if isinstance(atom_types, (int, np.integer)):
                 # Account for init argument atom_types=atom_type
                 # rather than atom_types=[atom_type]
                 atom_types = [atom_types]
@@ -748,7 +749,7 @@ class BondedInteraction(Interaction):
         BondAngle(H1, H2, O)
     """
 
-    def __init__(self, *atom_tuples: list[tuple], **settings: dict):
+    def __init__(self, *atom_tuples: list[tuple], **settings: Any):
 
         if atom_tuples and is_atom(atom_tuples[0]):
             atom_tuples = (atom_tuples, )
@@ -940,7 +941,7 @@ class BondedInteraction(Interaction):
         if len(atoms) not in n_atoms:
             raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
-    def add_atoms(self, *atoms: Atom, **settings: dict) -> None:
+    def add_atoms(self, *atoms: Atom, **settings: Any) -> None:
         """
         Add atoms which are all involved in one example of this interaction
 

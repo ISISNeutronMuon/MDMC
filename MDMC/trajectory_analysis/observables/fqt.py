@@ -6,7 +6,7 @@ from abc import abstractmethod
 from collections.abc import Callable, Generator
 from contextlib import suppress
 from itertools import product
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 

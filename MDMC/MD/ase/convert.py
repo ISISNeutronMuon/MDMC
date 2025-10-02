@@ -1,4 +1,6 @@
 """Converts ASE Atoms objects into MDMC Molecules."""
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import ase
@@ -93,7 +95,7 @@ def MDMC_to_ASE(structure: Structure | Universe | list[Atom],
     -----------
     structure: Structure, Universe or List[Atom]
         the MDMC object to convert.
-    cell: np.array, optional, default None
+    cell: np.ndarray, optional, default None
         provides cell dimensions for the ASE Atoms object.
         If None, the default cell size (0,0,0) is used.
 

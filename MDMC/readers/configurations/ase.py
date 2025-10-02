@@ -1,5 +1,7 @@
 """MDMC wrapper for the ASE reader."""
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import ase.io
 

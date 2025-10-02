@@ -6,7 +6,6 @@ it is fixed, has constraints or is tied.
 Parameters inherits from lists and implements a number of methods for filterting
 a sequence of Parameter objects.
 """
-
 from __future__ import annotations
 
 import ast

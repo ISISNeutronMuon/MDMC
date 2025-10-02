@@ -1,10 +1,10 @@
 """
 Factory class for generating observables.
 """
+
 from collections.abc import Callable
 
-from collections.abc import Callable, Iterable
-
+from MDMC.common.factory import RegisterFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 

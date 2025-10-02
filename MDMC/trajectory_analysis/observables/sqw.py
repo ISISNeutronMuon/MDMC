@@ -3,8 +3,10 @@ Module for AbstractSQw and total SQw class.
 """
 
 from contextlib import suppress
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 from numpy.testing import assert_allclose
 from scipy.interpolate import RectBivariateSpline
 
@@ -23,14 +25,14 @@ class SQwMixins:
     A mixin class for properties used by both SQw and FQt objects.
     """
 
-    def minimum_frames(self, dt: float = None) -> int:
+    def minimum_frames(self, dt: float) -> int:
         r"""
         Compute minimum number of ``CompactTrajectory`` frames to calculate ``dependent_variables``.
 
         Parameters
         ----------
-        dt : float, optional
-            The time separation of frames in ``fs``, default is `None`.
+        dt : float
+            The time separation of frames in ``fs``.
 
         Returns
         -------
@@ -104,7 +106,7 @@ class SQwMixins:
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
-    def Q(self) -> np.array | None:
+    def Q(self) -> npt.NDArray[np.floating] | None:
         """
         Get or set the momentum transfers.
 
@@ -119,7 +121,7 @@ class SQwMixins:
             return None
 
     @Q.setter
-    def Q(self, value: np.array) -> None:
+    def Q(self, value: np.ndarray) -> None:
         self.independent_variables['Q'] = value
 
 
@@ -207,7 +209,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
-    def E(self) -> np.array:
+    def E(self) -> np.ndarray:
         """
         Get the energies.
 
@@ -226,7 +228,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
-    def w(self) -> np.array:
+    def w(self) -> np.ndarray:
         """
         Get the angular frequencies.
 

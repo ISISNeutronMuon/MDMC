@@ -1,5 +1,7 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING

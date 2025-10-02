@@ -5,6 +5,7 @@ import warnings
 from collections import defaultdict
 from collections.abc import Generator
 from itertools import chain, combinations_with_replacement, product
+from typing import Any
 
 import numpy as np
 
@@ -127,7 +128,7 @@ class PairDistributionFunction(Observable):
     def errors(self, value: dict) -> None:
         self._errors = value
 
-    def minimum_frames(self, dt: float = None) -> int:
+    def minimum_frames(self, dt: float | None = None) -> int:
         """
         The minimum number of frames needed to calculate the ``dependent_variables``.
 

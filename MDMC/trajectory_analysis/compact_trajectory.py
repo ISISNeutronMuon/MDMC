@@ -511,8 +511,8 @@ class CompactTrajectory:
             # we use the mean value over time as the dimensions parameter.
 
     def writeOneStep(self, step_num: int = -1, time: float = -1.0,
-                     positions: np.array = None,
-                     velocities: np.array = None):
+                     positions: np.ndarray = None,
+                     velocities: np.ndarray = None):
         """
         Write the atom properties of a single frame into the trajectory arrays.
 
@@ -524,10 +524,10 @@ class CompactTrajectory:
         time : float
             The time stamp of the simulation step, in the
             correct time units (femtoseconds). Defaults to -1.0.
-        positions : np.array
+        positions : np.ndarray
             The array of the atom positions, shaped
             (n_atoms, 3). Defaults to None.
-        velocities : np.array, optional
+        velocities : np.ndarray, optional
             The array of the atom velocities, shaped
             (n_atoms, 3). If we don't use velocities, it can be skipped.
             Defaults to None.
@@ -606,7 +606,7 @@ class CompactTrajectory:
             return number_types
         return np.array(atom_types)
 
-    def validateTypes(self, raw_atom_types: np.array) -> bool:
+    def validateTypes(self, raw_atom_types: np.ndarray) -> bool:
         """
         Check and set the array of atom types.
 

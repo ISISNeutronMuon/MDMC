@@ -1,5 +1,7 @@
 """Module for the AtomContainer class."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, overload
 
@@ -37,8 +39,7 @@ class AtomContainer(ABC):
     def __getitem__(self, index: int) -> Atom: ...
     @overload
     def __getitem__(self, index: slice) -> list[Atom]: ...
-
-    def __getitem__(self, index: int | slice) -> Atom | list[Atom]:
+    def __getitem__(self, index):
         """
         Returns
         -------

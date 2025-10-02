@@ -32,7 +32,7 @@ def write_metadata(target: h5py.File, observable: Observable):
     meta_group.create_dataset(
         "MDMC_version",
         (1,),
-        data=str("0.2.0"),
+        data="0.2.0",
         dtype=string_dt,
     )
     inputs_group = meta_group.create_group("inputs")

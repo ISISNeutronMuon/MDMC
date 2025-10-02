@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Iterable
-from typing import IO
+from typing import IO, Any
 
 import numpy as np
 

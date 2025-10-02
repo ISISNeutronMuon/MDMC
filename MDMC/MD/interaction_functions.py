@@ -13,9 +13,8 @@ Contains filters for filtering list of parameters based on a predicate."""
 from __future__ import annotations
 
 import functools
-from collections.abc import Callable
 from itertools import zip_longest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -24,6 +23,8 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameter, Parameters
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from MDMC.MD.interactions import Interaction
 
 
@@ -468,7 +469,7 @@ class Periodic(InteractionFunction):
                 raise TypeError('*parameters must contain a K, n, and d value for'
                                 ' each order >2 (i.e. it should contain a'
                                 ' number of values exactly divisible by 3)')
-            if not isinstance(order_parameters[1], int | np.integer):
+            if not isinstance(order_parameters[1], (int, np.integer)):
                 raise TypeError('All n values must be of type int')
             if order_parameters[1] < 0.:
                 raise ValueError('All n values must be non-negative ints')

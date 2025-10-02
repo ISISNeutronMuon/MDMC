@@ -1,12 +1,13 @@
 """Module for setting up and running the simulation
 
  Classes for the simulation box, minimizer and integrator."""
+from __future__ import annotations
 
 import logging
 import warnings
 from collections import defaultdict
 from itertools import count, filterfalse, product
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -26,12 +27,11 @@ from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.interactions import Coulombic, Dispersion
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
-from MDMC.MD.structures import Structure
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 if TYPE_CHECKING:
     from MDMC.MD.interactions import Interaction
-    from MDMC.MD.structures import Atom, Molecule
+    from MDMC.MD.structures import Atom, Molecule, Structure
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
@@ -228,7 +228,7 @@ class Universe(AtomContainer):
                              msg)
                 raise ValueError(msg)
             self._dimensions = np.array([dimensions] * 3)
-        elif isinstance(dimensions, list | tuple | np.ndarray):
+        elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
                 if any(dim <= 0 for dim in np.array(dimensions)):
                     msg = ('Only positive values for the Universe dimensions '
@@ -594,7 +594,7 @@ class Universe(AtomContainer):
         return self._force_fields
 
     @property
-    def atom_types(self) -> list[Atom]:
+    def atom_types(self) -> dict[int, list[Atom]]:
         """
         Get the atom types of atoms in the ``Universe``
 
@@ -847,7 +847,7 @@ class Universe(AtomContainer):
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field: str,
                         *interactions: Interaction,
-                        **settings: dict) -> None:
+                        **settings: Any) -> None:
         """
         Adds a force field to the specified ``interactions``.  If no
         ``interactions`` are passed, the force field is applied to all
@@ -1566,11 +1566,14 @@ class Simulation:
     # this is flagged up by variables having a list as default value
     # but we don't mutate the list anywhere in the function, so
     # this is safe and has better readability
-    def auto_equilibrate(self,
-                         variables: list[str] = ('temp', 'pe'),
-                         eq_step: int = 10,
-                         window_size: int = 100,
-                         tolerance: float = 0.01) -> tuple[int, dict]:
+    def auto_equilibrate(
+        self,
+        variables: list[str] = ('temp', 'pe'),
+        eq_step: int = 10,
+        window_size: int = 100,
+        tolerance: float = 0.01,
+        max_step = 10000,
+    ) -> tuple[int, dict]:
         """
         Equilibrate until the specified list of variables have stabilised.
         Uses the KPSS stationarity test to determine

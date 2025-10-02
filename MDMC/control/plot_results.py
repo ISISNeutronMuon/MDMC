@@ -95,7 +95,7 @@ class PlotResults:
             location of the minimum.
         y_random[index_best_objective] : float
             the surrogate function value at the minimum.
-        y_random : np.array
+        y_random : np.ndarray
             An array of length "self.points" containing surrogate function values at each point
         random_samples : list[list]
             A list of length "self.points" containing the coordinates of each prediction
