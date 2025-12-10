@@ -1,7 +1,8 @@
-"""Module for reading pdb files"""
+"""
+Module for reading pdb files.
+"""
 # pylint: disable=no-name-in-module
 import itertools
-from typing import List
 
 import numpy as np
 
@@ -12,14 +13,18 @@ from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
 class ProteinDataBankReader(ConfigurationReader):
     """
-    A class for reading pdb configuration files
+    A class for reading pdb configuration files.
+
+    Parameters
+    ----------
+    file_name : str
+        File to read data from.
 
     Examples
     --------
-    To use a pdb reader to read a file called 'paracetamol.pdb' and create a set of
-    ``Molecule``s from it:
+    To use a pdb reader to read a file called ``'water.pdb'`` and create a set of
+    ``Molecule`` s from it:
 
-    .. highlight:: python
     .. code-block:: python
 
         file = 'water.pdb'
@@ -32,12 +37,24 @@ class ProteinDataBankReader(ConfigurationReader):
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._bonds: List['Bond'] = []
+        self._bonds: list[Bond] = []
 
     def parse(self, **settings: dict) -> None:
-        # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
-        # Link to PDF of file format:
-        # https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
+        """
+        Parse ``.pdb`` file into MDMC `Atom` s.
+
+        Parameters
+        ----------
+        **settings : dict
+            Extra options.
+
+        Notes
+        -----
+        This follows:
+        https://www.wwpdb.org/documentation/file-format v3.30 (page 180 of A4 pdf)
+        Link to PDF of file format:
+        https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
+        """
         # pylint: disable=unused-variable
         # as molecule_id is unused but is part of the standard!
         molecule = {}
@@ -65,18 +82,31 @@ class ProteinDataBankReader(ConfigurationReader):
 
     def create_bond(self, atom1: Atom, atom2: Atom) -> None:
         """
+        Create bonds in the system.
+
         Checks the bond lengths of the atoms in the molecule and
-        creates a bond if it is below a certain threshold
+        creates a bond if it is below a certain threshold.
 
-        This is needed because PDB files are able to include H-bonds (which MDMC does not support)
-        alongside other types of bonds, which are undistinguishable from each other in a pdb file.
-        Therefore, cutting off the bond length at a reasonable distance prevents an extremely long
-        bond being introduced into a molecule structure
+        Parameters
+        ----------
+        atom1 : Atom
+            First atom to check.
+        atom2 : Atom
+            Second atom to check.
+
+        Notes
+        -----
+        This is needed because PDB files are able to include H-bonds
+        (which MDMC does not support) alongside other types of bonds,
+        which are undistinguishable from each other in a pdb file.
+        Therefore, cutting off the bond length at a reasonable
+        distance prevents an extremely long bond being introduced into
+        a molecule structure.
+
+        Value of 2.1 Ang comes from:
+        https://doi.org/10.1002/anie.202102967
+        where 2 Ang is given as the maximum length.
         """
-
-        # 2.1 Ang used as bonded interactions should not usually go beyond this, and to prevent
-        # bonds that are way too long in the context of the whole molecule value.
-        # Value comes from: https://doi.org/10.1002/anie.202102967, where 2 Ang is given as the
         cutoff = 2.1
         difference = np.subtract(atom1.position, atom2.position)
         bond_length = np.linalg.norm(difference)
@@ -84,11 +114,16 @@ class ProteinDataBankReader(ConfigurationReader):
             self._bonds += [Bond((atom1, atom2))]
 
     @property
-    def atoms(self) -> 'list[Atom]':
-        return self._atoms
+    def bonds(self) -> list[Bond]:
+        """
+        Return the bonds within the molecule.
 
-    @property
-    def bonds(self) -> 'list[Bond]':
-        """Returns the bonds within the molecule,
-        as specified by "CONECT" statements in the pdb file"""
+        Bonds created by "CONECT" statements in the .pdb file and
+        :any:`create_bond`.
+
+        Returns
+        -------
+        list[Bond]
+            Bonds in the system.
+        """
         return self._bonds

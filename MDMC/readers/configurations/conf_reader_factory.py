@@ -1,4 +1,6 @@
-"""Factory class for generating readers for configurations"""
+"""
+Factory class for generating readers for configurations.
+"""
 
 from pathlib import Path
 
@@ -7,9 +9,6 @@ from ase.io.formats import ioformats
 from MDMC.common.factory import ModuleFactory
 from MDMC.readers.configurations.ase import ASEReader
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
-
-# pylint: disable=cyclic-import
-# this is handled!
 
 
 class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
@@ -28,13 +27,14 @@ class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
 
     @classmethod
     def create_reader_from_ext(cls, extension: str, file_name: str) -> ConfigurationReader:
-
         """
+        Create a reader from a filename extension.
+
         Parameters
         ----------
         extension : str
             The file extension from which to initialize a subclass of
-            ``ConfigurationReader``
+            ``ConfigurationReader``.
         file_name : str
             The name of the file that you want to read.
 
@@ -42,7 +42,7 @@ class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
         -------
         ConfigurationReader
             An initialized configuration reader which has the extension
-            specified by ``extension``
+            specified by ``extension``.
 
         Raises
         ------

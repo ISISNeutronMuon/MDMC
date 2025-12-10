@@ -1,30 +1,43 @@
-"""Module for observable reader abstract class"""
-from typing import TYPE_CHECKING, List
+"""
+Module for observable reader abstract class.
+"""
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.MD.structures import Atom
 from MDMC.readers.reader import Reader
 
-if TYPE_CHECKING:
-    from MDMC.MD.structures import Atom
 
 @repr_decorator('file', 'extension', 'atoms')
 class ConfigurationReader(Reader):
-
     """
-    Abstract class (as it does not implement ``Reader.parse``) that defines
-    properties common to all readers for configurations
+    Abstract class for properties common to all configuration readers.
 
-    A ``ConfigurationReader`` is created using ``ConfigurationReaderFactory``
+    Parameters
+    ----------
+    file_name : str
+        File to read atoms from.
+
+    Notes
+    -----
+    A ``ConfigurationReader`` should be created
+    using ``ConfigurationReaderFactory``
+
+    Does not implement ``Reader.parse``.
     """
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._atoms: List['Atom'] = []
+        self._atoms: list[Atom] = []
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         The `Atom` objects parsed from the file.
+
+        Returns
+        -------
+        list[Atom]
+            Parsed atoms.
         """
 
         return self._atoms

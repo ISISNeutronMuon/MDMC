@@ -1,4 +1,6 @@
-"""Module for reader abstract class"""
+"""
+Module for reader abstract class.
+"""
 from abc import ABC, abstractmethod
 from typing import IO
 
@@ -7,14 +9,13 @@ from MDMC.common.decorators import repr_decorator
 
 @repr_decorator('file')
 class Reader(ABC):
-
     """
-    Abstract class that defines methods common to all readers
+    Abstract class that defines methods common to all readers.
 
     Parameters
     ----------
-    file_name: str
-        name of file to read
+    file_name : str
+        Name of file to read.
     """
 
     def __init__(self, file_name: str):
@@ -24,8 +25,10 @@ class Reader(ABC):
 
     def __enter__(self) -> None:
         """
-        Provides a generic implementation of file opening using inbuilt python
-        open
+        Interface for opening file.
+
+        Provide generic implementation of file opening using inbuilt python
+        :any:`open`.
 
         Should be overridden if necessary for specific file types.
         """
@@ -35,24 +38,34 @@ class Reader(ABC):
         self.file = open(self.file_name, 'r', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Closes the open file after parsing"""
+        """
+        Close the open file after parsing.
+
+        Parameters
+        ----------
+        exception_type : Type[BaseException]
+            Type of exception raised.
+        exception_value : BaseException
+            The exception itself.
+        traceback : TraceBackType
+            Traceback from error.
+        """
 
         self.file.close()
 
     @abstractmethod
     def parse(self, **settings: dict) -> None:
         """
-        Parses the file data so that it is in a format expected by the class
-        calling the data reader
+        Parse the file data.
 
-        For readers which are not specific to one data type, the calling class
-        must be determined so that the file data can be parsed into
-        the appropriate data type.
+        For readers which are not specific to one data type, the
+        calling class must be determined so that the file data can be
+        parsed into the appropriate data type.
 
         Parameters
         ----------
-        **settings: dict
-            dictionary of settings for reader
+        **settings : dict
+            Dictionary of settings for reader.
         """
 
         raise NotImplementedError

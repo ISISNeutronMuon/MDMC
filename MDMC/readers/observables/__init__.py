@@ -1,16 +1,17 @@
-"""Modules for reading experimental observables
+"""
+Modules for reading experimental observables.
 
 Contents
 --------
-LAMPSQw
-LAMPPDF
-MantidSQw
-MDANSEQSw
-netCDFSQw
-netCDFPDF
-obs_reader_factory
-obs_reader
-xml_SQw
+- LAMPSQw
+- LAMPPDF
+- MantidSQw
+- MDANSEQSw
+- netCDFSQw
+- netCDFPDF
+- obs_reader_factory
+- obs_reader
+- xml_SQw
 """
 
 from . import (

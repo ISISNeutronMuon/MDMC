@@ -1,4 +1,6 @@
-"""Factory class for generating readers for observables"""
+"""
+Factory class for generating readers for observables.
+"""
 
 from pathlib import Path
 
@@ -9,9 +11,11 @@ from MDMC.readers.observables.obs_reader import ObservableReader
 class ObservableReaderFactory(ModuleFactory[ObservableReader]):
 
     """
-    Provides a factory for creating readers.  Any module within the readers
-    submodule can be created with a string of the class name, as long as it is a
-    subclass of ``Reader``.
+    Provides a factory for creating readers.
+
+    Any module within the readers submodule can be created with a
+    string of the class name, as long as it is a subclass of
+    ``Reader``.
     """
     registry: dict[str, ObservableReader] = {}
     curr_path = Path(__file__).parent

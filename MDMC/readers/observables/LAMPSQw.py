@@ -1,4 +1,6 @@
-"""Readers for dynamic data"""
+"""
+Readers for dynamic data.
+"""
 
 import logging
 from typing import IO, Iterable
@@ -9,24 +11,40 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
+
 class LAMPSQw(SQwReader):
-
     """
-    A class for reading SQw files from LAMP
+    A class for reading SQw files from LAMP.
 
-    LAMP's ascii output uses three files: 1 for independent variables and
-    parameters (..._LAMP), another for dependent variables
-    (..._LAMPascii), and a third for the errors in the dependent variables
-    (...LAMPascii_e)
+    LAMP's ASCII output uses three files:
+
+    - One for independent variables and parameters (``<file_name>``)
+    - another for dependent variables (``<file_name>ascii``)
+    - and a third for the errors in the dependent variables (``<file_name>ascii_e``)
+
+    Parameters
+    ----------
+    file_name : str
+        Base name to load data from.
 
     Attributes
     ----------
-    file_indep : file
-        File containing the independent variables
-    file_dep : file
-        File containing the dependent variables
-    file_dep_err: file
-        File containing the errors on the dependent variables
+    file_indep : ~typing.IO
+        File containing the independent variables.
+    file_dep : ~typing.IO
+        File containing the dependent variables.
+    file_dep_err: ~typing.IO
+        File containing the errors on the dependent variables.
+    SQw : ~numpy.ndarray, size(Q) x size(E)
+        2D array of intensity of ``S``
+    SQw_err : ~numpy.ndarray, size(Q) x size(E)
+        2D array of error in ``S``
+    Q : ~numpy.ndarray
+        1D array of wavevector transfer (in ``Ang^-1``).
+    w : ~numpy.ndarray
+        1D array of frequency (in ``ps^-1``).
+    E : ~numpy.ndarray
+        1D array of  energy transfer (in ``meV``).
     """
 
     def __init__(self, file_name: str):
@@ -39,8 +57,10 @@ class LAMPSQw(SQwReader):
 
     def __enter__(self) -> None:
         """
-        Open the files for independent variables, dependent variables and errors
-        on the dependent variables
+        Open sources.
+
+        Open the files for independent variables, dependent
+        variables and errors on the dependent variables.
         """
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
@@ -50,7 +70,18 @@ class LAMPSQw(SQwReader):
         self.file_dep_err = open(self.file_name + 'ascii_e', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Closes all three files after parsing"""
+        """
+        Close all three files after parsing.
+
+        Parameters
+        ----------
+        exception_type : Type[BaseException]
+            Type of exception raised.
+        exception_value : BaseException
+            The exception itself.
+        traceback : TraceBackType
+            Traceback from error.
+        """
 
         self.file_indep.close()
         self.file_dep.close()
@@ -58,10 +89,12 @@ class LAMPSQw(SQwReader):
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse into SQw format
+        Parse into SQw format.
 
-        E is the energy transfer (in meV)
-        Q is wavevector transfer (in Ang^-1)
+        Parameters
+        ----------
+        **settings : dict
+            Extra options.
         """
 
         self.E, self.Q = self.parse_indep_var(self.file_indep)
@@ -73,38 +106,47 @@ class LAMPSQw(SQwReader):
         # result in inf.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            msg = "We have set the error bar to infinity for any zero error values, this allows\
-                us to calculate chi-squared but effectively ignores these points, this may not\
-                be what you want to do, consider using a FoM which doesn't need errors if\
-                this is an issue"
-            logger.warning(msg)
+            logger.warning(self.SQW_ERR_WARNING)
 
-    def parse_indep_var(self, file: IO) -> 'tuple[np.ndarray, np.ndarray]':
+    def parse_indep_var(self, file: IO) -> tuple[np.ndarray, np.ndarray]:
         """
-        Parses the independent variables
+        Parse the independent variables.
 
         Splits the file so that the data can be extracted into a ``array`` by
-        ``self._get_data``
+        ``self._get_data``.
 
         Parameters
         ----------
-        file : file
-            Open file containing independent data
+        file : IO
+            Open file containing independent data.
 
         Returns
         -------
-        tuple
-            (X, Y) where X and Y are arrays of the two independent variables
+        tuple[~numpy.ndarray, ~numpy.ndarray]
+            (X, Y) where X and Y are arrays of the two independent variables.
         """
 
-        # pylint: disable=inconsistent-return-statements
-        # as it breaks the function when changed to return None
-        def get_n_elements(line):
+        def get_n_elements(line: str) -> np.int64:
+            """
+            Get number of elements in line.
+
+            Parameters
+            ----------
+            line : str
+                Input line to check.
+
+            Returns
+            -------
+            ~numpy.int64
+                Number of elements in line.
+            """
             for i in line.split(" "):
                 try:
                     return np.int64(i)
                 except ValueError:
                     pass
+
+            return None
 
         for line in file:
             if "X_SIZE" in line:
@@ -128,42 +170,54 @@ class LAMPSQw(SQwReader):
 
     def parse_dep_var(self, file: IO) -> np.ndarray:
         """
-        Parses the dependent variables or their errors.
+        Parse the dependent variables or their errors.
 
         Parameters
         ----------
-        file : file
-            Open file containing independent data
+        file : ~typing.IO
+            Open file containing independent data.
 
         Returns
         -------
-        numpy.ndarray
-            A 2d array with dimensions of the two independent variables
+        ~numpy.ndarray
+            A 2d array with dimensions of the two independent variables.
         """
 
         file_split = iter([word for line in file for word in line.split(" ")])
         dep = self._get_data(file_split, self._Y_dim, self._X_dim)
         return dep
 
-    def _get_data(self, str_iter: Iterable, *dimensions: float) -> np.ndarray:
+    def _get_data(self, str_iter: Iterable[str], *dimensions: float) -> np.ndarray:
         """
-        Iterates over an iterator from a file and extracts the numerical values
-        as data.
+        Iterate over a `str` iterator and extract the numerical values as data.
 
         Parameters
         ----------
-        str_iter : iterator
-            An iterator of str
-        *dimensions
-            A `float` specifying the size for every dimension of the data
+        str_iter : Iterable[str]
+            An iterator of str.
+        *dimensions : float
+            A `float` specifying the size for every dimension of the data.
 
         Returns
         -------
         numpy.ndarray
-            An array of `float` with dimensions specified by ``*dimensions``
+            An array of `float` with dimensions specified by ``*dimensions``.
         """
 
-        def get_row_data(dim):
+        def get_row_data(dim) -> np.ndarray:
+            """
+            Get first `dim` data from each row as `float` s.
+
+            Parameters
+            ----------
+            dim : int
+                Number of data to read.
+
+            Returns
+            -------
+            ~numpy.ndarray
+                Parsed data from line.
+            """
 
             row_data = np.empty(dim)
 

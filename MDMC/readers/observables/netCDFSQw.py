@@ -1,4 +1,6 @@
-"""A reader for netcdf SQw data"""
+"""
+A reader for netCDF SQw data.
+"""
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
 import logging
@@ -11,35 +13,63 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
-class netCDFSQw(SQwReader):
 
+class netCDFSQw(SQwReader):
     """
-    Currently only setup for parsing MMTK/nMOLDYN SQw netcdf files
+    Class to handle netCDF format SQW files.
+
+    Parameters
+    ----------
+    file_name : str
+        File to read data from.
 
     Attributes
     ----------
-    file : file
+    file : ~typing.IO
         The netCDF input file
+    SQw : ~numpy.ndarray, size(Q) x size(E)
+        2D array of intensity of ``S``
+    SQw_err : ~numpy.ndarray, size(Q) x size(E)
+        2D array of error in ``S``
+    Q : ~numpy.ndarray
+        1D array of wavevector transfer (in ``Ang^-1``).
+    E : ~numpy.ndarray
+        1D array of energy transfer (in ``meV``).
+
+    Notes
+    -----
+    Currently only setup for parsing MMTK/nMOLDYN SQw netcdf files.
     """
 
     def __enter__(self) -> None:
         """
-        Opens the file for parsing
+        Open the file for parsing.
         """
-
         self.file = Dataset(self.file_name, 'r', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Closes the file after parsing"""
+        """
+        Close the file after parsing.
 
+        Parameters
+        ----------
+        exception_type : Type[BaseException]
+            Type of exception raised.
+        exception_value : BaseException
+            The exception itself.
+        traceback : TraceBackType
+            Traceback from error.
+        """
         self.file.close()
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse into SQw format
+        Parse into SQw format.
 
-        E is the energy transfer (in ``meV``)
-        Q is wavevector transfer (in ``Ang^-1``)
+        Parameters
+        ----------
+        **settings : dict
+            No extra options used in this reader.
         """
         # Convert hbar (eV*s) to meV*s
         # Convert angular_frequency (Thz) to Hz
@@ -58,8 +88,4 @@ class netCDFSQw(SQwReader):
 
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-            msg = "We have set the error bar to infinity for any zero error values, this allows\
-                us to calculate chi-squared but effectively ignores these points, this may not\
-                be what you want to do, consider using a FoM which doesn't need errors if\
-                this is an issue"
-            logger.warning(msg)
+            logger.warning(self.SQW_ERR_WARNING)

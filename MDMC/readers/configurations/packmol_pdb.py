@@ -1,30 +1,60 @@
-"""A reader for reading in the PDB configuration of whole packmol systems"""
-from typing import TYPE_CHECKING, Dict, List
+"""
+A reader for reading in the PDB configuration of whole packmol systems.
+"""
 
-from MDMC.MD.structures import Atom, Molecule
+from typing import TypedDict
+
+from MDMC.MD.structures import Atom, Molecule, Structure
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
-if TYPE_CHECKING:
-    from MDMC.MD.structures import Structure
+
+class Record(TypedDict):
+    """
+    Parsed ``ATOM`` or ``HETATM`` record.
+    """
+    #: Atom name.
+    name: str
+    #: ID within chain.
+    chain_id: str
+    #: ID of molecule.
+    molecule_id: int
+    #: Cartesian position of atom.
+    atom_position: tuple[float, float, float]
+    #: Chemical element abbreviation.
+    element_symbol: str
+
 
 class PackmolPDBReader(ConfigurationReader):
-    """A class to read in packmol PDB output files"""
+    """
+    A class to read in packmol PDB output files.
+
+    Parameters
+    ----------
+    file_name : str
+        File name to parse.
+
+    Notes
+    -----
+    This reader is for reading in entire universe configurations as output by Packmol.
+    For reading single molecules in pdb format, ProteinDataBankReader
+    should be used.
+    """
     extension = "NONE"
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._structures: List['Structure'] = []
+        self._structures: list[Structure] = []
 
     def parse(self, **settings: dict) -> None:
         """
-        Parses a .pdb file into a list of `Structure`s (atoms and molecules)
-        which can then be accessed as the `structures` property of the reader.
+        Parse a .pdb file.
+
+        Results can be accessed as the `structures` property of the reader.
 
         Parameters
         ----------
-        **settings: dict, optional
+        **settings : dict, optional
             None are necessary for this reader.
-
         """
         # 'chain id' is an identifier for the unique type of molecule in the file
         # and 'molecule id' is an identifier for a specific copy of said molecule
@@ -35,10 +65,10 @@ class PackmolPDBReader(ConfigurationReader):
         #   'B': {'1': [...], '2': [...], ...}
         # }
         # where [...] is a list of atoms belonging to a specific molecule
-        chains_dict: Dict[str, Dict[str, List[Atom]]] = {}
+        chains_dict: dict[str, dict[str, list[Atom]]] = {}
 
         for line in self.file:
-            #chars 0-6 identify what the line is describing
+            # chars 0-6 identify what the line is describing
             record_name = line[0:6]
             if record_name in ("ATOM  ", "HETATM"):
                 record = self._parse_atom_record(line)
@@ -65,11 +95,24 @@ class PackmolPDBReader(ConfigurationReader):
                 else:
                     self._structures.append(Molecule(atoms=atom_list))
 
-
-    def _parse_atom_record(self, line):
+    def _parse_atom_record(self, line: str) -> Record:
         """
-        A function to get the necessary information out of an `ATOM  ` or `HETATM` record
-        This follows https://www.wwpdb.org/documentation/file-format v3.30 (page 180 of A4 pdf)
+        Extract information from an ``ATOM`` or ``HETATM`` record.
+
+        Parameters
+        ----------
+        line : str
+            Line to parse.
+
+        Returns
+        -------
+        Record
+            Parsed structure as a dictionary.
+
+        Notes
+        -----
+        This follows:
+        https://www.wwpdb.org/documentation/file-format v3.30 (page 180 of A4 pdf)
         Link to PDF of file format:
         https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
         """
@@ -85,6 +128,13 @@ class PackmolPDBReader(ConfigurationReader):
         return record
 
     @property
-    def structures(self) -> List['Structure']:
-        """Returns a list of ``Molecule`` objects from the data read from the file"""
+    def structures(self) -> list[Structure]:
+        """
+        ``Structure`` objects from the data read from the file.
+
+        Returns
+        -------
+        list[Structure]
+            Parsed structures as a `list`.
+        """
         return self._structures
