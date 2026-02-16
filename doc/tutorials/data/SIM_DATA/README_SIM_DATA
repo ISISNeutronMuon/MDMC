@@ -1,0 +1,49 @@
+SIMULATED SYSTEMS
+
+!!!! BENZENE under 303 K, 1 atm !!!
+Duration = 2 ns
+Barostat = Berendsen
+cutoff = 9 Å
+Time step = 2 fs
+System composition = 512 benzene molecules
+Pressure coupling = isotropic
+Force field = GAFF (General Amber force field)
+Output = 1 frame every 1 ps
+
+!!!! Methanol under 290 K, 1 atm !!!
+Duration = 2 ns
+Barostat = Berendsen
+cutoff = 9 Å
+Time step = 2 fs
+System composition = 512 methanol molecules
+Pressure coupling = isotropic
+Force field = CHARMM-36
+Output = 1 frame every 1 ps
+
+!!!! Methanol in water (TIP3p model) under 290 K, 1 atm !!!
+Duration = 2 ns
+Barostat = Berendsen
+cutoff = 9 Å
+Time step = 2 fs
+System composition = 300 methanol+534 water molecules (50/50 weight %)
+Pressure coupling = isotropic
+Force field = CHARMM-36
+Output = 1 frame every 1 ps
+
+!!!! Water (TIP3p model) under 303 K, 1 atm !!!
+Duration = 2 ns
+Barostat = Berendsen
+cutoff = 9 Å
+Time step = 2 fs
+System composition = 3375 water molecules
+Pressure coupling = isotropic
+Output = 1 frame every 1 ps
+
+!!!! Water (TIP3p model) under 290 K, 1 atm !!!
+Duration = 2 ns
+Barostat = Berendsen
+cutoff = 9 Å
+Time step = 2 fs
+System composition = 3375 water molecules
+Pressure coupling = isotropic
+Output = 1 frame every 1 ps
