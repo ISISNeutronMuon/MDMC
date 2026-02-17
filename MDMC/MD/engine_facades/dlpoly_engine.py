@@ -562,7 +562,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         if statis_label is None:
             raise KeyError(
                 f"Variable '{variable}' not supported by DLPolyEngine.eval(). "
-                f"Supported variables: {list(self.EVAL_MAP.keys())}"
+                f"Supported variables: {list(self.EVAL_MAP.keys())}",
             )
         self.dlpoly.load_statis(quiet=True)
         return float(self.dlpoly.statis[statis_label][-1])
