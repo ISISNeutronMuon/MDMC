@@ -1609,6 +1609,10 @@ class Simulation:
             """
             variable_values = vals_dict[var]
             window = variable_values[-window_size:]
+            # A constant series (zero variance) is trivially stationary.
+            # KPSS crashes with NaN division in this case, so handle it first.
+            if np.std(window) == 0:
+                return True
             results = kpss(window, regression='c')
             # results[1] is the p-value from the test
             # we base our tolerance on the p-value, where the alternative hypothesis

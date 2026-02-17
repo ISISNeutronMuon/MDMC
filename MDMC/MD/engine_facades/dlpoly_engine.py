@@ -121,6 +121,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                       "t_fraction", "rescale_step", "thermostat",
                       "barostat", "field"}
 
+    # Mapping from MDMC variable eval names to DL_POLY STATIS labels
+    EVAL_MAP = {
+        "temp": "System Temperature",
+        "pe": "Configurational Energy",
+    }
+
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
                  statis: str = None, output: str = None, dest_config: str = None,
@@ -534,11 +540,32 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly_universe.set_config(self.saved_config)
 
-    def eval(self, variable: str) -> None:
+    def eval(self, variable: str) -> float:
+        """Evaluate a simulation variable by reading the DL_POLY STATIS file.
+
+        Parameters
+        ----------
+        variable : str
+            The variable to evaluate.
+
+        Returns
+        -------
+        float
+            The value of the variable.
+
+        Raises
+        ------
+        KeyError
+            If the variable is not supported.
         """
-        Dummy eval to satisfy Abstract specification
-        """
-        raise NotImplementedError("DLPolyEngine does not support eval")
+        statis_label = self.EVAL_MAP.get(variable)
+        if statis_label is None:
+            raise KeyError(
+                f"Variable '{variable}' not supported by DLPolyEngine.eval(). "
+                f"Supported variables: {list(self.EVAL_MAP.keys())}"
+            )
+        self.dlpoly.load_statis(quiet=True)
+        return float(self.dlpoly.statis[statis_label][-1])
 
     def _pass_settings_to_control(self, settings: dict,
                                   control: dlpoly.control.Control) -> None:
