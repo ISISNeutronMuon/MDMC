@@ -290,13 +290,13 @@ class Control:
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
 
-            if "select" in dset:  # Data below threshold should be zeroed.
+            if "filter" in dset:  # Data below threshold should be zeroed.
                 self._threshold_filter(
                     exp_observable,
-                    abs_threshold=dset["select"].get("abs", 0.),
-                    rel_threshold=dset["select"].get("rel", 0.),
-                    magnitude=dset["select"].get("use_magnitude", False),
-                    warn_threshold=dset["select"].get("warn_threshold", 0.1),
+                    abs_threshold=dset["filter"].get("abs", 0.),
+                    rel_threshold=dset["filter"].get("rel", 0.),
+                    magnitude=dset["filter"].get("use_magnitude", False),
+                    warn_threshold=dset["filter"].get("warn_threshold", 0.1),
                 )
 
             MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
@@ -822,7 +822,7 @@ class Control:
         file_name : str
             The absolute or relative path and the file name.
         use_FFT: bool, optional
-            Boolean determining if the FFT should be used, default is True.
+            Whether the Fast Fourier Transform should be used, default is True.
 
         Returns
         -------

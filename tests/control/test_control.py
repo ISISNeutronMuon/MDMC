@@ -212,16 +212,16 @@ def exp_datasets() -> callable:
             if use_FFT is not None:
                 dataset['use_FFT'] = use_FFT
             if any(key is not None for key in (rel_threshold, abs_threshold, absolute)):
-                dataset.setdefault("select", {})
+                dataset.setdefault("filter", {})
                 # Always print removed %
-                dataset["select"]["warn_threshold"] = -1.
+                dataset["filter"]["warn_threshold"] = -1.
 
                 if rel_threshold is not None:
-                    dataset["select"]["rel"] = rel_threshold
+                    dataset["filter"]["rel"] = rel_threshold
                 if abs_threshold is not None:
-                    dataset["select"]["abs"] = abs_threshold
+                    dataset["filter"]["abs"] = abs_threshold
                 if absolute is not None:
-                    dataset["select"]["use_magnitude"] = absolute
+                    dataset["filter"]["use_magnitude"] = absolute
 
             for resolution_v in data.RESOLUTION_DATA.values():
                 if (resolution is not None
