@@ -49,7 +49,7 @@ class GPR(Minimizer):
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
-        self.results_filename = settings.get('results_filename', None)
+        self.results_filename = settings.get('results_filename')
         self.change_parameters()
         self.previous_history = previous_history
         self.state_changed = False

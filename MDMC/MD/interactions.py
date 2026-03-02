@@ -86,7 +86,7 @@ class Interaction(ABC):
         TypeError: object of type 'Atom' has no len()
         """
 
-        self.function = settings.get('function', None)
+        self.function = settings.get('function')
         self.name = self.__class__.__name__
 
     def __deepcopy__(self, memo=None) -> NoReturn:

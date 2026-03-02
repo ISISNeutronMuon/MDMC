@@ -519,5 +519,5 @@ class LennardJones(InteractionFunction):
     def __init__(self, epsilon: float, sigma: float, **settings: dict):
 
         super().__init__({'epsilon': epsilon, 'sigma': sigma})
-        self.cutoff = settings.get('cutoff', None)
-        self.solver = settings.get('long_range_solver', None)
+        self.cutoff = settings.get('cutoff')
+        self.solver = settings.get('long_range_solver')

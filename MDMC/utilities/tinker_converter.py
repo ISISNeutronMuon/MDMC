@@ -229,10 +229,10 @@ def write_data(
     disps, bonds, angles, propers, impropers = [settings.get(inter_type, []) for
                                                 inter_type in inter_types]
 
-    inter_functions = [settings.get(inter_type[:-1] + '_function', None) for
+    inter_functions = [settings.get(inter_type[:-1] + '_function') for
                        inter_type in inter_types]
 
-    orig_file = settings.get('orig_file', None)
+    orig_file = settings.get('orig_file')
 
     if path is None:
         path = os.path.abspath(force_fields.__file__).replace('__init__.py',

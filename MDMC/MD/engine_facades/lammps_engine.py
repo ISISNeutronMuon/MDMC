@@ -441,7 +441,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
             # pylint: disable=consider-using-with
-            self.trajectory_file = NamedTemporaryFile()
+            self.trajectory_file = NamedTemporaryFile()  # noqa: SIM115
             #     f_name = self.trajectory_file.name
 
             # Custom trajectory output just saves the atom ID, type and
