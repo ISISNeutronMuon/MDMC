@@ -18,7 +18,7 @@ From: /your_path_to/apptainer_mdmc_engines.sif
 
     # Install MDMC itself
     export DISPLAY=$DISPLAY
-    git clone --depth=1 https://iermi:<write your token here>@github.com/MDMCproject/MDMCv0.2_pilot
+    git clone --depth=1 https://<write your GitHub username>:<write your token here>@github.com/MDMCproject/MDMCv0.2_pilot
     pip3 install ./MDMCv0.2_pilot
 
     # Timestamp
