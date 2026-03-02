@@ -1,0 +1,38 @@
+Bootstrap: localimage
+From: /your_path_to/apptainer_mdmc_engines.sif
+
+%files
+    . /opt/mdmc
+
+%post
+    pip3 install --upgrade pip setuptools pip-tools
+
+    cd /opt/mdmc
+
+    # Generate pinned dependencies
+    pip-compile --extra LAMMPS,DLPOLY,test,docs \
+        -o dependencies.txt pyproject.toml
+
+    # Install dependencies
+    pip3 install -r dependencies.txt
+
+    # Install MDMC itself
+    export DISPLAY=$DISPLAY
+    git clone --depth=1 https://iermi:<write your token here>@github.com/MDMCproject/MDMCv0.2_pilot
+    pip3 install ./MDMCv0.2_pilot
+
+    # Timestamp
+    echo "This Apptainer image was created on:" > /TIMESTAMP
+    date >> /TIMESTAMP
+    echo "With the following packages:" >> /TIMESTAMP
+    pip3 list >> /TIMESTAMP
+
+    echo 'alias python="python3"' > /root/.bash_aliases
+    echo 'alias pip="pip3"' >> /root/.bash_aliases
+    echo 'export OMPI_MCA_btl=^vader' >> /root/.bashrc
+
+%environment
+    export OMPI_MCA_btl=^vader
+
+%runscript
+    exec /bin/bash "$@"
