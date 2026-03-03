@@ -1,4 +1,4 @@
-"""Tests that h5md_dumper is dumping the correct files that are requested.
+"""Tests that file_dump_frequencyer is dumping the correct files that are requested.
 """
 from pathlib import Path
 
@@ -19,14 +19,14 @@ class MockControl(Control):
     """Mock class created so a simulation does
     not need to be run to get a FoM
     """
-    def __init__(self, in_list, h5md_dump, h5md_filename, h5md_file_loc, h5md_timestamp):
+    def __init__(self, in_list, file_dump_frequency, file_dump_prefix, file_dump_loc, file_dump_timestamp):
         self.FoM = in_list
         self.iFoM = iter(in_list)
-        self.h5md_dump = h5md_dump
+        self.file_dump_frequency = file_dump_frequency
         self.minimizer = MockMinimizer()
-        self.h5md_filename = h5md_filename
-        self.h5md_file_loc = h5md_file_loc
-        self.h5md_timestamp = h5md_timestamp
+        self.file_dump_prefix = file_dump_prefix
+        self.file_dump_loc = file_dump_loc
+        self.file_dump_timestamp = file_dump_timestamp
         self.h5md_creator = "test"
         self.h5md_email = "test@test"
 
@@ -49,7 +49,7 @@ class MockControl(Control):
         return fom, trj
 
 class MockMinimizer(Minimizer):
-    """A Mock Class created as h5md_dumper needs Minimizer._history
+    """A Mock Class created as file_dump_frequencyer needs Minimizer._history
     """
     def __init__(self):
         self._history = []
@@ -72,7 +72,7 @@ class MockMinimizer(Minimizer):
 def test_save_best_trajectory(tmp_path):
     """Test that checks that the H5MD dumper in control is dumping the best FoM
     """
-    control = MockControl(FOM, Dump.BEST, FILE_NAME, tmp_path, False)
+    control = MockControl(FOM, DumpFreq.BEST, FILE_NAME, tmp_path, False)
     for _ in range(len(FOM)):
         fom, trj = control._generate_FoM()
         control.minimizer._history.append(fom)
@@ -89,13 +89,13 @@ def test_save_all_trajectory(tmp_path):
     Check control dumps every trajectory based on the correct FoM.
     """
     file_names = []
-    control = MockControl(FOM, Dump.EVERY, FILE_NAME, tmp_path, False)
+    control = MockControl(FOM, DumpFreq.EVERY, FILE_NAME, tmp_path, False)
     for x in FOM:
         fom, trj = control._generate_FoM()
         control.minimizer._history.append(fom)
         filename = f"{x}_{FILE_NAME}"
         file_names.append(filename)
-        control.h5md_filename = filename
+        control.file_dump_prefix = filename
         control.dump_h5md(trj)
     for filename, fom in zip(file_names, FOM):
         file_path = tmp_path / filename

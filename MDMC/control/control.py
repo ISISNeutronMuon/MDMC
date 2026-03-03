@@ -5,7 +5,7 @@ import statistics
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -16,6 +16,7 @@ from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.control.plot_results import PlotResults, data_printers
+from MDMC.exporters.observables.MDA_writer import write_MDA
 from MDMC.exporters.trajectories import H5MD_build
 from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameters
@@ -29,9 +30,9 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
-class Dump(Enum):
+class DumpFreq(Enum):
     """
-    Enum for deciding how often the trajectory should be dumped in H5MD format.
+    Enum for deciding how often the output files should be dumped.
     """
     #: Dump only the best by FoM.
     BEST = -1
@@ -39,6 +40,24 @@ class Dump(Enum):
     NONE = 0
     #: Dump all h5md trajectories.
     EVERY = 1
+
+
+class DumpExtent(Enum):
+    """
+    Choose which files are dumped.
+    """
+    TRAJ = auto() # Only the trajectory file
+    OBS = auto() # Only the observables
+    BOTH = auto() # Both the trajectory and observables
+
+
+class ObsFormat(Enum):
+    """
+    Choose which files are dumped.
+    """
+    MDA = auto() # MDANSE MDA file
+    ALL = auto() # All supported formats
+
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
@@ -97,13 +116,15 @@ class Control:
         All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
         ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
         Those with ``constraints`` set are still passed.
-    h5md_dump : Dump | str, optional
-        Defines how often the trajectory should be dumped to a H5MD file. Default is `Dump.NONE`
-    h5md_file_loc: Path, optional
+    file_dump_frequency : DumpFreq | str, optional
+        Defines how often the trajectory should be dumped to a H5MD file. Default is `DumpFreq.NONE`
+    file_dump_extent : DumpExtent | str, optional
+        Which files should be written out in the dump. Default is `DumpExtent.BOTH`
+    file_dump_loc: Path, optional
         Location the H5MD file should be stored. Default is `Path('.')`
-    h5md_timestamp: bool, optional
+    file_dump_timestamp: bool, optional
         True if a time stamp should be added to the end of the H5MD file name. Default is `True`
-    h5md_filename: str, optional
+    file_dump_prefix: str, optional
         The name the dumped H5MD file should be. Default is ``trajectory``
     minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'MMC'.
@@ -213,10 +234,11 @@ class Control:
                  previous_history: Union[str,Path] = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
-                 h5md_dump: Dump = Dump.NONE,
-                 h5md_file_loc: Path = Path('.'),
-                 h5md_timestamp: bool = True,
-                 h5md_filename: str = 'trajectory',
+                 file_dump_frequency: DumpFreq = DumpFreq.NONE,
+                 file_dump_extent: DumpExtent = DumpExtent.BOTH,
+                 file_dump_loc: Path = Path('.'),
+                 file_dump_timestamp: bool = True,
+                 file_dump_prefix: str = 'trajectory',
                  **settings: dict):
 
         self.previous_history = previous_history
@@ -231,20 +253,24 @@ class Control:
                         'minimizer': [],
                         'TOTAL STEP': []}
 
-        if isinstance(h5md_dump, str):
-            self.h5md_dump = Dump[h5md_dump.upper()]
+        if isinstance(file_dump_frequency, str):
+            self.file_dump_frequency = DumpFreq[file_dump_frequency.upper()]
         else:
-            self.h5md_dump = h5md_dump
-        self.h5md_filename = h5md_filename
-        self.h5md_timestamp = h5md_timestamp
-        self.h5md_file_loc = h5md_file_loc
+            self.file_dump_frequency = file_dump_frequency
+        if isinstance(file_dump_extent, str):
+            self.file_dump_extent = DumpExtent[file_dump_extent.upper()]
+        else:
+            self.file_dump_extent = file_dump_extent
+        self.file_dump_prefix = file_dump_prefix
+        self.file_dump_timestamp = file_dump_timestamp
+        self.file_dump_loc = file_dump_loc
         self.h5md_creator = settings.get("h5md_creator_name", getpass.getuser())
         self.h5md_email = settings.get("h5md_creator_email",
                                        f"{getpass.getuser()}@unknown")
-        if self.h5md_dump is not Dump.NONE and "h5md_creator_name" not in settings:
+        if self.file_dump_frequency is not DumpFreq.NONE and "h5md_creator_name" not in settings:
             logging.warning("`h5md_creator_name` not set, defaulting to: %s",
                             self.h5md_creator)
-        if self.h5md_dump is not Dump.NONE and "h5md_creator_name" not in settings:
+        if self.file_dump_frequency is not DumpFreq.NONE and "h5md_creator_name" not in settings:
             logging.warning("`h5md_creator_email` not set, defaulting to: %s",
                             self.h5md_email)
 
@@ -673,8 +699,11 @@ class Control:
         elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
             fom, trj = self._generate_FoM()
-            if self.h5md_dump in (Dump.EVERY, Dump.BEST):
-                self.dump_h5md(trj)
+            if self.file_dump_frequency in (DumpFreq.EVERY, DumpFreq.BEST):
+                if self.file_dump_extent in (DumpExtent.TRAJ, DumpExtent.BOTH):
+                    self.dump_h5md(trj)
+                if self.file_dump_extent in (DumpExtent.OBS, DumpExtent.BOTH):
+                    self.dump_observables()
         else:
             # assuming params are bad so use max FoM available
             fom = self.max_FoM
@@ -715,20 +744,36 @@ class Control:
         or the file name must be different for each trajectory,
         as if not the file will be continually overwritten.
         """
-        if self.h5md_dump is Dump.EVERY:
+        if self.file_dump_frequency is DumpFreq.EVERY:
             H5MD_build.write_H5MD(trj,
-                                  filename=self.h5md_filename,
-                                  file_loc=self.h5md_file_loc,
-                                  timestamp=self.h5md_timestamp,
+                                  filename=self.file_dump_prefix,
+                                  file_loc=self.file_dump_loc,
+                                  timestamp=self.file_dump_timestamp,
                                   creator_name=self.h5md_creator,
                                   creator_email=self.h5md_email)
-        elif self.h5md_dump is Dump.BEST and self.minimizer.is_best_FoM():
+        elif self.file_dump_frequency is DumpFreq.BEST and self.minimizer.is_best_FoM():
             H5MD_build.write_H5MD(trj,
-                                  filename=self.h5md_filename,
-                                  file_loc=self.h5md_file_loc,
+                                  filename=self.file_dump_prefix,
+                                  file_loc=self.file_dump_loc,
                                   timestamp=False,
                                   creator_name=self.h5md_creator,
                                   creator_email=self.h5md_email)
+
+    def dump_observables(self, data_format: ObsFormat | str):
+        """
+        Dump the observables.
+
+        Parameters
+        ----------
+        data_format: ObsFormat | str
+            File format for writing the observables.
+        """
+        if data_format in (ObsFormat.MDA, ObsFormat.ALL):
+            for obs_pair in self.observable_pairs:
+                write_MDA(obs_pair.MD_obs,
+                          filename=self.file_dump_prefix,
+                          file_loc=self.file_dump_loc,
+                          timestamp=self.file_dump_timestamp)
 
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
