@@ -220,7 +220,7 @@ def write_H5MD(
         create_empty_groups(file, no_data_groups)
 
         create_metadata_group(
-            file, creator_name=settings["creator_name"], creator_email=settings["creator_email"]
+            file, creator_name=settings["creator_name"], creator_email=settings["creator_email"],
         )
 
         charge = trajectory.atom_charges

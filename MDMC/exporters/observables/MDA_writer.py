@@ -1,11 +1,9 @@
 """
 A module for writing and saving a H5MD file.
 """
-from datetime import datetime
 from pathlib import Path
 
 import h5py
-import numpy as np
 
 from MDMC.common import units
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -58,7 +56,8 @@ def write_MDA(observable: Observable,
             temp_ds.attrs["units"] = guess_unit(key)
         for key, data in observable.dependent_variables.items():
             main_ds = data_group.create_dataset(key, data=data[0])
-            main_ds.attrs["axis"] = "|".join(["mdmc_result/axes/"+str(x) for x in observable.independent_variables])
+            main_ds.attrs["axis"] = "|".join(["mdmc_result/axes/"+str(x)
+                                               for x in observable.independent_variables])
             main_ds.attrs["scaling_factor"] = 1.0
             main_ds.attrs["units"] = "au"
         write_metadata(target, observable)

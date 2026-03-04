@@ -6,7 +6,7 @@ import h5py
 import pytest
 
 from MDMC.control import Control
-from MDMC.control.control import Dump
+from MDMC.control.control import DumpFreq
 from MDMC.readers import H5MD_reader
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
