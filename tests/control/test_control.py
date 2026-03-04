@@ -11,7 +11,6 @@ from typing import List
 from unittest.mock import Mock, ANY
 
 from MDMC.control import Control
-from MDMC.control.control import Dump
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
