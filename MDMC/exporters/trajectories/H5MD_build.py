@@ -204,7 +204,7 @@ def write_H5MD(
         time_stamp = datetime.now().strftime("%d%m%y-%H.%M.%S.%f")
         filename = filename.with_stem(f"{time_stamp}_{filename}")
 
-    file_path_name = file_loc / filename
+    file_path_name = Path(file_loc, f"{filename}_traj").with_suffix('.h5')
 
     if not settings.get("creator_name") or not settings.get("creator_email"):
         raise ValueError("No creator_name or creator_email provided.")
@@ -220,7 +220,7 @@ def write_H5MD(
         create_empty_groups(file, no_data_groups)
 
         create_metadata_group(
-            file, creator_name=settings["creator_name"], creator_email=settings["creator_email"]
+            file, creator_name=settings["creator_name"], creator_email=settings["creator_email"],
         )
 
         charge = trajectory.atom_charges

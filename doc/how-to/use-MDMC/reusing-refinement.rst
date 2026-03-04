@@ -21,8 +21,8 @@ Creating a trajectory File
 In MDMC, an H5MD file can be created at the refinement stage of the simulation. It is possible to
 either create a H5MD file only from the trajectory with the best figure of merit or from every trajectory generated.
 
-To get an H5MD trajectory file from the refinement stage pass ``Dump.EVERY`` to the control object to create a H5MD file from every trajectory,
-or ``Dump.BEST``, to create a H5MD file from the trajectory with the best figure of merit.
+To get an H5MD trajectory file from the refinement stage pass ``DumpFreq.EVERY`` to the control object to create a H5MD file from every trajectory,
+or ``DumpFreq.BEST``, to create a H5MD file from the trajectory with the best figure of merit.
 
 This will result in files name "<timestamp>trajectory.h5" being created within the MDMC files.
 
@@ -30,9 +30,9 @@ Optional
 ^^^^^^^^
 Optionally, additional parameters can be used to change how or where the File is created:
 
-* ``h5md_filename`` can be set to a preferred name of the H5MD trajectory files.
-* ``h5md_file_loc`` can be set to change where the file is stored,
-* ``h5md_timestamp`` can be set to True or False, adding or removing the time stamp at the end of the file name respectively.
+* ``file_dump_prefix`` can be set to a preferred name of the H5MD trajectory files.
+* ``file_dump_loc`` can be set to change where the file is stored,
+* ``file_dump_timestamp`` can be set to True or False, adding or removing the time stamp at the end of the file name respectively.
 
 .. note::
 
@@ -53,12 +53,12 @@ to the file ``my_refinement_folder/trajectories/best_trajectory.h5``.
               exp_datasets=exp_datasets,
               fit_parameters=fit_parameters,
               MD_steps=570,
-              h5md_dump="best",
-              h5md_file_loc="./trajectories"
-              h5md_filename="best_trajectory.h5",
-              h5md_timestamp=False)
+              file_dump_frequency="best",
+              file_dump_loc="./trajectories"
+              file_dump_prefix="best_trajectory.h5",
+              file_dump_timestamp=False)
 
-We can set h5md_dump to dump every trajectory created by the analysis with a timestamp. This example ``Control`` object would dump trajectories
+We can set file_dump_frequency to dump every trajectory created by the analysis with a timestamp. This example ``Control`` object would dump trajectories
 to the same ``trajectories`` subfolder as previously, with the name ``traj_DDMMYYYY-HH.MM.SS``, i.e. trajectory dumped
 at 12:23:15pm on the 18th of October 2025, the name would be ``traj_18102025-12.23.15``.
 
@@ -68,15 +68,15 @@ at 12:23:15pm on the 18th of October 2025, the name would be ``traj_18102025-12.
               exp_datasets=exp_datasets,
               fit_parameters=fit_parameters,
               MD_steps=570,
-              h5md_dump="best",
-              h5md_file_loc="./trajectories"
-              h5md_filename="traj",
-              h5md_timestamp=True)
+              file_dump_frequency="best",
+              file_dump_loc="./trajectories"
+              file_dump_prefix="traj",
+              file_dump_timestamp=True)
 
 
 .. warning::
 
-    If printing all trajectories ``h5md_timestamp`` should be set to true, if not the file will be continually overwritten
+    If printing all trajectories ``file_dump_timestamp`` should be set to true, if not the file will be continually overwritten
     and the file will only contain the last trajectory.
 
 External Use
