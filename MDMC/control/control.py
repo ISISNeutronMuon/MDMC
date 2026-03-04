@@ -703,7 +703,7 @@ class Control:
                 if self.file_dump_extent in (DumpExtent.TRAJ, DumpExtent.BOTH):
                     self.dump_h5md(trj)
                 if self.file_dump_extent in (DumpExtent.OBS, DumpExtent.BOTH):
-                    self.dump_observables()
+                    self.dump_observables(ObsFormat.MDA)
         else:
             # assuming params are bad so use max FoM available
             fom = self.max_FoM

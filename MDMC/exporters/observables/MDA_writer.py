@@ -34,26 +34,31 @@ def write_metadata(target: h5py.File, observable: Observable):
         data=str("0.2.0"),
         dtype=string_dt,
     )
+    inputs_group = meta_group.create_group("inputs")
+    inputs_group.create_dataset("output_files",
+                                (1,),
+                                data='["mdmc_output.mda", ["MDAFormat"], "no logs"]',
+                                dtype=string_dt)
 
 def write_MDA(observable: Observable,
               filename: str,
               file_loc: Path | str,
               timestamp: bool = True,
               suffix: str = '.mda'):
-    target_path = (file_loc / (str(filename) + "_result")).with_suffix(suffix)
+    target_path = (Path(file_loc) / (str(filename) + "_result")).with_suffix(suffix)
     with h5py.File(target_path, 'w') as target:
         obs_name = observable.name
         result_group = target.create_group("mdmc_result")
         axes_group = result_group.create_group("axes")
         data_group = result_group.create_group(obs_name)
         for key, data in observable.independent_variables.items():
-            temp_ds = axes_group.create_dataset(key, data)
+            temp_ds = axes_group.create_dataset(key, data=data)
             temp_ds.attrs["axis"] = "index"
             temp_ds.attrs["scaling_factor"] = 1.0
             temp_ds.attrs["units"] = guess_unit(key)
         for key, data in observable.dependent_variables.items():
-            main_ds = data_group.create_dataset(key, data)
-            main_ds.attrs["axis"] = "|".join([str(x) for x in observable.independent_variables])
+            main_ds = data_group.create_dataset(key, data=data[0])
+            main_ds.attrs["axis"] = "|".join(["mdmc_result/axes/"+str(x) for x in observable.independent_variables])
             main_ds.attrs["scaling_factor"] = 1.0
             main_ds.attrs["units"] = "au"
         write_metadata(target, observable)
