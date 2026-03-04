@@ -5,7 +5,7 @@ import statistics
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
-from enum import Enum, auto
+from enum import Enum, Flag, auto
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -42,7 +42,7 @@ class DumpFreq(Enum):
     EVERY = 1
 
 
-class DumpExtent(Flags):
+class DumpExtent(Flag):
     """
     Choose which files are dumped.
     """
@@ -51,7 +51,7 @@ class DumpExtent(Flags):
     BOTH = TRAJ | OBS # Both the trajectory and observables
 
 
-class ObsFormat(Flags):
+class ObsFormat(Flag):
     """
     Choose which files are dumped.
     """
@@ -236,7 +236,7 @@ class Control:
                  print_all_settings: bool = False,
                  file_dump_frequency: DumpFreq = DumpFreq.NONE,
                  file_dump_extent: DumpExtent = DumpExtent.BOTH,
-                 file_dump_loc: Path = Path.cwd(),
+                 file_dump_loc: Path | None = None,
                  file_dump_timestamp: bool = True,
                  file_dump_prefix: str = 'trajectory',
                  **settings: dict):
@@ -263,7 +263,7 @@ class Control:
             self.file_dump_extent = file_dump_extent
         self.file_dump_prefix = file_dump_prefix
         self.file_dump_timestamp = file_dump_timestamp
-        self.file_dump_loc = file_dump_loc
+        self.file_dump_loc = file_dump_loc if file_dump_loc else Path.cwd()
         self.h5md_creator = settings.get("h5md_creator_name", getpass.getuser())
         self.h5md_email = settings.get("h5md_creator_email",
                                        f"{getpass.getuser()}@unknown")
