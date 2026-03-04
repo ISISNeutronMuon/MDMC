@@ -1,4 +1,6 @@
-"""The Gaussian-Process-Regression minimizer class"""
+"""
+The Gaussian-Process-Regression minimizer class.
+"""
 import itertools
 from pathlib import Path
 from textwrap import dedent
@@ -20,46 +22,68 @@ if TYPE_CHECKING:
 
 class GPR(Minimizer):
     """
-    ``Minimizer`` employing Gaussian Process Regression. Creates a predefined array of points
-    across all parameters and performs a simulation at each point. Then performs a Gaussian
-    process regression fit across all measured points and predicts across a finer grid, before
-    returning the predicted minimum FoM and the associated parameter values. This minimizer
-    works best when physically realistic constraints are applied, in the absence of being
-    provided with them, the minimizer sets constraints equal to 20% of the current parameter
+    ``Minimizer`` employing Gaussian Process Regression.
+
+    Creates a predefined array of points across all parameters and
+    performs a simulation at each point. Then performs a Gaussian
+    process regression fit across all measured points and predicts
+    across a finer grid, before returning the predicted minimum FoM
+    and the associated parameter values.
+
+    This minimizer works best when physically realistic constraints
+    are applied, in the absence of being provided with them, the
+    minimizer sets constraints equal to 20% of the current parameter
     values.
 
     Parameters
     ----------
-    control: Control
+    control : Control
         The ``Control`` object which uses this Minimizer.
-    parameters: Parameters
-        The parameters in the simulation Universe to be optimized
+    parameters : Parameters
+        The parameters in the simulation Universe to be optimized.
+    previous_history : str or Path
+        Previous history file to load former refinement steps from.
+    **settings : dict
+        Extra options.
 
-    Attributes
-    ----------
-    history_columns: list[str]
-        list of the column titles, and parameter names in the minimizer history
+    Other Parameters
+    ----------------
+    results_filename : Optional[str]
+        File to log GPR results to.
+
+    See Also
+    --------
+    sklearn.gaussian_process.GaussianProcessRegressor : GPR engine.
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, \
-        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+    def __init__(
+            self,
+            control: 'Control',
+            parameters: Parameters,
+            previous_history: Optional[Union[Path, str]] = None,
+            **settings: dict):
 
         super().__init__(control, parameters, previous_history)
-        np.random.seed(0) # This should mean results are reproducible in tests
+        np.random.seed(0)  # This should mean results are reproducible in tests
 
         self.parameter_names, self.parameter_point_array = \
-        self.create_parameter_point_array(parameters)
+            self.create_parameter_point_array(parameters)
         self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
         self.previous_history = previous_history
         self.state_changed = False
 
-    def create_parameter_point_array(self,
-                                     parameters: Parameters) -> 'tuple[list[str], list[tuple]]':
+    def create_parameter_point_array(
+            self,
+            parameters: Parameters,
+    ) -> tuple[list[str], list[tuple[float, ...]]]:
         """
-        Takes or creates the constraints of the parameters to be minimised and makes an array
-        of points, placed on a Latin hypercube covering the space defined by the constraints.
-        The resulting array of coordinates is self.control.n_steps long.
+        Generate constrained sample points on Latin hypercube.
+
+        Takes or creates the constraints of the parameters to be
+        minimised and makes an array of points, placed on a Latin
+        hypercube covering the space defined by the constraints.  The
+        resulting array of coordinates is self.control.n_steps long.
 
         Parameters
         ----------
@@ -68,10 +92,10 @@ class GPR(Minimizer):
 
         Returns
         -------
-        parameter_names : list
-                Ordered ``list`` of names of parameters
-        point_array : list
-                ``list`` of parameter coordinates to be simulated
+        parameter_names : list[str]
+                Ordered ``list`` of names of parameters.
+        point_array : list[tuple[float, ...]]
+                ``list`` of parameter coordinates to be simulated.
         """
         parameter_names = [str(name) for name in parameters]
 
@@ -89,32 +113,37 @@ class GPR(Minimizer):
         return parameter_names, latin_points
 
     @staticmethod
-    def create_bounds(parameter: Parameter, fraction: float = 0.3) -> 'tuple[float, float]':
-        """
-        Returns either the parameter constraints (bounds) or bounds for each parameter
-        equal to the parameter value =/- fraction*parameter.value, defaulting to +-30%.
-        Raises a ValueError if value is zero and has no constraints since it is not possible
-        to make a guess.
+    def create_bounds(parameter: Parameter, fraction: float = 0.3) -> tuple[float, float]:
+        r"""
+        Return the parameter constraints (bounds) or bounds for each parameter.
+
+        These are equal to
+
+        .. math::
+
+           \text{value} \pm{} \text{fraction} \times{} \text{value},
+
+        defaulting to +-30%.
 
         Parameters
         ----------
         parameter : Parameter
-            A MDMC ``Parameter``
+            An MDMC ``Parameter``.
         fraction : optional, float
-            The fractional size of the bound, defaults to 0.3 == +-30%
+            The fractional size of the bound, defaults to 0.3 == +-30%.
 
         Returns
         -------
         lower_bound : float
-            The lower bound for the parameter
+            The lower bound for the parameter.
         upper_bound : float
-            The upper bound for the parameter
+            The upper bound for the parameter.
 
         Raises
-        -----
+        ------
         ValueError
-            If `parameter.value` is zero and no constraints have been set for it there
-            is no sensible way to guess bounds.
+            If `parameter.value` is zero and no constraints
+            have been set, there is no sensible way to guess bounds.
         """
         try:
             lower_bound = parameter.constraints[0]
@@ -127,8 +156,8 @@ class GPR(Minimizer):
                 lower_bound = parameter.value*(1.0 + fraction)
                 upper_bound = parameter.value*(1.0 - fraction)
             else:
-                raise ValueError(f'You have set parameter {parameter.name} value to zero and \
-                    have no constraints set for it. Please set constraints for it') from error
+                raise ValueError(f'Parameter {parameter.name} set to zero and'
+                                 'has no constraints. Please define constraints.') from error
 
         parameter.constraints = [lower_bound, upper_bound]
 
@@ -136,8 +165,9 @@ class GPR(Minimizer):
 
     def has_converged(self) -> bool:
         """
-        Checks if the refinement process has finished, i.e. if all points across
-        the parameter_point_array have been measured.
+        Check if the refinement process has finished.
+
+        I.e. if all points across the `parameter_point_array` have been measured.
 
         Returns
         -------
@@ -147,27 +177,27 @@ class GPR(Minimizer):
         return len(self.history) >= self.control.n_steps
 
     @property
-    def history_columns(self) -> 'list[str]':
+    def history_columns(self) -> list[str]:
         """
-        Returns column labels of the history
+        Column labels of the history.
 
         Returns
         -------
         list[str]
-            A ``list`` of ``str`` containing all the column labels in the history
+            A ``list`` of ``str`` containing all the column labels in the history.
         """
         return ['FoM'] + list(self.parameters)
 
-    def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
+    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
-        Assigns a new value to each parameter (specified by the parameter.name)
+        Assign a new value to each parameter (specified by `parameter.name`).
 
         Parameters
         ----------
         parameter_names : list[str]
-            A list of the names of the parameters whose values are to be set
+            A list of the names of the parameters whose values are to be set.
         values : list[float]
-            A list of the values to be set for each parameter
+            A list of the values to be set for each parameter.
         """
 
         for name, value in zip(parameter_names, values):
@@ -175,8 +205,7 @@ class GPR(Minimizer):
 
     def change_parameters(self) -> None:
         """
-        Selects a new value for each parameter from the array of parameter values to interrogate
-        from the parameter_point_array.
+        Select new value for each parameter from parameter values in ``parameter_point_array``.
         """
 
         point_to_calculate = len(self._history)
@@ -186,7 +215,7 @@ class GPR(Minimizer):
 
     def step(self, FoM: float) -> None:
         """
-        Increments the minimization by a step
+        Increment the minimization by a step.
 
         Parameters
         ----------
@@ -206,42 +235,49 @@ class GPR(Minimizer):
             self.change_parameters()
 
     def reset_parameters(self) -> None:
-        """Resets the Parameter values to the last set of values in parameter_point_array"""
+        """
+        Reset ``Parameter`` values to the last set of values in ``parameter_point_array``.
+        """
 
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
     def GPR_fit(self, filename: Optional[str] = None,
-                alpha: Optional[float] = 5, length_scale: Optional[float] = 4):
+                alpha: Optional[float] = 5., length_scale: Optional[float] = 4.):
         """
-        Reads in the contents of the supplied filename, assumes it is the output of a refinement
-        and can be read into a dataframe with the relevant parameters. Uses the recorded points
-        file to perform a Gaussian process regression
-        (https://scikit-learn.org/stable/modules/gaussian_process.html) and fit the points
-        to some kernel, here using an RBF kernel.
+        Read the contents of the supplied filename to minimizer.
+
+        Assumes it is the output of a refinement and can be read into
+        a dataframe with the relevant parameters.
+
+        Uses the recorded points file to perform a Gaussian process
+        regression
+        (https://scikit-learn.org/stable/modules/gaussian_process.html)
+        and fit the points to some kernel, here using an RBF kernel.
 
         Parameters
         ----------
-        filename: str, optional
-            The filename or full path to a comma separated value file containing
+        filename : str, optional
+            The filename or full path to a csv file containing
             the full output of the refinement. Defaults to None, but if results_filename is set by
             Control then this is passed into GPR as self.results_filename and used here.
-        alpha: float, optional
+        alpha : float, optional
             Hyperparameter for the fitting, which can represent Gaussian noise in measurement
             points, e.g. how much variation in the output you expect between MD runs.
             Defaults to 5.
-        length_scale: float, optional
-            Hyperparameter for the fitting, which can represent how quickly the kernel is able
-            to change/oscillate. Defaults to 4.0.
+        length_scale : float, optional
+            Hyperparameter for the fitting,
+            which can represent how quickly the kernel is able to
+            change/oscillate. Defaults to 4.0.
 
         Returns
         -------
         GaussianProcessRegressor : GaussianProcessRegressor
-            The fitted points using GPR
-
+            The fitted points using GPR.
         Minimum figure of merit : float
-
+            Computed minimum FoM.
         Minimum parameter values : float
+            Parameters which gave minimum FoM.
         """
 
         if not filename:
@@ -253,7 +289,7 @@ class GPR(Minimizer):
 
         FOMs = records['FoM'].to_list()
         min_FOM = np.min(FOMs)
-        min_par_index = records.index[records['FoM']==min_FOM].tolist()
+        min_par_index = records.index[records['FoM'] == min_FOM].tolist()
 
         records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'], errors='ignore')
         # TODO this is hard coded to creation of history, may want to change
@@ -262,8 +298,8 @@ class GPR(Minimizer):
 
         coordinates = records.values.tolist()
 
-        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
-        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+        kernel = kernels.RBF(length_scale=np.ones(len(coordinates[0]))*length_scale)
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha=alpha)
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
@@ -271,25 +307,27 @@ class GPR(Minimizer):
 
     @staticmethod
     def GPR_predict(input_regressor,
-                    points: Optional[float] = 100) -> 'tuple[list[tuple[float]], np.ndarray]':
+                    points: Optional[int] = 100) -> tuple[list[tuple[float, ...]], np.ndarray]:
         """
-        Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
-        between the minimum and maximum measured parameter values and predicts the FoM at each
+        Take a fitted Gaussian process regressor from GPR_fit.
+
+        Creates an fine array of points between the minimum and
+        maximum measured parameter values and predicts the FoM at each
         one of these points.
 
         Parameters
         ----------
         input_regressor : GaussianProcessRegressor
-            A fitted Gaussian Process regressor object
-        points: int, optional
-            Number of points to predict the GPR over. Defaults to 100
+            A fitted Gaussian Process regressor object.
+        points : int, optional
+            Number of points to predict the GPR over. Defaults to 100.
 
         Returns
         -------
         point_array : list[tuple[float]]
-            The ``list`` of coordinates at which the predictions are made
+            The ``list`` of coordinates at which the predictions are made.
         prediction : numpy.ndarray
-            A ``list`` of predicted figure of merit surface at each coordinate in the point_array
+            A ``list`` of predicted figure of merit surface at each coordinate in the point_array.
         """
 
         regressor_points = input_regressor.X_train_
@@ -308,25 +346,25 @@ class GPR(Minimizer):
         return point_array, prediction
 
     @staticmethod
-    def global_minimum_position(predicted_FOMs: np.ndarray,
-                                measured_parameter_coordinates: 'list[float]') \
-            -> 'tuple[np.ndarray, float]':
+    def global_minimum_position(
+            predicted_FOMs: np.ndarray,
+            measured_parameter_coordinates: list[float]) -> tuple[np.ndarray, float]:
         """
-        Gives the coordinates of the global minimum of the predicted figure of merit surface.
+        Get the coordinates of the global minimum of the predicted figure of merit surface.
 
         Parameters
         ----------
         predicted_FOMs : numpy.ndarray
-            A numpy ``array`` of the predicted figures of merit
-        measured_parameter_coordinates: list
-            A ``list`` of the coordinates corresponding to the points at which the FoM was predicted
+            A numpy ``array`` of the predicted figures of merit.
+        measured_parameter_coordinates : list[float]
+            ``list`` of the coordinates corresponding to the points at which the FoM was predicted.
 
         Returns
         -------
         minimum_parameters : numpy.ndarray
-            The parameter coordinates where the minimum figure of merit is predicted to be
+            The parameter coordinates where the minimum figure of merit is predicted to be.
         min_FoM : float
-            The predicted minimum figure of merit value
+            The predicted minimum figure of merit value.
         """
 
         min_coordinates = minimum_position(predicted_FOMs)[0]
@@ -337,13 +375,13 @@ class GPR(Minimizer):
 
     def extract_result(self) -> list:
         """
-        Extracts the measured & predicted FoM and point(s)
+        Extract the measured & predicted FoM and point(s).
 
         Returns
         -------
         list
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
-            Minimum predicted FoM
+            Minimum predicted FoM.
         """
         fit, min_FoM_measured, min_parameters_measured = self.GPR_fit()
         points, FoMs = self.GPR_predict(fit)
@@ -361,21 +399,23 @@ class GPR(Minimizer):
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
+        Format result string from :meth:`extract_result` to `str`.
+
         Parameters
         ----------
-        minimizer_output: list
+        minimizer_output : list
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
-            Minimum predicted FoM
+            Minimum predicted FoM.
 
         Returns
         -------
         str
             An output string, formatted with the appropriate information about measured
-            and predicted points
+            and predicted points.
         """
 
         if self.has_converged():
-            converged_message = 'The refinement has finished.'
+            converged_message = "The refinement has finished."
         else:
             converged_message = "The refinement has not finished."
 

@@ -1,6 +1,9 @@
-"""A module for Figure of Merits"""
+"""
+A module for Figure of Merits abstract classes.
+"""
 
 from abc import ABC, abstractmethod
+from typing import Literal
 
 import numpy as np
 
@@ -12,22 +15,24 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 class ObservablePair:
 
     """
-    Contains a pair of observables for calculating the FoM
+    Class for computing differences between simulated and experimental data.
 
-    Checks the validity of observables
+    Contains a pair of observables for calculating the FoM.
+
+    Checks the validity of observables.
 
     Parameters
     ----------
     exp_obs : Observable
-        An ``Observable`` with ``Observable.origin == 'experiment'``
+        An ``Observable`` with ``Observable.origin == 'experiment'``.
     MD_obs : Observable
-        An ``Observable`` with ``Observable.origin == 'MD'``
+        An ``Observable`` with ``Observable.origin == 'MD'``.
     weight : float
-        The relative weight of this pair on a total FoM
-    rescale_factor: float, optional
+        The relative weight of this pair on a total FoM.
+    rescale_factor : float, optional
         Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
         on the same scale as ``MD_obs``. Default is `1.`.
-    auto_scale: bool, optional
+    auto_scale : bool, optional
         If `True`, ``rescale_factor`` is set automatically to minimise the FoM
         for each step of the refinement, overriding a user specified value if
         set. Note that this process is purely statistical and does not account
@@ -46,14 +51,14 @@ class ObservablePair:
     @property
     def exp_obs(self) -> Observable:
         """
-        Get or set the experimental ``Observable``
+        Get or set the experimental ``Observable``.
 
-        Setting the ``Observable`` checks its validity
+        Setting the ``Observable`` checks its validity.
 
         Returns
         -------
         Observable
-            The experimental ``Observable``
+            The experimental ``Observable``.
         """
 
         return self._exp_obs
@@ -66,14 +71,14 @@ class ObservablePair:
     @property
     def MD_obs(self) -> Observable:
         """
-        Get or set the MD ``Observable``
+        Get or set the MD ``Observable``.
 
-        Setting the ``Observable`` checks its validity
+        Setting the ``Observable`` checks its validity.
 
         Returns
         -------
         Observable
-            The MD ``Observable``
+            The MD ``Observable``.
         """
 
         return self._MD_obs
@@ -86,17 +91,17 @@ class ObservablePair:
     @property
     def weight(self) -> float:
         """
-        Get or set the relative weight of this pair on a total FoM
+        Get or set the relative weight of this pair on the total FoM.
 
         Returns
         -------
         float
-            The relative weight
+            The relative weight.
 
         Raises
         ------
         TypeError
-            If ``weight`` is set with a non-numeric
+            If ``weight`` is set with a non-numeric.
         """
 
         return self._weight
@@ -111,8 +116,10 @@ class ObservablePair:
         self._weight = weight
 
     @property
-    def n_averages(self) -> 'dict[str, int]':
+    def n_averages(self) -> dict[str, int]:
         """
+        Number of samples for each dependent variable.
+
         The number of separate, complete dependent variable calculations we
         have been able to perform for the ``Observable``
 
@@ -120,54 +127,57 @@ class ObservablePair:
         -------
         dict
             Each key represents a dependent variable, and the value is the
-            number of times we have calculated it
+            number of times we have calculated it.
         """
 
-        n_averages = {}
-        for key, value in self.MD_obs.dependent_variables.items():
-            n_averages[key] = len(value)
+        n_averages = {
+            key: len(value)
+            for key, value in self.MD_obs.dependent_variables.items()
+        }
 
         return n_averages
 
     def validate_obs(self, obs: Observable, origin: str) -> None:
         """
-        Performs checks to test the validity of an ``Observable``
+        Check the validity of an ``Observable``.
 
         Tests that the ``Observable.origin`` is as expected. If the
         ``ObservablePair`` has another ``Observable`` (i.e. the other
-        ``origin``), then this tests that the ``independent_variables`` are
-        identical, the ``dependent_variables`` have the same shape,
-        the ``errors`` have the same shape, and that the ``Observable`` objects
-        are of the same type.
+        ``origin``), then this tests that:
+
+        - the ``independent_variables`` are identical,
+        - the ``dependent_variables`` have the same shape,
+        - the ``errors`` have the same shape,
+        - the ``Observable`` objects are of the same type.
 
         Parameters
         ----------
         obs : Observable
-            The ``Observable`` to validate
-        origin : str
-            The ``Observable.origin`` (``'experiment'`` or ``'MD'``)
+            The ``Observable`` to validate.
+        origin : {'experiment', 'MD'}
+            The ``Observable.origin`` (``'experiment'`` or ``'MD'``).
 
         Raises
         ------
         AssertionError
             If the ``Observable.origin`` is not the same as the ``origin``
-            Parameter
+            Parameter.
         AssertionError
             If ``Observable`` does not have identical ``independent_variables``
             to any ``Observable`` of the other ``Observable.origin`` that
-            already exists in the ``ObservablePair``
+            already exists in the ``ObservablePair``.
         AssertionError
             If ``Observable`` does not have identical ``dependent_variables`` to
             any ``Observable`` of the other ``Observable.origin`` that already
-            exists in the ``ObservablePair``
+            exists in the ``ObservablePair``.
         AssertionError
             If ``Observable`` does not have identical ``errors`` to any
             ``Observable`` of the other ``Observable.origin`` that already
-            exists in the ``ObservablePair``
+            exists in the ``ObservablePair``.
         AssertionError
             If ``Observable`` does not have identical type to any ``Observable``
             of the other ``Observable.origin`` that already exists in the
-            ``ObservablePair``
+            ``ObservablePair``.
         """
 
         # Check origin is correct
@@ -215,17 +225,17 @@ class ObservablePair:
     @staticmethod
     def validate_weight(weight: float) -> None:
         """
-        Performs checks to test the validity of the ``weight``
+        Check the validity of the input ``weight``.
 
         Parameters
         ----------
         weight : float
-            The ``weight`` to be validated
+            The ``weight`` to be validated.
 
         Raises
         ------
         AssertionError
-            If the ``weight`` is not positive or is infinite
+            If the ``weight`` is not positive or is infinite.
         """
 
         assert weight > 0. and weight != float('inf'), ('Weight must be a'
@@ -234,50 +244,49 @@ class ObservablePair:
 
     def check_types(self) -> None:
         """
-        Checks that ``Observable`` objects are of the same type
+        Check that ``Observable`` objects are of the same type.
         """
 
         raise NotImplementedError
 
     def check_indep_var(self) -> None:
         """
-        Checks that ``Observable`` objects have the same
-        ``independent_variables`` and that are finite
+        Check ``Observable`` s have the same ``independent_variables`` and are finite.
         """
 
         raise NotImplementedError
 
     def check_dep_var(self) -> None:
         """
-        Checks that ``Observable`` objects have the same ``dependent_variables``
-        and that are finite
+        Check ``Observable`` s have the same ``dependent_variables`` and are finite.
         """
 
         raise NotImplementedError
 
     def check_errors(self) -> None:
         """
-        Checks that an ``Observable`` has errors on the ``dependent_variable``
-        and that these are `float` and not `NaN`
+        Check ``Observable`` errors on ``dependent_variable`` are `float` and not `NaN`.
         """
 
         raise NotImplementedError
 
     def check_origin(self, origin: str) -> None:
         """
-        Checks that the ``Observable.origin`` is correct
+        Check the ``Observable.origin`` is correct.
 
         Parameters
-        -------
-        origin : str
-            A string consisting of either ``'experiment'`` or  ``'MD'``
+        ----------
+        origin : {'experiment', 'MD'}
+            A string consisting of either ``'experiment'`` or  ``'MD'``.
         """
 
         raise NotImplementedError
 
     def calculate_difference(self) -> np.ndarray:
         """
-        Assumes a single dependent variable for each ``Observable``
+        Compute differences between experimental and simulated data.
+
+        Assumes a single dependent variable for each ``Observable``.
 
         Returns
         -------
@@ -296,7 +305,9 @@ class ObservablePair:
 
     def calculate_errors(self) -> np.ndarray:
         """
-        Assumes a single dependent variable error for each ``Observable``
+        Compute derived errors between experimental and simulated data.
+
+        Assumes a single dependent variable error for each ``Observable``.
 
         Returns
         -------
@@ -314,7 +325,10 @@ class ObservablePair:
 
     def calculate_exp_errors(self) -> np.ndarray:
         """
+        Compute experimental errors relateive to `rescale_factor`.
+
         Assumes a single dependent variable error for each ``Observable``.
+
         Calculates only the experimental errors.
 
         Returns
@@ -329,33 +343,33 @@ class ObservablePair:
 
 @repr_decorator('value', 'obs_pairs')
 class FigureOfMerit(ABC):
-
     """
-    Abstract class that defines methods common to all figure of merit
-    calculators
+    Abstract class that defines methods common to all figure of merit calculators.
 
     Parameters
     ----------
     obs_pairs : list
-        A `list` of ``ObservablePairs``
+        A `list` of ``ObservablePairs``.
     norm : {'data_points', 'dof', 'none'}, optional
-        What method of normalisation to use when calculating the FoM for a single dataset.
+        Method of normalisation to use when calculating the FoM for a single dataset.
         Default is 'data_points'.
     n_parameters : int, optional
-        The number of parameters being refined. Optional if ``norm`` is either 'data_points' or
-        'none', but required when 'dof'. Default is None.
+        The number of parameters being refined.
+
+        Optional if ``norm`` is either 'data_points' or 'none', but required when 'dof'.
+        Default is None.
 
     Attributes
     ----------
-    obs_pairs : list
-        A `list` of ``ObservablePairs``
+    obs_pairs : list[ObservablePair]
+        A `list` of ``ObservablePairs``.
     value : float
-        The Figure of Merit for all ``obs_pairs``
+        The Figure of Merit for all ``obs_pairs``.
     """
 
     def __init__(self,
-                 obs_pairs: 'list[ObservablePair]',
-                 norm: str = 'data_points',
+                 obs_pairs: list[ObservablePair],
+                 norm: Literal['data_points', 'dof', 'none'] = 'data_points',
                  n_parameters: int = None):
 
         self.obs_pairs = list(obs_pairs)
@@ -379,23 +393,23 @@ class FigureOfMerit(ABC):
 
     def calculate(self) -> float:
         """
-        Calculates the FoM value by calculating the FoM for every
-        ``ObservablePair``
+        Calculate accumulated FoM for every ``ObservablePair``.
 
         Returns
         -------
-        float
-            A non-negative `float` Figure of Merit
+        float, non-negative
+            Cumulative FoM from sum of independent
+            ``ObservablePair`` figures of merit.
 
         Raises
         ------
         ValueError
-            If calculated value of Figure of Merit is negative
+            If calculated value of Figure of Merit is negative.
         """
 
         total_weight = sum(obs_pair.weight for obs_pair in self.obs_pairs)
         value_unreduced = sum(self.calculate_single_FoM(obs_pair)
-                                  for obs_pair in self.obs_pairs)
+                              for obs_pair in self.obs_pairs)
         self.value = value_unreduced / total_weight
 
         if self.value < 0.:
@@ -404,20 +418,26 @@ class FigureOfMerit(ABC):
 
     def data_norm_factor(self, obs_pair: ObservablePair) -> int:
         """
-        Calculates the normalisation factor for ``obs_pair``. If ``self.norm`` is `True`, then
-        returns the number of data points less the number of refinement parameters if `'dof'`
-        normalisation was chosen, or just the number of data points for the default `'data_points'`
-        normalisation. If ``self.norm`` is `False`, then returns `1`.
+        Calculate normalisation factor for ``obs_pair``.
+
+        If ``self.norm`` is `True` and ``'dof'`` normalisation,
+        then returns the number of data points less the number
+        of refinement parameters.
+
+        If ``self.norm`` is `True` and ``'data_points'`` normalisation,
+        then returns just the number of data points.
+
+        If ``self.norm`` is `False`, then returns `1`.
 
         Parameters
         ----------
         obs_pair : ObservablePair
-            An ``ObservablePair`` for which the normalisation factor is calculated
+            An ``ObservablePair`` for which the normalisation factor is calculated.
 
         Returns
         -------
         int
-            The normalisation factor
+            The normalisation factor.
         """
 
         if self.norm:
@@ -432,17 +452,16 @@ class FigureOfMerit(ABC):
     @abstractmethod
     def calculate_single_FoM(self, obs_pair: ObservablePair) -> float:
         """
-        Performs the FoM calculation specific to each FoM
+        Perform the FoM calculation specific to each FoM.
 
         Parameters
         ----------
         obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
+            An ``ObservablePair`` for which the FoM is calculated.
 
         Returns
         -------
         float
-            The FoM for the ``obs_pair``
+            The FoM for the ``obs_pair``.
         """
-
         raise NotImplementedError

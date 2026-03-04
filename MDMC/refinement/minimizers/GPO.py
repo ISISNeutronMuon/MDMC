@@ -1,4 +1,6 @@
-"""The Gaussian-Process-Optimizer minimizer class"""
+"""
+The Gaussian-Process-Optimizer minimizer class.
+"""
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Optional, Union
@@ -6,6 +8,7 @@ from typing import TYPE_CHECKING, Optional, Union
 import numpy as np
 from skopt import Optimizer
 
+from MDMC.MD.parameters import Parameters
 from MDMC.refinement.minimizers.GPR import GPR
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
@@ -16,53 +19,66 @@ if TYPE_CHECKING:
 
 class GPO(Minimizer):
     """
-    ``Minimizer`` which uses Gaussian process optimisation to find the global minimum
-    figure of merit.
+    ``Minimizer`` which uses Gaussian process optimisation.
 
-    The optimizer comes from scikit-optimize
-    https://scikit-optimize.github.io/stable/modules/generated/skopt.optimizer.Optimizer.html
-    It acts in an ask/tell architecture, where the optimizer is "asked" for the best
-    parameter values to measure at, then when the measurement is complete, we "tell"
-    the optimizer what the result was and it updates its model. The optimizer
-    is configured to cycle between prioritising exploration of the space and
-    exploitation of the minima, in order to find the global minimum without becoming
-    stuck in a local minimum.
+    It uses an `ask`/`tell` architecture, where the optimizer is
+    "asked" for the best parameter values to measure at, then when the
+    measurement is complete, we "tell" the optimizer what the result
+    was and it updates its model.
+
+    The optimizer is configured to cycle between prioritising
+    exploration of the space and exploitation of the minima, in order
+    to find the global minimum without becoming stuck in a local
+    minimum.
 
     The first ``n_initial`` points will be spaced according to a latin
-    hypercube, to cover the available space, subsequent points will then be chosen according
-    to the acquisition function and the measured values.
-    Due to the potential large jumps between the points, a reasonable amount of equlibration
-    of the MD simulation is likely required.
-    This optimizer is likely to be the fastest converging (fewest MD steps) option for MDMC.
+    hypercube, to cover the available space, subsequent points will
+    then be chosen according to the acquisition function and the
+    measured values.  Due to the potential large jumps between the
+    points, a reasonable amount of equlibration of the MD simulation
+    is likely required.  This optimizer is likely to be the fastest
+    converging (fewest MD steps) option for MDMC.
 
-    Please see the documentation page explanation/minimizers for more information.
+    Please see the documentation page :doc:`/explanation/minimizers`
+    for more information.
 
     Parameters
     ----------
-    control: Control
+    control : Control
         The ``Control`` object which uses this Minimizer.
-    parameters: Parameters
+    parameters : Parameters
         The parameters in the simulation Universe to be optimized.
     previous_history : Path
         The Path to a results file containing previous refinement data.
+    **settings : dict
+        Extra options.
 
-    Settings
-    ----------
-    n_initial: int, optional
-        The number of points used for the initial latin hypercube coverage of the parameter
-        space. Optional. If no value is given it defaults to 20. Note that if the
-        associated ``Control`` objects has a maximum number of refinement steps (defined in
-        ``Control.n_steps``) which is smaller than ``n_initial`` then that value will be
-        used instead.
+    Other Parameters
+    ----------------
+    n_initial : int, optional
+        The number of points used for the initial latin hypercube
+        coverage of the parameter space. If no value is
+        given it defaults to 20.
 
-    Attributes
-    ----------
-    history_columns: list[str]
-        list of the column titles, and parameter names in the minimizer history
+        .. note::
+
+           If the associated ``Control`` object has a maximum number
+           of refinement steps (defined by ``Control.n_steps``) which is
+           smaller than ``n_initial``, that value will be used
+           instead.
+
+    See Also
+    --------
+    skopt.Optimizer : Main optimising driver.
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: Optional[Union[Path, str]] = None, **settings: dict):
+    def __init__(
+            self,
+            control: 'Control',
+            parameters: Parameters,
+            previous_history: Optional[Union[Path, str]] = None,
+            **settings: dict,
+    ):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
@@ -74,12 +90,12 @@ class GPO(Minimizer):
         self.predicted_FoM = 1e9
         self.predicted_min_pos = []
         # Ensure all parameters have bounds
-        self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) \
-                                for parameter in parameters.values()]
+        self.parameter_bounds = [tuple(GPR.create_bounds(parameter))
+                                 for parameter in parameters.values()]
 
         self.parameter_names = [str(name) for name in parameters]
 
-        np.random.seed(7) # This should mean results are reproducible in tests
+        np.random.seed(7)  # This should mean results are reproducible in tests
 
         # Initialise the optimizer, use Gaussian process estimator, an acquisition function which
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
@@ -97,22 +113,24 @@ class GPO(Minimizer):
             n_initial_points=initial_points, model_queue_size=1)
 
     @property
-    def history_columns(self) -> 'list[str]':
+    def history_columns(self) -> list[str]:
         """
-        Returns column labels of the history
+        Column labels of the history.
 
         Returns
         -------
         list[str]
-            A ``list`` of ``str`` containing all the column labels in the history
+            A ``list`` of ``str`` containing all the column labels in the history.
         """
 
         return ['FoM'] + list(self.parameters)
 
     def has_converged(self) -> bool:
         """
-        Checks if the refinement process has finished, i.e. if the number of points is
-        equal to or greater than the number of maximum refinement points of the associated
+        Check. if the refinement process has finished.
+
+        I.e. if the number of points is equal to or greater
+        than the number of maximum refinement points of the associated
         ``Control`` object.
 
         Returns
@@ -122,16 +140,16 @@ class GPO(Minimizer):
         """
         return len(self.history) >= self.control.n_steps + self.previous_steps
 
-    def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
+    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
-        Assigns a new value to each parameter (specified by the parameter.name)
+        Assign a new value to each parameter (specified by `parameter.name`).
 
         Parameters
         ----------
         parameter_names : list[str]
-            A list of the names of the parameters whose values are to be set
+            A list of the names of the parameters whose values are to be set.
         values : list[float]
-            A list of the values to be set for each parameter
+            A list of the values to be set for each parameter.
         """
 
         for name, value in zip(parameter_names, values):
@@ -139,8 +157,7 @@ class GPO(Minimizer):
 
     def change_parameters(self) -> None:
         """
-        Selects a new value for each parameter from the array of parameter values to interrogate
-        from the parameter_point_array.
+        Select new value for each parameter from parameter values in ``parameter_point_array``.
         """
 
         if not self.has_converged():
@@ -148,15 +165,20 @@ class GPO(Minimizer):
             self.set_parameter_values(self.parameter_names, coordinates)
 
     def reset_parameters(self) -> None:
-        """Not necessary for this minimizer"""
+        """
+        Not necessary for this minimizer.
+        """
         # pylint: disable=unnecessary-pass
         pass
 
     def step(self, FoM: float) -> None:
         """
-        Increments the minimization by a step, tells the optimizer the most recent measured point
-        asks for the coordinates of the next point, updates the history, checks for convergance
-        and then changes parameters if an additional step is required.
+        Increment the minimization by a step.
+
+        Tells the optimizer the most recent measured point asks for
+        the coordinates of the next point, updates the history, checks
+        for convergance and then changes parameters if an additional
+        step is required.
 
         Parameters
         ----------
@@ -181,13 +203,13 @@ class GPO(Minimizer):
 
     def extract_result(self) -> list:
         """
-        Extracts the measured & predicted FoM and point(s)
+        Extract the measured & predicted FoM and point(s).
 
         Returns
         -------
         list_of_outputs: list
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
-            Minimum predicted FoM
+            Minimum predicted FoM.
         """
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
@@ -203,21 +225,23 @@ class GPO(Minimizer):
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
+        Format result string from :meth:`extract_result` to `str`.
+
         Parameters
         ----------
-        minimizer_output: list
+        minimizer_output : list
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
-            Minimum predicted FoM
+            Minimum predicted FoM.
 
         Returns
         -------
-        output_string: str
+        str
             An output string, formatted with the appropriate information about measured
-            and predicted points
+            and predicted points.
         """
 
         if self.has_converged():
-            converged_message = 'The refinement has finished.'
+            converged_message = "The refinement has finished."
         else:
             converged_message = "The refinement has not finished."
 

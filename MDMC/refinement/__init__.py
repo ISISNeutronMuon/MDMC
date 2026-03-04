@@ -1,10 +1,13 @@
-"""Modules relating to the Parameter optimization loop, including Figures of
-Merit and minimizers
+"""
+Modules relating to the parameter optimization loop.
+
+Includes Figures of Merit and minimizers.
 
 Contents
 --------
-FoM
-minimizers
+
+- FoM
+- minimizers
 """
 
 from . import FoM, minimizers

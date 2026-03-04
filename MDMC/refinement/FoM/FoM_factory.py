@@ -1,6 +1,5 @@
 """
-Factory class for generating Figure of Merits
-And ObservablePair class fro defining the obseravble pairs used to calculate the Figure of Merit
+Factory class for generating ``FigureofMerit`` s and ``ObservablePair`` s.
 """
 from pathlib import Path
 
