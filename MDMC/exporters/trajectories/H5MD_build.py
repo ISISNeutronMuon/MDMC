@@ -204,7 +204,7 @@ def write_H5MD(
         time_stamp = datetime.now().strftime("%d%m%y-%H.%M.%S.%f")
         filename = filename.with_stem(f"{time_stamp}_{filename}")
 
-    file_path_name = (file_loc / (str(filename) + "_traj")).with_suffix('.h5')
+    file_path_name = Path(file_loc, f"{filename}_traj").with_suffix('.h5')
 
     if not settings.get("creator_name") or not settings.get("creator_email"):
         raise ValueError("No creator_name or creator_email provided.")

@@ -1,4 +1,4 @@
-"""Tests that file_dump_frequencyer is dumping the correct files that are requested.
+"""Tests that file_dump_frequency is dumping the correct files that are requested.
 """
 from pathlib import Path
 
@@ -49,7 +49,7 @@ class MockControl(Control):
         return fom, trj
 
 class MockMinimizer(Minimizer):
-    """A Mock Class created as file_dump_frequencyer needs Minimizer._history
+    """A Mock Class created as file_dump_frequency needs Minimizer._history
     """
     def __init__(self):
         self._history = []
