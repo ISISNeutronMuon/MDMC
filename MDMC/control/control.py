@@ -759,7 +759,7 @@ class Control:
                                   creator_name=self.h5md_creator,
                                   creator_email=self.h5md_email)
 
-    def dump_observables(self, data_format: ObsFormat | str):
+    def dump_observables(self, data_format: ObsFormat):
         """
         Dump the observables.
 
