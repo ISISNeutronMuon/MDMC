@@ -43,7 +43,7 @@ def write_MDA(observable: Observable,
               file_loc: Path | str,
               timestamp: bool = True,
               suffix: str = '.mda'):
-    target_path = (Path(file_loc) / (str(filename) + "_result")).with_suffix(suffix)
+    target_path = Path(file_loc, f"{filename}_result").with_suffix(suffix)
     with h5py.File(target_path, 'w') as target:
         obs_name = observable.name
         result_group = target.create_group("mdmc_result")
@@ -56,8 +56,8 @@ def write_MDA(observable: Observable,
             temp_ds.attrs["units"] = guess_unit(key)
         for key, data in observable.dependent_variables.items():
             main_ds = data_group.create_dataset(key, data=data[0])
-            main_ds.attrs["axis"] = "|".join(["mdmc_result/axes/"+str(x)
-                                               for x in observable.independent_variables])
+            main_ds.attrs["axis"] = "|".join(f"mdmc_result/axes/{x}"
+                                               for x in observable.independent_variables)
             main_ds.attrs["scaling_factor"] = 1.0
             main_ds.attrs["units"] = "au"
         write_metadata(target, observable)

@@ -42,21 +42,21 @@ class DumpFreq(Enum):
     EVERY = 1
 
 
-class DumpExtent(Enum):
+class DumpExtent(Flags):
     """
     Choose which files are dumped.
     """
     TRAJ = auto() # Only the trajectory file
     OBS = auto() # Only the observables
-    BOTH = auto() # Both the trajectory and observables
+    BOTH = TRAJ | OBS # Both the trajectory and observables
 
 
-class ObsFormat(Enum):
+class ObsFormat(Flags):
     """
     Choose which files are dumped.
     """
     MDA = auto() # MDANSE MDA file
-    ALL = auto() # All supported formats
+    ALL = MDA # All supported formats
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -236,7 +236,7 @@ class Control:
                  print_all_settings: bool = False,
                  file_dump_frequency: DumpFreq = DumpFreq.NONE,
                  file_dump_extent: DumpExtent = DumpExtent.BOTH,
-                 file_dump_loc: Path = Path('.'),
+                 file_dump_loc: Path = Path.cwd(),
                  file_dump_timestamp: bool = True,
                  file_dump_prefix: str = 'trajectory',
                  **settings: dict):
@@ -700,9 +700,9 @@ class Control:
             # Generate FoM by running MD for this step and then calculate FoM
             fom, trj = self._generate_FoM()
             if self.file_dump_frequency in (DumpFreq.EVERY, DumpFreq.BEST):
-                if self.file_dump_extent in (DumpExtent.TRAJ, DumpExtent.BOTH):
+                if DumpExtent.TRAJ in self.file_dump_extent:
                     self.dump_h5md(trj)
-                if self.file_dump_extent in (DumpExtent.OBS, DumpExtent.BOTH):
+                if DumpExtent.OBS in self.file_dump_extent:
                     self.dump_observables(ObsFormat.MDA)
         else:
             # assuming params are bad so use max FoM available
@@ -768,7 +768,7 @@ class Control:
         data_format: ObsFormat | str
             File format for writing the observables.
         """
-        if data_format in (ObsFormat.MDA, ObsFormat.ALL):
+        if ObsFormat.MDA in data_format:
             for obs_pair in self.observable_pairs:
                 write_MDA(obs_pair.MD_obs,
                           filename=self.file_dump_prefix,
