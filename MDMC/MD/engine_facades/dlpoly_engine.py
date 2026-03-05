@@ -6,7 +6,6 @@ the Python wrapper dlpoly-py that can interface with it.
 """
 from __future__ import annotations
 
-import logging
 from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
@@ -22,6 +21,7 @@ from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.species import Species
 from dlpoly.utility import next_file
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.common.units import Unit
@@ -34,8 +34,6 @@ from MDMC.utilities.partitioning import partition_interactions
 
 if TYPE_CHECKING:
     from MDMC.MD import Universe
-
-LOGGER = logging.getLogger(__name__)
 
 
 # mapping from the MDMC class names to names within DLPOLY

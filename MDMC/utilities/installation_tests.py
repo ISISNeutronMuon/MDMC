@@ -14,16 +14,14 @@ This includes:
 These tests exist so that a user can test their installation of MDMC.
 """
 
-import logging
 from abc import ABC, abstractmethod
 from glob import glob
 from importlib import import_module
 from os.path import basename, dirname, join
 from typing import Dict, Literal, Optional
 
+from MDMC import LOGGER
 from MDMC.common.factory import RegisterFactory
-
-LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=import-outside-toplevel, unused-import
 # these utilities explicitly test importing on purpose in this way

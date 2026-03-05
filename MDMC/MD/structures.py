@@ -5,7 +5,6 @@ defined.  All shared behaviour is included within the ``Structure`` base
 class."""
 from __future__ import annotations
 
-import logging
 import re
 import warnings
 import weakref
@@ -22,6 +21,7 @@ import numpy as np
 import periodictable
 from scipy.spatial.transform import Rotation
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 from MDMC.MD.container import AtomContainer
@@ -31,9 +31,6 @@ from MDMC.MD.interactions import BondedInteraction, Coulombic
 if TYPE_CHECKING:
     from MDMC.MD.interactions import Interaction, NonBondedInteraction
     from MDMC.MD.simulation import Universe
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',

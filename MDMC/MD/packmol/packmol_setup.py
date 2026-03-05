@@ -1,14 +1,13 @@
 """A module containing a class for storing packmol systems and their metadata"""
-import logging
+
 import math
 import warnings
 from typing import List, Tuple
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.MD import Structure
-
-LOGGER = logging.getLogger(__name__)
 
 
 def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> float:

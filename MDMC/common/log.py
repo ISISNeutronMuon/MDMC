@@ -4,10 +4,11 @@ This module configures logging for MDMC.
 
 import logging
 
+LOG_NAME = "MDMC"
 
 def start_logging(logfile: str = "MDMC.log",
                   level: int = logging.INFO,
-                  capture_warnings: bool = True):
+                  capture_warnings: bool = True) -> logging.Logger:
     """
     Start one or more loggers to capture log information from MDMC.
 
@@ -26,6 +27,7 @@ def start_logging(logfile: str = "MDMC.log",
     logger = _start_single_logger(logfile, level=level)
     if capture_warnings:
         _capture_warnings(logger)
+    return logger
 
 
 def _start_single_logger(logfile: str, level: int) -> logging.Logger:
@@ -75,7 +77,7 @@ def _capture_warnings(logger: logging.Logger):
     warnings_logger.addHandler(file_handler)
 
 
-def create_logger(name: str = "MDMC",
+def create_logger(name_override: str = "",
                   logfile: str = "MDMC.log",
                   level: int = logging.INFO) -> logging.Logger:
     """
@@ -96,7 +98,7 @@ def create_logger(name: str = "MDMC",
         Logger to handle MDMC logging.
     """
 
-    logger = logging.getLogger(name=name)
+    logger = logging.getLogger(name=name_override if name_override else LOG_NAME)
     logger.setLevel(level)
 
     # Setup log file handler
@@ -107,3 +109,18 @@ def create_logger(name: str = "MDMC",
     logger.addHandler(logging_fh)
 
     return logger
+
+
+def change_logging_level(name_override: str = "",
+                         level: int = logging.INFO):
+    """Change the log level of the selected logger.
+
+    Parameters
+    ----------
+    name_override : str, optional
+        If not empty, this will replace the standard log name, by default ""
+    level : int, optional
+        New logging level, by default logging.INFO
+    """
+    logger = logging.getLogger(name=name_override if name_override else LOG_NAME)
+    logger.setLevel(level)

@@ -22,7 +22,6 @@ Mar 2020 release.
 """
 from __future__ import annotations
 
-import logging
 import os
 import warnings
 from collections import defaultdict, namedtuple
@@ -43,6 +42,7 @@ except ModuleNotFoundError as err:
                               ' on Python to rectify this.',
                               ) from err
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 from MDMC.common.units import Unit
@@ -58,8 +58,6 @@ from MDMC.MD.simulation import ConstraintAlgorithm, KSpaceSolver, Universe
 from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
-
-LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=too-many-lines,possibly-used-before-assignment
 

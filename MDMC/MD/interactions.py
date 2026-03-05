@@ -2,7 +2,6 @@
 
  ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
 
-import logging
 import weakref
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -12,6 +11,7 @@ from typing import TYPE_CHECKING, NoReturn, Set, Union
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.MD.interaction_functions import Coulomb
@@ -22,9 +22,6 @@ if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
     from MDMC.MD.simulation import Universe
     from MDMC.MD.structures import Atom
-
-
-LOGGER = logging.getLogger(__name__)
 
 
 @repr_decorator('function')

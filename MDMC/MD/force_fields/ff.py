@@ -8,7 +8,6 @@ is self contained, although adding a new force field may require changes to the
 MD engine facades, so that a correspondence is established between the MDMC
 force field and the MD engine equivalent."""
 
-import logging
 import os
 from abc import ABC, abstractmethod
 from inspect import signature
@@ -17,12 +16,11 @@ from re import escape, sub
 
 import pandas as pd
 
+from MDMC import LOGGER
 from MDMC.common.decorators import repr_decorator, weakref_cache
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
 from MDMC.MD import interaction_functions
 from MDMC.MD.interactions import BondedInteraction, Coulombic
-
-LOGGER = logging.getLogger(__name__)
 
 
 @repr_decorator('interaction_dictionary')

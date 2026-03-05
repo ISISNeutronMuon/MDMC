@@ -41,4 +41,4 @@ is being run in serial or parallel. The process will log to 'MDMC.log'.
 
 from .common.log import start_logging
 
-start_logging()
+LOGGER = start_logging()

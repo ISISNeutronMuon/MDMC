@@ -10,7 +10,6 @@ a sequence of Parameter objects.
 from __future__ import annotations
 
 import ast
-import logging
 import operator
 import re
 import warnings
@@ -21,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, NoReturn, Optional, Union
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 
 if TYPE_CHECKING:
@@ -555,7 +555,6 @@ class Parameters(dict):
     def log_parameters(self) -> None:
         """Logs all Parameters by ID"""
 
-        LOGGER = logging.getLogger(__name__)
         msg = "List of all parameters with ID: \n"
         for parameter in self.values():
             msg += f"{parameter.repr()}"

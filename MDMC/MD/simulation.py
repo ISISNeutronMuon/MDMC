@@ -2,7 +2,6 @@
 
  Classes for the simulation box, minimizer and integrator."""
 
-import logging
 import warnings
 from collections import defaultdict
 from itertools import count, filterfalse, product
@@ -12,6 +11,7 @@ import numpy as np
 from statsmodels.tsa.stattools import kpss
 from verbosemanager import VerboseManager
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.decorators import (
     mod_docstring,
@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
-LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                  ', '.join(ForceFieldFactory.available_names())}
 
