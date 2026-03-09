@@ -123,6 +123,7 @@ class Universe(AtomContainer):
     def __init__(self, dimensions, force_field=None, structures=None, **settings):
 
         self.dimensions = dimensions
+        self._parameters = None
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:
@@ -365,9 +366,14 @@ class Universe(AtomContainer):
         Parameters
             The ``Parameters`` objects defined within ``Universe``
         """
-
-        return Parameters([parameter for interaction in self.interactions
+        if self._parameters is None:
+            self._parameters = Parameters([parameter for interaction in self.interactions
                            for parameter in interaction.parameters.as_array])
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, input_list):
+        self._parameters = Parameters(input_list)
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
