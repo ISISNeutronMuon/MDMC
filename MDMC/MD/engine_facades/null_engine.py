@@ -1,23 +1,26 @@
-"""Module containing an abstract base class for MD engine facades"""
-from abc import abstractmethod
-from typing import Any
+"""Module containing an MD engine that does not run any MD simulations."""
+
+from typing import TYPE_CHECKING, Any
 
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.simulation import Simulation
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.trajectory import Configuration
 
+if TYPE_CHECKING:
+    from MDMC.MD.simulation import Universe
 
 class NullEngine(MDEngine):
     """An MD engine which does not run any MD.
 
-    This is meant to test the optimisation procedure by generating results quickly."""
+    This is meant to test the optimisation procedure by generating results quickly.
+    It passes the parameters from the Universe object to the observable calculation
+    by setting attributes of the output trajectory to be parameter values."""
 
 
     @property
     def saved_config(self) -> 'Configuration':
         """
-        Get the saved configuration of the atomic positions
+        Returns an empty configuration.
 
         Returns
         -------
@@ -26,9 +29,9 @@ class NullEngine(MDEngine):
         """
         return Configuration()
 
-    def setup_universe(self, universe: str, **settings: dict) -> None:
+    def setup_universe(self, universe: Universe, **settings: dict) -> None:
         """
-        Do nothing.
+        Copies the parameters from the Universe object.
 
         Parameters
         ----------
@@ -89,6 +92,8 @@ class NullEngine(MDEngine):
         """
         Return an empty trajectory.
 
+        Parameters are saved as attributes of the trajectory instance.
+
         Parameters
         ----------
         start : int
@@ -98,11 +103,7 @@ class NullEngine(MDEngine):
         step : int
             The step size between trajectories.
         **settings
-            ``scaled_positions`` (`bool`)
-                If the ``trajectory_file`` has scaled ``positions``
-            ``atom_IDs`` (`list`)
-                LAMMPS ``ID`` of the atoms which should be included. If not passed
-                then all atoms are included in the converted trajectory.
+            N/A
 
         Returns
         -------
@@ -115,32 +116,30 @@ class NullEngine(MDEngine):
 
     def update_parameters(self) -> None:
         """
-        Updates the ``MDEngine`` force field ``Parameter`` objects from the
-        ``Universe``
+        Do nothing.
         """
         pass
 
     def save_config(self) -> None:
         """
-        Sets ``self.saved_config`` to the current configuration
+        Do nothing.
         """
         pass
 
     def clear(self) -> None:
         """
-        Deletes all atoms of the MD engine, restores all settings to their default values,
-        and frees all memory.
+        Do nothing.
         """
         pass
 
     def reset_config(self) -> None:
         """
-        Resets the configuration of the simulation to that in ``saved_config``
+        Do nothing.
         """
         pass
 
     def eval(self, variable: str) -> Any:
         """
-        Evaluates some simulation variable.
+        Return 1.0
         """
-        return 0.0
+        return 1.0

@@ -3,16 +3,9 @@ Module for AbstractSQw and total SQw class.
 """
 
 import numpy as np
-from numpy.testing import assert_allclose
 
-from MDMC.common import units
-from MDMC.common.constants import h, h_bar
-from MDMC.common.decorators import unit_decorator_getter
-from MDMC.resolution.resolution_factory import ResolutionFactory
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
 def gaussian_2D(
@@ -23,6 +16,10 @@ def gaussian_2D(
     width_x: float = 0.5,
     width_y: float = 0.5,
 ) -> np.ndarray:
+    """Return a 2D array of values.
+
+    The values are produced by multiplying two Gaussian functions,
+    each defining its own dimension of the data."""
     x_results = (np.sqrt(2.0 * np.pi) / width_x) * np.exp(
         -0.5 * ((x_axis - centre_x) / width_x) ** 2,
     )
@@ -33,6 +30,14 @@ def gaussian_2D(
 
 @ObservableFactory.register(('FakeObservable', 'gauss2D'))
 class FakeObservable(Observable):
+    """Calculates a function and ignores the trajectory contents.
+
+    The optimisation should produce the following arguments:
+        centre_x=5.0
+        centre_y=4.0
+        width_x=3.3
+        width_y=2.1
+    """
     def __init__(self):
         super().__init__()
         self._name = "gauss2D"
@@ -75,6 +80,17 @@ class FakeObservable(Observable):
         return 1e12
 
     def calculate_from_MD(self, MD_input, verbose=0, **parameters):
+        """Evaluate the function using the current parameter values.
+
+        Gets the current values of parameters from trajectory attributes.
+
+        Parameters
+        ----------
+        MD_input : CompactTrajectory
+            An empty trajectory with a parameters attribute.
+        verbose : int, optional
+            Ignored, by default 0.
+        """
         self._origin = 'MD'
         self._dependent_variables = {"gauss2D": gaussian_2D(self.x_axis,
                            self.y_axis,
@@ -85,6 +101,14 @@ class FakeObservable(Observable):
         self._errors = {"gauss2D": np.sqrt(self._dependent_variables["gauss2D"])}
 
     def read_from_file(self, reader, file_name):
+        """Generate the target values from hardcoded arguments.
+
+        The optimisation should produce the following arguments:
+            centre_x=5.0
+            centre_y=4.0
+            width_x=3.3
+            width_y=2.1
+        """
         self._origin = 'experiment'
         self._dependent_variables = {"gauss2D": gaussian_2D(self.x_axis,
                            self.y_axis,
