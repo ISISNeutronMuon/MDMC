@@ -29,7 +29,7 @@ class NullEngine(MDEngine):
         """
         return Configuration()
 
-    def setup_universe(self, universe: Universe, **settings: dict) -> None:
+    def setup_universe(self, universe: 'Universe', **settings: dict) -> None:
         """
         Copies the parameters from the Universe object.
 

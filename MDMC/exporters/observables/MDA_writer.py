@@ -1,6 +1,7 @@
 """
 A module for writing and saving a H5MD file.
 """
+import logging
 from pathlib import Path
 
 import h5py
@@ -8,6 +9,7 @@ import h5py
 from MDMC.common import units
 from MDMC.trajectory_analysis.observables.obs import Observable
 
+LOGGER = logging.getLogger(__name__)
 
 def guess_unit(axis_label: str) -> str:
     """Return the physical unit of a dataset based on its text label."""
@@ -19,7 +21,8 @@ def guess_unit(axis_label: str) -> str:
         case "r":
             unit_string = units.SYSTEM["LENGTH"]
         case _:
-            raise ValueError(f"Could not guess the unit of data axis {axis_label}")
+            unit_string = "au"
+            LOGGER.warning("MDA writer could not determine the unit of variable %s", axis_label)
     return unit_string.replace(" ","")
 
 def write_metadata(target: h5py.File, observable: Observable):
@@ -55,7 +58,8 @@ def write_MDA(observable: Observable,
             temp_ds.attrs["scaling_factor"] = 1.0
             temp_ds.attrs["units"] = guess_unit(key)
         for key, data in observable.dependent_variables.items():
-            main_ds = data_group.create_dataset(key, data=data[0])
+            main_ds = data_group.create_dataset(key,
+                                                data=data[0] if isinstance(data, list) else data)
             main_ds.attrs["axis"] = "|".join(f"mdmc_result/axes/{x}"
                                                for x in observable.independent_variables)
             main_ds.attrs["scaling_factor"] = 1.0

@@ -50,7 +50,7 @@ class FakeObservable(Observable):
     @property
     def independent_variables(self):
         if self._independent_variables is None:
-            self._independent_variables = {"x": self.x_axis, "y": self.y_axis}
+            self._independent_variables = {"y": self.y_axis, "x": self.x_axis}
         return self._independent_variables
 
     @independent_variables.setter
@@ -124,4 +124,4 @@ class FakeObservable(Observable):
 
     @property
     def dependent_variables_structure(self):
-        return {'gauss2D': ['x', 'y']}
+        return {'gauss2D': ['y', 'x']}
