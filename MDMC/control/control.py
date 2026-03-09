@@ -145,7 +145,7 @@ class Control:
     file_dump_loc: Path, optional
         Location the H5MD file should be stored. Default is `Path('.')`
     file_dump_timestamped: bool, optional
-        True if a time stamp should be added to the output file names. Default is `True`
+        Whether a time stamp should be added to the output file names. Default is `False`
     file_dump_prefix: str, optional
         The name the dumped H5MD file should be. Default is ``trajectory``
     minimizer_type : str, optional
