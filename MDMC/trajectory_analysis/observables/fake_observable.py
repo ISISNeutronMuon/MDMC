@@ -60,7 +60,7 @@ class FakeObservable(Observable):
     @property
     def dependent_variables(self):
         if self._dependent_variables is None:
-            self._dependent_variables = {"gauss2D": gaussian_2D(self.x_axis, self.y_axis)}
+            self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis, self.y_axis)]}
         return self._dependent_variables
 
     @dependent_variables.setter
@@ -70,7 +70,7 @@ class FakeObservable(Observable):
     @property
     def errors(self):
         if self._errors is None:
-            self._errors = {"gauss2D": np.sqrt(self.dependent_variables["gauss2D"])}
+            self._errors = {"gauss2D": [np.sqrt(self.dependent_variables["gauss2D"][0])]}
         return self._errors
 
     def minimum_frames(self, dt=None) -> int:
@@ -92,13 +92,13 @@ class FakeObservable(Observable):
             Ignored, by default 0.
         """
         self._origin = 'MD'
-        self._dependent_variables = {"gauss2D": gaussian_2D(self.x_axis,
+        self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis,
                            self.y_axis,
                            centre_x=MD_input.parameters.get("centre_x"),
                            centre_y=MD_input.parameters.get("centre_y"),
                            width_x=MD_input.parameters.get("width_x"),
-                           width_y=MD_input.parameters.get("width_y"))}
-        self._errors = {"gauss2D": np.sqrt(self._dependent_variables["gauss2D"])}
+                           width_y=MD_input.parameters.get("width_y"))]}
+        self._errors = {"gauss2D": [np.sqrt(self._dependent_variables["gauss2D"][0])]}
 
     def read_from_file(self, reader, file_name):
         """Generate the target values from hardcoded arguments.
@@ -110,13 +110,13 @@ class FakeObservable(Observable):
             width_y=2.1
         """
         self._origin = 'experiment'
-        self._dependent_variables = {"gauss2D": gaussian_2D(self.x_axis,
+        self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis,
                            self.y_axis,
                            centre_x=5.0,
                            centre_y=4.0,
                            width_x=3.3,
-                           width_y=2.1)}
-        self._errors = {"gauss2D": np.sqrt(self._dependent_variables["gauss2D"])}
+                           width_y=2.1)]}
+        self._errors = {"gauss2D": [np.sqrt(self._dependent_variables["gauss2D"][0])]}
 
     @property
     def uniformity_requirements(self):
