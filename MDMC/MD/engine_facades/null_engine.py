@@ -1,5 +1,7 @@
 """Module containing an MD engine that does not run any MD simulations."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from MDMC.MD.engine_facades.facade import MDEngine
