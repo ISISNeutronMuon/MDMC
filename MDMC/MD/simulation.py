@@ -123,6 +123,7 @@ class Universe(AtomContainer):
     def __init__(self, dimensions, force_field=None, structures=None, **settings):
 
         self.dimensions = dimensions
+        self._parameters = None
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:

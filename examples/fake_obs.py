@@ -3,6 +3,12 @@ A test script which attempts to run an optimisation without actually running
 any MD simulations. This is only used to test the MDMC minimisers.
 At the moment it is attempting to fit a 2D array created by multiplying
 two Gaussian functions.
+
+Currently, the solution is hardcoded. The minimiser should produce:
+centre_x=5.0
+centre_y=4.0
+width_x=3.3
+width_y=2.1
 """
 
 from MDMC.control import Control
