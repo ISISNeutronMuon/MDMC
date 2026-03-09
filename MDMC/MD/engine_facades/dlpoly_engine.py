@@ -315,7 +315,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
         etol = settings.get('etol', 1.e-3)
-        ftol = settings.get('ftol', None)
+        ftol = settings.get('ftol')
         min_freq = minimize_every
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
                     self.__class__, n_steps, ftol)

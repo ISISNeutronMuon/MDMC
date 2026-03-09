@@ -759,8 +759,8 @@ class Atom(Structure):
         except KeyError:
             self.mass = self.element.mass
 
-        self._atom_type = settings.get('atom_type', None)
-        self.cutoff = settings.get('cutoff', None)
+        self._atom_type = settings.get('atom_type')
+        self.cutoff = settings.get('cutoff')
         self.charge = charge
 
     def __deepcopy__(self, memo: dict) -> Atom:
