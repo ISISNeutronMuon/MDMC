@@ -39,13 +39,29 @@ def write_metadata(target: h5py.File, observable: Observable):
                                 dtype=string_dt)
 
 def write_MDA(observable: Observable,
+              *,
               filename: str,
               file_loc: Path | str,
-              timestamp: bool = True,
+              timestamp: str,
               suffix: str = '.mda'):
-    target_path = Path(file_loc, f"{filename}_result").with_suffix(suffix)
+    """Write the input observable to an MDANSE MDA file.
+
+    Parameters
+    ----------
+    observable : Observable
+        Object containing the calculated or experimental data.
+    filename : str
+        Base of the output file.
+    file_loc : Path | str
+        Path where the file will be written.
+    timestamp : str
+        Text to be used as the time stamp.
+    suffix : str, optional
+        File name extension, by default '.mda'.
+    """
+    obs_name = observable.name
+    target_path = Path(file_loc, f"{filename}{timestamp}_{obs_name}").with_suffix(suffix)
     with h5py.File(target_path, 'w') as target:
-        obs_name = observable.name
         result_group = target.create_group("mdmc_result")
         axes_group = result_group.create_group("axes")
         data_group = result_group.create_group(obs_name)

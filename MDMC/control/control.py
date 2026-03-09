@@ -58,6 +58,28 @@ class ObsFormat(Flag):
     MDA = auto() # MDANSE MDA file
     ALL = MDA # All supported formats
 
+def timestamp_now(use_timestamp: bool = True, dump_frequency: DumpFreq = DumpFreq.EVERY) -> str:
+    """Return a timestamp or an empty string for use in file names.
+
+    The intention is to use a time stamp if the user requested it,
+    or if files are written every step (to avoid overwriting files).
+
+    Parameters
+    ----------
+    use_timestamp : bool, optional
+        If True, forces the time stamp to be non-empty, by default True
+    dump_frequency : DumpFreq, optional
+        File output setting, by default DumpFreq.EVERY
+
+    Returns
+    -------
+    str
+        Either a time stamp string or an empty string.
+    """
+    if use_timestamp or dump_frequency is DumpFreq.EVERY:
+        return datetime.now().strftime("_%Y-%m-%d--%H-%M-%S")
+    return ""
+
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
@@ -122,8 +144,8 @@ class Control:
         Which files should be written out in the dump. Default is `DumpExtent.BOTH`
     file_dump_loc: Path, optional
         Location the H5MD file should be stored. Default is `Path('.')`
-    file_dump_timestamp: bool, optional
-        True if a time stamp should be added to the end of the H5MD file name. Default is `True`
+    file_dump_timestamped: bool, optional
+        Whether a time stamp should be added to the output file names. Default is `False`
     file_dump_prefix: str, optional
         The name the dumped H5MD file should be. Default is ``trajectory``
     minimizer_type : str, optional
@@ -237,7 +259,7 @@ class Control:
                  file_dump_frequency: DumpFreq = DumpFreq.NONE,
                  file_dump_extent: DumpExtent = DumpExtent.BOTH,
                  file_dump_loc: Path = Path('.'),
-                 file_dump_timestamp: bool = True,
+                 file_dump_timestamped: bool = False,
                  file_dump_prefix: str = 'trajectory',
                  **settings: dict):
 
@@ -262,7 +284,7 @@ class Control:
         else:
             self.file_dump_extent = file_dump_extent
         self.file_dump_prefix = file_dump_prefix
-        self.file_dump_timestamp = file_dump_timestamp
+        self.use_timestamp = file_dump_timestamped
         self.file_dump_loc = file_dump_loc
         self.h5md_creator = settings.get("h5md_creator_name", getpass.getuser())
         self.h5md_email = settings.get("h5md_creator_email",
@@ -286,7 +308,7 @@ class Control:
         self.settings = settings
         self.n_steps = settings.get('n_steps')
         self.results_filename = settings.get('results_filename',
-                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
+                                f'results{timestamp_now()}.csv')
         settings['results_filename'] = self.results_filename
         settings['time_step_reductions'] = settings.get('time_step_reductions', 2)
 
@@ -699,7 +721,8 @@ class Control:
         elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
             fom, trj = self._generate_FoM()
-            if self.file_dump_frequency in (DumpFreq.EVERY, DumpFreq.BEST):
+            if (self.file_dump_frequency is DumpFreq.EVERY
+               or (self.file_dump_frequency is DumpFreq.BEST and self.minimizer.is_best_FoM())):
                 if DumpExtent.TRAJ in self.file_dump_extent:
                     self.dump_h5md(trj)
                 if DumpExtent.OBS in self.file_dump_extent:
@@ -744,20 +767,13 @@ class Control:
         or the file name must be different for each trajectory,
         as if not the file will be continually overwritten.
         """
-        if self.file_dump_frequency is DumpFreq.EVERY:
-            H5MD_build.write_H5MD(trj,
-                                  filename=self.file_dump_prefix,
-                                  file_loc=self.file_dump_loc,
-                                  timestamp=self.file_dump_timestamp,
-                                  creator_name=self.h5md_creator,
-                                  creator_email=self.h5md_email)
-        elif self.file_dump_frequency is DumpFreq.BEST and self.minimizer.is_best_FoM():
-            H5MD_build.write_H5MD(trj,
-                                  filename=self.file_dump_prefix,
-                                  file_loc=self.file_dump_loc,
-                                  timestamp=False,
-                                  creator_name=self.h5md_creator,
-                                  creator_email=self.h5md_email)
+        H5MD_build.write_H5MD(trj,
+                              filename=self.file_dump_prefix,
+                              file_loc=self.file_dump_loc,
+                              timestamp=timestamp_now(self.use_timestamp,
+                                                      self.file_dump_frequency),
+                              creator_name=self.h5md_creator,
+                              creator_email=self.h5md_email)
 
     def dump_observables(self, data_format: ObsFormat):
         """
@@ -773,7 +789,9 @@ class Control:
                 write_MDA(obs_pair.MD_obs,
                           filename=self.file_dump_prefix,
                           file_loc=self.file_dump_loc,
-                          timestamp=self.file_dump_timestamp)
+                          timestamp=timestamp_now(self.use_timestamp,
+                                                  self.file_dump_frequency),
+                          )
 
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """

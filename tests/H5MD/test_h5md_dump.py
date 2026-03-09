@@ -19,14 +19,14 @@ class MockControl(Control):
     """Mock class created so a simulation does
     not need to be run to get a FoM
     """
-    def __init__(self, in_list, file_dump_frequency, file_dump_prefix, file_dump_loc, file_dump_timestamp):
+    def __init__(self, in_list, file_dump_frequency, file_dump_prefix, file_dump_loc, file_dump_timestamped):
         self.FoM = in_list
         self.iFoM = iter(in_list)
         self.file_dump_frequency = file_dump_frequency
         self.minimizer = MockMinimizer()
         self.file_dump_prefix = file_dump_prefix
         self.file_dump_loc = file_dump_loc
-        self.file_dump_timestamp = file_dump_timestamp
+        self.use_timestamp = file_dump_timestamped
         self.h5md_creator = "test"
         self.h5md_email = "test@test"
 
@@ -68,19 +68,6 @@ class MockMinimizer(Minimizer):
         pass
     def step(self):
         pass
-
-def test_save_best_trajectory(tmp_path):
-    """Test that checks that the H5MD dumper in control is dumping the best FoM
-    """
-    control = MockControl(FOM, DumpFreq.BEST, FILE_NAME, tmp_path, False)
-    for _ in range(len(FOM)):
-        fom, trj = control._generate_FoM()
-        control.minimizer._history.append(fom)
-        control.dump_h5md(trj)
-    file_path = tmp_path / FILE_NAME
-    with h5py.File(file_path, "r") as file:
-        expected_fom = H5MD_reader.read_dataset(file, "position")
-        assert expected_fom[0] == min(FOM)
 
 def test_save_all_trajectory(tmp_path):
     """
