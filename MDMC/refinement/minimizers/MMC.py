@@ -17,14 +17,16 @@ if TYPE_CHECKING:
 
 class MMC(Minimizer):
     """
-    ``Minimizer`` employing the Metropolis-Hastings algorithm
+    Minimiser using CMA-ES, but using it sequentially.
+
+    Normally, CMA-ES produces several sets of input parameters per batch/generation.
+    The MMC wrapper executes them one at a time, and asks the CMA-ES optimiser
+    for a new batch of inputs every time the existing batch has been used up.
 
     Parameters
     ----------
     control: Control
         The ``Control`` object which uses this Minimizer.
-    MC_norm : float
-        Normalization parameter for MC which determines the accept/reject ratio, default is 1.0
     max_parameter_change: float, optional
         Maximum factor by which a Parameter can change each step of the
         refinement. Defaults to `0.01`
@@ -34,8 +36,6 @@ class MMC(Minimizer):
         The number of refinement steps with an accepted state change after which
         convergence is checked. If the number of accepted state changes is less than this,
         then the refinement is deemed as not converged. Defaults to `2`
-    distribution : str, optional
-        The distribution from which ``Parameter`` changes are selected. Defaults to 'uniform'
 
     Attributes
     ----------
@@ -53,14 +53,11 @@ class MMC(Minimizer):
         **settings: dict,
     ):
         super().__init__(control, parameters, previous_history)
-        self.MC_norm = settings.get("MC_norm", 1.0)
 
         self.parameters = parameters
-        self.max_parameter_change = settings.get("max_parameter_change", 0.01)
-        self.conv_tol = settings.get("conv_tol", 1e-5)
+        self.max_parameter_change = settings.get("max_parameter_change", 0.2)
+        self.conv_tol = settings.get("conv_tol", 1e-4)
         self.min_steps = settings.get("min_steps", 2)
-        distribution = "uniform"
-        self.distribution = self.__class__.DISTRIBUTION[distribution]
 
         self.previous_history = previous_history
         self.state_changed = False
@@ -73,7 +70,7 @@ class MMC(Minimizer):
                     [par.constraints[1] for par in self.parameters.values()],
                 ],
                 "CMA_elitist": True,
-                "tolfun": self.conv_tol*10,
+                "tolfun": self.conv_tol * 10,
                 "tolx": 1e-3,
                 "tolfunhist": self.conv_tol,
             },
@@ -131,6 +128,9 @@ class MMC(Minimizer):
         return True
 
     def next_parameter_point(self) -> Sequence[float]:
+        """Return the next set of simulation parameters.
+
+        If the current batch has been exhausted, it generates a new batch using CMA-ES."""
         if not self.new_parameters:
             self.optimiser.tell(self.used_parameters, self.used_values)
             self.new_parameters = self.optimiser.ask()
@@ -140,19 +140,7 @@ class MMC(Minimizer):
         return self.new_parameters.pop()
 
     def change_parameters(self) -> None:
-        """
-        Selects a new value for each parameter from a distribution centered
-        around the current value.
-
-        Note that for ``Parameter``s with ``constraints`` set, any proposed new value that would
-        lie outside the range of the constraint is clipped to the lower or upper limit as
-        appropriate.
-
-        Parameters
-        ----------
-        parameters : Parameters
-            All ``Parameter`` objects that are being refined
-        """
+        """Assign new values to the simulation parameters."""
 
         new_values = self.next_parameter_point()
 
@@ -176,7 +164,7 @@ class MMC(Minimizer):
 
     def reset_parameters(self) -> None:
         """
-        Resets the ``Parameter`` values to the values from the previous MMC step
+        Not used.
         """
         pass
 
