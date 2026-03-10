@@ -61,14 +61,19 @@ class MMC(Minimizer):
 
         self.previous_history = previous_history
         self.state_changed = False
+        opt_bounds = (
+            [
+                [par.constraints[0] for par in self.parameters.values()],
+                [par.constraints[1] for par in self.parameters.values()],
+            ]
+            if all(par.constraints is not None for par in self.parameters.values())
+            else None
+        )
         self.optimiser = cma.CMAEvolutionStrategy(
             [par.value for par in self.parameters.values()],
             self.max_parameter_change,
             {
-                "bounds": [
-                    [par.constraints[0] for par in self.parameters.values()],
-                    [par.constraints[1] for par in self.parameters.values()],
-                ],
+                "bounds": opt_bounds,
                 "CMA_elitist": True,
                 "tolfun": self.conv_tol * 100,
                 "tolx": 1e-3,
