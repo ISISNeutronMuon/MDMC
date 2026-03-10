@@ -1,4 +1,4 @@
-"""The Metropolis-Hastings minimizer class"""
+"""Covariance Matrix Adaptation Evolution Strategy minimiser."""
 
 from collections.abc import Sequence
 from pathlib import Path
@@ -15,21 +15,24 @@ if TYPE_CHECKING:
     from MDMC.MD import Parameters
 
 
-class MMC(Minimizer):
+class CMAES(Minimizer):
     """
     Minimiser using CMA-ES, but using it sequentially.
 
     Normally, CMA-ES produces several sets of input parameters per batch/generation.
-    The MMC wrapper executes them one at a time, and asks the CMA-ES optimiser
+    This wrapper executes them one at a time, and asks the CMA-ES optimiser
     for a new batch of inputs every time the existing batch has been used up.
 
     Parameters
     ----------
     control: Control
         The ``Control`` object which uses this Minimizer.
-    max_parameter_change: float, optional
-        Maximum factor by which a Parameter can change each step of the
-        refinement. Defaults to `0.01`
+    sigma0: float, optional
+        Initial standard deviation of the generated parameters.
+    CMA_popsize: int, optional
+        Population size, overrides the standard CMA-ES settings.
+    CMA_elitist: bool, optional
+        Whether to keep the best solution in the next generation of solutions.
     conv_tol : float, optional
         The relative tolerance of the convergence check. Defaults to `1e-5`
     min_steps : int, optional
@@ -55,7 +58,7 @@ class MMC(Minimizer):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
-        self.max_parameter_change = settings.get("max_parameter_change", 0.2)
+        self.sigma0 = settings.get("sigma0", 0.2)
         self.conv_tol = settings.get("conv_tol", 1e-4)
         self.min_steps = settings.get("min_steps", 2)
 
@@ -71,12 +74,13 @@ class MMC(Minimizer):
         )
         self.optimiser = cma.CMAEvolutionStrategy(
             [par.value for par in self.parameters.values()],
-            self.max_parameter_change,
+            self.sigma0,
             {
                 "bounds": opt_bounds,
-                "CMA_elitist": True,
+                "CMA_elitist": settings.get("CMA_elitist", False),
+                "popsize": settings.get("CMA_popsize"),
                 "tolfun": self.conv_tol * 100,
-                "tolx": 1e-3,
+                "tolx": settings.get("CMA_tolx", 1e-3),
                 "tolfunhist": self.conv_tol * 10,
             },
         )
@@ -215,7 +219,7 @@ class MMC(Minimizer):
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
-        Formats a string output for the results of an MMC minimizer run
+        Formats a string output for the results of an CMAES minimizer run
 
         Parameters
         ----------

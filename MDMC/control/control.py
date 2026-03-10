@@ -149,7 +149,7 @@ class Control:
     file_dump_prefix: str, optional
         The name the dumped H5MD file should be. Default is ``trajectory``
     minimizer_type : str, optional
-        The ``Minimizer`` type. Default is 'MMC'.
+        The ``Minimizer`` type. Default is 'CMAES'.
     FoM_options : dict of {str : str}, optional
         Defines the details of the ``FigureOfMeritCalculator`` to use. Default is `None`, in which
         case the first option for each of the following keys is used:
@@ -198,8 +198,15 @@ class Control:
             blocks as possible (with overlap allowed).
         results_filename: str
             The name of the file in which the results of the MDMC run will be stored
-        MC_norm: int
-            1 if the MMC minimiser is to be used for parameter optimisation.
+        sigma0: float, optional
+            Initial standard deviation of the generated parameters.
+        CMA_popsize: int, optional
+            Population size, overrides the standard CMA-ES settings.
+        CMA_elitist: Any, optional
+            Whether to keep the best solution(s) in the next generation of solutions.
+            Can be an int, "initial" or True.
+        CMA_tolx: float, optional
+            Convergence criterion for the parameter change in consecutive generations. Def. 1e-3
         use_average : bool, optional
             Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
             and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
@@ -250,7 +257,7 @@ class Control:
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters,
-                 minimizer_type: str = 'MMC', FoM_options: dict = None,
+                 minimizer_type: str = 'CMAES', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
                  previous_history: Union[str,Path] = None,

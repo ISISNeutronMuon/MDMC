@@ -1,10 +1,10 @@
 """A module for refinement minimizers."""
-from . import GPO, GPR, MMC, minimizer_abs, minimizer_factory
+from . import CMAES, GPO, GPR, minimizer_abs, minimizer_factory
 
 __all__ = [
+    "CMAES",
     "GPO",
     "GPR",
-    "MMC",
     "minimizer_abs",
     "minimizer_factory",
 ]
