@@ -70,9 +70,9 @@ class MMC(Minimizer):
                     [par.constraints[1] for par in self.parameters.values()],
                 ],
                 "CMA_elitist": True,
-                "tolfun": self.conv_tol * 10,
+                "tolfun": self.conv_tol * 100,
                 "tolx": 1e-3,
-                "tolfunhist": self.conv_tol,
+                "tolfunhist": self.conv_tol * 10,
             },
         )
         self.new_parameters = self.optimiser.ask()
@@ -160,7 +160,11 @@ class MMC(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return self.optimiser.stop()
+        if len(self.history) <= self.min_steps:
+            return False
+        param_history = np.array(self.history.drop("Change state", axis=1))
+        converged = np.allclose(param_history[-1], param_history[-2], rtol=self.conv_tol)
+        return self.optimiser.stop() or converged
 
     def reset_parameters(self) -> None:
         """
