@@ -3,11 +3,21 @@ Module defining a class for processing observables from MD trajectories.
 """
 
 from abc import ABC, abstractmethod
+from enum import Enum, auto
 from typing import Literal
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+
+
+class PlotTypes(Enum):
+    """
+    Supported plot types.
+    """
+    DEFAULT = auto()
+    HEATMAP = auto()
+    SLIDER = auto()
 
 
 @repr_decorator('origin', 'data')
@@ -272,3 +282,9 @@ class Observable(ABC):
         """
 
         raise NotImplementedError
+
+    def plot(self) -> None:
+        '''
+        Plot experimental and simulated datasets side-by-side.
+        '''
+        raise NotImplementedError(f"No plot method implemented for {type(self).__name__}.")

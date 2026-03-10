@@ -1,11 +1,12 @@
 """A module for Figure of Merits"""
-
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
-from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.obs import Observable, PlotTypes
+from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
 @repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale')
@@ -128,6 +129,26 @@ class ObservablePair:
             n_averages[key] = len(value)
 
         return n_averages
+
+    @property
+    def residual(self) -> Observable:
+        """
+        Assumes a single dependent variable and single dependent variable error
+        for each ``Observable``
+
+        Returns
+        -------
+        Observable
+             The computed residual between experimental and simulated
+             ``Observable``
+        """
+        new_obs = ObservableFactory.create(self.MD_obs.name)
+
+        new_obs.dependent_variables = {self.MD_obs.name: np.abs(self.calculate_difference())}
+        new_obs.errors = {self.MD_obs.name: self.calculate_errors()}
+        new_obs.independent_variables = self.MD_obs.independent_variables
+
+        return new_obs
 
     def validate_obs(self, obs: Observable, origin: str) -> None:
         """
@@ -326,6 +347,144 @@ class ObservablePair:
 
         return np.array(*self.exp_obs.errors.values()) * self.rescale_factor
 
+    def _plot(self) -> None:
+        '''
+        Plot the experimental and simulated observable
+
+        For observables with 2 independent variables:
+        - 3D plot: dependent variable on z-axis, independent variables on x-,
+          y- axes.
+
+        For observables with 1 independent variable:
+        - 2D plot: dependent variable on y-axis, independent variable on x-axis.
+        '''
+
+        # Find the number of domain dimensions of the observable
+        domain_dimensions = len(self.exp_obs.independent_variables)
+
+        if domain_dimensions == 1:
+            fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+        elif domain_dimensions == 2:
+            fig, axs = plt.subplots(1, 2, subplot_kw={'projection': '3d'}, figsize=(15, 6))
+
+        # If the observable is experimental apply the 'rescale_factor' that
+        # minimizes the Figure-of-Merit (needed as the experimental data is
+        # arbitrary units).
+        exp_dependent_variable = (np.array(*self.exp_obs.dependent_variables.values())
+                                  * self.rescale_factor)
+        self.exp_obs.default_plot(ax=axs[0], dependent_variable=exp_dependent_variable,
+                                  noshow=True)
+        title = axs[0].get_title() + ' - Experimental'
+        axs[0].set_title(title)
+
+        self.MD_obs.default_plot(ax=axs[1], noshow=True)
+        title = axs[1].get_title() + ' - Simulated'
+        axs[1].set_title(title)
+
+        obs_name = list(self.MD_obs.dependent_variables.keys())[0]
+        fig.suptitle(f'Comparing experimental and simulated for {obs_name}',
+                     fontsize=21)
+
+        plt.tight_layout()
+        plt.show()
+
+    def _slider(self) -> None:
+        '''
+        Generate plot slider for an experimental and simulated oberservable
+
+        - The observable must have 2 independent variables.
+
+        - Slider Plot: users view a "slice" of the data where the dependent
+          variable is on y-axis and one of the independent variables on the
+          x-axis with the other independent variable fixed (a slice of the 3D
+          data).
+          The user can use a slider to change the value of the fixed independent
+          variable.  Users can then compare the observables closely.
+        '''
+        figax = plt.subplots()
+
+        # If the observable is experimental apply the 'rescale_factor' that
+        # minimizes the Figure-of-Merit (needed as the experimental data is
+        # arbitrary units).
+        exp_dependent_variable = (np.array(*self.exp_obs.dependent_variables.values())
+                                  * self.rescale_factor)
+
+        self.MD_obs.slider_plot(other_dependent_variable=exp_dependent_variable,
+                                figax=figax)
+
+        figax[1].legend(labels=['Refined', 'Experimemtal'])
+
+    def _heatmap(self) -> None:
+        '''
+        Plot heatmap of an experimental and simulated oberservable
+
+        - The observable must have 2 independent variables.
+
+        - Heatmaps: two-dimensional representation of data in which dependent
+          variable is represented by colors ("heat"). Each of the two axis is
+          for one of the independent variables. Users can, therefore, have an
+          immediate visual summary of each observable for comparison.
+        '''
+
+        # Find the number of domain dimensions of the observable
+        domain_dimensions = len(self.exp_obs.independent_variables)
+
+        if domain_dimensions != 2:
+            raise ValueError("Cannot plot heatmap: Number Indepedent variables is not 2")
+
+        fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+
+        # If the observable is experimental apply the 'rescale_factor' that
+        # minimizes the Figure-of-Merit (needed as the experimental data is
+        # arbitrary units).
+        exp_dependent_variable = (np.array(*self.exp_obs.dependent_variables.values())
+                                  * self.rescale_factor)
+        self.exp_obs.heatmap_plot(ax=axs[0],
+                                  dependent_variable=exp_dependent_variable,
+                                  noshow=True)
+        title = axs[0].get_title() + ' - Experimental'
+        axs[0].set_title(title)
+
+        self.MD_obs.heatmap_plot(ax=axs[1], noshow=True)
+        title = axs[1].get_title() + ' - Simulated'
+        axs[1].set_title(title)
+
+        obs_name = self.MD_obs.name
+        fig.suptitle(f'Experimental and simulated for {obs_name}',
+                     fontsize=21)
+
+        plt.tight_layout()
+        plt.show()
+
+    def plot(self, plot_type: PlotTypes = PlotTypes.DEFAULT) -> None:
+        '''
+        Plot of the Experimental and Simulation Observables.
+
+        Parameters
+        ----------
+        plot_type : PlotTypes
+            The ``type`` of figure to be plot:
+            DEFAULT: Plots side by side.
+                     For 1 independent variable is a line plot,
+                     For 2 independent variables is a surface plot.
+            SLIDER:  For observables with 2 independent variables, plots a line
+                     ine graph in 1 variable and slider of the other variable.
+            HEATMAP: For observables with 2 independent variables, dependent
+                     variable is the heat, independent on axis.
+        '''
+        # Parse from str
+        if isinstance(plot_type, str):
+            plot_type = PlotTypes[plot_type.upper()]
+
+        if plot_type is PlotTypes.DEFAULT:
+            self._plot()
+        elif plot_type is PlotTypes.SLIDER:
+            self._slider()
+        elif plot_type is PlotTypes.HEATMAP:
+            self._heatmap()
+        else:
+            raise NotImplementedError(f"Unsupported plot type ({plot_type.name}) for "
+                                      f"{type(self).__name__}")
 
 @repr_decorator('value', 'obs_pairs')
 class FigureOfMerit(ABC):
@@ -395,7 +554,7 @@ class FigureOfMerit(ABC):
 
         total_weight = sum(obs_pair.weight for obs_pair in self.obs_pairs)
         value_unreduced = sum(self.calculate_single_FoM(obs_pair)
-                                  for obs_pair in self.obs_pairs)
+                              for obs_pair in self.obs_pairs)
         self.value = value_unreduced / total_weight
 
         if self.value < 0.:
