@@ -1,8 +1,11 @@
 """The Metropolis-Hastings minimizer class"""
+
+from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Optional, Union
 
+import cma
 import numpy as np
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -11,8 +14,8 @@ if TYPE_CHECKING:
     from MDMC.control import Control
     from MDMC.MD import Parameters
 
-class MMC(Minimizer):
 
+class MMC(Minimizer):
     """
     ``Minimizer`` employing the Metropolis-Hastings algorithm
 
@@ -40,25 +43,46 @@ class MMC(Minimizer):
         list of the column titles for the minimizer history
     """
 
-    DISTRIBUTION = {'uniform': np.random.uniform}
+    DISTRIBUTION = {"uniform": np.random.uniform}
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+    def __init__(
+        self,
+        control: "Control",
+        parameters: "Parameters",
+        previous_history: Optional[Union[Path, str]] = None,
+        **settings: dict,
+    ):
         super().__init__(control, parameters, previous_history)
-        self.MC_norm = settings.get('MC_norm', 1.0)
+        self.MC_norm = settings.get("MC_norm", 1.0)
 
         self.parameters = parameters
-        self.max_parameter_change = settings.get('max_parameter_change', 0.01)
-        self.conv_tol = settings.get('conv_tol', 1e-5)
-        self.min_steps = settings.get('min_steps', 2)
-        distribution = 'uniform'
+        self.max_parameter_change = settings.get("max_parameter_change", 0.01)
+        self.conv_tol = settings.get("conv_tol", 1e-5)
+        self.min_steps = settings.get("min_steps", 2)
+        distribution = "uniform"
         self.distribution = self.__class__.DISTRIBUTION[distribution]
 
         self.previous_history = previous_history
         self.state_changed = False
+        self.optimiser = cma.CMAEvolutionStrategy(
+            [par.value for par in self.parameters.values()],
+            self.max_parameter_change,
+            {
+                "bounds": [
+                    [par.constraints[0] for par in self.parameters.values()],
+                    [par.constraints[1] for par in self.parameters.values()],
+                ],
+                "CMA_elitist": True,
+                "tolfun": self.conv_tol*10,
+                "tolx": 1e-3,
+                "tolfunhist": self.conv_tol,
+            },
+        )
+        self.new_parameters = self.optimiser.ask()
+        self.used_parameters, self.used_values = [], []
 
     @property
-    def history_columns(self) -> 'list[str]':
+    def history_columns(self) -> "list[str]":
         """
         Returns column labels of the history
 
@@ -67,7 +91,7 @@ class MMC(Minimizer):
         list[str]
             A ``list`` of ``str`` containing all the column labels in the history
         """
-        return ['FoM', 'Change state'] + list(self.parameters)
+        return ["FoM", "Change state"] + list(self.parameters)
 
     def step(self, FoM: float) -> None:
         """
@@ -82,18 +106,13 @@ class MMC(Minimizer):
         self.FoM = FoM
         parameters = {p: self.parameters[p].value for p in self.parameters}
         history = [self.FoM]
+        self.used_parameters.append([val for val in parameters.values()])
+        self.used_values.append(FoM)
 
-        if self.change_state():
-            history.append('Accepted')
-            self.FoM_old = self.FoM
-            self.parameters_old_values = parameters
-            self.state_changed = True
-
-        else:
-            history.append('Rejected')
-            self.FoM = self.FoM_old
-            self.reset_parameters()
-            self.state_changed = False
+        history.append("Accepted")
+        self.FoM_old = self.FoM
+        self.parameters_old_values = parameters
+        self.state_changed = True
 
         history.extend(list(parameters.values()))
         self._history.append(history)
@@ -109,12 +128,16 @@ class MMC(Minimizer):
         bool
             `True` if the state should be change
         """
+        return True
 
-        # Only determine if state will be changed
-        prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-        change_state = bool(prob > np.random.random())
+    def next_parameter_point(self) -> Sequence[float]:
+        if not self.new_parameters:
+            self.optimiser.tell(self.used_parameters, self.used_values)
+            self.new_parameters = self.optimiser.ask()
+            self.used_parameters = []
+            self.used_values = []
 
-        return change_state
+        return self.new_parameters.pop()
 
     def change_parameters(self) -> None:
         """
@@ -131,22 +154,10 @@ class MMC(Minimizer):
             All ``Parameter`` objects that are being refined
         """
 
-        # Calculate magnitude of parameter changes
-        # Faster to generate all random numbers at once
-        changes = self.distribution(-self.max_parameter_change,
-                                    self.max_parameter_change,
-                                    len(self.parameters))
+        new_values = self.next_parameter_point()
 
         for i, parameter in enumerate(self.parameters.values()):
-            new_value = parameter.value * (1 + changes[i])
-            # If the parameter is constrained, then clip changes that would be out of range
-            if parameter.constraints is not None:
-                if new_value < parameter.constraints[0]:
-                    new_value = parameter.constraints[0]
-                elif new_value > parameter.constraints[1]:
-                    new_value = parameter.constraints[1]
-
-            self.parameters[parameter.name].value = new_value
+            self.parameters[parameter.name].value = new_values[i]
 
     def has_converged(self) -> bool:
         """
@@ -161,31 +172,15 @@ class MMC(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-
-        # select the history of accepted state changes
-        accepted_history = self.history['Change state'] == 'Accepted'
-        accepted_history = self.history[accepted_history]
-        if len(accepted_history) >= self.min_steps:
-            # drop 'Change state' column to select only parameters;
-            # turn to np.array for easy slicing
-            param_history = np.array(
-                accepted_history.drop('Change state', axis=1))
-            converged = np.allclose(
-                param_history[-1], param_history[-2], rtol=self.conv_tol)
-        else:
-            converged = False
-
-        return converged
+        return self.optimiser.stop()
 
     def reset_parameters(self) -> None:
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """
+        pass
 
-        for parameter in self.parameters:
-            self.parameters[parameter].value = self.parameters_old_values[parameter]
-
-    def extract_result(self) -> 'list[str]':
+    def extract_result(self) -> "list[str]":
         """
         Extracts the result data from the history of the minimizer run
 
@@ -212,8 +207,12 @@ class MMC(Minimizer):
         last_parameters_found = tuple(last_param_row)
         lowest_FoM_parameters = tuple(lowest_FoM_row)
 
-        output_data = [last_parameters_found, last_FoM_value,
-                       lowest_FoM_parameters, lowest_FoM_value]
+        output_data = [
+            last_parameters_found,
+            last_FoM_value,
+            lowest_FoM_parameters,
+            lowest_FoM_value,
+        ]
 
         return output_data
 
@@ -234,7 +233,7 @@ class MMC(Minimizer):
             last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
         """
         if self.has_converged():
-            converged_message = 'The refinement has converged.'
+            converged_message = "The refinement has converged."
         else:
             converged_message = "The refinement has not converged."
 
