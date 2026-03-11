@@ -8,8 +8,8 @@ from MDMC.MD.engine_facades.facade import MDEngine
 
 ENGINES = {'lammps_engine': 'LAMMPSEngine',
            'dlpoly_engine': 'DLPOLYEngine',
-           'null_engine': 'NullEngine'}
-
+           'null_engine': 'NullEngine',
+           'openmm_engine': 'OpenMMEngine'}
 
 class MDEngineFacadeFactory:
 
