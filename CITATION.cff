@@ -1,0 +1,130 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: MDMC
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - affiliation: EPFL
+    family-names: Abbott
+    given-names: Joseph W.
+  - affiliation: STFC
+    family-names: Austin
+    given-names: Patrick
+  - affiliation: STFC
+    family-names: Bartkowiak
+    given-names: Maciej
+  - affiliation: STFC
+    family-names: Bathe
+    given-names: Jonathan
+  - affiliation: University of Copenhagen
+    family-names: Bordallo
+    given-names: Heloisa N.
+  - affiliation: STFC
+    family-names: Bylett
+    given-names: Braden
+  - affiliation: STFC
+    family-names: Cheng
+    given-names: Chi Y.
+  - affiliation: European Spallation Source
+    family-names: Cooper
+    given-names: Jos
+  - affiliation: STFC
+    family-names: Elena
+    given-names: Alin M.
+  - affiliation: IT University of Copenhagen
+    family-names: Ermilova
+    given-names: Inna
+  - affiliation: STFC
+    family-names: Farmer
+    given-names: Thomas
+  - affiliation: Technical University of Denmark
+    family-names: Hoffman Petersen
+    given-names: Martin
+  - affiliation: STFC
+    family-names: Lang
+    given-names: Franz
+  - affiliation: STFC
+    family-names: Markvardsen
+    affiliation: STFC
+  - given-names: Robert L.
+    family-names: McGreevy
+    affiliation: STFC
+  - given-names: Jan
+    family-names: Swenson
+    affiliation: Chalmers
+  - given-names: Thomas H.
+    family-names: Rod
+    affiliation: ESS
+  - given-names: Inna
+    family-names: Ermilova
+    affiliation: ESS
+  - given-names: Thomas
+    family-names: Farmer
+    affiliation: STFC
+  - given-names: Franz
+    family-names: Lang
+    affiliation: STFC
+  - given-names: Alex H.
+    family-names: Room
+    affiliation: STFC
+  - given-names: Jos
+    family-names: Cooper
+    affiliation: ESS
+  - given-names: Maksymilian
+    family-names: Sekula
+    affiliation: Chalmers
+  - given-names: Maciej
+    family-names: Bartkowiak
+    affiliation: STFC
+  - given-names: Patrick
+    family-names: Austin
+    affiliation: STFC
+  - given-names: Jacob S.
+    family-names: Wilkins
+    affiliation: STFC
+  - given-names: Piotr
+    family-names: Rozyczko
+  - given-names: Bryce
+    family-names: Shirley
+    affiliation: STFC
+  - given-names: Jonathan
+    family-names: Bathe
+    affiliation: STFC
+  - given-names: Alin M.
+    family-names: Elena
+    affiliation: STFC
+  - given-names: Ashley
+    family-names: Meigh
+    affiliation: STFC
+  - given-names: Braden
+    family-names: Bylett
+    affiliation: STFC
+  - given-names: Martin
+    family-names: Hoffman Petersen
+    affiliation: ESS
+repository-code: 'https://github.com/MDMCproject/MDMCv0.2_pilot'
+url: 'https://mdmcproject.org'
+abstract: >-
+  A package for optimising classical molecular dynamics
+  parameters by refining against experimental data.
+keywords:
+  - neutron scattering
+  - molecular dynamics
+  - potential fitting
+license: GPL-3.0-or-later
+version: '0.2'
+references:
+  - title: Optimising molecular dynamic potentials to dynamical structure factor data
+    authors:
+    - given-names: Anders J.
+      family-names: Markvardsen
+      affiliation: STFC
+    - given-names: Robert L.
+      family-names: McGreevy
+      affiliation: STFC
+    type: article
+    doi:        10.5286/raltr.2017014
