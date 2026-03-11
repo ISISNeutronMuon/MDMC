@@ -57,6 +57,7 @@ class CMAES(Minimizer):
     ):
         super().__init__(control, parameters, previous_history)
 
+        self.current_iteration = 1
         self.parameters = parameters
         self.sigma0 = settings.get("sigma0", 0.2)
         self.conv_tol = settings.get("conv_tol", 1e-4)
@@ -72,8 +73,10 @@ class CMAES(Minimizer):
             if all(par.constraints is not None for par in self.parameters.values())
             else None
         )
+        # This change is necessary just to avoid re-writing most of the Control tests:
+        init_values = [par.value for par in self.parameters.values()] if self.parameters else [0, 1]
         self.optimiser = cma.CMAEvolutionStrategy(
-            [par.value for par in self.parameters.values()],
+            init_values,
             self.sigma0,
             {
                 "bounds": opt_bounds,
@@ -97,7 +100,7 @@ class CMAES(Minimizer):
         list[str]
             A ``list`` of ``str`` containing all the column labels in the history
         """
-        return ["FoM", "Change state"] + list(self.parameters)
+        return ["FoM", "CMA iteration"] + list(self.parameters)
 
     def step(self, FoM: float) -> None:
         """
@@ -115,7 +118,7 @@ class CMAES(Minimizer):
         self.used_parameters.append([val for val in parameters.values()])
         self.used_values.append(FoM)
 
-        history.append("Accepted")
+        history.append(self.current_iteration)
         self.FoM_old = self.FoM
         self.parameters_old_values = parameters
         self.state_changed = True
@@ -145,6 +148,7 @@ class CMAES(Minimizer):
             self.new_parameters = self.optimiser.ask()
             self.used_parameters = []
             self.used_values = []
+            self.current_iteration += 1
 
         return self.new_parameters.pop()
 
@@ -171,7 +175,7 @@ class CMAES(Minimizer):
         """
         if len(self.history) <= self.min_steps:
             return False
-        param_history = np.array(self.history.drop("Change state", axis=1))
+        param_history = np.array(self.history.drop("CMA iteration", axis=1))
         converged = np.allclose(param_history[-1], param_history[-2], rtol=self.conv_tol)
         return self.optimiser.stop() or converged
 
@@ -202,8 +206,8 @@ class CMAES(Minimizer):
         lowest_FoM_row = history.iloc[lowest_FoM_id]
         lowest_FoM_value = lowest_FoM_row.get("FoM")
 
-        last_param_row = last_param_row.drop("FoM").drop("Change state")
-        lowest_FoM_row = lowest_FoM_row.drop("FoM").drop("Change state")
+        last_param_row = last_param_row.drop("FoM").drop("CMA iteration")
+        lowest_FoM_row = lowest_FoM_row.drop("FoM").drop("CMA iteration")
 
         last_parameters_found = tuple(last_param_row)
         lowest_FoM_parameters = tuple(lowest_FoM_row)

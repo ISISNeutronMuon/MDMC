@@ -127,8 +127,8 @@ def test_minimizer_history_columns(mockcontrol, parameters, p_slice, columns, mi
     minim = MinimizerFactory.create(minimizer_name, mockcontrol, parameter_slice)
     expected_columns = copy(columns)  # copy required else the actual parameters get changed by append
     expected_columns.append('FoM')
-    if minimizer_name == "CMAES":  # only MMC has the 'accept'/'reject' column
-        expected_columns.append('Change state')
+    if minimizer_name == "CMAES":  # only CMAES has the 'CMA iteration' column
+        expected_columns.append('CMA iteration')
 
     for expected_column in expected_columns:
         assert np.any([expected_column in history_columns for \
