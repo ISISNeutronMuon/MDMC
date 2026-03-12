@@ -1,22 +1,23 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import openmm
 import openmm as mm
 from openmm import unit
-from openmm.app import Topology, Simulation
+from openmm.app import Simulation, Topology
 
 from MDMC.MD import LennardJones
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
+if TYPE_CHECKING:
+    from MDMC.trajectory_analysis.trajectory import Configuration
 
 LOGGER = logging.getLogger(__name__)
 
 
 class OpenMMEngine(MDEngine):
-
     def __init__(self):
         super().__init__()
         self.universe = None
@@ -26,7 +27,7 @@ class OpenMMEngine(MDEngine):
         self.compact_trajectory = None
 
     @property
-    def saved_config(self) -> 'Configuration':
+    def saved_config(self) -> Configuration:
         raise NotImplementedError
 
     def setup_universe(self, universe: str, **settings: dict) -> None:
@@ -42,11 +43,16 @@ class OpenMMEngine(MDEngine):
         """
         self.universe = universe
         self.openmm_system = mm.System()
-        box_matrix = np.array([
-            [self.universe.dimensions[0], 0, 0],
-            [0, self.universe.dimensions[1], 0],
-            [0, 0, self.universe.dimensions[2]]
-        ]) * unit.angstrom
+        box_matrix = (
+            np.array(
+                [
+                    [self.universe.dimensions[0], 0, 0],
+                    [0, self.universe.dimensions[1], 0],
+                    [0, 0, self.universe.dimensions[2]],
+                ],
+            )
+            * unit.angstrom
+        )
 
         self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
 
@@ -85,13 +91,13 @@ class OpenMMEngine(MDEngine):
         lang_int_1 = mm.LangevinMiddleIntegrator(
             temperature,
             10.0 / unit.picoseconds,
-            self.time_step * unit.femtoseconds
+            self.time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_1)
         lang_int_2 = mm.LangevinMiddleIntegrator(
             temperature,
             1.0 / unit.picoseconds,
-            self.time_step * unit.femtoseconds
+            self.time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_2)
         compound_integrator.addIntegrator(mm.VerletIntegrator(self.time_step * unit.femtoseconds))
@@ -107,8 +113,7 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.setPositions(positions)
         self.openmm_simulation.context.setVelocitiesToTemperature(temperature)
 
-    def minimize(self, n_steps: int, minimize_every: int = 10,
-                 **settings: dict) -> None:
+    def minimize(self, n_steps: int, minimize_every: int = 10, **settings: dict) -> None:
         """Minimizes the simulation energy
 
         Parameters
@@ -120,8 +125,14 @@ class OpenMMEngine(MDEngine):
         """
         self.openmm_simulation.minimizeEnergy(maxIterations=n_steps)
 
-    def run(self, n_steps: int, equilibration: bool, output_log: str = None,
-            work_dir: str = None, **settings: dict) -> None:
+    def run(
+        self,
+        n_steps: int,
+        equilibration: bool,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: dict,
+    ) -> None:
         """Run the simulation.
 
         Parameters
@@ -153,14 +164,22 @@ class OpenMMEngine(MDEngine):
             self.openmm_simulation.currentStep = 0
             self.openmm_simulation.context.setTime(0.0)
             state = self.openmm_simulation.context.getState(
-                getPositions=True, getVelocities=True, getEnergy=True, enforcePeriodicBox=True
+                getPositions=True,
+                getVelocities=True,
+                getEnergy=True,
+                enforcePeriodicBox=True,
             )
             reporter.report(self.openmm_simulation, state)
             self.openmm_simulation.step(n_steps)
             self.openmm_simulation.reporters.clear()
 
-    def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> CompactTrajectory:
+    def convert_trajectory(
+        self,
+        start: int = 0,
+        stop: int = None,
+        step: int = 1,
+        **settings: dict,
+    ) -> CompactTrajectory:
         """Returns the MDMC compact trajectory.
 
         Parameters
@@ -203,7 +222,7 @@ class OpenMMEngine(MDEngine):
             force = self.openmm_simulation.system.getForce(i)
 
             j = 0
-            for type_ID, atom_type_group in  self.universe.atom_types.items():
+            for type_ID, atom_type_group in self.universe.atom_types.items():
                 for _ in atom_type_group:
                     force.setParticleParameters(j, 0.0, sigma, epsilon)
                     j += 1
@@ -225,12 +244,7 @@ class OpenMMEngine(MDEngine):
 
 
 class CompactTrajectoryReporter:
-    def __init__(
-            self,
-            compact_trajectory: CompactTrajectory,
-            report_interval: int,
-            n_steps: int
-    ):
+    def __init__(self, compact_trajectory: CompactTrajectory, report_interval: int, n_steps: int):
         """Reporter which saves MD results into the MDMC compact
         trajectory.
 
@@ -283,5 +297,5 @@ class CompactTrajectoryReporter:
 
         if simulation.currentStep + steps >= self.n_steps:
             return steps, False, False, False, False
-            
+
         return steps, True, True, True, True
