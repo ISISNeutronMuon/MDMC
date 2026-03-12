@@ -56,7 +56,7 @@ class OpenMMEngine(MDEngine):
 
         self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
 
-        for type_ID, atom_type_group in universe.atom_types.items():
+        for _type_ID, atom_type_group in universe.atom_types.items():
             for _ in atom_type_group:
                 self.openmm_system.addParticle(float(atom_type_group[0].mass) * unit.amu)
 
@@ -68,7 +68,7 @@ class OpenMMEngine(MDEngine):
             epsilon = float(disp.function.epsilon.value) * unit.kilojoules_per_mole
             force = mm.NonbondedForce()
             force.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
-            for type_ID, atom_type_group in universe.atom_types.items():
+            for _type_ID, atom_type_group in universe.atom_types.items():
                 for _ in atom_type_group:
                     force.addParticle(0.0, sigma, epsilon)
             force.setCutoffDistance(disp.cutoff * unit.angstrom)
@@ -222,7 +222,7 @@ class OpenMMEngine(MDEngine):
             force = self.openmm_simulation.system.getForce(i)
 
             j = 0
-            for type_ID, atom_type_group in self.universe.atom_types.items():
+            for _type_ID, atom_type_group in self.universe.atom_types.items():
                 for _ in atom_type_group:
                     force.setParticleParameters(j, 0.0, sigma, epsilon)
                     j += 1
