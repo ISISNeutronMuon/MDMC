@@ -2,6 +2,7 @@ import logging
 from typing import Any
 
 import numpy as np
+import openmm
 import openmm as mm
 from openmm import unit
 from openmm.app import Topology, Simulation
@@ -29,6 +30,16 @@ class OpenMMEngine(MDEngine):
         raise NotImplementedError
 
     def setup_universe(self, universe: str, **settings: dict) -> None:
+        """Set up the openmm system.
+
+        Parameters
+        ----------
+        universe : Universe
+            A molecular dynamics ``Universe`` which will be setup in the
+            ``OpenMMEngine``.
+        **settings
+            Not used.
+        """
         self.universe = universe
         self.openmm_system = mm.System()
         box_matrix = np.array([
@@ -61,6 +72,13 @@ class OpenMMEngine(MDEngine):
             self.openmm_system.addForce(force)
 
     def setup_simulation(self, **settings: dict) -> None:
+        """Set up the openmm simulation.
+
+        Parameters
+        ----------
+        settings**
+            Some settings which are used to set up the system.
+        """
         temperature = settings.get("temperature")
 
         compound_integrator = mm.CompoundIntegrator()
@@ -91,11 +109,37 @@ class OpenMMEngine(MDEngine):
 
     def minimize(self, n_steps: int, minimize_every: int = 10,
                  **settings: dict) -> None:
+        """Minimizes the simulation energy
+
+        Parameters
+        ----------
+        n_steps : int
+            Maximum number of MD steps during the energy minimization.
+        minimize_every : int, optional, default 10
+            Not used.
+        """
         self.openmm_simulation.minimizeEnergy(maxIterations=n_steps)
 
     def run(self, n_steps: int, equilibration: bool, output_log: str = None,
             work_dir: str = None, **settings: dict) -> None:
+        """Run the simulation.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of steps for the time integrator.
+        equilibration : bool
+            If `True`, run is equilibration which does not store the
+            ``trajectory`` otherwise run is production.
+        output_log: str, optional, default None
+            Not used.
+        work_dir: str, optional, default None
+            Not used.
+        **settings
+            Not used.
+        """
         if equilibration:
+            self.openmm_simulation.minimizeEnergy()
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
             self.openmm_simulation.step(n_steps // 2)
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
@@ -103,7 +147,6 @@ class OpenMMEngine(MDEngine):
         else:
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=len(self.universe.atoms))
-            self.compact_trajectory.validateTypes([atom.atom_type for atom in self.universe.atoms])
             reporter = CompactTrajectoryReporter(self.compact_trajectory, self.traj_step, n_steps)
             self.openmm_simulation.reporters.append(reporter)
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
@@ -118,16 +161,38 @@ class OpenMMEngine(MDEngine):
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
                            step: int = 1, **settings: dict) -> CompactTrajectory:
+        """Returns the MDMC compact trajectory.
+
+        Parameters
+        ----------
+        start : int
+            Not used.
+        stop : int
+            Not used.
+        step : int
+            Not used.
+        **settings
+            Not used.
+
+        Returns
+        -------
+        CompactTrajectory
+            The ``CompactTrajectory`` from the most recent production simulation.
+        """
         traj = self.compact_trajectory
-        atom_symbols = [atom.element.symbol for atom in self.universe.atoms]
+        traj.validateTypes([atom.atom_type for atom in self.universe.atoms])
+        atom_elements = [atom.element for atom in self.universe.atoms]
         atom_masses = [atom.mass for atom in self.universe.atoms]
-        traj.labelAtoms(atom_symbols, atom_masses)
+        traj.labelAtoms(atom_elements, atom_masses)
         traj.setCharge([atom.charge for atom in self.universe.atoms])
         traj.postProcess()
         self.compact_trajectory = None
         return traj
 
     def update_parameters(self) -> None:
+        """Updates the ``OpenMMEngine`` force field parameters from the
+        ``Universe``.
+        """
         i = 0
         for disp in self.universe.nonbonded_interactions:
             if not isinstance(disp.function, LennardJones):
@@ -160,12 +225,38 @@ class OpenMMEngine(MDEngine):
 
 
 class CompactTrajectoryReporter:
-    def __init__(self, compact_trajectory, report_interval, n_steps):
+    def __init__(
+            self,
+            compact_trajectory: CompactTrajectory,
+            report_interval: int,
+            n_steps: int
+    ):
+        """Reporter which saves MD results into the MDMC compact
+        trajectory.
+
+        Parameters
+        ----------
+        compact_trajectory : CompactTrajectory
+            The MDMC compact trajectory object.
+        report_interval : int
+            The interval which the MD results will be saved.
+        n_steps : int
+            The total number of step of the simulation.
+        """
         self.compact_trajectory = compact_trajectory
         self.report_interval = report_interval
         self.n_steps = n_steps
 
-    def report(self, simulation, state):
+    def report(self, simulation: Simulation, state: openmm.State):
+        """Save the simulation data into the MDMC compact trajectory.
+
+        Parameters
+        ----------
+        simulation : Simulation
+            The openmm simulation object.
+        state : openmm.State
+            The openmm state object.
+        """
         step = simulation.currentStep
 
         if step >= self.n_steps:
@@ -187,7 +278,7 @@ class CompactTrajectoryReporter:
         )
         self.compact_trajectory.setDimensions(np.array([a, b, c]), step_num=step)
 
-    def describeNextReport(self, simulation):
+    def describeNextReport(self, simulation: Simulation):
         steps = self.report_interval - simulation.currentStep % self.report_interval
 
         if simulation.currentStep + steps >= self.n_steps:

@@ -38,7 +38,6 @@ simulation = Simulation(universe,
                         traj_step=15)
 
 # Energy Minimization and equilibration
-simulation.minimize(n_steps=2000)
 simulation.run(n_steps=20000, equilibration=True)
 
 # Setup refinement of the force field parameters
