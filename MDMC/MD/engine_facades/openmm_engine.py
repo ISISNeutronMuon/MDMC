@@ -27,7 +27,7 @@ class OpenMMEngine(MDEngine):
         self.compact_trajectory = None
 
     @property
-    def saved_config(self) -> Configuration:
+    def saved_config(self) -> "Configuration":
         raise NotImplementedError
 
     def setup_universe(self, universe: str, **settings: dict) -> None:
