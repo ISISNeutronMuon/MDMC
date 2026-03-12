@@ -201,6 +201,8 @@ def write_H5MD(
     if not settings.get("creator_name") or not settings.get("creator_email"):
         raise ValueError("No creator_name or creator_email provided.")
 
+    file_path_name.parent.mkdir(parents=True, exist_ok=True)
+
     with h5py.File(file_path_name, "w") as file:
         no_data_groups = [
             "particles",

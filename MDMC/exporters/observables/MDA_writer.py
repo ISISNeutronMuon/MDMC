@@ -64,6 +64,7 @@ def write_MDA(observable: Observable,
     """
     obs_name = observable.name
     target_path = Path(file_loc, f"{filename}{timestamp}_{obs_name}").with_suffix(suffix)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(target_path, 'w') as target:
         result_group = target.create_group("mdmc_result")
         axes_group = result_group.create_group("axes")

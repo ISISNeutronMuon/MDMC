@@ -39,7 +39,7 @@ simulation = Simulation(universe,
 
 # Energy Minimization and equilibration
 simulation.minimize(n_steps=2000)
-simulation.run(n_steps=2000, equilibration=True)
+simulation.run(n_steps=20000, equilibration=True)
 
 # Setup refinement of the force field parameters
 
@@ -64,9 +64,10 @@ fit_parameters['epsilon'].constraints = [0.5, 1.5]
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
+                  minimizer_type="GPO",
                   reset_config=True,
-                  equilibration_steps=2000,
-                  MD_steps=1600,
+                  equilibration_steps=20000,
+                  MD_steps=16000,
                   FoM_options={'error': 'none'})
 
 # Run the refinement, i.e. refine the FF parameters against the data.
