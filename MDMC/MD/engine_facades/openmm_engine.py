@@ -151,9 +151,11 @@ class OpenMMEngine(MDEngine):
         if equilibration:
             self.openmm_simulation.minimizeEnergy()
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
-            self.openmm_simulation.step(n_steps // 2)
+            self.openmm_simulation.step(n_steps // 3)
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
-            self.openmm_simulation.step(n_steps // 2)
+            self.openmm_simulation.step(n_steps // 3)
+            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
+            self.openmm_simulation.step(n_steps // 3)
         else:
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=len(self.universe.atoms))

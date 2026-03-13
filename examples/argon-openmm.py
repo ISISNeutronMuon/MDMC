@@ -39,7 +39,7 @@ simulation = Simulation(universe,
                         openmm_platform="OpenCL")
 
 # Energy Minimization and equilibration
-simulation.run(n_steps=20000, equilibration=True)
+simulation.run(n_steps=30000, equilibration=True)
 
 # Setup refinement of the force field parameters
 
@@ -66,7 +66,7 @@ control = Control(simulation=simulation,
                   fit_parameters=fit_parameters,
                   minimizer_type="GPO",
                   reset_config=True,
-                  equilibration_steps=20000,
+                  equilibration_steps=30000,
                   MD_steps=16000,
                   FoM_options={'error': 'none'})
 
