@@ -35,7 +35,8 @@ simulation = Simulation(universe,
                         engine="openmm",
                         time_step=10.18893,
                         temperature=120.,
-                        traj_step=15)
+                        traj_step=15,
+                        openmm_platform="OpenCL")
 
 # Energy Minimization and equilibration
 simulation.run(n_steps=20000, equilibration=True)

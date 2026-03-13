@@ -23,7 +23,6 @@ class OpenMMEngine(MDEngine):
         self.universe = None
         self.openmm_system = None
         self.openmm_simulation = None
-        self.openmm_platform = mm.Platform.getPlatformByName("CPU")
         self.compact_trajectory = None
 
     @property
@@ -83,7 +82,8 @@ class OpenMMEngine(MDEngine):
         Parameters
         ----------
         settings**
-            Some settings which are used to set up the system.
+            Some settings which are used to set up the openmm
+            simulation object.
         """
         temperature = settings.get("temperature")
 
@@ -106,7 +106,7 @@ class OpenMMEngine(MDEngine):
             Topology(),
             self.openmm_system,
             compound_integrator,
-            self.openmm_platform,
+            mm.Platform.getPlatformByName(settings.get("openmm_platform")),
         )
 
         positions = np.array([atom.position for atom in self.universe.atoms]) * unit.angstrom
