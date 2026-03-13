@@ -119,12 +119,12 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: dict) -> None:
-        """Minimizes the simulation energy
+        """Minimizes the simulation energy.
 
         Parameters
         ----------
         n_steps : int
-            Maximum number of MD steps during the energy minimization.
+            Maximum number of iterations during the energy minimization.
         minimize_every : int, optional, default 10
             Not used.
         """
@@ -157,6 +157,7 @@ class OpenMMEngine(MDEngine):
         if equilibration:
             try:
                 self.openmm_simulation.minimizeEnergy()
+                self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
                 self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
                 self.openmm_simulation.step(n_steps // 3)
                 self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
