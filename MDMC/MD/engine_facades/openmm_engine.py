@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import openmm as mm
@@ -7,11 +7,8 @@ from openmm import unit
 from openmm.app import Simulation, Topology
 
 from MDMC.MD import LennardJones
-from MDMC.MD.engine_facades.facade import MDEngine
+from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
-
-if TYPE_CHECKING:
-    from MDMC.trajectory_analysis.trajectory import Configuration
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,10 +20,19 @@ class OpenMMEngine(MDEngine):
         self.openmm_system = None
         self.openmm_simulation = None
         self.compact_trajectory = None
+        self.temperature = None
+        self._saved_config = None
 
     @property
-    def saved_config(self) -> "Configuration":
-        raise NotImplementedError
+    def saved_config(self) -> np.ndarray:
+        """Get the saved configuration of the atomic positions.
+
+        Returns
+        -------
+        np.ndarray
+            The atomic positions.
+        """
+        return self._saved_config
 
     def setup_universe(self, universe: str, **settings: dict) -> None:
         """Set up the openmm system.
@@ -84,17 +90,17 @@ class OpenMMEngine(MDEngine):
             Some settings which are used to set up the openmm
             simulation object.
         """
-        temperature = settings.get("temperature")
+        self.temperature = settings.get("temperature")
 
         compound_integrator = mm.CompoundIntegrator()
         lang_int_1 = mm.LangevinMiddleIntegrator(
-            temperature,
+            self.temperature,
             10.0 / unit.picoseconds,
             self.time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_1)
         lang_int_2 = mm.LangevinMiddleIntegrator(
-            temperature,
+            self.temperature,
             1.0 / unit.picoseconds,
             self.time_step * unit.femtoseconds,
         )
@@ -110,7 +116,7 @@ class OpenMMEngine(MDEngine):
 
         positions = np.array([atom.position for atom in self.universe.atoms]) * unit.angstrom
         self.openmm_simulation.context.setPositions(positions)
-        self.openmm_simulation.context.setVelocitiesToTemperature(temperature)
+        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: dict) -> None:
         """Minimizes the simulation energy
@@ -149,13 +155,17 @@ class OpenMMEngine(MDEngine):
             Not used.
         """
         if equilibration:
-            self.openmm_simulation.minimizeEnergy()
-            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
-            self.openmm_simulation.step(n_steps // 3)
-            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
-            self.openmm_simulation.step(n_steps // 3)
-            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
-            self.openmm_simulation.step(n_steps // 3)
+            try:
+                self.openmm_simulation.minimizeEnergy()
+                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
+                self.openmm_simulation.step(n_steps // 3)
+                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
+                self.openmm_simulation.step(n_steps // 3)
+                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
+                self.openmm_simulation.step(n_steps // 3)
+            except mm.OpenMMException as e:
+                LOGGER.warning(f"OpenMM exception during equilibration: {e}")
+                raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
         else:
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=len(self.universe.atoms))
@@ -171,8 +181,13 @@ class OpenMMEngine(MDEngine):
                 enforcePeriodicBox=True,
             )
             reporter.report(self.openmm_simulation, state)
-            self.openmm_simulation.step(n_steps)
-            self.openmm_simulation.reporters.clear()
+            try:
+                self.openmm_simulation.step(n_steps)
+            except mm.OpenMMException as e:
+                LOGGER.warning(f"OpenMM exception during production run: {e}")
+                raise MDEngineError(f"OpenMM exception during production run: {e}") from e
+            finally:
+                self.openmm_simulation.reporters.clear()
 
     def convert_trajectory(
         self,
@@ -199,15 +214,13 @@ class OpenMMEngine(MDEngine):
         CompactTrajectory
             The ``CompactTrajectory`` from the most recent production simulation.
         """
-        traj = self.compact_trajectory
-        traj.validateTypes([atom.atom_type for atom in self.universe.atoms])
+        self.compact_trajectory.validateTypes([atom.atom_type for atom in self.universe.atoms])
         atom_elements = [atom.element for atom in self.universe.atoms]
         atom_masses = [atom.mass for atom in self.universe.atoms]
-        traj.labelAtoms(atom_elements, atom_masses)
-        traj.setCharge([atom.charge for atom in self.universe.atoms])
-        traj.postProcess()
-        self.compact_trajectory = None
-        return traj
+        self.compact_trajectory.labelAtoms(atom_elements, atom_masses)
+        self.compact_trajectory.setCharge([atom.charge for atom in self.universe.atoms])
+        self.compact_trajectory.postProcess()
+        return self.compact_trajectory
 
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters from the
@@ -232,13 +245,17 @@ class OpenMMEngine(MDEngine):
             i += 1
 
     def save_config(self) -> None:
-        pass
+        """Sets ``self._saved_config`` to the current set of positions."""
+        state = self.openmm_simulation.context.getState(getPositions=True)
+        self._saved_config = np.array(state.getPositions().value_in_unit(unit.angstrom))
 
     def clear(self) -> None:
-        raise NotImplementedError
+        pass
 
     def reset_config(self) -> None:
-        raise NotImplementedError
+        """Resets the atomic positions of the simulation to that in ``saved_config``."""
+        self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
+        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
 
     def eval(self, variable: str) -> Any:
         raise NotImplementedError
