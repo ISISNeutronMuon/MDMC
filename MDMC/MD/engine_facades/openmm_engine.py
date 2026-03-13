@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import openmm
 import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
@@ -261,14 +260,14 @@ class CompactTrajectoryReporter:
         self.report_interval = report_interval
         self.n_steps = n_steps
 
-    def report(self, simulation: Simulation, state: openmm.State):
+    def report(self, simulation: Simulation, state: mm.State):
         """Save the simulation data into the MDMC compact trajectory.
 
         Parameters
         ----------
         simulation : Simulation
             The openmm simulation object.
-        state : openmm.State
+        state : mm.State
             The openmm state object.
         """
         step = simulation.currentStep
