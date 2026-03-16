@@ -1,8 +1,11 @@
-"""The Metropolis-Hastings minimizer class"""
+"""Covariance Matrix Adaptation Evolution Strategy minimiser."""
+
+from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Optional, Union
 
+import cma
 import numpy as np
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -11,28 +14,31 @@ if TYPE_CHECKING:
     from MDMC.control import Control
     from MDMC.MD import Parameters
 
-class MMC(Minimizer):
 
+class CMAES(Minimizer):
     """
-    ``Minimizer`` employing the Metropolis-Hastings algorithm
+    Minimiser using CMA-ES, but using it sequentially.
+
+    Normally, CMA-ES produces several sets of input parameters per batch/generation.
+    This wrapper executes them one at a time, and asks the CMA-ES optimiser
+    for a new batch of inputs every time the existing batch has been used up.
 
     Parameters
     ----------
     control: Control
         The ``Control`` object which uses this Minimizer.
-    MC_norm : float
-        Normalization parameter for MC which determines the accept/reject ratio, default is 1.0
-    max_parameter_change: float, optional
-        Maximum factor by which a Parameter can change each step of the
-        refinement. Defaults to `0.01`
+    sigma0: float, optional
+        Initial standard deviation of the generated parameters.
+    CMA_popsize: int, optional
+        Population size, overrides the standard CMA-ES settings.
+    CMA_elitist: bool, optional
+        Whether to keep the best solution in the next generation of solutions.
     conv_tol : float, optional
         The relative tolerance of the convergence check. Defaults to `1e-5`
     min_steps : int, optional
         The number of refinement steps with an accepted state change after which
         convergence is checked. If the number of accepted state changes is less than this,
         then the refinement is deemed as not converged. Defaults to `2`
-    distribution : str, optional
-        The distribution from which ``Parameter`` changes are selected. Defaults to 'uniform'
 
     Attributes
     ----------
@@ -40,25 +46,52 @@ class MMC(Minimizer):
         list of the column titles for the minimizer history
     """
 
-    DISTRIBUTION = {'uniform': np.random.uniform}
+    DISTRIBUTION = {"uniform": np.random.uniform}
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+    def __init__(
+        self,
+        control: "Control",
+        parameters: "Parameters",
+        previous_history: Optional[Union[Path, str]] = None,
+        **settings: dict,
+    ):
         super().__init__(control, parameters, previous_history)
-        self.MC_norm = settings.get('MC_norm', 1.0)
 
+        self.current_iteration = 1
         self.parameters = parameters
-        self.max_parameter_change = settings.get('max_parameter_change', 0.01)
-        self.conv_tol = settings.get('conv_tol', 1e-5)
-        self.min_steps = settings.get('min_steps', 2)
-        distribution = 'uniform'
-        self.distribution = self.__class__.DISTRIBUTION[distribution]
+        self.sigma0 = settings.get("sigma0", 0.2)
+        self.conv_tol = settings.get("conv_tol", 1e-4)
+        self.min_steps = settings.get("min_steps", 2)
 
         self.previous_history = previous_history
         self.state_changed = False
+        opt_bounds = (
+            [
+                [par.constraints[0] for par in self.parameters.values()],
+                [par.constraints[1] for par in self.parameters.values()],
+            ]
+            if all(par.constraints is not None for par in self.parameters.values())
+            else None
+        )
+        # This change is necessary just to avoid re-writing most of the Control tests:
+        init_values = [par.value for par in self.parameters.values()] if self.parameters else [0, 1]
+        self.optimiser = cma.CMAEvolutionStrategy(
+            init_values,
+            self.sigma0,
+            {
+                "bounds": opt_bounds,
+                "CMA_elitist": settings.get("CMA_elitist", False),
+                "popsize": settings.get("CMA_popsize"),
+                "tolfun": self.conv_tol * 100,
+                "tolx": settings.get("CMA_tolx", 1e-3),
+                "tolfunhist": self.conv_tol * 10,
+            },
+        )
+        self.new_parameters = self.optimiser.ask()
+        self.used_parameters, self.used_values = [], []
 
     @property
-    def history_columns(self) -> 'list[str]':
+    def history_columns(self) -> "list[str]":
         """
         Returns column labels of the history
 
@@ -67,7 +100,7 @@ class MMC(Minimizer):
         list[str]
             A ``list`` of ``str`` containing all the column labels in the history
         """
-        return ['FoM', 'Change state'] + list(self.parameters)
+        return ["FoM", "CMA iteration"] + list(self.parameters)
 
     def step(self, FoM: float) -> None:
         """
@@ -82,18 +115,13 @@ class MMC(Minimizer):
         self.FoM = FoM
         parameters = {p: self.parameters[p].value for p in self.parameters}
         history = [self.FoM]
+        self.used_parameters.append([val for val in parameters.values()])
+        self.used_values.append(FoM)
 
-        if self.change_state():
-            history.append('Accepted')
-            self.FoM_old = self.FoM
-            self.parameters_old_values = parameters
-            self.state_changed = True
-
-        else:
-            history.append('Rejected')
-            self.FoM = self.FoM_old
-            self.reset_parameters()
-            self.state_changed = False
+        history.append(self.current_iteration)
+        self.FoM_old = self.FoM
+        self.parameters_old_values = parameters
+        self.state_changed = True
 
         history.extend(list(parameters.values()))
         self._history.append(history)
@@ -109,44 +137,28 @@ class MMC(Minimizer):
         bool
             `True` if the state should be change
         """
+        return True
 
-        # Only determine if state will be changed
-        prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-        change_state = bool(prob > np.random.random())
+    def next_parameter_point(self) -> Sequence[float]:
+        """Return the next set of simulation parameters.
 
-        return change_state
+        If the current batch has been exhausted, it generates a new batch using CMA-ES."""
+        if not self.new_parameters:
+            self.optimiser.tell(self.used_parameters, self.used_values)
+            self.new_parameters = self.optimiser.ask()
+            self.used_parameters = []
+            self.used_values = []
+            self.current_iteration += 1
+
+        return self.new_parameters.pop()
 
     def change_parameters(self) -> None:
-        """
-        Selects a new value for each parameter from a distribution centered
-        around the current value.
+        """Assign new values to the simulation parameters."""
 
-        Note that for ``Parameter``s with ``constraints`` set, any proposed new value that would
-        lie outside the range of the constraint is clipped to the lower or upper limit as
-        appropriate.
-
-        Parameters
-        ----------
-        parameters : Parameters
-            All ``Parameter`` objects that are being refined
-        """
-
-        # Calculate magnitude of parameter changes
-        # Faster to generate all random numbers at once
-        changes = self.distribution(-self.max_parameter_change,
-                                    self.max_parameter_change,
-                                    len(self.parameters))
+        new_values = self.next_parameter_point()
 
         for i, parameter in enumerate(self.parameters.values()):
-            new_value = parameter.value * (1 + changes[i])
-            # If the parameter is constrained, then clip changes that would be out of range
-            if parameter.constraints is not None:
-                if new_value < parameter.constraints[0]:
-                    new_value = parameter.constraints[0]
-                elif new_value > parameter.constraints[1]:
-                    new_value = parameter.constraints[1]
-
-            self.parameters[parameter.name].value = new_value
+            self.parameters[parameter.name].value = new_values[i]
 
     def has_converged(self) -> bool:
         """
@@ -161,31 +173,19 @@ class MMC(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-
-        # select the history of accepted state changes
-        accepted_history = self.history['Change state'] == 'Accepted'
-        accepted_history = self.history[accepted_history]
-        if len(accepted_history) >= self.min_steps:
-            # drop 'Change state' column to select only parameters;
-            # turn to np.array for easy slicing
-            param_history = np.array(
-                accepted_history.drop('Change state', axis=1))
-            converged = np.allclose(
-                param_history[-1], param_history[-2], rtol=self.conv_tol)
-        else:
-            converged = False
-
-        return converged
+        if len(self.history) <= self.min_steps:
+            return False
+        param_history = np.array(self.history.drop("CMA iteration", axis=1))
+        converged = np.allclose(param_history[-1], param_history[-2], rtol=self.conv_tol)
+        return self.optimiser.stop() or converged
 
     def reset_parameters(self) -> None:
         """
-        Resets the ``Parameter`` values to the values from the previous MMC step
+        Not used.
         """
+        pass
 
-        for parameter in self.parameters:
-            self.parameters[parameter].value = self.parameters_old_values[parameter]
-
-    def extract_result(self) -> 'list[str]':
+    def extract_result(self) -> "list[str]":
         """
         Extracts the result data from the history of the minimizer run
 
@@ -206,20 +206,24 @@ class MMC(Minimizer):
         lowest_FoM_row = history.iloc[lowest_FoM_id]
         lowest_FoM_value = lowest_FoM_row.get("FoM")
 
-        last_param_row = last_param_row.drop("FoM").drop("Change state")
-        lowest_FoM_row = lowest_FoM_row.drop("FoM").drop("Change state")
+        last_param_row = last_param_row.drop("FoM").drop("CMA iteration")
+        lowest_FoM_row = lowest_FoM_row.drop("FoM").drop("CMA iteration")
 
         last_parameters_found = tuple(last_param_row)
         lowest_FoM_parameters = tuple(lowest_FoM_row)
 
-        output_data = [last_parameters_found, last_FoM_value,
-                       lowest_FoM_parameters, lowest_FoM_value]
+        output_data = [
+            last_parameters_found,
+            last_FoM_value,
+            lowest_FoM_parameters,
+            lowest_FoM_value,
+        ]
 
         return output_data
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
-        Formats a string output for the results of an MMC minimizer run
+        Formats a string output for the results of an CMAES minimizer run
 
         Parameters
         ----------
@@ -234,7 +238,7 @@ class MMC(Minimizer):
             last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
         """
         if self.has_converged():
-            converged_message = 'The refinement has converged.'
+            converged_message = "The refinement has converged."
         else:
             converged_message = "The refinement has not converged."
 

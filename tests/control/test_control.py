@@ -224,7 +224,7 @@ def exp_datasets() -> callable:
                          [(False,
                            ["- Attributes", "  Minimizer", "  FoM type",
                             "  Number of observables", "  Number of parameters"],
-                           ["-", "MMC", "RSquared_noneerror", "1", "0"]),
+                           ["-", "CMAES", "RSquared_noneerror", "1", "0"]),
 
                           (True,
                           ["- Attributes", "  Minimizer", "  FoM type", "  Number of observables",
@@ -233,7 +233,7 @@ def exp_datasets() -> callable:
                              "  results_filename", "- Parameters", "- Experimental Datasets",
                              "  type", "  reader", "  file_name", "  weight", "  resolution",
                              "- FoM Options", "  error"],
-                            ["-", "MMC", "RSquared_noneerror", "1", "0", "38", "0", "False", "0", "-",
+                            ["-", "CMAES", "RSquared_noneerror", "1", "0", "38", "0", "False", "0", "-",
                              "results_2022-09-20--13-29-45.csv", "-", "-", "SQw", "xml_SQw",
                              "test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
                              "1.0", "{\'gaussian\': 84}", "-", "none"])
@@ -283,14 +283,14 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
                          [['exp',
                            ('Control created with:\n'
                             '- Attributes                              -\n'
-                            '  Minimizer                             MMC\n'
+                            '  Minimizer                           CMAES\n'
                             '  FoM type               ChiSquaredExpError\n'
                             '  Number of observables                   1\n'
                             '  Number of parameters                    0\n')],
                           ['none',
                            ('Control created with:\n'
                             '- Attributes                              -\n'
-                            '  Minimizer                             MMC\n'
+                            '  Minimizer                           CMAES\n'
                             '  FoM type               RSquared_noneerror\n'
                             '  Number of observables                   1\n'
                             '  Number of parameters                    0\n')]])
@@ -389,7 +389,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     stdout = capsys.readouterr().out
     stdout_message = ('Control created with:\n'
                       '- Attributes                              -\n'
-                      '  Minimizer                             MMC\n'
+                      '  Minimizer                           CMAES\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
                       '  Number of parameters                    0\n'
@@ -489,7 +489,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                       '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
                       '- Attributes                              -\n'
-                      '  Minimizer                             MMC\n'
+                      '  Minimizer                           CMAES\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
                       '  Number of parameters                    0\n'
@@ -539,12 +539,12 @@ def test_control_max_parameter_change(monkeypatch):
 
     monkeypatch.setattr(Control, "calculate_max_FoM", mock_calculate_max_FoM)
 
-    ctrl_default = Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
-    assert ctrl_default.minimizer.max_parameter_change == 0.01
+    ctrl_default = Control(None, [], [], minimizer_type="CMAES",verbose=-1, reset_config=False)
+    assert ctrl_default.minimizer.sigma0 == 0.2
 
     ctrl = Control(None, [], [], reset_config=False, verbose=-1,
-                           minimizer_type="MMC", max_parameter_change=0.02)
-    assert ctrl.minimizer.max_parameter_change == 0.02
+                           minimizer_type="CMAES", sigma0=0.02)
+    assert ctrl.minimizer.sigma0 == 0.02
 
 
 def mock_nonuniform_SQw() -> SQw:
@@ -794,12 +794,13 @@ def test_control_fit_parameters(simulation, monkeypatch):
     fit_parameters = Parameters([Parameter(0., 'zero'),
                                  Parameter(1., 'fixed', fixed=True),
                                  tied_param,
-                                 Parameter(3., 'constraints', constraints=(2.9, 3.1))])
+                                 Parameter(3., 'constraints', constraints=(2.9, 3.1)),
+                                 Parameter(4., 'constraints', constraints=(3.9, 4.1))])
 
     ctrl = Control(simulation(), [], fit_parameters=fit_parameters,
                            verbose=-1, reset_config=False)
 
-    assert len(ctrl.fit_parameters) == 1
+    assert len(ctrl.fit_parameters) == 2
     assert 'constraints' in list(ctrl.fit_parameters.keys())[0]
 
 def test_control_resolution_function(simulation, exp_datasets):

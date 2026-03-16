@@ -282,7 +282,7 @@ class Parameter:
             raise ValueError(f"Value must be within constraints, \
                             value is: {value}, constraints are: {constraints}")
 
-    # comparison operator so parameters are always in the same order on MMC refinement headings
+    # comparison operator so parameters are always in the same order on refinement headings
     def __lt__(self, other):
         return self.name < other.name
 

@@ -78,7 +78,7 @@ control = Control(simulation=simulation,
                   exp_datasets=exp_dataset_ISIS,
                   fit_parameters=fit_parameters,
                   MC_norm=1,
-                  minimizer_type="MMC",
+                  minimizer_type="CMAES",
                   MD_steps=804000,
                   energy_resolution=13.6)
 

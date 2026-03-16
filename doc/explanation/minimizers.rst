@@ -34,8 +34,7 @@ proceeds as follows:
 Through this, the minimizer is guaranteed to end up at the bottom of *some* valley.
 However, if it ends up at the bottom of a valley, it has no way of knowing whether
 it's the deepest in all the land, and it is stuck down there. More complicated algorithms
-have ways of dealing with this (in fact, the Metropolis-Hastings algorithm -
-explained below - solves this problem!).
+have ways of dealing with this.
 
 Nonetheless, this is an example of minimization; our inputs are the x and y coordinates of the minimizer's
 current position, and the output is their altitude at that location.
@@ -71,27 +70,14 @@ have some mathematical formula for it.
 
 We will now detail the minimizers available in MDMC.
 
-Metropolis-Hastings algorithm
------------------------------
-The `Metropolis-Hastings algorithm <https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm>`_
-(in MDMC, this is called `MMC`, for 'Metropolis Monte Carlo')  is a 'random walk' Monte Carlo algorithm;
-essentially, a more complicated method of the gradient descent example, but using randomness
-and 'backtracking' to avoid needing to know slope data, as well as avoiding getting
-stuck in small, 'local' valleys.
+Covariance Matrix Adaptation Evolution Strategy
+-----------------------------------------------
 
-MMC starts at an initial point in parameter space and proposes a random direction to take a step in;
-this proposed point to step to is called the “candidate”.  If the candidate has a better figure of merit
-than the current position then it is accepted and moved to. However if the candidate
-has a worse figure of merit it may also be accepted. The probability of acceptance is determined by an
-exponential factor of how much worse it is than the current value. This means that unlike gradient descent,
-this algorithm is willing to 'walk uphill', particularly up shallow hills.
-
-MMC is a robust algorithm - it is guaranteed to eventually find the minimum point in the entire space.
-However, it is quite slow as it can reject steps; when a step is rejected, the time used to simulate
-the function and calculate the figure of merit is essentially wasted. Furthermore,
-if it starts very far away from the minimum, it can only take finite-sized steps.
-This means it might take a long time to randomly wander over to the vague region
-of the minimum if the initial 'guess' of the parameters is not very good.
+The `CMA-ES package <https://cma-es.github.io/apidocs-pycma/index.html>`_ provides an optimisation
+algorithm which generates the parameters within a given standard deviation around the initial values,
+and determines their covariance matrix based on the calculated values at each point. This approach
+requires a larger number of function evaluations before convergence is reached. At the same time,
+it can handle noisy data and functions with local minima.
 
 Gaussian Process Regression
 ---------------------------
