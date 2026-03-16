@@ -2,7 +2,7 @@
 import itertools
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +42,7 @@ class GPR(Minimizer):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, \
-        previous_history: Optional[Union[Path, str]] = None,**settings: dict):
+        previous_history: Optional[Union[Path, str]] = None,**settings: Any):
 
         super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests

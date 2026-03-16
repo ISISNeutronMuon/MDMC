@@ -2,6 +2,7 @@
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
 import logging
+from typing import Any
 
 import numpy as np
 from netCDF4 import Dataset
@@ -34,7 +35,7 @@ class netCDFSQw(SQwReader):
 
         self.file.close()
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parse into SQw format
 

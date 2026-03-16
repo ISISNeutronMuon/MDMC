@@ -16,6 +16,7 @@ limits of performance that we can achieve within Python.
 # that each coordinate will be at least a 32-bit float, or
 # a 64-bit float if we use the default value normally picked
 # by numpy.
+from typing import Any
 
 import numpy as np
 
@@ -91,7 +92,7 @@ class CompactTrajectory:
                  n_atoms: int = 1,
                  useVelocity: bool = False,
                  bits_per_number: int = 8,
-                 **settings: dict):
+                 **settings: Any):
         # The development plan is to use the units defined here to calculate conversion factors,
         # and use these factors when writing the numbers into the arrays.
         # For now, we define the units here:

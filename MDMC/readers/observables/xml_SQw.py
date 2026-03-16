@@ -1,7 +1,7 @@
 """XML reader for SQw data"""
 import logging
 import xml.etree.ElementTree as ET
-from typing import TextIO
+from typing import Any, TextIO
 
 import numpy as np
 
@@ -17,7 +17,7 @@ class XML_SQw(SQwReader):
     An XML reader for SQw data
     """
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parses the xml file
 

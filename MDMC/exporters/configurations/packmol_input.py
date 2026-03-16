@@ -4,7 +4,7 @@ A module for a class to export a packmol input file.
 from __future__ import annotations
 
 from copy import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from MDMC.exporters.exporter import Exporter
 
@@ -26,7 +26,7 @@ class PackmolInputExporter(Exporter):
             setup: PackmolSetup,
             structure_file_names: dict,
             output_name: str = "output_file.pdb",
-            **settings: dict,
+            **settings: Any,
     ) -> None:
         """
         Write the data contained in a `PackmolSetup` object to a packmol input file.

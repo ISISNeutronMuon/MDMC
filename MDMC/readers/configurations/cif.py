@@ -2,6 +2,7 @@
 Reads a .cif file into an MDMC molecule, optionally ignoring symmetry data.
 Adapted from https://wiki.fysik.dtu.dk/ase/_modules/ase/io/cif.html#read_cif.
 """
+from typing import Any
 
 from ase.io.cif import parse_cif
 
@@ -16,7 +17,7 @@ class CIFReader(ConfigurationReader):
     """
     extension = 'cif'
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parse a .cif file into a list of MDMC Atoms,
         optionally ignoring symmetry data.

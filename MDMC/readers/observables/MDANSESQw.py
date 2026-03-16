@@ -1,6 +1,7 @@
 """Readers for dynamic data"""
 
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -122,7 +123,7 @@ class MDANSESQw(SQwReader):
         if self.first_row != 'Q':
             self.transpose_data = False
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parse into SQw format, creates an error on SQw 1% of the value of SQw,
         since MDANSE does not yet output an error. This should be changed once

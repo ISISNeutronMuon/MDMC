@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import cma
 import numpy as np
@@ -53,7 +53,7 @@ class CMAES(Minimizer):
         control: "Control",
         parameters: "Parameters",
         previous_history: Optional[Union[Path, str]] = None,
-        **settings: dict,
+        **settings: Any,
     ):
         super().__init__(control, parameters, previous_history)
 

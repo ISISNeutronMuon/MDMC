@@ -1,5 +1,6 @@
 """A reader for netcdf PDF data"""
 import re
+from typing import Any
 
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
@@ -31,7 +32,7 @@ class netCDFPDF(PDFReader):
 
         self.file.close()
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parse into PDF format
         """

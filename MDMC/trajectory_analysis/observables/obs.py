@@ -3,7 +3,7 @@ Module defining a class for processing observables from MD trajectories.
 """
 
 from abc import ABC, abstractmethod
-from typing import Literal
+from typing import Any, Literal
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
@@ -194,7 +194,7 @@ class Observable(ABC):
     @abstractmethod
     def calculate_from_MD(self,
                           MD_input: CompactTrajectory | list[CompactTrajectory],
-                          verbose: int = 0, **parameters: dict) -> None:
+                          verbose: int = 0, **parameters: Any) -> None:
         """
         Calculate the observable using input from an MD simulation.
 

@@ -1,7 +1,7 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 from skopt import Optimizer
@@ -62,7 +62,7 @@ class GPO(Minimizer):
     """
 
     def __init__(self, control: 'Control', parameters: 'Parameters', \
-        previous_history: Optional[Union[Path, str]] = None, **settings: dict):
+        previous_history: Optional[Union[Path, str]] = None, **settings: Any):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters

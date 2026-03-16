@@ -4,7 +4,7 @@ Module for calculating the total pair distribution function (PDF).
 import warnings
 from collections import defaultdict
 from itertools import chain, combinations_with_replacement, product
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
 
 import numpy as np
 
@@ -219,7 +219,7 @@ class PairDistributionFunction(Observable):
             self,
             MD_input: CompactTrajectory,
             verbose: int = 0,
-            **settings: dict,
+            **settings: Any,
     ):
         r"""
         Calculate the pair distribution function, :math:`G(r)` from a ``CompactTrajectory``.
@@ -447,7 +447,7 @@ class PairDistributionFunction(Observable):
     def _slice_trajectory(
             self,
             trajectory: CompactTrajectory,
-            **settings: dict,
+            **settings: Any,
     ) -> CompactTrajectory:
         """
         Slice the trajectory into frames used to calculate an average total PDF.

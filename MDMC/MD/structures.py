@@ -16,7 +16,7 @@ from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count
 from math import gcd
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 import numpy as np
 import periodictable
@@ -733,7 +733,7 @@ class Atom(Structure):
                  = (0., 0., 0.),
                  velocity: Union['list[float]', 'tuple[float]', np.ndarray]
                  = (0., 0., 0.),
-                 charge: float = None, **settings: dict):
+                 charge: float = None, **settings: Any):
 
         self.universe = None
 
@@ -1217,7 +1217,7 @@ class Molecule(CompositeStructure):
                  position: Union['list[float]', 'tuple[float]', np.ndarray] = None,
                  velocity: Union['list[float]', 'tuple[float]', np.ndarray] = (0, 0, 0),
                  name = None,
-                 **settings: dict):
+                 **settings: Any):
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:

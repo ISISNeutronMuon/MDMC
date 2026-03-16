@@ -1,5 +1,5 @@
 """MDMC wrapper for the ASE reader."""
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, List
 
 import ase.io
 
@@ -18,7 +18,7 @@ class ASEReader(ConfigurationReader):
         super().__init__(file_name)
         self._atoms: List['Atom'] = []
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parses any format supported by ASE's file reader; the file
         is read in as an ase.atoms.Atoms object and then converted

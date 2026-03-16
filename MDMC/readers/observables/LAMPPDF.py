@@ -1,6 +1,6 @@
 """Reader for pair distribution function data from LAMP's ascii files"""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -60,7 +60,7 @@ class LAMPPDF(PDFReader):
         observable.partial_pdfs = self.partial_pdfs
         observable.partial_strings = self.partial_strings
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
 
         """
         Parse the file information

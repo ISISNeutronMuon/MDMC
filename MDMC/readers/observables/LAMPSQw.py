@@ -1,7 +1,7 @@
 """Readers for dynamic data"""
 
 import logging
-from typing import IO, Iterable
+from typing import IO, Any, Iterable
 
 import numpy as np
 
@@ -56,7 +56,7 @@ class LAMPSQw(SQwReader):
         self.file_dep.close()
         self.file_dep_err.close()
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parse into SQw format
 
