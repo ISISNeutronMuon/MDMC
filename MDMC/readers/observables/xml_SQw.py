@@ -1,15 +1,14 @@
 """XML reader for SQw data"""
-import logging
 import xml.etree.ElementTree as ET
 from typing import TextIO
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.constants import h_bar
 from MDMC.readers.observables.obs_reader import SQwReader
 
-logger = logging.getLogger(__name__)
 
 class XML_SQw(SQwReader):
 
@@ -89,7 +88,7 @@ class XML_SQw(SQwReader):
                 us to calculate chi-squared but effectively ignores these points, this may not \
                 be what you want to do, consider using a FoM which doesn't need errors i f\
                 this is an issue \n"
-            logger.error(msg)
+            LOGGER.error(msg)
 
     @staticmethod
     def dict_from_element(element: TextIO) -> dict:

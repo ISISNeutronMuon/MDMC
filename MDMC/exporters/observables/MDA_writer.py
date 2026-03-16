@@ -1,15 +1,15 @@
 """
 A module for writing and saving a H5MD file.
 """
-import logging
+
 from pathlib import Path
 
 import h5py
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.trajectory_analysis.observables.obs import Observable
 
-LOGGER = logging.getLogger(__name__)
 
 def guess_unit(axis_label: str) -> str:
     """Return the physical unit of a dataset based on its text label."""

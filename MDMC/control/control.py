@@ -1,6 +1,5 @@
 """A module for performing the refinement"""
 import getpass
-import logging
 import statistics
 from contextlib import suppress
 from copy import deepcopy
@@ -14,6 +13,7 @@ import pandas as pd
 from scipy.interpolate import RectBivariateSpline, interp1d
 from verbosemanager import VerboseManager
 
+from MDMC import LOGGER
 from MDMC.common.decorators import repr_decorator
 from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.exporters.observables.MDA_writer import write_MDA
@@ -297,10 +297,10 @@ class Control:
         self.h5md_email = settings.get("h5md_creator_email",
                                        f"{getpass.getuser()}@unknown")
         if self.file_dump_frequency is not DumpFreq.NONE and "h5md_creator_name" not in settings:
-            logging.warning("`h5md_creator_name` not set, defaulting to: %s",
+            LOGGER.warning("`h5md_creator_name` not set, defaulting to: %s",
                             self.h5md_creator)
         if self.file_dump_frequency is not DumpFreq.NONE and "h5md_creator_name" not in settings:
-            logging.warning("`h5md_creator_email` not set, defaulting to: %s",
+            LOGGER.warning("`h5md_creator_email` not set, defaulting to: %s",
                             self.h5md_email)
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
@@ -702,7 +702,7 @@ class Control:
                 self.engine_recovery_from_equil(n_steps=n_steps,verbose=verbose,
                                                 output_log=output_log,work_dir=work_dir,**settings)
             except MDEngineError as exc:
-                logging.exception('The MD engine produced an error. This is often due to '
+                LOGGER.exception('The MD engine produced an error. This is often due to '
                 'bad constraints or parameter values - please check these and try again.')
                 raise MDEngineError from exc
 
@@ -1198,7 +1198,7 @@ class Control:
             if changed:
                 self.simulation.traj_step = traj_step
                 self.simulation.time_step = time_step
-                logging.warning(" The given traj_step and time_step values were not"
+                LOGGER.warning(" The given traj_step and time_step values were not"
                     " compatibile with the dataset specified.\nThe values "
                     "(whilst prioritising time_step) have been changed to"
                     " traj_step: %d, and time_step: %f. \n"

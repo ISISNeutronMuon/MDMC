@@ -1,5 +1,4 @@
 """A module for plotting data and results of a minimization."""
-import logging
 import os
 from abc import ABC, abstractmethod
 
@@ -8,6 +7,8 @@ import IPython.display
 import numpy as np
 import pandas as pd
 from skopt import Optimizer
+
+from MDMC import LOGGER
 
 
 class PlotResults():
@@ -51,7 +52,7 @@ class PlotResults():
                                        acq_func="gp_hedge", acq_optimizer="sampling",
                                          model_queue_size=1)
             if len(self.FoMs) < old_optimizer_min:
-                logging.warning("You have only used %d refinement steps,"
+                LOGGER.warning("You have only used %d refinement steps,"
                                 " use a larger number for more meaningful plots.",
                                 len(self.FoMs))
         except ValueError as error:

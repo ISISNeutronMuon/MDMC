@@ -1,14 +1,13 @@
 """Readers for dynamic data"""
 
-import logging
 from contextlib import suppress
 from typing import IO
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.readers.observables.obs_reader import SQwReader
 
-logger = logging.getLogger(__name__)
 
 class MantidSQw(SQwReader):
     """
@@ -96,7 +95,7 @@ class MantidSQw(SQwReader):
                 us to calculate chi-squared but effectively ignores these points, this may not\
                 be what you want to do, consider using a FoM which doesn't need errors if\
                 this is an issue"
-            logger.warning(msg)
+            LOGGER.warning(msg)
 
     def parse_variables(self, file: IO) -> 'tuple[float]':
         """

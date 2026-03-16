@@ -1,13 +1,10 @@
 """Readers for dynamic data"""
 
-import logging
-
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.common.units import SYSTEM, Unit
 from MDMC.readers.observables.obs_reader import SQwReader
-
-logger = logging.getLogger(__name__)
 
 eV_in_Joules = 1.602176634 * 10**(-19)
 mole = 6.02214076 * 10**23
@@ -102,7 +99,7 @@ class MDANSESQw(SQwReader):
                     try:
                         _ = q_unit.conversion_factor
                     except KeyError:
-                        logger.warning('Unit %s not recognised, replaced with 1/Ang', str(unit))
+                        LOGGER.warning('Unit %s not recognised, replaced with 1/Ang', str(unit))
                         q_unit = Unit('1')/SYSTEM["LENGTH"]
                     self.q_unit = q_unit
                 elif variable == 'omega':
@@ -155,4 +152,4 @@ class MDANSESQw(SQwReader):
                 us to calculate chi-squared but effectively ignores these points, this may not\
                 be what you want to do, consider using a FoM which doesn't need errors if\
                 this is an issue"
-            logger.warning(msg)
+            LOGGER.warning(msg)

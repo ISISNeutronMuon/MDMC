@@ -1,13 +1,12 @@
 """Readers for dynamic data"""
 
-import logging
 from typing import IO, Iterable
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.readers.observables.obs_reader import SQwReader
 
-logger = logging.getLogger(__name__)
 
 class LAMPSQw(SQwReader):
 
@@ -77,7 +76,7 @@ class LAMPSQw(SQwReader):
                 us to calculate chi-squared but effectively ignores these points, this may not\
                 be what you want to do, consider using a FoM which doesn't need errors if\
                 this is an issue"
-            logger.warning(msg)
+            LOGGER.warning(msg)
 
     def parse_indep_var(self, file: IO) -> 'tuple[np.ndarray, np.ndarray]':
         """

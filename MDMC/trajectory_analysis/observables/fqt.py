@@ -1,7 +1,6 @@
 """
 Module for Intermediate Scattering Function class.
 """
-import logging
 from abc import abstractmethod
 from collections.abc import Callable
 from contextlib import suppress
@@ -10,6 +9,7 @@ from typing import Generator, Literal, Optional
 
 import numpy as np
 
+from MDMC import LOGGER
 from MDMC.common import units
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
@@ -226,7 +226,7 @@ class AbstractFQt(SQwMixins, Observable):
                                     for value in self.Q_values)
             self.Q = [val for val in self.Q if val in self.Q_values]
 
-            logging.warning(" The specified universe dimensions were not able to recreate the"
+            LOGGER.warning(" The specified universe dimensions were not able to recreate the"
                             " lowest q values of the experimental data and so this data has been"
                             " trimmed accordingly.")
 
