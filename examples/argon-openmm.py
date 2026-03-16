@@ -4,6 +4,11 @@ For info on syntax see the MDMC docs, including the jupyter notebook tutorials.
 A copy of the data fitting against is assumed to be located in
 ../doc/tutorials/data/Well_s_q_omega_Ar_data.xml
 """
+import os
+# Currently MDMC uses OMP_NUM_THREADS to control the number of processes
+# in the sqw calculation
+os.environ["OMP_NUM_THREADS"] = "4"
+
 
 from MDMC.control import Control
 from MDMC.MD import Atom, LennardJones, Simulation, Universe
@@ -64,7 +69,6 @@ fit_parameters['epsilon'].constraints = [0.5, 1.5]
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
-                  minimizer_type="GPO",
                   reset_config=True,
                   equilibration_steps=30000,
                   MD_steps=16000,
