@@ -6,7 +6,7 @@ from abc import abstractmethod
 from collections.abc import Callable
 from contextlib import suppress
 from itertools import product
-from typing import Generator, Literal, Optional
+from typing import Any, Generator, Literal, Optional
 
 import numpy as np
 
@@ -156,7 +156,7 @@ class AbstractFQt(SQwMixins, Observable):
         self.dependent_variables['FQt'] = value
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
-                          **settings: dict) -> None:
+                          **settings: Any) -> None:
         """
         Calculate the intermediate scattering function from a trajectory.
 

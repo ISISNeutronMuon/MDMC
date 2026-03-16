@@ -3,7 +3,7 @@ Module for AbstractSQw and total SQw class.
 """
 
 from contextlib import suppress
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -332,7 +332,7 @@ class AbstractSQw(SQwMixins, Observable):
     def calculate_from_MD(self,
                           MD_input: CompactTrajectory,
                           verbose: int = 0,
-                          **settings: dict):
+                          **settings: Any):
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``CompactTrajectory``.
 

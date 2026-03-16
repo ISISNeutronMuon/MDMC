@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum, Flag, auto
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -184,7 +184,7 @@ class Control:
     print_full_settings: bool, optional
         Whether to print all settings/attributes/parameters passed to this object,
         defaults to False.
-    **settings: dict, optional
+    **settings: Any, optional
         n_steps: int
             The maximum number of refinement steps to be. An optional parameter that,
             if specified, will be used in the ``refine`` method unless a different value
@@ -268,7 +268,7 @@ class Control:
                  file_dump_loc: Path = Path('.'),
                  file_dump_timestamped: bool = False,
                  file_dump_prefix: str = 'trajectory',
-                 **settings: dict):
+                 **settings: Any):
 
         self.previous_history = previous_history
         self.step_timings: list = []
@@ -614,7 +614,7 @@ class Control:
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
                  verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: dict) -> None:
+                 work_dir: str = None, **settings: Any) -> None:
         """
         Performs an MD run intertwined with periodic structure relaxation.
         This way after a local minimum is found, the system is taken
@@ -671,7 +671,7 @@ class Control:
 
 
     def equilibrate(self, n_steps: int = None, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
+            output_log: str = None, work_dir: str = None, **settings: Any) -> None:
 
         """
         Run molecular dynamics to equilibrate the ``Universe``.
@@ -1260,7 +1260,7 @@ class Control:
                     [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
 
     def engine_recovery_from_equil(self, n_steps: int, verbose: bool,
-            output_log: str, work_dir: str, **settings: dict) -> None:
+            output_log: str, work_dir: str, **settings: Any) -> None:
         """
         Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
         LAMMPS.

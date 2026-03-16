@@ -1,7 +1,7 @@
 """Module for reading pdb files"""
 # pylint: disable=no-name-in-module
 import itertools
-from typing import List
+from typing import Any, List
 
 import numpy as np
 
@@ -34,7 +34,7 @@ class ProteinDataBankReader(ConfigurationReader):
         super().__init__(file_name)
         self._bonds: List['Bond'] = []
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
         # Link to PDF of file format:
         # https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)

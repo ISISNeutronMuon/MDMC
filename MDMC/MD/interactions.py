@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from itertools import permutations
 from types import MethodType
-from typing import TYPE_CHECKING, NoReturn, Set, Union
+from typing import TYPE_CHECKING, Any, NoReturn, Set, Union
 
 import numpy as np
 
@@ -52,7 +52,7 @@ class Interaction(ABC):
             A class of interaction function (e.g. ``HarmonicPotential``)
     """
 
-    def __init__(self, **settings: dict):
+    def __init__(self, **settings: Any):
         """
         Arguments:
         atom_tuples - One or more tuples consisting of one or more Atom objects.
@@ -407,7 +407,7 @@ class Dispersion(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: 'Universe', *atom_types: int, **settings: dict):
+    def __init__(self, universe: 'Universe', *atom_types: int, **settings: Any):
 
         # Ignore pylint warning for inner function docstring
         # pylint: disable=missing-docstring
@@ -578,7 +578,7 @@ class Coulombic(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: 'Universe' = None, **settings: dict):
+    def __init__(self, universe: 'Universe' = None, **settings: Any):
         # pylint: disable=not-callable
         # as it raises a false positive on self.add_atoms
 
@@ -748,7 +748,7 @@ class BondedInteraction(Interaction):
         BondAngle(H1, H2, O)
     """
 
-    def __init__(self, *atom_tuples: 'list[tuple]', **settings: dict):
+    def __init__(self, *atom_tuples: 'list[tuple]', **settings: Any):
 
         if atom_tuples and is_atom(atom_tuples[0]):
             atom_tuples = (atom_tuples, )
@@ -940,7 +940,7 @@ class BondedInteraction(Interaction):
         if len(atoms) not in n_atoms:
             raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
-    def add_atoms(self, *atoms: 'Atom', **settings: dict) -> None:
+    def add_atoms(self, *atoms: 'Atom', **settings: Any) -> None:
         """
         Add atoms which are all involved in one example of this interaction
 
@@ -1054,7 +1054,7 @@ class ConstrainableMixin:
         Specifying whether the object is constrained
     """
 
-    def __init__(self, *atom_tuples: tuple, **settings: dict):
+    def __init__(self, *atom_tuples: tuple, **settings: Any):
 
         self.constrained = settings.get('constrained', False)
         super().__init__(*atom_tuples, **settings)
@@ -1075,7 +1075,7 @@ class Bond(ConstrainableMixin, BondedInteraction):
     **settings
     """
 
-    def __init__(self, *atom_tuples: tuple, **settings: dict):
+    def __init__(self, *atom_tuples: tuple, **settings: Any):
 
         settings['n_atoms'] = (2, )
         super().__init__(*atom_tuples, **settings)
@@ -1124,7 +1124,7 @@ class BondAngle(ConstrainableMixin, BondedInteraction):
     **settings
     """
 
-    def __init__(self, *atom_tuples: tuple, **settings: dict):
+    def __init__(self, *atom_tuples: tuple, **settings: Any):
 
         settings['n_atoms'] = (3, )
         super().__init__(*atom_tuples, **settings)
@@ -1198,7 +1198,7 @@ class DihedralAngle(BondedInteraction):
         dihedral.
     """
 
-    def __init__(self, *atom_tuples: tuple, **settings: dict):
+    def __init__(self, *atom_tuples: tuple, **settings: Any):
 
         settings['n_atoms'] = (4, )
         self.improper = settings.get('improper', False)

@@ -2,6 +2,7 @@
 Module for exporter abstract class.
 """
 from abc import ABC, abstractmethod
+from typing import Any
 
 from MDMC.common.decorators import repr_decorator
 
@@ -47,7 +48,7 @@ class Exporter(ABC):
         self.file.close()
 
     @abstractmethod
-    def write(self, obj, **settings: dict) -> None:
+    def write(self, obj, **settings: Any) -> None:
         """
         Write the file data in the correct format.
 

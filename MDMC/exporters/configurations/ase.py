@@ -1,6 +1,8 @@
 """
 Export structures via ASE.
 """
+from typing import Any
+
 import ase.io
 
 from MDMC.exporters.exporter import Exporter
@@ -13,7 +15,7 @@ class ASEExporter(Exporter):
     Use ASE to export to any format supported by ASE.
     """
     # pylint: disable=too-few-public-methods
-    def write(self, obj: Structure, **settings: dict) -> None:
+    def write(self, obj: Structure, **settings: Any) -> None:
         """
         Write to any format supported by ASE.
 

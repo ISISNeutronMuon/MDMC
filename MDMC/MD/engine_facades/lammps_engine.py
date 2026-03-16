@@ -320,7 +320,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         self.ensemble.barostat = value
 
-    def setup_universe(self, universe: Universe, **settings: dict) -> None:
+    def setup_universe(self, universe: Universe, **settings: Any) -> None:
         """
         Creates the simulation box, the atomic configuration, and the topology
         in LAMMPS
@@ -340,7 +340,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe = LAMMPSUniverse(self.universe, self.lmp, **settings)
         self._saved_config = None
 
-    def setup_simulation(self, **settings: dict) -> None:
+    def setup_simulation(self, **settings: Any) -> None:
         """
         Sets simulation parameters in LAMMPS, such as the thermodynamic
         variables, thermostat/barostat parameters and trajectory settings
@@ -358,7 +358,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     def minimize(self, n_steps: int, minimize_every: int = 10,
                  output_log: str = None,
-                 work_dir: str = None, **settings: dict) -> None:
+                 work_dir: str = None, **settings: Any) -> None:
         """Moves the atoms towards a potential energy minimum,
         by performing an MD simulation interrupted periodically
         by a structure relaxation. In the end, the configuration
@@ -434,7 +434,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.ensemble.apply_ensemble_fixes()
 
     def run(self, n_steps: int, equilibration=False, output_log: str = None,
-            work_dir: str = None, **settings: dict):
+            work_dir: str = None, **settings: Any):
         if not equilibration:
             # Remove previous dumps if they exist
             if 'traj1' in [dump['name'] for dump in self.dumps]:
@@ -472,7 +472,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.thermostat = None
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> CompactTrajectory:
+                           step: int = 1, **settings: Any) -> CompactTrajectory:
         """
         Converts between a LAMMPS trajectory dump and an MDMC
         ``CompactTrajectory``
@@ -792,7 +792,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         (with ``improper == True``) to a LAMMPS ``ID``.
     """
 
-    def __init__(self, universe: Universe, lmp: PyLammps = None, **settings: dict):
+    def __init__(self, universe: Universe, lmp: PyLammps = None, **settings: Any):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
@@ -1062,7 +1062,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             max_inters = n_inters if n_inters > max_inters else max_inters
         return max_inters
 
-    def _add_topology(self, universe: Universe, **settings: dict) -> None:
+    def _add_topology(self, universe: Universe, **settings: Any) -> None:
         """
         Add the bonded and nonbonded interactions to LAMMPS
 
@@ -1438,7 +1438,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
 
-    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings: dict):
+    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings: Any):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
@@ -1790,7 +1790,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
     """
 
     def __init__(self, lmp, temperature: float = None, pressure: float = None,
-                 thermostat: str = None, barostat: str = None, **settings: dict):
+                 thermostat: str = None, barostat: str = None, **settings: Any):
 
         # Requires a lmp object as thermostats cannot be applied before
         # configuration is defined

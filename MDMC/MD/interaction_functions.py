@@ -13,7 +13,7 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import functools
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
@@ -353,7 +353,7 @@ class HarmonicPotential(InteractionFunction):
         hp = HarmonicPotential(180., 20.92, interaction_type='improper')
     """
 
-    def __new__(cls, equilibrium_state: float, potential_strength: float, **settings: dict):
+    def __new__(cls, equilibrium_state: float, potential_strength: float, **settings: Any):
 
         # interaction_type is a required keyword, but has to be passed through
         # settings so that it can be correctly passed in inter_func_decorator
@@ -516,7 +516,7 @@ class LennardJones(InteractionFunction):
     """
 
     @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
-    def __init__(self, epsilon: float, sigma: float, **settings: dict):
+    def __init__(self, epsilon: float, sigma: float, **settings: Any):
 
         super().__init__({'epsilon': epsilon, 'sigma': sigma})
         self.cutoff = settings.get('cutoff')

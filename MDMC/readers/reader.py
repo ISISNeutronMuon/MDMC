@@ -1,6 +1,6 @@
 """Module for reader abstract class"""
 from abc import ABC, abstractmethod
-from typing import IO
+from typing import IO, Any
 
 from MDMC.common.decorators import repr_decorator
 
@@ -40,7 +40,7 @@ class Reader(ABC):
         self.file.close()
 
     @abstractmethod
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parses the file data so that it is in a format expected by the class
         calling the data reader
@@ -51,7 +51,7 @@ class Reader(ABC):
 
         Parameters
         ----------
-        **settings: dict
+        **settings: Any
             dictionary of settings for reader
         """
 

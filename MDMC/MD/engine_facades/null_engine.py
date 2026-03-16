@@ -31,7 +31,7 @@ class NullEngine(MDEngine):
         """
         return Configuration()
 
-    def setup_universe(self, universe: Universe, **settings: dict) -> None:
+    def setup_universe(self, universe: Universe, **settings: Any) -> None:
         """
         Copies the parameters from the Universe object.
 
@@ -46,7 +46,7 @@ class NullEngine(MDEngine):
         """
         self.parameters = universe.parameters
 
-    def setup_simulation(self, **settings: dict) -> None:
+    def setup_simulation(self, **settings: Any) -> None:
         """
         Do nothing.
 
@@ -62,7 +62,7 @@ class NullEngine(MDEngine):
         pass
 
     def minimize(self, n_steps: int, minimize_every: int = 10,
-                 **settings: dict) -> None:
+                 **settings: Any) -> None:
         """
         Do nothing.
 
@@ -90,7 +90,7 @@ class NullEngine(MDEngine):
         pass
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> 'CompactTrajectory':
+                           step: int = 1, **settings: Any) -> 'CompactTrajectory':
         """
         Return an empty trajectory.
 

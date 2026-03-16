@@ -1,5 +1,5 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from MDMC.MD.structures import Atom, Molecule
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
@@ -15,14 +15,14 @@ class PackmolPDBReader(ConfigurationReader):
         super().__init__(file_name)
         self._structures: List['Structure'] = []
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parses a .pdb file into a list of `Structure`s (atoms and molecules)
         which can then be accessed as the `structures` property of the reader.
 
         Parameters
         ----------
-        **settings: dict, optional
+        **settings: Any, optional
             None are necessary for this reader.
 
         """

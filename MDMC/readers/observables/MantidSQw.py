@@ -2,7 +2,7 @@
 
 import logging
 from contextlib import suppress
-from typing import IO
+from typing import IO, Any
 
 import numpy as np
 
@@ -63,7 +63,7 @@ class MantidSQw(SQwReader):
         with suppress(AttributeError):
             self.file_detectors.close()
 
-    def parse(self, **settings: dict) -> None:
+    def parse(self, **settings: Any) -> None:
         """
         Parse into SQw format
 

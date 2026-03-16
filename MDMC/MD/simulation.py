@@ -6,7 +6,7 @@ import logging
 import warnings
 from collections import defaultdict
 from itertools import count, filterfalse, product
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Any, Tuple, Union
 
 import numpy as np
 from statsmodels.tsa.stattools import kpss
@@ -846,7 +846,7 @@ class Universe(AtomContainer):
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field: str,
                         *interactions: 'Interaction',
-                        **settings: dict) -> None:
+                        **settings: Any) -> None:
         """
         Adds a force field to the specified ``interactions``.  If no
         ``interactions`` are passed, the force field is applied to all
@@ -1002,7 +1002,7 @@ class Universe(AtomContainer):
     @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
     def solvate(self, density: float,
                 tolerance: float = 1., solvent: str = 'SPCE',
-                max_iterations: int = 100, **settings: dict) -> None:
+                max_iterations: int = 100, **settings: Any) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
         coordinates.
@@ -1184,7 +1184,7 @@ class KSpaceSolver:
         The relative RMS error in per-atom forces
     """
 
-    def __init__(self, **settings: dict):
+    def __init__(self, **settings: Any):
 
         self.accuracy = settings.get('accuracy')
 
@@ -1470,7 +1470,7 @@ class Simulation:
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
                  verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: dict) -> None:
+                 work_dir: str = None, **settings: Any) -> None:
         """
         Performs an MD run intertwined with periodic structure relaxation.
         This way after a local minimum is found, the system is taken
@@ -1519,7 +1519,7 @@ class Simulation:
         verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
+            output_log: str = None, work_dir: str = None, **settings: Any) -> None:
         """
         Runs the MD simulation for the specified number of steps. Trajectories
         for the simulation are only saved when ``equilibration`` is `False`.

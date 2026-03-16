@@ -3,7 +3,7 @@ Module for ``Configuration`` and related classes.
 """
 import weakref
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import numpy as np
 
@@ -97,7 +97,7 @@ class Configuration(AtomCollection):
 
     __slots__ = ('_data', 'element_set', '_structure_list')
 
-    def __init__(self, *structures: Structure, **settings: dict):
+    def __init__(self, *structures: Structure, **settings: Any):
 
         if "universe" in settings:
             self.universe = settings['universe']
@@ -422,7 +422,7 @@ class TemporalConfiguration(Configuration):
 
     __slots__ = ('time', )
 
-    def __init__(self, time: float, *structures: Structure, **settings: dict) -> None:
+    def __init__(self, time: float, *structures: Structure, **settings: Any) -> None:
 
         super().__init__(*structures, **settings)
         self.time = time
