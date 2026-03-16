@@ -47,6 +47,7 @@ class OpenMMEngine(MDEngine):
         """
         self.universe = universe
         self.openmm_system = mm.System()
+        # currently MDMC can only deal with orthorhombic lattices
         box_matrix = (
             np.array(
                 [
@@ -298,7 +299,7 @@ class CompactTrajectoryReporter:
         time = state.getTime().value_in_unit(unit.femtoseconds)
         positions = state.getPositions().value_in_unit(unit.angstrom)
 
-        # currently MDMC can only deal with cubic lattice
+        # currently MDMC can only deal with orthorhombic lattices
         a, b, c = state.getPeriodicBoxVectors()
         a = np.array(a.value_in_unit(unit.angstrom))[0]
         b = np.array(b.value_in_unit(unit.angstrom))[1]
