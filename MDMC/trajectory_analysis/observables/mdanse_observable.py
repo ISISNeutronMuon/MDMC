@@ -2,15 +2,21 @@
 Wrapper for analysis run using MDANSE.
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import h5py
 import numpy as np
 from MDANSE.Framework.Configurators.IConfigurator import IConfigurator
 from MDANSE.Framework.Jobs.IJob import IJob
+from more_itertools import first
 
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+
+if TYPE_CHECKING:
+    from MDMC.readers.observables.csv_reader import csv_reader
 
 
 def get_default_mdanse_settings(job_name: str) -> dict[str, Any]:
@@ -26,7 +32,7 @@ def get_default_mdanse_settings(job_name: str) -> dict[str, Any]:
 
 
 def check_if_main(hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
-    if "tags" in hdf5_node.attrs and "main" in hdf5_node.attrs["tags"].split(','):
+    if "tags" in hdf5_node.attrs and "main" in hdf5_node.attrs["tags"].split(","):
         main_result = hdf5_node.name
         axes = hdf5_node.attrs["axis"].split("|")
         return main_result, axes
@@ -37,24 +43,20 @@ def find_main_result(data_structure: h5py.File) -> tuple[str, list[str]]:
     return data_structure.visit(check_if_main)
 
 
-@ObservableFactory.register(('MDANSEObservable', 'MDANSE'))
+@ObservableFactory.register(("MDANSEObservable", "MDANSE"))
 class MDANSEObservable(Observable):
-    """Runs a specific MDANSE analysis on the input trajectory.
-    """
-    def __init__(self):
+    """Runs a specific MDANSE analysis on the input trajectory."""
+
+    def __init__(self, mdanse_job_type: str):
         super().__init__()
         self._name = "MDANSE"
-        self.job_type = "DensityOfStates"
-        self.x_axis = np.linspace(-5.0, 25.0, 111)
-        self.y_axis = np.linspace(-6.0, 33.0, 210)
+        self.job_type = mdanse_job_type
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
 
     @property
     def independent_variables(self):
-        if self._independent_variables is None:
-            self._independent_variables = {"y": self.y_axis, "x": self.x_axis}
         return self._independent_variables
 
     @independent_variables.setter
@@ -63,8 +65,6 @@ class MDANSEObservable(Observable):
 
     @property
     def dependent_variables(self):
-        if self._dependent_variables is None:
-            self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis, self.y_axis)]}
         return self._dependent_variables
 
     @dependent_variables.setter
@@ -74,7 +74,8 @@ class MDANSEObservable(Observable):
     @property
     def errors(self):
         if self._errors is None:
-            self._errors = {"gauss2D": [np.sqrt(self.dependent_variables["gauss2D"][0])]}
+            label = first(self.dependent_variables.keys())
+            self._errors = {label: [np.sqrt(self.dependent_variables[label][0])]}
         return self._errors
 
     def minimum_frames(self, dt=None) -> int:
@@ -95,7 +96,7 @@ class MDANSEObservable(Observable):
         verbose : int, optional
             Ignored, by default 0.
         """
-        self._origin = 'MD'
+        self._origin = "MD"
         self.job_instance = IJob.create(self.job_type, trajectory_input="mdmc")
         settings = get_default_mdanse_settings(self.job_type)
         for key, value in self.job_settings.items():
@@ -109,23 +110,13 @@ class MDANSEObservable(Observable):
         self._independent_variables = {name.split("/")[-1]: results[name] for name in axes_names}
         self._errors = {self.job_type: [np.sqrt(self._dependent_variables[self.job_type][0])]}
 
-    def read_from_file(self, reader, file_name):
-        """Generate the target values from hardcoded arguments.
-
-        The optimisation should produce the following arguments:
-            centre_x=5.0
-            centre_y=4.0
-            width_x=3.3
-            width_y=2.1
-        """
-        self._origin = 'experiment'
-        self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis,
-                           self.y_axis,
-                           centre_x=5.0,
-                           centre_y=4.0,
-                           width_x=3.3,
-                           width_y=2.1)]}
-        self._errors = {"gauss2D": [np.sqrt(self._dependent_variables["gauss2D"][0])]}
+    def read_from_file(self, reader: csv_reader):
+        """Load the data from a file."""
+        self._origin = "experiment"
+        self._dependent_variables = reader.dependent_variables
+        self._independent_variables = reader.independent_variables
+        self._errors = reader.errors
+        self._units = reader.units
 
     @property
     def uniformity_requirements(self):
@@ -133,4 +124,4 @@ class MDANSEObservable(Observable):
 
     @property
     def dependent_variables_structure(self):
-        return {'gauss2D': ['y', 'x']}
+        return {first(self.dependent_variables.keys()): list(self.independent_variables.keys())}

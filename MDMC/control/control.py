@@ -2,6 +2,7 @@
 import getpass
 import logging
 import statistics
+from collections.abc import Iterable
 from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
@@ -268,6 +269,7 @@ class Control:
                  file_dump_loc: Path = Path('.'),
                  file_dump_timestamped: bool = False,
                  file_dump_prefix: str = 'trajectory',
+                 observable_pairs: Iterable[ObservablePair] = [],
                  **settings: Any):
 
         self.previous_history = previous_history
@@ -329,58 +331,61 @@ class Control:
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
-        self.observable_pairs = []
+        self.observable_pairs = observable_pairs
         minimum_MD_steps = 0
-        for dset in exp_datasets:
-            use_FFT = dset.get('use_FFT', True)
+        if observable_pairs:
+            logging.info("Using pre-defined observable pairs")
+        else:
+            for dset in exp_datasets:
+                use_FFT = dset.get('use_FFT', True)
 
-            # keep the keys in the _dset_input_check function
-            # consistent with the ones retrieved from dset
-            self._input_check(dset, inputs=['type','reader', 'file_name'])
-            exp_observable = self._read_observable_from_file(dset['type'],
-                                                             dset['reader'],
-                                                             dset['file_name'],
-                                                             use_FFT)
+                # keep the keys in the _dset_input_check function
+                # consistent with the ones retrieved from dset
+                self._input_check(dset, inputs=['type','reader', 'file_name'])
+                exp_observable = self._read_observable_from_file(dset['type'],
+                                                                dset['reader'],
+                                                                dset['file_name'],
+                                                                use_FFT)
 
-            if exp_observable.uniformity_requirements:
-                exp_observable = self._make_data_uniform(exp_observable)
+                if exp_observable.uniformity_requirements:
+                    exp_observable = self._make_data_uniform(exp_observable)
 
-            if "filter" in dset:  # Data below threshold should be zeroed.
-                self._threshold_filter(
-                    exp_observable,
-                    abs_threshold=dset["filter"].get("abs", 0.),
-                    rel_threshold=dset["filter"].get("rel", 0.),
-                    magnitude=dset["filter"].get("use_magnitude", False),
-                    warn_threshold=dset["filter"].get("warn_threshold", 0.1),
-                )
+                if "filter" in dset:  # Data below threshold should be zeroed.
+                    self._threshold_filter(
+                        exp_observable,
+                        abs_threshold=dset["filter"].get("abs", 0.),
+                        rel_threshold=dset["filter"].get("rel", 0.),
+                        magnitude=dset["filter"].get("use_magnitude", False),
+                        warn_threshold=dset["filter"].get("warn_threshold", 0.1),
+                    )
 
-            MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
+                MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
 
-            self._validate_energy(MD_observable)
+                self._validate_energy(MD_observable)
 
-            auto_scale = dset.get('auto_scale', False)
-            rescale_factor = dset.get('rescale_factor')
-            if auto_scale and rescale_factor and self.verbose != -1:
-                print('Both `rescale_factor` and `auto_scale` set for file {};'
-                      ' scaling will be automated to minimise FoM'
-                      ''.format(dset['file_name']))
-                rescale_factor = 1.
-            elif not rescale_factor:
-                rescale_factor = 1.
+                auto_scale = dset.get('auto_scale', False)
+                rescale_factor = dset.get('rescale_factor')
+                if auto_scale and rescale_factor and self.verbose != -1:
+                    print('Both `rescale_factor` and `auto_scale` set for file {};'
+                        ' scaling will be automated to minimise FoM'
+                        ''.format(dset['file_name']))
+                    rescale_factor = 1.
+                elif not rescale_factor:
+                    rescale_factor = 1.
 
-            observable_pair = ObservablePair(exp_observable,
-                                             MD_observable,
-                                             dset['weight'],
-                                             rescale_factor=rescale_factor,
-                                             auto_scale=auto_scale)
-            self.observable_pairs.append(observable_pair)
-            self.recreated_independent_vars  = {}
-            self.production_time_step = self.simulation.time_step
+                observable_pair = ObservablePair(exp_observable,
+                                                MD_observable,
+                                                dset['weight'],
+                                                rescale_factor=rescale_factor,
+                                                auto_scale=auto_scale)
+                self.observable_pairs.append(observable_pair)
+                self.recreated_independent_vars  = {}
+                self.production_time_step = self.simulation.time_step
 
-            # Take the largest minimum number of MD_steps needed by any dataset
-            min_MD_steps_dset = self._calculate_minimum_MD_steps(
-                observable_pair)
-            minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
+                # Take the largest minimum number of MD_steps needed by any dataset
+                min_MD_steps_dset = self._calculate_minimum_MD_steps(
+                    observable_pair)
+                minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
         if FoM_options is None or FoM_options.get('error') is None:
             FoM_error = 'exp'
@@ -1420,13 +1425,16 @@ class Control:
             value of maximum FoM
 
         """
-
         # pylint: disable=protected-access
         # the purpose of method is to create this empty observable so accessing is necessary
-        self.observable_pairs[0].MD_obs._dependent_variables = {}
-        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1e-9
+        for obs_pair in self.observable_pairs:
+            obs_pair.MD_obs._dependent_variables = {}
+            for key, value in obs_pair.exp_obs.dependent_variables.items():
+                obs_pair.MD_obs._dependent_variables[key] = np.zeros_like(value)
 
         max_FoM = self.FoM_calculator.calculate()
-        self.observable_pairs[0].MD_obs._dependent_variables = None
+
+        for obs_pair in self.observable_pairs:
+            obs_pair.MD_obs._dependent_variables = None
 
         return max_FoM

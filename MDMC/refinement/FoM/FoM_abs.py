@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+from more_itertools import first
+from scipy.interpolate import RegularGridInterpolator
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -287,12 +289,24 @@ class ObservablePair:
             between the ``dependent_variables`` taking the ``rescale_factor``
             into account.
         """
+        if len(self.exp_obs.independent_variables) == 1:
+            exp_x = first(self.exp_obs.independent_variables.values())
+            exp_y = first(self.exp_obs.dependent_variables.values())
+            md_x = first(self.MD_obs.independent_variables.values())
+            md_y = first(self.MD_obs.dependent_variables.values())
+            md_y_matching = np.interp(exp_x,
+                             md_x,
+                             md_y)
+            return exp_y*self.rescale_factor - md_y_matching
 
-        diff = (np.array(*self.exp_obs.dependent_variables.values())
-                * self.rescale_factor
-                - np.array(*self.MD_obs.dependent_variables.values()))
+        elif len(self.exp_obs.independent_variables) == 2:
 
-        return diff
+            return (np.array(*self.exp_obs.dependent_variables.values())
+                    * self.rescale_factor
+                    - np.array(*self.MD_obs.dependent_variables.values()))
+
+        else:
+            raise NotImplementedError("Only 1D and 2D observables can be interpolated.")
 
     def calculate_errors(self) -> np.ndarray:
         """
