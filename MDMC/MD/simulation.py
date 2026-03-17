@@ -142,7 +142,18 @@ class Universe(AtomContainer):
     nbis_by_atom_type_pairs
     """
 
-    def __init__(self, dimensions, force_field=None, structures=None, **settings):
+    def __init__(
+        self,
+        dimensions,
+        force_field: str | None = None,
+        structures=None,
+        *,
+        kspace_solver: KSpaceSolver | None = None,
+        electrostatic_solver: KSpaceSolver | None = None,
+        dispersive_solver: KSpaceSolver | None = None,
+        verbose: bool = True,
+        **settings,
+    ):
 
         self.dimensions = dimensions
         self._parameters = None
@@ -155,6 +166,7 @@ class Universe(AtomContainer):
         self._solvent_density = 0.0
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
+
         if force_field:
             self._force_fields = ForceFieldFactory.create(force_field)
         else:
@@ -1211,7 +1223,7 @@ class KSpaceSolver:
         The relative RMS error in per-atom forces
     """
 
-    def __init__(self, **settings: Any):
+    def __init__(self, accuracy: float | None = None, **settings: Any):
 
         self.accuracy = settings.get("accuracy")
 

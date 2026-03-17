@@ -803,7 +803,7 @@ class UnitNDArray(np.ndarray):
         return self._unit
 
     @unit.setter
-    def unit(self, value: float):
+    def unit(self, value: str | None):
 
         if not (isinstance(value, str) or value is None):
             raise TypeError("unit must be a string")

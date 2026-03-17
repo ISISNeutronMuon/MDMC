@@ -17,7 +17,8 @@
 """Facade for OpenMM MD engine."""
 
 import logging
-from typing import Any
+from itertools import product
+from typing import Any, Literal
 
 import networkx as nx
 import numpy as np
@@ -25,7 +26,7 @@ import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
 
-from MDMC.MD import NonBonded
+from MDMC.MD import HarmonicPotential, LennardJones, Periodic
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.interaction_functions import DummyInteractionFunction
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
@@ -34,16 +35,17 @@ from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
+OpenmmPlatforms = Literal["OpenCL", "CUDA", "HIP", "CPU", "Reference"]
 
 
 class OpenMMEngine(MDEngine):
     def __init__(self):
         super().__init__()
         self.universe = None
-        self.openmm_system = None
-        self.openmm_simulation = None
+        self._openmm_system = None
+        self._openmm_simulation = None
         self.compact_trajectory = None
-        self.temperature = None
+        self.current_temperature = None
         self._saved_config = None
         self.MDMC_ID_to_idx = {}
         self.bond_graph = nx.Graph()
@@ -64,8 +66,63 @@ class OpenMMEngine(MDEngine):
             The atomic positions.
         """
         if self._saved_config is None:
-            raise TypeError("OpenMMEngine has not been run.")
+            raise ValueError(f"{type(self).__name__} has not been run.")
         return self._saved_config
+
+    @property
+    def system(self) -> mm.System:
+        """OpenMM System configuration."""
+        if self._openmm_system is None:
+            raise ValueError("OpenMM system has not been initialised.")
+        return self._openmm_system
+
+    @property
+    def simulation(self) -> Simulation:
+        """OpenMM Simulation configuration."""
+        if self._openmm_simulation is None:
+            raise ValueError("OpenMM simulation has not been initialised.")
+        return self._openmm_simulation
+
+    @property
+    def context(self) -> mm.Context:
+        """OpenMM Context."""
+        return self.simulation.context
+
+    @property
+    def natoms(self) -> int:
+        """The number of atoms in the system."""
+        return self.system.getNumParticles()
+
+    @property
+    def universe(self) -> Universe:
+        """Atomic universe."""
+        if self._universe is None:
+            raise ValueError("OpenMM universe has not been initialised.")
+        return self._universe
+
+    @universe.setter
+    def universe(self, value: Universe | None) -> None:
+        if value is not None and not isinstance(value, Universe):
+            raise TypeError(f"Unsupported universe ({type(value).__name__})")
+        self._universe = value
+
+    @property
+    def coul_force(self) -> mm.NonbondedForce | None:
+        for pot in self.system.getForces():
+            if pot.getName() == "Coulomb":
+                return pot
+
+        return None
+
+    @coul_force.setter
+    def coul_force(self, value: KSpaceSolver | None):
+        if self.coul_force is not None:
+            self.system.removeForce(self.coul_force)
+
+        if force := parse_kspace_solver(value):
+            if value is None:
+                force.setCutoffDistance(np.max(self.universe.dimensions) / 2 * unit.angstrom)
+            self.system.addForce(force)
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
         """Set up the openmm system.
@@ -82,19 +139,7 @@ class OpenMMEngine(MDEngine):
         self.openmm_system = mm.System()
         self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)
 
-        # set the unit cell, note that currently MDMC can only deal with
-        # orthorhombic lattices
-        box_matrix = (
-            np.array(
-                [
-                    [self.universe.dimensions[0], 0, 0],
-                    [0, self.universe.dimensions[1], 0],
-                    [0, 0, self.universe.dimensions[2]],
-                ],
-            )
-            * unit.angstrom
-        )
-        self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
+        self.system.setDefaultPeriodicBoxVectors(*box_matrix)
 
         # add atoms
         for i, atom in enumerate(self.universe.atoms):
@@ -320,6 +365,7 @@ class OpenMMEngine(MDEngine):
         time_step = float(self.time_step)
 
         compound_integrator = mm.CompoundIntegrator()
+
         lang_int_1 = mm.LangevinMiddleIntegrator(
             self.temperature * unit.kelvin,
             10.0 / unit.picoseconds,
@@ -334,9 +380,9 @@ class OpenMMEngine(MDEngine):
         compound_integrator.addIntegrator(lang_int_2)
         compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
 
-        self.openmm_simulation = Simulation(
+        self._openmm_simulation = Simulation(
             Topology(),
-            self.openmm_system,
+            self.system,
             compound_integrator,
             mm.Platform.getPlatformByName(settings.get("openmm_platform", "CPU")),
             settings.get("openmm_properties", {}),
@@ -356,14 +402,14 @@ class OpenMMEngine(MDEngine):
         minimize_every : int, optional, default 10
             Not used.
         """
-        self.openmm_simulation.minimizeEnergy(maxIterations=n_steps)
+        self.simulation.minimizeEnergy(maxIterations=n_steps)
 
     def run(
         self,
         n_steps: int,
-        equilibration: bool,
-        output_log: str = None,
-        work_dir: str = None,
+        equilibration: bool = False,
+        output_log: str | None = None,
+        work_dir: str | None = None,
         **settings: Any,
     ) -> None:
         """Run the simulation.
@@ -416,19 +462,19 @@ class OpenMMEngine(MDEngine):
                 getEnergy=True,
                 enforcePeriodicBox=True,
             )
-            reporter.report(self.openmm_simulation, state)
+            reporter.report(self.simulation, state)
             try:
-                self.openmm_simulation.step(n_steps)
+                self.simulation.step(n_steps)
             except mm.OpenMMException as e:
                 LOGGER.warning(f"OpenMM exception during production run: {e}")
                 raise MDEngineError(f"OpenMM exception during production run: {e}") from e
             finally:
-                self.openmm_simulation.reporters.clear()
+                self.simulation.reporters.clear()
 
     def convert_trajectory(
         self,
         start: int = 0,
-        stop: int = None,
+        stop: int | None = None,
         step: int = 1,
         **settings: Any,
     ) -> CompactTrajectory:
@@ -459,15 +505,172 @@ class OpenMMEngine(MDEngine):
         self.compact_trajectory.postProcess()
         return self.compact_trajectory
 
+    def _create_parameters(self) -> None:
+        """Create initial set of parameters."""
+
+        for disp in self.universe.nonbonded_interactions:
+            match disp.function:
+                case LennardJones(sigma=sig, epsilon=eps):
+                    sigma = float(sig.value) * unit.angstrom
+                    epsilon = float(eps.value) * unit.kilojoules_per_mole
+
+                    force = mm.NonbondedForce()
+                    force.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
+                    for atom_type_group in self.universe.atom_types.values():
+                        for _ in atom_type_group:
+                            force.addParticle(0.0, sigma, epsilon)
+
+                    force.setCutoffDistance(disp.cutoff * unit.angstrom)
+                    force.setUseSwitchingFunction(True)
+                    force.setSwitchingDistance(0.8 * disp.cutoff * unit.angstrom)
+                    force.setUseDispersionCorrection(True)
+
+                case _:
+                    LOGGER.warning(f"Unsupported potential ({type(disp.function).__name__}).")
+                    continue
+
+            self.system.addForce(force)
+
+        for bond, atoms in self.universe.bonded_interaction_pairs:
+            match bond:
+                case HarmonicPotential(
+                    equilibrium_state=a,
+                    potential_strength=b,
+                    interaction_type="bond",
+                ):
+                    aval = float(a.value) * unit.angstrom
+                    bval = float(b.value) * unit.kilojoules_per_mole
+
+                    force = mm.HarmonicBondForce()
+
+                    for i, j in product(
+                        *(self.universe.atom_types[at] for at in atoms),
+                    ):
+                        force.addBond(i, j, aval, bval)
+
+                case HarmonicPotential(
+                    equilibrium_state=a,
+                    potential_strength=b,
+                    interaction_type="angle",
+                ):
+                    aval = float(a.value)
+                    bval = float(b.value) * unit.kilojoules_per_mole
+
+                    force = mm.HarmonicAngleForce()
+                    for i, j, k in product(
+                        *(self.universe.atom_types[at] for at in atoms),
+                    ):
+                        force.addAngle(i, j, k, aval, bval)
+
+                case Periodic(K1=a, n1=b, d1=c):
+                    aval = float(a.value) * unit.kilojoules_per_mole
+                    bval = float(b.value)
+                    cval = float(c.value)
+
+                    force = mm.PeriodicTorsionForce()
+                    for i, j, k, m in product(
+                        *(self.universe.atom_types[at] for at in atoms),
+                    ):
+                        force.addTorsion(i, j, k, m, bval, cval, aval)
+
+                case _:
+                    LOGGER.warning(f"Unsupported potential ({type(bond).__name__}).")
+                    continue
+
+            self.system.addForce(force)
+
+        self.coul_force = self.universe.kspace_solver
+
+        if force := self.coul_force:
+            for atom in (
+                atom
+                for atom_type_group in self.universe.atom_types.values()
+                for atom in atom_type_group
+            ):
+                force.addParticle(atom.charge or 0.0, 0.0, 0.0)
+
     def update_parameters(self) -> None:
-        """Updates the ``OpenMMEngine`` force field parameters."""
-        self.clear_forces()
-        self.change_openmm_force_field()
-        self.openmm_simulation.context.reinitialize(preserveState=True)
+        """Updates the ``OpenMMEngine`` force field parameters from the
+        ``Universe``.
+        """
+        forces = self.system.getForces()
+        force_it = iter(forces)
+        force = next(force_it)
+
+        for disp in self.universe.nonbonded_interactions:
+            match disp.function:
+                case LennardJones(sigma=sig, epsilon=eps):
+                    params = [
+                        float(sig.value) * unit.angstrom,
+                        float(eps.value) * unit.kilojoules_per_mole,
+                    ]
+                case _:  # Already warned in creation, don't advance
+                    continue
+
+            for j, _ in enumerate(
+                atom
+                for atom_type_group in self.universe.atom_types.values()
+                for atom in atom_type_group
+            ):
+                force.setParticleParameters(j, 0.0, *params)
+
+            force = next(force_it)
+
+        for bond, atoms in self.universe.bonded_interaction_pairs:
+            match bond:
+                case HarmonicPotential(
+                    equilibrium_state=a,
+                    potential_strength=b,
+                    interaction_type="bond",
+                ):
+                    params = [
+                        float(a.value) * unit.angstrom,
+                        float(b.value) * unit.kilojoules_per_mole,
+                    ]
+                    update = force.setBondParameters
+
+                case HarmonicPotential(
+                    equilibrium_state=a,
+                    potential_strength=b,
+                    interaction_type="angle",
+                ):
+                    params = [
+                        float(a.value),
+                        float(b.value) * unit.kilojoules_per_mole,
+                    ]
+                    update = force.setAngleParameters
+
+                case Periodic(K1=a, n1=b, d1=c):
+                    params = [
+                        float(a.value) * unit.kilojoules_per_mole,
+                        float(b.value),
+                        float(c.value),
+                    ]
+                    update = force.setTorsionParameters
+
+                case _:  # Already warned in creation, don't advance
+                    continue
+
+            for j, at in enumerate(
+                product(
+                    *(self.universe.atom_types[at] for at in atoms),
+                ),
+            ):
+                update(j, *at, *params)
+
+            force = next(force_it)
+
+        if (force := self.coul_force) is not None:
+            for j, atom in enumerate(
+                atom
+                for atom_type_group in self.universe.atom_types.values()
+                for atom in atom_type_group
+            ):
+                force.setParticleParameters(j, atom.charge, 0.0, 0.0)
 
     def save_config(self) -> None:
         """Sets ``self._saved_config`` to the current set of positions."""
-        state = self.openmm_simulation.context.getState(getPositions=True)
+        state = self.simulation.context.getState(getPositions=True)
         self._saved_config = np.array(state.getPositions().value_in_unit(unit.angstrom))
 
     def clear(self) -> None:
@@ -547,3 +750,21 @@ class CompactTrajectoryReporter:
             return steps, False, False, False, False
 
         return steps, True, True, True, True
+
+
+def parse_kspace_solver(solver: KSpaceSolver | None) -> mm.NonbondedForce | None:
+    force = mm.NonbondedForce()
+    match solver:
+        case Ewald(accuracy=accuracy):
+            force.setNonbondedMethod(force.Ewald)
+            force.setEwaldErrorTolerance(accuracy)
+        case PPPM(accuracy=accuracy):
+            force.setNonbondedMethod(force.PME)
+            force.setEwaldErrorTolerance(accuracy)
+        case None:
+            force.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
+        case _:
+            raise NotImplementedError
+
+    force.setName("Coulomb")
+    return force
