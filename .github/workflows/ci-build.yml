@@ -41,6 +41,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
+          BRANCH="${BRANCH//\//-}"
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Run tests
@@ -97,6 +98,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
+          BRANCH="${BRANCH//\//-}"
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Create Docker Container

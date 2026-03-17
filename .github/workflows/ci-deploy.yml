@@ -45,6 +45,7 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
+        BRANCH="${BRANCH//\//-}"
         # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/mdmc:ci-$BRANCH || exit 0
         docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
@@ -54,6 +55,7 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
+        BRANCH="${BRANCH//\//-}"
         # If no image (mdmc/engines:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/engines:ci-$BRANCH || exit 0
         docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest

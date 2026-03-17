@@ -37,6 +37,7 @@ jobs:
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
+          BRANCH="${BRANCH//\//-}"
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Run tests
@@ -134,6 +135,7 @@ jobs:
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
+           BRANCH="${BRANCH//\//-}"
            singularity pull mdmc.sif docker://mdmc/mdmc:ci-$BRANCH || singularity pull mdmc.sif docker://mdmc/mdmc:latest
            singularity exec mdmc.sif pip3 install --upgrade pip
            singularity exec mdmc.sif pip3 install .[all]
@@ -155,6 +157,7 @@ jobs:
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
+          BRANCH="${BRANCH//\//-}"
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Run tests
@@ -185,6 +188,7 @@ jobs:
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
+          BRANCH="${BRANCH//\//-}"
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Create Docker Container

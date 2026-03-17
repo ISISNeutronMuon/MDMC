@@ -4,6 +4,8 @@
 
 echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
 
+# when branch name has "/" chars
+BRANCH="${BRANCH//\//-}"
 
 # full image rebuild if MD engines have changed
 if git diff remotes/origin/master --name-only | grep 'build/Docker/Dockerfile.engines'
