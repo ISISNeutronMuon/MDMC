@@ -11,7 +11,7 @@ verbosemanager==1.3.0
 ipython==8.37.0
 ipykernel==6.30.1
 corner==2.2.3
-periodictable==1.7.1
+periodictable==2.1.0
 statsmodels==0.14.5
 cma==4.4.4
 h5py==3.16.0
