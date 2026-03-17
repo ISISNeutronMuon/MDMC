@@ -87,7 +87,8 @@ control = Control(simulation=simulation,
                   fit_parameters=fit_parameters,
                   observable_pairs= [observable_pair],
                   MD_steps=5700,
-                  equilibration_steps=8000)
+                  equilibration_steps=8000,
+                  cont_slicing=True)
 
 # Energy Minimization and equilibration
 control.minimize(n_steps=5000)

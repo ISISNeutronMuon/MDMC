@@ -927,6 +927,26 @@ class CompactTrajectory:
                     velocity,
                     charge=charge)
 
+    def has_variable(self, var_name: str) -> bool:
+        """Return True if a variable is present in the trajectory, False otherwise.
+
+        Required by MDANSE.
+
+        Parameters
+        ----------
+        var_name : str
+            Name of the variable. Only 'velocities' can be used at the moment.
+
+        Returns
+        -------
+        bool
+            Whether the requested variable is stored in this trajectory instance.
+        """
+        if var_name == "velocities":
+            return self.has_velocity
+        return False
+
+
 
 def configurations_as_compact_trajectory(
         *configs: list[TemporalConfiguration],

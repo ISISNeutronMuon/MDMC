@@ -51,6 +51,7 @@ class MDANSEObservable(Observable):
         super().__init__()
         self._name = "MDANSE"
         self.job_type = mdanse_job_type
+        self.job_settings = {}
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
@@ -99,10 +100,12 @@ class MDANSEObservable(Observable):
         self._origin = "MD"
         self.job_instance = IJob.create(self.job_type, trajectory_input="mdmc")
         settings = get_default_mdanse_settings(self.job_type)
+        settings["frames"] = [0, len(MD_input), 1, len(MD_input) // 2]
         for key, value in self.job_settings.items():
             settings[key] = value
         settings["trajectory"] = MD_input
         settings["output_files"] = ["dummy_name", ["FileInMemory"], "no logs"]
+        self.job_instance.setup(settings)
         self.job_instance.run(settings, status=True)
         results = self.job_instance.results
         main_name, axes_names = find_main_result(results)

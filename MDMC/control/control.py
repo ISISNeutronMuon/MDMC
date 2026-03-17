@@ -868,7 +868,7 @@ class Control:
         """
         Run a molecular dynamics simulation
         """
-
+        print(f"Running MD for {self.MD_steps} steps")
         self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self) -> None:
