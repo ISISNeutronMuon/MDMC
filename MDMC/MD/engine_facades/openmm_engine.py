@@ -18,7 +18,8 @@ class OpenMMEngine(MDEngine):
     FORCE_FIELDS = [
         (
             LennardJones,
-            "4*epsilon(type1,type2)*((0.1 * sigma(type1,type2)/r)^12 - (0.1 * sigma(type1,type2)/r)^6)",
+            "4*epsilon(type1,type2)*((0.1 * sigma(type1,type2)/r)^12 "
+            "- (0.1 * sigma(type1,type2)/r)^6)",
             (("epsilon", 2), ("sigma", 2)),
             "type",
         ),
