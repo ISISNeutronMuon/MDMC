@@ -128,6 +128,7 @@ class OpenMMEngine(MDEngine):
             openmm_force.setCutoffDistance(cutoff * unit.angstrom)
             openmm_force.setUseSwitchingFunction(True)
             openmm_force.setSwitchingDistance(0.8 * cutoff * unit.angstrom)
+            openmm_force.setUseLongRangeCorrection(True)
 
             for type_ID, atom_type_group in self.universe.atom_types.items():
                 for _ in atom_type_group:
