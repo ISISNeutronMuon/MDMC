@@ -21,7 +21,7 @@ class OpenMMEngine(MDEngine):
             "4*epsilon(type1,type2)*((0.1 * sigma(type1,type2)/r)^12 - (0.1 * sigma(type1,type2)/r)^6)",
             (("epsilon", 2), ("sigma", 2)),
             "type",
-        )
+        ),
     ]
 
     def __init__(self):
@@ -95,10 +95,10 @@ class OpenMMEngine(MDEngine):
             openmm_force = mm.CustomNonbondedForce(expression)
             openmm_force.addPerParticleParameter(type_str)
 
-            for i, (param_str, rank) in enumerate(param_dict):
+            for param_str, rank in param_dict:
                 if rank < 2:
                     raise ValueError(
-                        "Force field parameters should depend on at least two atoms types."
+                        "Force field parameters should depend on at least two atoms types.",
                     )
                 elif rank == 2:
                     n_exprs = len(mdmc_forces)
@@ -108,12 +108,12 @@ class OpenMMEngine(MDEngine):
                         params[j - 1, k - 1] = float(getattr(mdmc_inter.function, param_str).value)
                         params[k - 1, j - 1] = float(getattr(mdmc_inter.function, param_str).value)
                     openmm_force.addTabulatedFunction(
-                        param_str, mm.Discrete2DFunction(n_exprs, n_exprs, params.ravel())
+                        param_str, mm.Discrete2DFunction(n_exprs, n_exprs, params.ravel()),
                     )
                 else:
                     raise NotImplementedError(
                         "Currently only force fields with parameters which depend "
-                        "on only two different atom types are currently supported."
+                        "on only two different atom types are currently supported.",
                     )
 
             cutoff = max([force.cutoff for force in mdmc_forces])
