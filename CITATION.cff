@@ -8,144 +8,75 @@ message: >-
   metadata from this file.
 type: software
 authors:
-  - affiliation: EPFL
-    family-names: Abbott
-    given-names: Joseph W.
-  - affiliation: STFC
-    family-names: Austin
-    given-names: Patrick
-  - affiliation: STFC
-    family-names: Bartkowiak
-    given-names: Maciej
-  - affiliation: STFC
-    family-names: Bathe
-    given-names: Jonathan
-  - affiliation: University of Copenhagen
-    family-names: Bordallo
-    given-names: Heloisa N.
-  - affiliation: STFC
-    family-names: Bylett
-    given-names: Braden
-  - affiliation: STFC
-    family-names: Cheng
-    given-names: Chi Y.
-  - affiliation: European Spallation Source
-    family-names: Cooper
-    given-names: Jos
-  - affiliation: STFC
-    family-names: Elena
-    given-names: Alin M.
-  - affiliation: IT University of Copenhagen
-    family-names: Ermilova
-    given-names: Inna
-  - affiliation: STFC
-    family-names: Farmer
-    given-names: Thomas
-  - affiliation: Technical University of Denmark
-    family-names: Hoffman Petersen
-    given-names: Martin
-  - affiliation: STFC
-    family-names: Lang
-    given-names: Franz
-  - affiliation: STFC
-    family-names: Markvardsen
-    affiliation: STFC
-  - given-names: Robert L.
-    family-names: McGreevy
-    affiliation: STFC
-  - given-names: Jan
-    family-names: Swenson
-    affiliation: Chalmers
-  - given-names: Thomas H.
-    family-names: Rod
-    affiliation: ESS
-  - given-names: Inna
-    family-names: Ermilova
-    affiliation: ESS
-  - given-names: Thomas
-    family-names: Farmer
-    affiliation: STFC
-  - given-names: Franz
-    family-names: Lang
-    affiliation: STFC
-  - given-names: Alex H.
-    family-names: Room
-    affiliation: STFC
-  - given-names: Jos
-    family-names: Cooper
-    affiliation: ESS
-  - given-names: Maksymilian
-    family-names: Sekula
-    affiliation: Chalmers
-  - given-names: Maciej
-    family-names: Bartkowiak
-    affiliation: STFC
-  - given-names: Patrick
-    family-names: Austin
-    given-names: Patrick
-  - affiliation: STFC
-    family-names: Bartkowiak
-    given-names: Maciej
-  - affiliation: STFC
-    family-names: Bathe
-    given-names: Jonathan
-  - affiliation: University of Copenhagen
-    family-names: Bordallo
-    given-names: Heloisa N.
-  - affiliation: STFC
-    family-names: Bylett
-    given-names: Braden
-  - affiliation: STFC
-    family-names: Cheng
-    given-names: Chi Y.
-  - affiliation: European Spallation Source
-    family-names: Cooper
-    given-names: Jos
-  - affiliation: STFC
-    family-names: Elena
-    given-names: Alin M.
-  - affiliation: IT University of Copenhagen
-    family-names: Ermilova
-    given-names: Inna
-  - affiliation: STFC
-    family-names: Farmer
-    given-names: Thomas
-  - affiliation: Technical University of Denmark
-    family-names: Hoffman Petersen
-    given-names: Martin
-  - affiliation: STFC
-    family-names: Lang
-    given-names: Franz
-  - affiliation: STFC
-    family-names: Markvardsen
-    given-names: Anders J.
-  - affiliation: STFC
-    family-names: McGreevy
-    given-names: Robert L.
-  - affiliation: STFC
-    family-names: Meigh
-    given-names: Ashley
-  - affiliation: European Spallation Source
-    family-names: Rod
-    given-names: Thomas H.
-  - affiliation: STFC
-    family-names: Room
-    given-names: Alex H.
-  - affiliation: European Spallation Source
-    family-names: Rozyczko
-    given-names: Piotr
-  - affiliation: King's College London
-    family-names: Sekula
-    given-names: Maksymilian
-  - affiliation: STFC
-    family-names: Shirley
-    given-names: Bryce
-  - affiliation: Chalmers University of Technology
-    family-names: Swenson
-    given-names: Jan
-  - affiliation: STFC
-    family-names: Wilkins
-    given-names: Jacob S.
+- affiliation: EPFL
+  family-names: Abbott
+  given-names: Joseph W.
+- affiliation: STFC
+  family-names: Austin
+  given-names: Patrick
+- affiliation: STFC
+  family-names: Bartkowiak
+  given-names: Maciej
+- affiliation: STFC
+  family-names: Bathe
+  given-names: Jonathan
+- affiliation: University of Copenhagen
+  family-names: Bordallo
+  given-names: Heloisa N.
+- affiliation: STFC
+  family-names: Bylett
+  given-names: Braden
+- affiliation: STFC
+  family-names: Cheng
+  given-names: Chi Y.
+- affiliation: European Spallation Source
+  family-names: Cooper
+  given-names: Jos
+- affiliation: STFC
+  family-names: Elena
+  given-names: Alin M.
+- affiliation: IT University of Copenhagen
+  family-names: Ermilova
+  given-names: Inna
+- affiliation: STFC
+  family-names: Farmer
+  given-names: Thomas
+- affiliation: Technical University of Denmark
+  family-names: Hoffman Petersen
+  given-names: Martin
+- affiliation: STFC
+  family-names: Lang
+  given-names: Franz
+- affiliation: STFC
+  family-names: Markvardsen
+  given-names: Anders J.
+- affiliation: STFC
+  family-names: McGreevy
+  given-names: Robert L.
+- affiliation: STFC
+  family-names: Meigh
+  given-names: Ashley
+- affiliation: European Spallation Source
+  family-names: Rod
+  given-names: Thomas H.
+- affiliation: STFC
+  family-names: Room
+  given-names: Alex H.
+- affiliation: European Spallation Source
+  family-names: Rozyczko
+  given-names: Piotr
+- affiliation: King's College London
+  family-names: Sekula
+  given-names: Maksymilian
+- affiliation: STFC
+  family-names: Shirley
+  given-names: Bryce
+- affiliation: Chalmers University of Technology
+  family-names: Swenson
+  given-names: Jan
+- affiliation: STFC
+  family-names: Wilkins
+  given-names: Jacob S.
 repository-code: 'https://github.com/MDMCproject/MDMCv0.2_pilot'
 url: 'https://mdmcproject.org'
 abstract: >-
