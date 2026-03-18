@@ -15,15 +15,14 @@ LOGGER = logging.getLogger(__name__)
 
 class OpenMMEngine(MDEngine):
     # custom force fields expressions include unit conversion from MDMC to OpenMM
-    FORCE_FIELDS = [
-        (
-            LennardJones,
+    FORCE_FIELDS = {
+        LennardJones: (
             "4*epsilon(type1,type2)*((0.1 * sigma(type1,type2)/r)^12 "
             "- (0.1 * sigma(type1,type2)/r)^6)",
             (("epsilon", 2), ("sigma", 2)),
             "type",
         ),
-    ]
+    }
 
     def __init__(self):
         super().__init__()
@@ -80,44 +79,51 @@ class OpenMMEngine(MDEngine):
 
     def change_openmm_force_field(self):
         """Change the OpenMM force fields."""
-        for i in reversed(range(self.openmm_system.getNumForces())):
-            self.openmm_system.removeForce(i)
-
-        for mdmc_force_class, expression, param_dict, type_str in self.FORCE_FIELDS:
+        for mdmc_force_class, (expression, param_dict, type_str) in self.FORCE_FIELDS.items():
             mdmc_forces = [
                 force
                 for force in self.universe.interactions
                 if isinstance(force.function, mdmc_force_class)
             ]
 
-            if len(mdmc_forces) == 0:
+            if not mdmc_forces:
                 continue
 
             openmm_force = mm.CustomNonbondedForce(expression)
             openmm_force.addPerParticleParameter(type_str)
 
             for param_str, rank in param_dict:
-                if rank < 2:
-                    raise ValueError(
-                        "Force field parameters should depend on at least two atoms types.",
-                    )
-                elif rank == 2:
-                    n_exprs = len(mdmc_forces)
-                    params = np.zeros((n_exprs, n_exprs))
-                    for mdmc_inter in mdmc_forces:
-                        j, k = mdmc_inter.atom_types[0]
-                        params[j - 1, k - 1] = float(getattr(mdmc_inter.function, param_str).value)
-                        params[k - 1, j - 1] = float(getattr(mdmc_inter.function, param_str).value)
-                    openmm_force.addTabulatedFunction(
-                        param_str, mm.Discrete2DFunction(n_exprs, n_exprs, params.ravel()),
-                    )
-                else:
-                    raise NotImplementedError(
-                        "Currently only force fields with parameters which depend "
-                        "on only two different atom types are currently supported.",
-                    )
+                n_exprs = len(mdmc_forces)
 
-            cutoff = max([force.cutoff for force in mdmc_forces])
+                match rank:
+                    case 1:
+                        params = np.zeros(n_exprs)
+                        for mdmc_inter in mdmc_forces:
+                            value = float(getattr(mdmc_inter.function, param_str).value)
+                            j = mdmc_inter.atom_types[0]
+                            params[j - 1] = value
+                        openmm_force.addTabulatedFunction(
+                            param_str,
+                            mm.Discrete1DFunction(n_exprs, params),
+                        )
+                    case 2:
+                        params = np.zeros((n_exprs, n_exprs))
+                        for mdmc_inter in mdmc_forces:
+                            value = float(getattr(mdmc_inter.function, param_str).value)
+                            j, k = mdmc_inter.atom_types[0]
+                            params[j - 1, k - 1] = value
+                            params[k - 1, j - 1] = value
+                        openmm_force.addTabulatedFunction(
+                            param_str,
+                            mm.Discrete2DFunction(n_exprs, n_exprs, params.ravel()),
+                        )
+                    case _:
+                        raise NotImplementedError(
+                            "Currently only force fields with parameters which depend "
+                            "on only two or fewer different atom types are currently implemented.",
+                        )
+
+            cutoff = max(force.cutoff for force in mdmc_forces)
             openmm_force.setNonbondedMethod(mm.CustomNonbondedForce.CutoffPeriodic)
             openmm_force.setCutoffDistance(cutoff * unit.angstrom)
             openmm_force.setUseSwitchingFunction(True)
@@ -128,6 +134,11 @@ class OpenMMEngine(MDEngine):
                     openmm_force.addParticle([type_ID - 1])
 
             self.openmm_system.addForce(openmm_force)
+
+    def clear_forces(self):
+        """Clear the OpenMM force fields from the OpenMM system."""
+        for i in reversed(range(self.openmm_system.getNumForces())):
+            self.openmm_system.removeForce(i)
 
     def setup_simulation(self, **settings: dict) -> None:
         """Set up the openmm simulation.
@@ -273,6 +284,7 @@ class OpenMMEngine(MDEngine):
 
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters."""
+        self.clear_forces()
         self.change_openmm_force_field()
         self.openmm_simulation.context.reinitialize(preserveState=True)
 
