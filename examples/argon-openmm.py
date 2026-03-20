@@ -31,7 +31,7 @@ universe.fill(Ar, num_density=density)
 Ar_dispersion = Dispersion(universe,  # the universe our interaction applies to
                            (Ar.atom_type, Ar.atom_type),  # the types of atoms to which it applies (only one type here!)
                            cutoff=8.,  # the cutoff distance
-                           function=LennardJones(epsilon=1.0, sigma=3.0))
+                           function=LennardJones(epsilon=1.08, sigma=3.4))
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the
@@ -50,7 +50,7 @@ simulation.run(n_steps=30000, equilibration=True)
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental
 # dataset
-exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data_no_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
                  'weight':1.,
