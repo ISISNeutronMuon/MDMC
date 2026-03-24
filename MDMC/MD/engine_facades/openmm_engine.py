@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, NamedTuple
 
 import numpy as np
 import openmm as mm
@@ -13,10 +13,16 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 LOGGER = logging.getLogger(__name__)
 
 
+class ForceFieldDef(NamedTuple):
+    functional_form: str
+    parameters: tuple[tuple[str, int], ...]
+    type_str: str
+
+
 class OpenMMEngine(MDEngine):
     # custom force fields expressions include unit conversion from MDMC to OpenMM
     FORCE_FIELDS = {
-        LennardJones: (
+        LennardJones: ForceFieldDef(
             "4*epsilon(type1,type2)*((0.1 * sigma(type1,type2)/r)^12 "
             "- (0.1 * sigma(type1,type2)/r)^6)",
             (("epsilon", 2), ("sigma", 2)),
@@ -79,7 +85,7 @@ class OpenMMEngine(MDEngine):
 
     def change_openmm_force_field(self):
         """Change the OpenMM force fields."""
-        for mdmc_force_class, (expression, param_dict, type_str) in self.FORCE_FIELDS.items():
+        for mdmc_force_class, force_field in self.FORCE_FIELDS.items():
             mdmc_forces = [
                 force
                 for force in self.universe.interactions
@@ -89,10 +95,10 @@ class OpenMMEngine(MDEngine):
             if not mdmc_forces:
                 continue
 
-            openmm_force = mm.CustomNonbondedForce(expression)
-            openmm_force.addPerParticleParameter(type_str)
+            openmm_force = mm.CustomNonbondedForce(force_field.functional_form)
+            openmm_force.addPerParticleParameter(force_field.type_str)
 
-            for param_str, rank in param_dict:
+            for param_str, rank in force_field.parameters:
                 n_exprs = len(mdmc_forces)
 
                 match rank:
