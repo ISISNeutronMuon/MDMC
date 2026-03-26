@@ -94,7 +94,7 @@ def mocked_df():
 
 @pytest.fixture
 def correct_output_data():
-    return [(1.0, 2.0), 1.0, (1.2970476059280804, 2.578890522713669), 3.6666658956168403]
+    return [(1.0, 2.0), 1.0, np.array([0.99972565, 2.09108368]), 0.9935490487887009]
 
 
 def test_GPR_parameter_point_array_hypercube(mockcontrol, constrained_parameters):
@@ -124,7 +124,7 @@ def test_GPR_reset_parameters(mockcontrol, parameters):
     parameter_values = [p.value for p in gpr.parameters.values()]
     assert np.allclose(parameter_values, (1.15, 2.3), rtol=1e-5)
 
-
+    
 @pytest.mark.parametrize('FoMs,coordinates,expected',
     [([2, 3, 0, 1, 4], [[0,0], [0,1], [1,0], [1,1], [2,0]], [[1,0], 0]),
     ([2], [[0,0,1]], [[0,0,1], 2]),
@@ -136,7 +136,6 @@ def test_GPR_global_minimum_position(mockcontrol, FoMs, coordinates, expected):
     min_coord, min_FoM = gpr.global_minimum_position(FoMs, coordinates)
     assert np.allclose(min_coord, expected[0], rtol=1e-5)
     assert np.allclose(min_FoM, expected[1], rtol=1e-5)
-
 
 def test_GPR_create_bounds(mockcontrol):
     """Tests bounds are created and returned correctly"""
@@ -197,9 +196,9 @@ def test_GPR_predict(mockcontrol, parameters):
     kernel = RBF(length_scale=4.0)
     input_regressor = GaussianProcessRegressor(kernel=kernel, alpha=0.1)
     input_regressor.fit([[0.0, 0.0], [1.0, 1.0]], [0.0, 1.0])
-    point_array, prediction = gpr.GPR_predict(input_regressor, points=2)
-    assert np.allclose(point_array, [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], rtol=1e-5)
-    assert np.allclose(prediction, [0.03015209, 0.40226347, 0.40226347, 0.89999947], rtol=1e-5)
+    min_params, min_fom = gpr.GPR_predict(input_regressor)
+    assert np.allclose(min_params, [0.70000508, 2.59998984], rtol=1e-5)
+    assert np.allclose(min_fom, 0.22619262570074802, rtol=1e-5)
 
 
 def test_GPR_minimizer_change_constrained_parameter(mockcontrol):

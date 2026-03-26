@@ -1,5 +1,4 @@
 """The Gaussian-Process-Regression minimizer class"""
-import itertools
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Optional, Union
@@ -7,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 import numpy as np
 import pandas as pd
 import scipy.stats as st
-from scipy.ndimage import minimum, minimum_position
+from scipy.optimize import direct
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 
@@ -82,10 +81,10 @@ class GPR(Minimizer):
             raise AttributeError("GPR requires that the number of refinement steps "
                                  "is set when initialising Control.") from error
 
-        lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
-        upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
+        self.lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
+        self.upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
 
-        latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
+        latin_points = st.qmc.scale(latin_points, self.lower_bounds, self.upper_bounds)
         return parameter_names, latin_points
 
     @staticmethod
@@ -211,8 +210,7 @@ class GPR(Minimizer):
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
-    def GPR_fit(self, filename: Optional[str] = None,
-                alpha: Optional[float] = 5, length_scale: Optional[float] = 4):
+    def GPR_fit(self, filename: Optional[str] = None):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement
         and can be read into a dataframe with the relevant parameters. Uses the recorded points
@@ -226,13 +224,6 @@ class GPR(Minimizer):
             The filename or full path to a comma separated value file containing
             the full output of the refinement. Defaults to None, but if results_filename is set by
             Control then this is passed into GPR as self.results_filename and used here.
-        alpha: float, optional
-            Hyperparameter for the fitting, which can represent Gaussian noise in measurement
-            points, e.g. how much variation in the output you expect between MD runs.
-            Defaults to 5.
-        length_scale: float, optional
-            Hyperparameter for the fitting, which can represent how quickly the kernel is able
-            to change/oscillate. Defaults to 4.0.
 
         Returns
         -------
@@ -262,20 +253,19 @@ class GPR(Minimizer):
 
         coordinates = records.values.tolist()
 
-        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
-        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+        kernel = kernels.Matern(length_scale = np.ones(len(coordinates[0]))) + kernels.WhiteKernel()
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = 0., normalize_y=True)
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
         return fitted_GPR, min_FOM, min_pars
 
-    @staticmethod
-    def GPR_predict(input_regressor,
-                    points: Optional[float] = 100) -> 'tuple[list[tuple[float]], np.ndarray]':
+    def GPR_predict(self, input_regressor) -> 'tuple[list[tuple[float]], np.ndarray]':
         """
-        Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
-        between the minimum and maximum measured parameter values and predicts the FoM at each
-        one of these points.
+        Takes a fitted Gaussian process regressor from GPR_fit, and uses the DIRECT
+        global optimization algorithm
+        (https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.direct.html#id1)
+        to find the minimum FoM according to the regressor's predictions.
 
         Parameters
         ----------
@@ -286,54 +276,21 @@ class GPR(Minimizer):
 
         Returns
         -------
-        point_array : list[tuple[float]]
-            The ``list`` of coordinates at which the predictions are made
-        prediction : numpy.ndarray
-            A ``list`` of predicted figure of merit surface at each coordinate in the point_array
+        min_params : numpy.ndarray
+            The ``list`` of coordinates at which the best FoM was found
+        min_fom : float
+            The best FoM found by the optimizer
         """
+        def predict_wrapper(x): return input_regressor.predict([x])
 
-        regressor_points = input_regressor.X_train_
+        bounds = list(zip(self.lower_bounds, self.upper_bounds))
 
-        predictive_coordinates = []
+        optimizer_result = direct(predict_wrapper, bounds)
 
-        for column in regressor_points.T:
-            min_point, max_point = np.min(column), np.max(column)
-            dense_array = np.linspace(min_point, max_point, points)
-            predictive_coordinates.append(dense_array)
+        min_params = optimizer_result.x
+        min_fom = optimizer_result.fun
 
-        point_array = list(itertools.product(*predictive_coordinates))
-        # predict method needs explicit array
-        prediction = input_regressor.predict(point_array, return_std=False)
-
-        return point_array, prediction
-
-    @staticmethod
-    def global_minimum_position(predicted_FOMs: np.ndarray,
-                                measured_parameter_coordinates: 'list[float]') \
-            -> 'tuple[np.ndarray, float]':
-        """
-        Gives the coordinates of the global minimum of the predicted figure of merit surface.
-
-        Parameters
-        ----------
-        predicted_FOMs : numpy.ndarray
-            A numpy ``array`` of the predicted figures of merit
-        measured_parameter_coordinates: list
-            A ``list`` of the coordinates corresponding to the points at which the FoM was predicted
-
-        Returns
-        -------
-        minimum_parameters : numpy.ndarray
-            The parameter coordinates where the minimum figure of merit is predicted to be
-        min_FoM : float
-            The predicted minimum figure of merit value
-        """
-
-        min_coordinates = minimum_position(predicted_FOMs)[0]
-        min_FoM = minimum(predicted_FOMs)
-        minimum_parameters = measured_parameter_coordinates[min_coordinates]
-
-        return minimum_parameters, min_FoM
+        return min_params, min_fom
 
     def extract_result(self) -> list:
         """
@@ -346,8 +303,7 @@ class GPR(Minimizer):
             Minimum predicted FoM
         """
         fit, min_FoM_measured, min_parameters_measured = self.GPR_fit()
-        points, FoMs = self.GPR_predict(fit)
-        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
+        min_parameters_predicted, min_FoM_predicted = self.GPR_predict(fit)
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
 
         min_parameters_measured = tuple(min_parameters_measured.iloc[0])
