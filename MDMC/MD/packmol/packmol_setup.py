@@ -2,7 +2,6 @@
 import logging
 import math
 import warnings
-from typing import List, Tuple
 
 import numpy as np
 
@@ -11,7 +10,7 @@ from MDMC.MD import Structure
 LOGGER = logging.getLogger(__name__)
 
 
-def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> float:
+def calculate_volume(dimensions: tuple[float], container_type: str = None) -> float:
     """
     A method to calculate the volume of a container given the dimensions.
 
@@ -47,14 +46,14 @@ class PackmolSetup:
     """
 
     def __init__(self):
-        self._structures: List[Structure] = []
-        self._structure_settings: List[dict] = []
+        self._structures: list[Structure] = []
+        self._structure_settings: list[dict] = []
         self._system_settings: dict = {}
         self._system_settings["tolerance"] = 2.0  # packmol default tolerance
 
     def add_fixed_structure(self, structure: Structure,
-                           position: Tuple[float] = (0., 0., 0.),
-                           rotation: Tuple[float] = (0., 0., 0.),
+                           position: tuple[float] = (0., 0., 0.),
+                           rotation: tuple[float] = (0., 0., 0.),
                            centre: bool = True) -> None:
         """
         Add a single structure (atom or molecule) in a fixed position to the setup.
@@ -133,7 +132,7 @@ class PackmolSetup:
 
     def add_cube(self, structure: Structure,
                  size: float,
-                 origin: Tuple[float] = (0., 0., 0.),
+                 origin: tuple[float] = (0., 0., 0.),
                  density: float = 0.,
                  n_structures: int = 0) -> None:
         """
@@ -164,8 +163,8 @@ class PackmolSetup:
                            container_type="cube")
 
     def add_box(self, structure: Structure,
-                lengths: Tuple[float],
-                origin: Tuple[float] = (0., 0., 0.),
+                lengths: tuple[float],
+                origin: tuple[float] = (0., 0., 0.),
                 density: float = 0.,
                 n_structures: int = 0) -> None:
         """
@@ -198,7 +197,7 @@ class PackmolSetup:
 
     def add_sphere(self, structure: Structure,
                    radius: float,
-                   origin: Tuple[float] = (0., 0., 0.),
+                   origin: tuple[float] = (0., 0., 0.),
                    density: float = 0.,
                    n_structures: int = 0) -> None:
         """
@@ -278,7 +277,7 @@ class PackmolSetup:
             raise RuntimeError("The packmol setup is invalid for the following reasons:\n"
                                + "\n".join(error_messages))
 
-    def get_settings(self) -> Tuple[dict, list[dict]]:
+    def get_settings(self) -> tuple[dict, list[dict]]:
         """
         Returns
         -------
@@ -287,7 +286,7 @@ class PackmolSetup:
         """
         return self._system_settings, self._structure_settings
 
-    def get_structures(self) -> Tuple[Structure]:
+    def get_structures(self) -> tuple[Structure]:
         """
         Returns
         -------
@@ -296,7 +295,7 @@ class PackmolSetup:
         """
         return self._structures
 
-    def get_max_sizes(self) -> Tuple[float]:
+    def get_max_sizes(self) -> tuple[float]:
         """
         Returns
         -------
@@ -352,7 +351,7 @@ class PackmolSetup:
                                 "fixed"]
 
     @staticmethod
-    def resolve_density(dimensions: Tuple[float],
+    def resolve_density(dimensions: tuple[float],
                         density: float = 0.,
                         container_type: str = None) -> tuple:
         """
@@ -362,7 +361,7 @@ class PackmolSetup:
 
         Parameters
         ----------
-        dimensions: optional, tuple
+        dimensions: tuple
             A tuple of the dimensions that affect the volume of the container.
         density: optional, float
             A target density to achieve within the system.

@@ -1,8 +1,10 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -44,8 +46,8 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters,
-                 previous_history: Union[str,Path] = None):
+    def __init__(self, control: Control, parameters: Parameters,
+                 previous_history: Path | str = None):
 
         self.control = control
         self.previous_history = previous_history
@@ -59,15 +61,15 @@ class Minimizer(ABC):
             if isinstance(previous_history, str):
                 self.previous_history = Path(self.previous_history)
 
-            self.column_names, self._history = \
-            self.load_history(self.previous_history)
+            self.column_names, self._history = self.load_history(self.previous_history)
             self.previous_steps = len(self._history)
             self.FoM_old = self._history[-1][0]
             self.compatible = False
             self.enforcing_minimizer_compatibility(self.history_columns, self._history)
             self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
-            self.parameters_old_values = self.get_parameters_old_values(parameters, \
-            self.column_names, self._history)
+            self.parameters_old_values = self.get_parameters_old_values(parameters,
+                                                                        self.column_names,
+                                                                        self._history)
             self._history.pop(-1)
         else:
             self._history = []
@@ -109,7 +111,7 @@ class Minimizer(ABC):
 
     @property
     @abstractmethod
-    def history_columns(self) -> 'list[str]':
+    def history_columns(self) -> list[str]:
         """
         Get the column titles for the minimizer history
 
@@ -218,7 +220,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def extract_result(self) -> 'list[str]':
+    def extract_result(self) -> list[str]:
         """
         Obtains the result of the minimizer to be presented/formatted
 
@@ -375,14 +377,20 @@ class Minimizer(ABC):
 
         """
         if history and self.compatible is False:
-            if 'Change state' in column_names and \
-                ('Accepted' not in history[0] or 'Rejected' not in history[0]):
+            if (
+                    'Change state' in column_names and
+                    ('Accepted' not in history[0] or
+                     'Rejected' not in history[0])
+            ):
                 for row in history:
                     pos = column_names.index('Change state')
                     row.insert(pos,'Accepted')
 
-            elif 'Change state' not in column_names and \
-                ('Accepted' in history[0] or 'Rejected' in history[0]):
+            elif (
+                    'Change state' not in column_names and
+                    ('Accepted' in history[0] or
+                     'Rejected' in history[0])
+            ):
                 for row in history:
                     try:
                         row.remove('Accepted')

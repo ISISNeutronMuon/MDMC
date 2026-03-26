@@ -3,8 +3,8 @@ Partitioning utilities.
 
 Utilities related to partitioning iterators into their composite components.
 """
+from collections.abc import Callable, Iterable
 from itertools import tee
-from typing import Callable, Iterable
 
 from MDMC.MD import Interaction
 

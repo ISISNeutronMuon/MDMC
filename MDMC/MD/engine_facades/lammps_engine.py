@@ -31,7 +31,7 @@ from copy import copy
 from itertools import chain, combinations, count, product
 from random import randint
 from tempfile import NamedTemporaryFile
-from typing import Any, Union
+from typing import Any
 
 import numpy as np
 
@@ -121,7 +121,7 @@ class PyLammpsAttribute:
         return namedtuple('System', system_state.keys())(*system_state.values())
 
     @property
-    def fixes(self) -> "list[dict]":
+    def fixes(self) -> list[dict]:
         """
         Get the ``PyLammps`` wrapper `list` of ``fixes``
 
@@ -136,7 +136,7 @@ class PyLammpsAttribute:
         return fixes
 
     @property
-    def fix_styles(self) -> "list[str]":
+    def fix_styles(self) -> list[str]:
         """
         Get the styles of the ``fixes`` applied in LAMMPS
 
@@ -149,7 +149,7 @@ class PyLammpsAttribute:
         return [fix['style'] for fix in self.fixes]
 
     @property
-    def fix_names(self) -> "list[str]":
+    def fix_names(self) -> list[str]:
         """
         Get the names of the ``fixes`` applied in LAMMPS
 
@@ -266,7 +266,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_simulation.pressure = value
 
     @property
-    def ensemble(self) -> 'LAMMPSEnsemble':
+    def ensemble(self) -> LAMMPSEnsemble:
         """
         Get or set the ensemble object which applies a ``thermostat`` and/or
         ``barostat`` to LAMMPS
@@ -280,7 +280,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return self.lmp_simulation.ensemble
 
     @ensemble.setter
-    def ensemble(self, value: 'LAMMPSEnsemble') -> None:
+    def ensemble(self, value: LAMMPSEnsemble) -> None:
 
         self.lmp_simulation.ensemble = value
 
@@ -440,9 +440,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
-            # pylint: disable=consider-using-with
-            self.trajectory_file = NamedTemporaryFile()  # noqa: SIM115
-            #     f_name = self.trajectory_file.name
+            self.trajectory_file = NamedTemporaryFile() # noqa: SIM115 - Use with
 
             # Custom trajectory output just saves the atom ID, type and
             # positions
@@ -544,7 +542,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             line_count = sum( buf.count(b'\n') for buf in file_generator )
 
         if line_count == 0:
-            raise IOError("Trajectory file empty, run may have failed"
+            raise OSError("Trajectory file empty, run may have failed"
                           " or run length may be less than dump frequency.")
 
         # And header_size will tell us how many lines per frame
@@ -585,7 +583,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     for i in range(3):
                         line = file_handler.readline()
                         header_size += 1
-                        dmin, dmax = [float(splt) for splt in line.split()]
+                        dmin, dmax = (float(splt) for splt in line.split())
                         temp_dim.append((dmin, dmax))
                         traj_dimensions[i] = dmax-dmin
                     if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
@@ -609,8 +607,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         splt = line.split()
                         # Requires id, type and position to be defined, velocity is
                         # optional
-                        i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
-                                               in ['id', 'type', pos_string]]
+                        i_id, i_type, i_pos = (splt.index(prop) - 2 for prop
+                                               in ['id', 'type', pos_string])
                         i_vel = splt.index('vx') if 'vx' in splt else None
 
                         # now we try to get the correct number of frames in the trajectory
@@ -859,10 +857,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         if not value:
             self._nonbonded_mix = value
         else:
-            supported = ['geometric', 'arithmetic', 'sixthpower']
+            supported = ('geometric', 'arithmetic', 'sixthpower')
             if value.lower() not in supported:
-                raise ValueError('The supported mixes are: {0}, {1}, {2}'
-                                 ''.format(*supported))
+                raise ValueError(f"The supported mixes are: {', '.join(supported)}")
+
             self._nonbonded_mix = value.lower()
 
     def update_parameters(self) -> None:
@@ -1238,7 +1236,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.') from error
 
-    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: 'list[str]' = None) -> None:
+    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: list[str] = None) -> None:
         """
         Updates ``Dispersion`` interactions in LAMMPS
 
@@ -1307,7 +1305,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         special = 'no'
-        ID_attr = getattr(self, '{0}_ID'.format(lmp_name)
+        ID_attr = getattr(self, f'{lmp_name}_ID'
                           if lmp_name != 'dihedral' else 'proper_ID')
         coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # If bonds already exist, new bond IDs are generated from lowest unused
@@ -1362,7 +1360,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # bond_coeff)
         coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # Get ID dict attribute from self (e.g. bond_ID)
-        b_i_IDs = getattr(self, '{0}_ID'.format(lmp_name)
+        b_i_IDs = getattr(self, f'{lmp_name}_ID'
                           if lmp_name != 'dihedral' else 'proper_ID')
         for b_i in bonded_interactions:
             coeff_function(b_i_IDs[b_i], *parse_bonded_coefficients(b_i))
@@ -2180,7 +2178,7 @@ SYSTEM = {
 }
 
 
-def convert_unit(value: Union[np.ndarray, float],
+def convert_unit(value: np.ndarray | float,
                  unit: Unit = None, to_lammps: bool = True):
     """
     Converts between MDMC units and LAMMPS real units
@@ -2475,7 +2473,7 @@ def parse_nonbonded_styles(interaction: NonBondedInteraction) -> tuple:
     return lmp_str, parse_nonbonded_modifications(interaction)
 
 
-def parse_nonbonded_modifications(interaction: Interaction) -> 'list[str]':
+def parse_nonbonded_modifications(interaction: Interaction) -> list[str]:
     """
     Parses MDMC ``Interaction`` attributes into `list` that can be used with
     LAMMPS ``pair_modify`` command
@@ -2509,7 +2507,7 @@ def parse_nonbonded_modifications(interaction: Interaction) -> 'list[str]':
     return mods
 
 
-def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> 'dict[tuple, list[str]]':
+def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> dict[tuple, list[str]]:
     """
     Converts all ``NonBondedInteractions`` to LAMMPS pair styles
 
@@ -2552,7 +2550,7 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> 'dict[tupl
         range ``Coulombic``.
     """
 
-    def check_validity(pair_style: str, cutoffs: 'list[float]' = None) -> 'list[str]':
+    def check_validity(pair_style: str, cutoffs: list[float] = None) -> list[str]:
         """
         Tests the validity of a LAMMPS ``pair_style``.
 
@@ -2644,7 +2642,7 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> 'dict[tupl
     return combined_parsed_inters
 
 
-def parse_bonded_coefficients(interaction: BondedInteraction) -> 'list[str]':
+def parse_bonded_coefficients(interaction: BondedInteraction) -> list[str]:
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``bond_coeff`` and
     ``angle_coeff``
@@ -2712,7 +2710,7 @@ def parse_bonded_coefficients(interaction: BondedInteraction) -> 'list[str]':
 
 
 def parse_dispersion_coefficients(interactions: list[NonBondedInteraction],
-                                  nonbonded_styles: 'list[tuple]' = None) -> 'list[str]':
+                                  nonbonded_styles: list[tuple] = None) -> list[str]:
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``pair_coeff``
 

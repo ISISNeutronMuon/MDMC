@@ -98,7 +98,7 @@ class MantidSQw(SQwReader):
                 this is an issue"
             logger.warning(msg)
 
-    def parse_variables(self, file: IO) -> 'tuple[float]':
+    def parse_variables(self, file: IO) -> tuple[float, float, float]:
         """
         Parses the values for energy, SQw and its error for each detector, or momentum value
         if it is defined instead of detector_ID

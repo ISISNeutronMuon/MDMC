@@ -111,7 +111,7 @@ class ObservablePair:
         self._weight = weight
 
     @property
-    def n_averages(self) -> 'dict[str, int]':
+    def n_averages(self) -> dict[str, int]:
         """
         The number of separate, complete dependent variable calculations we
         have been able to perform for the ``Observable``
@@ -354,7 +354,7 @@ class FigureOfMerit(ABC):
     """
 
     def __init__(self,
-                 obs_pairs: 'list[ObservablePair]',
+                 obs_pairs: list[ObservablePair],
                  norm: str = 'data_points',
                  n_parameters: int = None):
 

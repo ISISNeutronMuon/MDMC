@@ -59,7 +59,7 @@ class LorentzianResolution(Resolution):
         # thus as the instrument resolution function is centred around x_0, this simplifies to
         # e^(-Gamma * pi * |k|).
 
-        window = np.exp((-self.e_res * np.pi * np.abs(t)))
+        window = np.exp(-self.e_res * np.pi * np.abs(t))
 
         return window
 

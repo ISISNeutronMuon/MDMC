@@ -1,6 +1,6 @@
 """Utility for slicing a ``CompactTrajectory`` object into sub-trajectories"""
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 

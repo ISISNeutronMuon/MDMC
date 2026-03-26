@@ -1,9 +1,11 @@
 """Module containing an abstract base class for MD engine facades"""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from MDMC.MD.simulation import Simulation
+    from MDMC.MD.simulation import Simulation, Universe
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
     from MDMC.trajectory_analysis.trajectory import Configuration
 
@@ -25,7 +27,7 @@ class MDEngine(ABC):
 
     @property
     @abstractmethod
-    def saved_config(self) -> 'Configuration':
+    def saved_config(self) -> Configuration:
         """
         Get the saved configuration of the atomic positions
 
@@ -38,7 +40,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @property
-    def parent_simulation(self) -> 'Simulation':
+    def parent_simulation(self) -> Simulation:
         """
         Get or set the simulation that created this engine facade
 
@@ -56,7 +58,7 @@ class MDEngine(ABC):
                                  "") from error
 
     @parent_simulation.setter
-    def parent_simulation(self, value: 'Simulation') -> None:
+    def parent_simulation(self, value: Simulation) -> None:
         # pylint: disable=attribute-defined-outside-init
         # as this is internal and abstract
         self._parent_simulation = value
@@ -93,7 +95,7 @@ class MDEngine(ABC):
             return None
 
     @abstractmethod
-    def setup_universe(self, universe: str, **settings: Any) -> None:
+    def setup_universe(self, universe: Universe, **settings: Any) -> None:
         """
         Creates a ``Universe.configuration`` and populates with
         ``Structure``
@@ -163,7 +165,7 @@ class MDEngine(ABC):
 
     @abstractmethod
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: Any) -> 'CompactTrajectory':
+                           step: int = 1, **settings: Any) -> CompactTrajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 

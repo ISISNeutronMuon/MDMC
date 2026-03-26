@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from copy import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import dlpoly.control
 import numpy as np
@@ -92,13 +92,13 @@ class DLPOLYAttribute:
                      self.dlpoly,
                      'added to class' if dlpoly else 'created by class')
 
-    def read_settings(self, settings: dict) -> None:
+    def read_settings(self, settings: Any) -> None:
         """
         Read DLP parameters from a settings dict
 
         Parameters
         ----------
-        settings : dict
+        settings : Any
             MDMC settings dictionary to read parameters from.
         """
         new_opt = DLPControl.from_dict(settings, strict=False)
@@ -189,7 +189,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly_simulation.pressure = value
 
     @property
-    def ensemble(self) -> 'DLPOLYEnsemble':
+    def ensemble(self) -> DLPOLYEnsemble:
 
         """
         Get or set the ensemble object which applies a ``thermostat`` and/or
@@ -204,7 +204,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         return self.dlpoly_simulation.ensemble
 
     @ensemble.setter
-    def ensemble(self, value: 'DLPOLYEnsemble') -> None:
+    def ensemble(self, value: DLPOLYEnsemble) -> None:
         self.dlpoly_simulation.ensemble = value
 
     @property
@@ -245,7 +245,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.ensemble.barostat = value
 
-    def setup_universe(self, universe: 'Universe', **settings: Any) -> None:
+    def setup_universe(self, universe: Universe, **settings: Any) -> None:
 
         """
         Creates the simulation box, the atomic configuration, and the topology
@@ -540,7 +540,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         raise NotImplementedError("DLPolyEngine does not support eval")
 
-    def _pass_settings_to_control(self, settings: dict,
+    def _pass_settings_to_control(self, settings: Any,
                                   control: dlpoly.control.Control) -> None:
         """Pass excess settings through to dlpoly control object.
 
@@ -582,7 +582,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
     There might be a lot of Attributes needed (see DL_POLYUniverse for example)
     """
 
-    def __init__(self, universe: 'Universe', dlpoly: DLPoly = None, **settings: Any):
+    def __init__(self, universe: Universe, dlpoly: DLPoly = None, **settings: Any):
 
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
@@ -655,7 +655,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         else:
             self.dlpoly.control['coul_method'] = settings.get('coul_method', 'off')
 
-    def _build_config(self, universe: 'Universe', **settings) -> None:
+    def _build_config(self, universe: Universe, **settings) -> None:
 
         """
         Adds atoms to DL_POLY
@@ -679,7 +679,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         LOGGER.info('%s configuration written in %s',
                     self.__class__, config_filename)
 
-    def _add_topology(self, universe: 'Universe', **settings: Any) -> None:
+    def _add_topology(self, universe: Universe, **settings: Any) -> None:
 
         """
         Add the bonded and nonbonded interactions to DL_POLY
@@ -707,7 +707,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
-    def _create_field(self, universe: 'Universe', **settings: Any) -> Field:
+    def _create_field(self, universe: Universe, **settings: Any) -> Field:
         """
         Creates a dlpoly Field object
 
@@ -771,7 +771,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         return out
 
     @staticmethod
-    def _from_atom(universe: 'Universe', structure: MAtom) -> Molecule:
+    def _from_atom(universe: Universe, structure: MAtom) -> Molecule:
 
         """
         Construct DLPoly molecule from MDMC Atom
@@ -795,7 +795,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         return new_molecule
 
     @staticmethod
-    def _from_molecule(universe: 'Universe', structure: MMolecule) -> Molecule:
+    def _from_molecule(universe: Universe, structure: MMolecule) -> Molecule:
 
         """
         Construct DLPoly molecule from MDMC molecule
@@ -961,7 +961,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
     temperature: float, temperatjre of the stimulation
     """
 
-    def __init__(self, universe: 'Universe', traj_step: int,
+    def __init__(self, universe: Universe, traj_step: int,
                  time_step: float = 1., dlpoly=None, **settings: Any):
 
         super().__init__(dlpoly=dlpoly)
@@ -1228,7 +1228,7 @@ SYSTEM = {
 # some extra utility methods. these might be obsolete or
 # importable from lammps_engine.py
 # (in which case they maybe should be refactored into a utility module)
-def convert_unit(value: Union[np.ndarray, float],
+def convert_unit(value: np.ndarray | float,
                  unit: Unit = None, to_dlpoly: bool = True):
 
     """

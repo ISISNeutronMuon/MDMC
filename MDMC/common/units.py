@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from copy import deepcopy
 from numbers import Number
-from typing import Literal, Union
+from typing import Literal
 
 import numpy as np
 from pandas import Series
@@ -661,7 +661,7 @@ class UnitFloat(float):
     immaterial as no quantity which possesses units is complex.
     """
 
-    def __new__(cls, value: float, unit: Union[Unit, str]):
+    def __new__(cls, value: float, unit: Unit | str):
 
         if value is None:
             return None
@@ -671,7 +671,7 @@ class UnitFloat(float):
             return float(value.iloc[0])
         return float.__new__(cls, value)
 
-    def __init__(self, value: float, unit: Union[Unit, str]):
+    def __init__(self, value: float, unit: Unit | str):
 
         float.__init__(value)
         self.unit = unit
@@ -807,7 +807,7 @@ class UnitNDArray(np.ndarray):
             return super().__str__()
 
 
-def unit_array(obj, unit: Union[Unit, str], dtype=None) -> UnitNDArray:
+def unit_array(obj, unit: Unit | str, dtype=None) -> UnitNDArray:
     """
     Create a ``UnitNDArray`` from an ``array`` or any nested sequence.
 

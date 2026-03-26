@@ -3,10 +3,10 @@ Module for Intermediate Scattering Function class.
 """
 import logging
 from abc import abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import suppress
 from itertools import product
-from typing import Any, Generator, Literal, Optional
+from typing import Any, Literal
 
 import numpy as np
 
@@ -130,13 +130,13 @@ class AbstractFQt(SQwMixins, Observable):
 
     @t.setter
     @unit_decorator(unit=units.TIME)
-    def t(self, value: 'np.ndarray') -> None:
+    def t(self, value: np.ndarray) -> None:
 
         self.independent_variables['t'] = value
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def FQt(self) -> Optional[list[np.ndarray]]:
+    def FQt(self) -> list[np.ndarray] | None:
         """
         Get or set the dynamic structure factor, F(Q, t) (in ``arb``).
 
@@ -152,7 +152,7 @@ class AbstractFQt(SQwMixins, Observable):
             return None
 
     @FQt.setter
-    def FQt(self, value: 'list[np.ndarray]') -> None:
+    def FQt(self, value: list[np.ndarray]) -> None:
         self.dependent_variables['FQt'] = value
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
@@ -478,9 +478,9 @@ class AbstractFQt(SQwMixins, Observable):
         # with similar values of |Q|.
         # The following lines split the calculation by multiplying
         # the trajectory by each q vector separately.
-        futures = core_batch((executor.submit(helper_coherent,
-                                              configs, vector)
-                              for vector in single_Q_vectors))
+        futures = core_batch(executor.submit(helper_coherent,
+                                             configs, vector)
+                             for vector in single_Q_vectors)
         # Append to rho_config as completed, block until all futures added
         q_num = 0
         for future_batch in futures:
@@ -682,10 +682,10 @@ class FQt(AbstractFQt):
             element_configs = np.swapaxes(element_configs, 0, 2)
 
             rho_all = calculate_rho(element_configs, single_Q_vectors)
-            futures = core_batch((executor.submit(faster_autocorrelation,
-                                                  rho.T,
-                                                  weights=incoh_weights**2)
-                                  for rho in rho_all))
+            futures = core_batch(executor.submit(faster_autocorrelation,
+                                                 rho.T,
+                                                 weights=incoh_weights**2)
+                                 for rho in rho_all)
             for future_batch in futures:
                 results = [future.result() for future in future_batch]
                 for result in results:

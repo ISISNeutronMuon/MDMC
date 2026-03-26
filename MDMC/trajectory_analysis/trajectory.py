@@ -1,17 +1,20 @@
 """
 Module for ``Configuration`` and related classes.
 """
+from __future__ import annotations
+
 import weakref
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
-from MDMC.MD.structures import Atom, Molecule, Structure
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from MDMC.MD.simulation import Universe
+    from MDMC.MD.structures import Atom, Molecule, Structure
 
 # pylint: disable=abstract-method
 # as __sub__ and scale() are not implemented
@@ -25,7 +28,7 @@ class AtomCollection:
     __slots__ = ('_universe', )
 
     @property
-    def universe(self) -> Optional['Universe']:
+    def universe(self) -> Universe | None:
         """
         Get or set the ``Universe`` in which the ``AtomCollection`` exists.
 
@@ -45,7 +48,7 @@ class AtomCollection:
             return None
 
     @universe.setter
-    def universe(self, universe: 'Universe') -> None:
+    def universe(self, universe: Universe) -> None:
 
         # Create a weakref of the universe for _universe. If the use of weakref
         # causes issues with prematurely garbage collecting the universe,
@@ -56,13 +59,13 @@ class AtomCollection:
             self._universe = None
 
     @property
-    def dimensions(self) -> 'np.ndarray':
+    def dimensions(self) -> np.ndarray:
         """
         Get the ``dimensions`` of the ``Universe`` in which the ``AtomCollection`` exists.
 
         Returns
         -------
-        snumpy.ndarray
+        numpy.ndarray
             The ``dimensions`` of the ``Universe``.
         """
 
@@ -108,7 +111,7 @@ class Configuration(AtomCollection):
         self.data = structures
         self.element_set = set(self.element_list)
 
-    def __eq__(self, other: 'Configuration') -> bool:
+    def __eq__(self, other: Configuration) -> bool:
         if id(other) == id(self):
             return True
         if isinstance(other, self.__class__):
@@ -270,7 +273,7 @@ class Configuration(AtomCollection):
         except AssertionError as error:
             raise AssertionError('Atoms are not all from same universe') from error
 
-    def __add__(self, configuration: 'Configuration') -> 'Configuration':
+    def __add__(self, configuration: Configuration) -> Configuration:
         """
         Add the structures from the other ``Configuration`` into this one.
 
@@ -285,7 +288,7 @@ class Configuration(AtomCollection):
 
         return self.__class__(*structure_list)
 
-    def __sub__(self, configuration: 'Configuration') -> 'Configuration':
+    def __sub__(self, configuration: Configuration) -> Configuration:
         """
         Returns
         -------
@@ -427,7 +430,7 @@ class TemporalConfiguration(Configuration):
         super().__init__(*structures, **settings)
         self.time = time
 
-    def __add__(self, configuration: 'TemporalConfiguration') -> 'TemporalConfiguration':
+    def __add__(self, configuration: TemporalConfiguration) -> TemporalConfiguration:
         """
         Returns
         -------

@@ -1,6 +1,7 @@
 """
 Factory class for generating observables.
 """
+
 from collections.abc import Callable
 
 from MDMC.common.factory import RegisterFactory

@@ -1,5 +1,7 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-from typing import TYPE_CHECKING, Any, Dict, List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from MDMC.MD.structures import Atom, Molecule
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
@@ -13,7 +15,7 @@ class PackmolPDBReader(ConfigurationReader):
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._structures: List['Structure'] = []
+        self._structures: list[Structure] = []
 
     def parse(self, **settings: Any) -> None:
         """
@@ -35,7 +37,7 @@ class PackmolPDBReader(ConfigurationReader):
         #   'B': {'1': [...], '2': [...], ...}
         # }
         # where [...] is a list of atoms belonging to a specific molecule
-        chains_dict: Dict[str, Dict[str, List[Atom]]] = {}
+        chains_dict: dict[str, dict[str, list[Atom]]] = {}
 
         for line in self.file:
             #chars 0-6 identify what the line is describing
@@ -85,6 +87,6 @@ class PackmolPDBReader(ConfigurationReader):
         return record
 
     @property
-    def structures(self) -> List['Structure']:
+    def structures(self) -> list[Structure]:
         """Returns a list of ``Molecule`` objects from the data read from the file"""
         return self._structures
