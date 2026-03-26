@@ -128,3 +128,12 @@ def test_minimize_mpi(tmp_path, control):
     new_conf = control.simulation.engine.dlpoly.config.atoms
 
     assert orig_conf != new_conf
+
+
+def test_auto_equil(tmp_path, capsys, control):
+    """ Test that equilibrate runs an auto-equilibration phase """
+
+    control.equilibrate(output_log=tmp_path / 'equilibration.log',
+                        work_dir=tmp_path)
+    captured = capsys.readouterr()
+    assert "Auto-equilibration has detected stability " in captured.out

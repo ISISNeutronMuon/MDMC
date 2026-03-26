@@ -21,7 +21,6 @@ from dlpoly.field import Bond, Field, Molecule, Potential
 from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.species import Species
 from dlpoly.utility import next_file
-
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
@@ -385,7 +384,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         err_code = self.dlpoly.run(numProcs=settings.get('numprocs', 1),
                                    outputFile=output_log,
                                    mpi="mpirun --allow-run-as-root -n",
-                                   debug=True)
+                                   load_outputs=True)
 
         if err_code != 0:
             raise MDEngineError(f"Non-zero exit code ({err_code}), DLPoly run failed, "
@@ -534,11 +533,37 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly_universe.set_config(self.saved_config)
 
+    LAMMPS_TO_DLP = {
+        'temp': 'System Temperature',
+        'pe': 'Total Extended System Energy',
+    }
+
     def eval(self, variable: str) -> None:
+        """Return a value determined from a DLPoly Run.
+
+        Parameters
+        ----------
+        variable : str
+            Variable to extract. Must be a valid DLPoly statis key.
+
         """
-        Dummy eval to satisfy Abstract specification
-        """
-        raise NotImplementedError("DLPolyEngine does not support eval")
+        dlp = self.dlpoly_simulation.dlpoly
+
+        return dlp.statis[self.LAMMPS_TO_DLP.get(variable, variable)]
+
+    def generate_auto_equil_data(self, vals_dict: dict, eq_step: int, window_size: int):
+        outp = Path("auto_equil")
+        self.run(n_steps=window_size * eq_step,
+                 equilibration=True,
+                 work_dir=outp,
+                 output_log=outp / "auto_equil.log",
+                 record_equilibration=True,
+                 rescale_frequency=(eq_step, "steps"),
+                 stats_frequency=(1, "steps"),
+                 )
+
+        for var in vals_dict:
+            vals_dict[var] = list(self.dlpoly.statis[var][1::eq_step])
 
     def _pass_settings_to_control(self, settings: dict,
                                   control: dlpoly.control.Control) -> None:

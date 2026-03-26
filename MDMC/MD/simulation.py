@@ -1605,7 +1605,7 @@ class Simulation:
             """
             Performs one step of an equilibration and records variable values.
             """
-            self.run(eq_step, equilibration=True)
+            self.run(eq_step, equilibration=True, work_dir="auto_equil")
             for var in vals_dict:
                 vals_dict[var].append(self.engine.eval(var))
 
@@ -1624,8 +1624,7 @@ class Simulation:
             return results[1] > 0.1 - tolerance
 
         # we perform an initial run of window_size*eq_step steps to create a window.
-        for _ in range(window_size):
-            auto_step()
+        self.engine.generate_auto_equil_data(vals_dict, eq_step, window_size)
 
         # we consider the simulation stable if the rolling window
         # is stationary for all variables (by KPSS)
@@ -1638,7 +1637,7 @@ class Simulation:
 
         total_steps = len(list(vals_dict.values())[0]) * eq_step
         print("Auto-equilibration has detected stability "
-             f"after {total_steps} equilibration steps.")
+              f"after {total_steps} equilibration steps.")
         return total_steps, vals_dict
 
     @property
