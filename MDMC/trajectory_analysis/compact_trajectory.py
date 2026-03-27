@@ -105,6 +105,7 @@ class CompactTrajectory:
         # and so we define them as header data, and not separately for every frame:
         self.n_atoms = n_atoms
         self.n_steps = n_steps
+        self._chemical_system = None
         self.atom_types = []  # atom types defined as numbers, following the MD engine definition
         self.atom_masses = []  # atom masses, floating point numbers, one for each atom
         self.atom_charges = []  # atom charges, floating point numbers, one for each atom
@@ -945,7 +946,6 @@ class CompactTrajectory:
         if var_name == "velocities":
             return self.has_velocity
         return False
-
 
 
 def configurations_as_compact_trajectory(

@@ -12,6 +12,7 @@ from MDANSE.Framework.Configurators.IConfigurator import IConfigurator
 from MDANSE.Framework.Jobs.IJob import IJob
 from more_itertools import first
 
+from MDMC.trajectory_analysis.mdanse_trajectory import MDMCTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
@@ -103,7 +104,7 @@ class MDANSEObservable(Observable):
         settings["frames"] = [0, len(MD_input), 1, len(MD_input) // 2]
         for key, value in self.job_settings.items():
             settings[key] = value
-        settings["trajectory"] = MD_input
+        settings["trajectory"] = MDMCTrajectory(MD_input)
         settings["output_files"] = ["dummy_name", ["FileInMemory"], "no logs"]
         self.job_instance.setup(settings)
         self.job_instance.run(settings, status=True)
