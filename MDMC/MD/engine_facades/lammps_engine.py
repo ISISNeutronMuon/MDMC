@@ -449,7 +449,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                          self.trajectory_file)
             self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
                           self.trajectory_file.name, 'id', 'type', 'x', 'y',
-                          'z')
+                          'z','vx','vy','vz')
         else:
             reset_to_nve = False
             if self.thermostat is self.barostat is None:
