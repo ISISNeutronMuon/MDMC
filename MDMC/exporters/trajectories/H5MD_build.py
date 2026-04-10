@@ -140,7 +140,7 @@ def create_box_data(open_file: h5py.File, trajectory: CompactTrajectory):
         box_group.attrs["boundary"] = boundary
 
 
-def create_parameter_data(open_file: h5py.File, data: np.array):
+def create_parameter_data(open_file: h5py.File, data: np.ndarray):
     """
     Create and store the remaining parameter data in the H5MD file.
 
@@ -148,7 +148,7 @@ def create_parameter_data(open_file: h5py.File, data: np.array):
     ----------
     open_file : h5py.File
         A pre-opened file that the data is being written into
-    data : np.array
+    data : np.ndarray
         The data being stored
     """
     parameters = open_file["parameters"]

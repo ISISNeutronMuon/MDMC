@@ -16,9 +16,10 @@ from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count
 from math import gcd
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 import periodictable
 from scipy.spatial.transform import Rotation
 
@@ -29,10 +30,12 @@ from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.interactions import BondedInteraction, Coulombic
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from MDMC.MD.interactions import Interaction, NonBondedInteraction
     from MDMC.MD.simulation import Universe
 
-
+ThreeVec = npt.NDArray[np.floating]
 LOGGER = logging.getLogger(__name__)
 
 
@@ -45,12 +48,10 @@ class Structure(ABC):
 
     Parameters
     ----------
-    position : list, tuple, numpy.ndarray
-        A 3 element `list`, `tuple` or ``array`` with the position in units of
-        ``Ang``.
-    velocity : list, tuple, numpy.ndarray
-        A 3 element `list`, `tuple` or ``array`` with the velocity in units of
-        ``Ang / fs``.
+    position : ThreeVec
+        A 3 element sequence with the position in units of ``Ang``.
+    velocity : ThreeVec
+        A 3 element sequence with the velocity in units of ``Ang / fs``.
     name : str
         The name of the structure.
 
@@ -71,8 +72,8 @@ class Structure(ABC):
     _ID_generator = count(start=1, step=1)
 
     def __init__(self,
-                 position: Union['list[float]', 'tuple[float]', np.ndarray],
-                 velocity: Union['list[float]', 'tuple[float]', np.ndarray],
+                 position: ThreeVec,
+                 velocity: ThreeVec,
                  name: str):
 
         self.ID = self._generate_ID()
@@ -89,44 +90,44 @@ class Structure(ABC):
                     self.position)
 
     @property
-    def position(self) -> np.ndarray:
+    def position(self) -> ThreeVec:
         """
         Get or set the position of the center of mass of the ``Structure``
         in ``Ang``
 
         Returns
         -------
-        numpy.ndarray
+        ThreeVec
         """
 
         return self._position
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position: np.ndarray) -> None:
+    def position(self, position: ThreeVec) -> None:
 
         self._position = position
 
     @property
-    def velocity(self) -> np.ndarray:
+    def velocity(self) -> ThreeVec:
         """
         Get or set the velocity of the ``Structure`` in ``Ang/fs``
 
         Returns
         -------
-        numpy.ndarray
+        ThreeVec
         """
 
         return self._velocity
 
     @velocity.setter
     @unit_decorator(unit=units.LENGTH / units.TIME)
-    def velocity(self, velocity: np.ndarray) -> None:
+    def velocity(self, velocity: ThreeVec) -> None:
 
         self._velocity = velocity
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         Get a `list` of all of the `Atom` objects in the structure by
         recursively calling ``atoms`` for all substructures
@@ -142,7 +143,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def universe(self) -> Union['Universe', None]:
+    def universe(self) -> Universe | None:
         """
         Get the ``Universe`` to which the ``Structure`` belongs
 
@@ -154,33 +155,33 @@ class Structure(ABC):
 
         raise NotImplementedError
 
-    def translate(self, displacement: Union[tuple, np.ndarray]) -> None:
+    def translate(self, displacement: ThreeVec) -> None:
         """
         Translate the structural unit by the specified displacement
 
         Parameters
         ----------
-        Displacement : tuple, numpy.ndarray
-            A three element tuple or ``array`` of `float`
+        Displacement : ThreeVec
+            Three vector displacement in Angstroms.
         """
 
         self.position = self.position + np.array(displacement)
 
     @property
-    def interactions(self) -> 'list[Interaction]':
+    def interactions(self) -> list[Interaction]:
         """
         Get a list of the interactions acting on the ``Structure``
 
         Returns
         -------
         list
-            Interactions acting on the ``Structure``
+            ``Interactions`` acting on the ``Structure``
         """
 
         return self.bonded_interactions + self.nonbonded_interactions
 
     @property
-    def bonded_interactions(self) -> 'list[BondedInteraction]':
+    def bonded_interactions(self) -> list[BondedInteraction]:
         """
         Get a list of the bonded interactions acting on the ``Structure``
 
@@ -194,7 +195,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def nonbonded_interactions(self) -> 'list[NonBondedInteraction]':
+    def nonbonded_interactions(self) -> list[NonBondedInteraction]:
         """
         Get a list of the nonbonded interactions acting on the
         ``Structure``
@@ -209,7 +210,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def bonded_interaction_pairs(self) -> 'list[tuple[Interaction, tuple[Atom]]]':
+    def bonded_interaction_pairs(self) -> list[tuple[Interaction, tuple[Atom, ...]]]:
         """
         Get bonded interactions acting on the ``Structure`` and the other
         atoms to which the atom is bonded
@@ -263,15 +264,14 @@ class Structure(ABC):
             return self.parent.top_level_structure
         return self
 
-    def copy(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> Structure:
+    def copy(self, position: ThreeVec) -> Structure:
 
         """
         Copies the structural unit and sets the ``position``
 
         Parameters
         ----------
-        position : list, tuple, numpy.ndarray
-            3 element `list`, `tuple` or ``array`` of `float` specifying the
+        position : ThreeVec
             ``position`` of the new ``Structure``
 
         Returns
@@ -298,7 +298,7 @@ class Structure(ABC):
 
         return next(self._ID_generator)
 
-    def _position_in_parent_CoM_frame(self) -> np.ndarray:
+    def _position_in_parent_CoM_frame(self) -> ThreeVec:
         """
         Get the position in the ``parent`` center of mass frame
 
@@ -325,7 +325,7 @@ class Structure(ABC):
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
     def valid_position(self,
-                       position: Union['list[float]', 'tuple[float]', np.ndarray] = None) -> bool:
+                       position: ThreeVec | None = None) -> bool:
         """
         Checks if the specified ``position`` is within the bounds of the
         ``Structure.universe``, if it has one
@@ -333,8 +333,8 @@ class Structure(ABC):
         Parameters
         ----------
         position : list, tuple, numpy.ndarray
-            3 element `list`, `tuple` or ``array`` with units of ``Ang`` or
-            `None`. If `None` then the ``position`` of the ``Structure`` is
+            Position to check with units of ``Ang``.
+            If ``None`` then the ``position`` of the ``Structure`` is
             used.
 
         Returns
@@ -362,7 +362,7 @@ class Structure(ABC):
                     np.any(position > self.universe.dimensions)):
                 return False
             if np.any(position == float('nan')):
-                raise ValueError('position of {0} is undefined'.format(self))
+                raise ValueError(f'Position of {self} is undefined')
             return True
         except AttributeError:
             # Not a member of a universe
@@ -376,7 +376,6 @@ class Structure(ABC):
         BoundingBox
             Contains the lower and upper extents of the ``Molecule``
         """
-
         return BoundingBox(self.atoms)
 
     @abstractmethod
@@ -409,8 +408,8 @@ class CompositeStructure(Structure, AtomContainer):
     """
 
     def __init__(self,
-                 position: Union['list[float]', 'tuple[float]', np.ndarray],
-                 velocity: Union['list[float]', 'tuple[float]', np.ndarray],
+                 position: ThreeVec,
+                 velocity: ThreeVec,
                  name: str):
 
         super().__init__(position, velocity, name)
@@ -521,7 +520,7 @@ class CompositeStructure(Structure, AtomContainer):
                                              in self.atoms])
 
     @property
-    def universe(self) -> Union[Universe, None]:
+    def universe(self) -> Universe | None:
         """
         Get or set the ``Universe`` to which the ``CompositeStructure``
         belongs
@@ -552,7 +551,7 @@ class CompositeStructure(Structure, AtomContainer):
                 structure.universe = value
 
     @property
-    def structure_list(self) -> 'list[Structure]':
+    def structure_list(self) -> list[Structure]:
         """
         Get or set the ``Structure`` objects that are subunits of this
         ``CompositeStructure``
@@ -567,7 +566,7 @@ class CompositeStructure(Structure, AtomContainer):
         return self._structure_list
 
     @structure_list.setter
-    def structure_list(self, value: 'list[Structure]') -> None:
+    def structure_list(self, value: list[Structure]) -> None:
 
         self._structure_list = value
 
@@ -729,11 +728,9 @@ class Atom(Structure):
     """
 
     def __init__(self, element: str,
-                 position: Union['list[float]', 'tuple[float]', np.ndarray]
-                 = (0., 0., 0.),
-                 velocity: Union['list[float]', 'tuple[float]', np.ndarray]
-                 = (0., 0., 0.),
-                 charge: float = None, **settings: Any):
+                 position: ThreeVec = (0., 0., 0.),
+                 velocity: ThreeVec = (0., 0., 0.),
+                 charge: float | None = None, **settings: Any):
 
         self.universe = None
 
@@ -818,14 +815,10 @@ class Atom(Structure):
             ``Atom``
         """
 
-        return ('{0} atom,'
-                '  ID: {1}'
-                '  charge: {2},'
-                '  interactions: {3}'.format(self.element.symbol,
-                                             self.ID,
-                                             self.charge,
-                                             [i.name for i
-                                              in self.interactions]))
+        return (f'{self.element.symbol} atom, '
+                f'ID: {self.ID}, '
+                f'charge: {self.charge}, '
+                f'interactions: {", ".join(i.name for i in self.interactions)}')
 
     def __str__(self) -> str:
         """
@@ -835,14 +828,11 @@ class Atom(Structure):
             The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
-        return ('{0} {1}  charge: {2}  position: {3}'.format(
-            self.element.symbol,
-            self.__class__.__name__,
-            self.charge,
-            self.position))
+        return (f'{self.element.symbol} {self.__class__.__name__} '
+                f' charge: {self.charge}  position: {self.position}')
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         Get a `list` of the atoms, just consisting of the ``Atom``
 
@@ -855,7 +845,7 @@ class Atom(Structure):
         return [self]
 
     @property
-    def universe(self) -> Union[Universe, None]:
+    def universe(self) -> Universe | None:
         """
         Get the ``Universe`` to which the ``Atomm`` belongs
 
@@ -885,7 +875,7 @@ class Atom(Structure):
             self._universe = None
 
     @property
-    def charge(self) -> Union[float, None]:
+    def charge(self) -> float | None:
         """
         Get or set the charge in ``e`` if one has been applied to the ``Atom``
 
@@ -1045,7 +1035,7 @@ class Atom(Structure):
 
         return self._bonded_interaction_pairs
 
-    def copy(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> Atom:
+    def copy(self, position: ThreeVec) -> Atom:
         # pylint:disable=useless-super-delegation
         # Docstring specific to Atom
         """
@@ -1060,9 +1050,8 @@ class Atom(Structure):
 
         Parameters
         ----------
-        position : list, tuple, numpy.ndarray
-            A 3 element `list`, `tuple` or ``array`` with the ``position`` of
-            the new ``Atom``
+        position : ThreeVec
+            ``position`` of the new ``Atom``.
 
         Returns
         -------
@@ -1214,9 +1203,9 @@ class Molecule(CompositeStructure):
     """
 
     def __init__(self,
-                 position: Union['list[float]', 'tuple[float]', np.ndarray] = None,
-                 velocity: Union['list[float]', 'tuple[float]', np.ndarray] = (0, 0, 0),
-                 name = None,
+                 position: ThreeVec | None = None,
+                 velocity: ThreeVec = (0, 0, 0),
+                 name: str | None = None,
                  **settings: Any):
 
         self._structure_list = settings['atoms']
@@ -1228,7 +1217,7 @@ class Molecule(CompositeStructure):
         super().__init__(position, velocity, name)
 
     @property
-    def position(self) -> np.ndarray:
+    def position(self) -> ThreeVec:
         """
         Get or set the position of the center of mass of the ``Molecule`` in
         ``Ang``
@@ -1237,20 +1226,20 @@ class Molecule(CompositeStructure):
 
         Returns
         -------
-        numpy.ndarray
+        ThreeVec
         """
 
         return self._position
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> None:
+    def position(self, position: ThreeVec) -> None:
 
         self._position = position
         self._set_subunit_positions()
 
     @property
-    def nonbonded_interactions(self) -> 'list[NonBondedInteraction]':
+    def nonbonded_interactions(self) -> list[NonBondedInteraction]:
         """
         Get a list of the nonbonded interactions acting on the ``Molecule``
 
@@ -1358,7 +1347,7 @@ class BoundingBox:
         determined
     """
 
-    def __init__(self, atoms: 'list[Atom]'):
+    def __init__(self, atoms: list[Atom]):
         if not atoms:
             raise ValueError("Empty atoms passed; "
                              "it must contain at least one atom to create a BoundingBox object.")
@@ -1423,7 +1412,7 @@ class BoundingBox:
         return abs(np.prod(self.max - self.min))
 
 
-def filter_atoms(atoms: 'list[Atom]', predicate: Callable) -> 'list[Atom]':
+def filter_atoms(atoms: list[Atom], predicate: Callable[[Atom], bool]) -> list[Atom]:
     """
     Filters a list of Atoms with a given predicate
 
@@ -1443,7 +1432,7 @@ def filter_atoms(atoms: 'list[Atom]', predicate: Callable) -> 'list[Atom]':
     return list(filter(predicate, atoms))
 
 
-def filter_atoms_element(atoms: 'list[Atom]', element: str) -> 'list[Atom]':
+def filter_atoms_element(atoms: list[Atom], element: str) -> list[Atom]:
     """
     Filters a list of atoms based on the atomic element
 
@@ -1463,8 +1452,8 @@ def filter_atoms_element(atoms: 'list[Atom]', element: str) -> 'list[Atom]':
     return list(filter(lambda a: a.element.symbol == element, atoms))
 
 
-def get_reduced_chemical_formula(symbols: 'list[str]',
-                                 factor: int = None,
+def get_reduced_chemical_formula(symbols: list[str],
+                                 factor: int | None = None,
                                  system: str = 'Hill') -> str:
     """
     Get the reduced chemical formula
@@ -1517,8 +1506,8 @@ def get_reduced_chemical_formula(symbols: 'list[str]',
 
     n_symbols = len(symbols)
     if n_symbols % factor != 0:
-        raise ValueError('factor ({0}) must be a factor of the number of'
-                         ' symbols {1}'.format(factor, n_symbols))
+        raise ValueError(f'factor ({factor}) must be a factor of the number of'
+                         f' symbols {n_symbols}')
 
     n_reduced_atoms = n_symbols // factor
     reduced_symbols = symbols[::n_symbols // n_reduced_atoms]

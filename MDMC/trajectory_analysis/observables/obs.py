@@ -126,7 +126,7 @@ class Observable(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimum_frames(self, dt: float = None) -> int:
+    def minimum_frames(self, dt: float | None = None) -> int:
         """
         The no. of ``CompactTrajectory`` frames needed to calculate the ``dependent_variables``.
 

@@ -1,9 +1,9 @@
 """Covariance Matrix Adaptation Evolution Strategy minimiser."""
 
-from collections.abc import Sequence
-from pathlib import Path
+from __future__ import annotations
+
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import cma
 import numpy as np
@@ -11,6 +11,9 @@ import numpy as np
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
+
     from MDMC.control import Control
     from MDMC.MD import Parameters
 
@@ -50,9 +53,9 @@ class CMAES(Minimizer):
 
     def __init__(
         self,
-        control: "Control",
-        parameters: "Parameters",
-        previous_history: Optional[Union[Path, str]] = None,
+        control: Control,
+        parameters: Parameters,
+        previous_history: Path | str | None = None,
         **settings: Any,
     ):
         super().__init__(control, parameters, previous_history)
@@ -91,7 +94,7 @@ class CMAES(Minimizer):
         self.used_parameters, self.used_values = [], []
 
     @property
-    def history_columns(self) -> "list[str]":
+    def history_columns(self) -> list[str]:
         """
         Returns column labels of the history
 
@@ -185,7 +188,7 @@ class CMAES(Minimizer):
         """
         pass
 
-    def extract_result(self) -> "list[str]":
+    def extract_result(self) -> list[str]:
         """
         Extracts the result data from the history of the minimizer run
 

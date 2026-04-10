@@ -2,7 +2,7 @@
 A module containing mathematical functions.
 """
 
-from typing import Union, overload
+from typing import overload
 
 import numpy as np
 from numpy.fft import fft, ifft
@@ -127,7 +127,7 @@ def faster_correlation(input1: np.ndarray, input2: np.ndarray) -> np.ndarray:
 
 
 def faster_autocorrelation(input1: np.ndarray,
-                           weights: Union[np.ndarray, float] = None) -> np.ndarray:
+                           weights: np.ndarray | float | None = None) -> np.ndarray:
     """
     The autocorrelation of a vector.
 

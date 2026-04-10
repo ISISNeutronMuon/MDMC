@@ -3,8 +3,9 @@ Module for calculating the total pair distribution function (PDF).
 """
 import warnings
 from collections import defaultdict
+from collections.abc import Generator
 from itertools import chain, combinations_with_replacement, product
-from typing import Any, Generator, Optional
+from typing import Any
 
 import numpy as np
 
@@ -127,7 +128,7 @@ class PairDistributionFunction(Observable):
     def errors(self, value: dict) -> None:
         self._errors = value
 
-    def minimum_frames(self, dt: float = None) -> int:
+    def minimum_frames(self, dt: float | None = None) -> int:
         """
         The minimum number of frames needed to calculate the ``dependent_variables``.
 
@@ -160,7 +161,7 @@ class PairDistributionFunction(Observable):
         return None
 
     @property
-    def r(self) -> Optional[float]:
+    def r(self) -> float | None:
         """
         Get or set the value of the atomic separation distance (in ``Ang``).
 
@@ -185,7 +186,7 @@ class PairDistributionFunction(Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
-    def PDF(self) -> Optional[float]:
+    def PDF(self) -> float | None:
         """
         Get the value of the total pair distribution function (in ``barn``).
 
@@ -201,7 +202,7 @@ class PairDistributionFunction(Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
-    def PDF_err(self) -> Optional[float]:
+    def PDF_err(self) -> float | None:
         """
         Get the errors on the total pair distribution function (in ``barn``).
 
@@ -541,8 +542,8 @@ class PairDistributionFunction(Observable):
         self.numbers_of_atoms = self._set_numbers(self.elements,
                                                   self.trajectory.element_list)
 
-        self.universe_dimensions = np.array((settings.get('dimensions')
-                                             or trajectory.universe.dimensions))
+        self.universe_dimensions = np.array(settings.get('dimensions')
+                                             or trajectory.universe.dimensions)
         self.universe_volume = np.prod(self.universe_dimensions)
         # PDF only valid where number of atoms is conserved over trajectories
         self.n_atoms = self.trajectory.n_atoms

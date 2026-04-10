@@ -1,14 +1,16 @@
 """Module for setting up and running the simulation
 
  Classes for the simulation box, minimizer and integrator."""
+from __future__ import annotations
 
 import logging
 import warnings
 from collections import defaultdict
 from itertools import count, filterfalse, product
-from typing import TYPE_CHECKING, Any, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from statsmodels.tsa.stattools import kpss
 from verbosemanager import VerboseManager
 
@@ -25,12 +27,11 @@ from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.interactions import Coulombic, Dispersion
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
-from MDMC.MD.structures import Structure
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 if TYPE_CHECKING:
     from MDMC.MD.interactions import Interaction
-    from MDMC.MD.structures import Atom, Molecule
+    from MDMC.MD.structures import Atom, Molecule, Structure
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
@@ -216,7 +217,7 @@ class Universe(AtomContainer):
         return self._dimensions
 
     @dimensions.setter
-    def dimensions(self, dimensions: Union[float, list, tuple, np.ndarray]) -> None:
+    def dimensions(self, dimensions: npt.ArrayLike) -> None:
 
         if isinstance(dimensions, float):
             if dimensions <= 0:
@@ -390,7 +391,7 @@ class Universe(AtomContainer):
         return np.prod(self.dimensions)
 
     @property
-    def element_list(self) -> 'list[str]':
+    def element_list(self) -> list[str]:
         """
         The elements of the atoms in the ``Universe``
 
@@ -403,7 +404,7 @@ class Universe(AtomContainer):
         return [atom.element.symbol for atom in self.atoms]
 
     @property
-    def element_dict(self) -> 'dict[str, Atom]':
+    def element_dict(self) -> dict[str, Atom]:
         """
         Get the elements in the ``Universe`` and example ``Atom`` objects for
         each element
@@ -422,7 +423,7 @@ class Universe(AtomContainer):
         return {atom.element.symbol: atom for atom in self.atoms}
 
     @property
-    def element_lookup(self) -> 'dict[str, Atom]':
+    def element_lookup(self) -> dict[str, Atom]:
 
         """
         Get the elements by ID in the ``Universe``
@@ -441,7 +442,7 @@ class Universe(AtomContainer):
         return {atom.atom_type: atom.element.symbol for atom in self.atoms}
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         Get a list of the atoms in the ``Universe``
 
@@ -467,7 +468,7 @@ class Universe(AtomContainer):
         return len(self.atoms)
 
     @property
-    def molecule_list(self) -> 'list[Molecule]':
+    def molecule_list(self) -> list[Molecule]:
         """
         Get a list of the ``Molecule`` objects in the ``Universe``
 
@@ -522,7 +523,7 @@ class Universe(AtomContainer):
         return list(structures)
 
     @property
-    def top_level_structure_list(self) -> 'list[Structure]':
+    def top_level_structure_list(self) -> list[Structure]:
 
         """
         Get a `list` of the top level ``Structure`` objects that exist in the
@@ -545,7 +546,7 @@ class Universe(AtomContainer):
         return top_level_structures
 
     @property
-    def equivalent_top_level_structures_dict(self) -> 'dict[Structure, int]':
+    def equivalent_top_level_structures_dict(self) -> dict[Structure, int]:
 
         """
         Get a `dict` of equivalent top level ``Structure`` objects that
@@ -593,7 +594,7 @@ class Universe(AtomContainer):
         return self._force_fields
 
     @property
-    def atom_types(self) -> 'list[Atom]':
+    def atom_types(self) -> dict[int, list[Atom]]:
         """
         Get the atom types of atoms in the ``Universe``
 
@@ -606,7 +607,7 @@ class Universe(AtomContainer):
         return self._atom_types
 
     @property
-    def atom_type_interactions(self) -> 'dict[int, list[Interaction]]':
+    def atom_type_interactions(self) -> dict[int, list[Interaction]]:
         """
         Get the atom types and the interactions for each atom type
 
@@ -648,7 +649,7 @@ class Universe(AtomContainer):
 
         return self._solvent_density
 
-    def _update_atom_types(self, atom: 'Atom') -> None:
+    def _update_atom_types(self, atom: Atom) -> None:
         """
         Adds the atom to ``atom_types`` `dict`
 
@@ -728,8 +729,8 @@ class Universe(AtomContainer):
             raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structure(self, structure: Union[Structure, int],
-                      force_field: str = None,
+    def add_structure(self, structure: Structure | int,
+                      force_field: str | None = None,
                       center: bool = False) -> None:
         """
         Adds a single ``Structure`` to the ``Universe``, with optional
@@ -845,7 +846,7 @@ class Universe(AtomContainer):
 
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field: str,
-                        *interactions: 'Interaction',
+                        *interactions: Interaction,
                         **settings: Any) -> None:
         """
         Adds a force field to the specified ``interactions``.  If no
@@ -906,7 +907,7 @@ class Universe(AtomContainer):
             pass
 
     def add_bonded_interaction_pairs(self,
-                                     *bonded_interaction_pairs: 'tuple[Interaction, Atom]') -> None:
+                                     *bonded_interaction_pairs: tuple[Interaction, Atom]) -> None:
         """
         Adds one or more interaction pairs to the ``Universe``
 
@@ -920,7 +921,7 @@ class Universe(AtomContainer):
         self._bonded_interaction_pairs.update(bonded_interaction_pairs)
 
     def add_nonbonded_interaction(self,
-                                  *nonbonded_interactions: 'tuple[Interaction, Atom]') -> None:
+                                  *nonbonded_interactions: tuple[Interaction, Atom]) -> None:
         # ignore line too long linting as it is necessary for URL formatting
         # pylint: disable=line-too-long
         """
@@ -944,7 +945,7 @@ class Universe(AtomContainer):
         self._nonbonded_interactions.update(nonbonded_interactions)
 
     @property
-    def nbis_by_atom_type_pairs(self) -> 'dict[tuple[int], list[Interaction]]':
+    def nbis_by_atom_type_pairs(self) -> dict[tuple[int], list[Interaction]]:
         """
         Generates a `dict` of all nonbonded interactions possessed by all
         combinations of ``atom_type`` pairs in the ``Universe``.
@@ -973,14 +974,14 @@ class Universe(AtomContainer):
         # Create dict of interactions for each atom type pair
         for pair in atom_type_pairs:
             pairs_interactions[pair] = [inter for inter in self.interactions
-                                        if ((isinstance(inter, Dispersion)
-                                             and pair in inter.atom_types)) or
+                                        if (isinstance(inter, Dispersion)
+                                             and pair in inter.atom_types) or
                                             (isinstance(inter, Coulombic)
                                              and any(elem in inter.atom_types for elem in pair))]
 
         return pairs_interactions
 
-    def _check_out_of_bounds(self, position: Union[list, np.ndarray]) -> bool:
+    def _check_out_of_bounds(self, position: list | np.ndarray) -> bool:
         """
         Checks whether a ``position`` lies outside the bounds of the
         ``Universe``
@@ -1566,13 +1567,13 @@ class Simulation:
     # but we don't mutate the list anywhere in the function, so
     # this is safe and has better readability
     def auto_equilibrate(
-            self,
-            variables: list[str] = ('temp', 'pe'),
-            eq_step: int = 10,
-            window_size: int = 100,
-            tolerance: float = 0.01,
-            max_step = 10000,
-    ) -> Tuple[int, dict]:
+        self,
+        variables: list[str] = ('temp', 'pe'),
+        eq_step: int = 10,
+        window_size: int = 100,
+        tolerance: float = 0.01,
+        max_step = 10000,
+    ) -> tuple[int, dict]:
         """
         Equilibrate until the specified list of variables have stabilised.
         Uses the KPSS stationarity test to determine
@@ -1642,7 +1643,7 @@ class Simulation:
         return total_steps, vals_dict
 
     @property
-    def trajectory(self) -> Union['CompactTrajectory', None]:
+    def trajectory(self) -> CompactTrajectory | None:
         """
         The ``CompactTrajectory`` produced by the most recent production run of the
         ``Simulation``.

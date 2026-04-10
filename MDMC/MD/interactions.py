@@ -1,6 +1,7 @@
 """Module in which all interactions between structural units are defined.
 
  ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
+from __future__ import annotations
 
 import logging
 import weakref
@@ -8,7 +9,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from itertools import permutations
 from types import MethodType
-from typing import TYPE_CHECKING, Any, NoReturn, Set, Union
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import numpy as np
 
@@ -105,7 +106,7 @@ class Interaction(ABC):
 
     @property
     @abstractmethod
-    def atoms(self) -> Union['Atom', 'list[Atom]']:
+    def atoms(self) -> Atom | list[Atom]:
         """
         Get the atoms on which the ``Interaction`` is applied
         """
@@ -113,7 +114,7 @@ class Interaction(ABC):
         raise NotImplementedError
 
     @property
-    def parameters(self) -> 'Parameters':
+    def parameters(self) -> Parameters:
         """
         Get the ``Parameter`` objects belonging to the ``InteractionFunction``
         belonging to the ``Interaction``
@@ -127,7 +128,7 @@ class Interaction(ABC):
         return self.function.parameters
 
     @property
-    def function(self) -> 'InteractionFunction':
+    def function(self) -> InteractionFunction:
         """
         Get or set the ``InteractionFunction`` of the ``Interaction``
 
@@ -140,12 +141,12 @@ class Interaction(ABC):
         return self._function
 
     @function.setter
-    def function(self, value: 'InteractionFunction'):
+    def function(self, value: InteractionFunction):
 
         self._function = value
 
     @property
-    def function_name(self) -> Union[str, None]:
+    def function_name(self) -> str | None:
         """
         Get the name of the ``InteractionFunction`` belonging to the
         ``Interaction``
@@ -164,7 +165,7 @@ class Interaction(ABC):
 
     @property
     @abstractmethod
-    def universe(self) -> 'Universe':
+    def universe(self) -> Universe:
         """
         Get the ``Universe`` to which the ``Interaction`` belongs
 
@@ -214,7 +215,7 @@ class Interaction(ABC):
 
         return tuple(self.element_list())
 
-    def _add_interaction_atoms(self, atoms: 'list[Atom]'):
+    def _add_interaction_atoms(self, atoms: list[Atom]):
         """
         Add the ``Interaction`` to atoms for which the ``Interaction`` has been
         applied
@@ -289,7 +290,7 @@ class NonBondedInteraction(Interaction):
 
     @property
     @abstractmethod
-    def atom_types(self) -> 'list[int]':
+    def atom_types(self) -> list[int]:
         """
         Get the atom types for which the ``NonBondedInteraction`` applies
 
@@ -302,7 +303,7 @@ class NonBondedInteraction(Interaction):
         raise NotImplementedError
 
     @property
-    def universe(self) -> 'Universe':
+    def universe(self) -> Universe:
         """
         Get or set the ``Universe`` to which the ``NonBondedInteraction``
         belongs
@@ -320,7 +321,7 @@ class NonBondedInteraction(Interaction):
             return self._universe
 
     @universe.setter
-    def universe(self, value: 'Universe') -> None:
+    def universe(self, value: Universe) -> None:
 
         try:
             self._universe = weakref.ref(value)
@@ -407,7 +408,7 @@ class Dispersion(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: 'Universe', *atom_types: int, **settings: Any):
+    def __init__(self, universe: Universe, *atom_types: int, **settings: Any):
 
         # Ignore pylint warning for inner function docstring
         # pylint: disable=missing-docstring
@@ -448,7 +449,7 @@ class Dispersion(NonBondedInteraction):
         return tuple(sorted(self._atom_types))
 
     @property
-    def atoms(self) -> 'list[tuple[list[Atom]]]':
+    def atoms(self) -> list[tuple[list[Atom]]]:
         """
         Get the atoms on which the ``Dispersion`` is applied
 
@@ -578,7 +579,7 @@ class Coulombic(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: 'Universe' = None, **settings: Any):
+    def __init__(self, universe: Universe = None, **settings: Any):
         # pylint: disable=not-callable
         # as it raises a false positive on self.add_atoms
 
@@ -658,7 +659,7 @@ class Coulombic(NonBondedInteraction):
                 and sorted(self.atoms, key=id) == sorted(other.atoms, key=id))
 
     @property
-    def atoms(self) -> 'list[Atom]':
+    def atoms(self) -> list[Atom]:
         """
         Get the atoms on which the ``Coulombic`` interaction is applied
 
@@ -748,7 +749,7 @@ class BondedInteraction(Interaction):
         BondAngle(H1, H2, O)
     """
 
-    def __init__(self, *atom_tuples: 'list[tuple]', **settings: Any):
+    def __init__(self, *atom_tuples: list[tuple], **settings: Any):
 
         if atom_tuples and is_atom(atom_tuples[0]):
             atom_tuples = (atom_tuples, )
@@ -820,7 +821,7 @@ class BondedInteraction(Interaction):
                 and self.function == other.function))
 
     @property
-    def atoms(self) -> 'list[tuple[Atom]]':
+    def atoms(self) -> list[tuple[Atom]]:
         """
         Get or set the atoms on which the ``Coulombic`` interaction is applied
 
@@ -841,7 +842,7 @@ class BondedInteraction(Interaction):
         return self._atoms
 
     @atoms.setter
-    def atoms(self, atom_tuples: 'list[tuple[Atom]]') -> None:
+    def atoms(self, atom_tuples: list[tuple[Atom]]) -> None:
 
         # Check for duplicate tuples in list
         self._check_duplicates(atom_tuples)
@@ -871,7 +872,7 @@ class BondedInteraction(Interaction):
                 self._add_to_universe(self.universe, tpl)
 
     @property
-    def atom_types(self) -> Set[Union[int, None]]:
+    def atom_types(self) -> set[int | None]:
 
         """
         Get the `set` of all ``atom_type``s that this ``BondedInteraction``
@@ -885,7 +886,7 @@ class BondedInteraction(Interaction):
         return {atom.atom_type for atom_tuple in self.atoms for atom in atom_tuple}
 
     @property
-    def universe(self) -> Union['Universe', None]:
+    def universe(self) -> Universe | None:
         """
         Get the ``Universe`` to which the ``BondedInteraction`` belongs
 
@@ -901,7 +902,7 @@ class BondedInteraction(Interaction):
         except IndexError:
             return None
 
-    def element_list(self) -> Union[list, None]:
+    def element_list(self) -> list[str] | None:
         """
         Get a `list` of the elements for which the ``BondedInteraction`` applies
 
@@ -940,7 +941,7 @@ class BondedInteraction(Interaction):
         if len(atoms) not in n_atoms:
             raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
-    def add_atoms(self, *atoms: 'Atom', **settings: Any) -> None:
+    def add_atoms(self, *atoms: Atom, **settings: Any) -> None:
         """
         Add atoms which are all involved in one example of this interaction
 
@@ -1002,7 +1003,7 @@ class BondedInteraction(Interaction):
         if len(set(equivalent_structs)) != len(equivalent_structs):
             raise ValueError(err_msg)
 
-    def _get_equivalent_structures(self, structs: list) -> 'list[tuple[Atom]]':
+    def _get_equivalent_structures(self, structs: list) -> list[tuple[Atom]]:
         """
         Returns
         -------
@@ -1012,7 +1013,7 @@ class BondedInteraction(Interaction):
 
         return structs + [tuple(reversed(atom_tuple)) for atom_tuple in structs]
 
-    def _add_to_universe(self, universe: 'Universe', atoms: 'tuple[Atom]') -> None:
+    def _add_to_universe(self, universe: Universe, atoms: tuple[Atom]) -> None:
         """
         Adds interaction and atom tuple to ``universe``
 
@@ -1204,7 +1205,7 @@ class DihedralAngle(BondedInteraction):
         self.improper = settings.get('improper', False)
         super().__init__(*atom_tuples, **settings)
 
-    def _get_equivalent_structures(self, structs: 'list[tuple[Atom]]') -> list:
+    def _get_equivalent_structures(self, structs: list[tuple[Atom]]) -> list:
         """
         Parameters
         ----------
@@ -1230,7 +1231,7 @@ class DihedralAngle(BondedInteraction):
         return super()._get_equivalent_structures(structs)
 
 
-def _add_atom_types(self, *atom_types: 'list[int]') -> None:
+def _add_atom_types(self, *atom_types: list[int]) -> None:
     """
     Function for dynamically creating an ``add_atom_types`` method in
     ``Coulombic``
@@ -1245,7 +1246,7 @@ def _add_atom_types(self, *atom_types: 'list[int]') -> None:
     self.atom_types.append(*atom_types)
 
 
-def _add_atoms(self, *atoms: 'list[Atom]') -> None:
+def _add_atoms(self, *atoms: list[Atom]) -> None:
     """
     Function for dynamically creating an ``add_atoms`` method in ``Coulombic``
 

@@ -48,10 +48,10 @@ class FQtIncoherent(AbstractFQt):
         configs = np.swapaxes(self._trajectory.position, 1, 2)
         configs = np.swapaxes(configs, 0, 2)
         rho_all = calculate_rho(configs, np.array(single_Q_vectors))
-        futures = core_batch((executor.submit(faster_autocorrelation,
-                                              rho.T,
-                                              weights=np.array(weight))
-                              for rho in rho_all))
+        futures = core_batch(executor.submit(faster_autocorrelation,
+                                             rho.T,
+                                             weights=np.array(weight))
+                             for rho in rho_all)
 
         for future_batch in futures:
             results = [future.result() for future in future_batch]

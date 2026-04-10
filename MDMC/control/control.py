@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum, Flag, auto
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -255,12 +255,12 @@ class Control:
         Number of molecular dynamics steps for each step of the refinement
     """
 
-    def __init__(self, simulation: Simulation, exp_datasets: List[dict],
+    def __init__(self, simulation: Simulation, exp_datasets: list[dict],
                  fit_parameters: Parameters,
                  minimizer_type: str = 'CMAES', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
-                 previous_history: Union[str,Path] = None,
+                 previous_history: Path | str | None = None,
                  verbose: int = 0,
                  print_all_settings: bool = False,
                  file_dump_frequency: DumpFreq = DumpFreq.NONE,
@@ -935,7 +935,7 @@ class Control:
 
     def _calculate_observables(self,
                                simulation: Simulation,
-                               observable_pairs: 'list[ObservablePair]') -> None:
+                               observable_pairs: list[ObservablePair]) -> None:
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
@@ -1095,7 +1095,7 @@ class Control:
         return n_skip
 
     @staticmethod
-    def _is_data_uniform(observable: Observable) -> Dict[str, Dict[str, bool]]:
+    def _is_data_uniform(observable: Observable) -> dict[str, dict[str, bool]]:
         """
         Checks if the values for each independent variable of an ``Observable`` are uniformly
         spaced and if they start at zero. This information is returned in a single dictionary.

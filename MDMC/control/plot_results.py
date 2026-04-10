@@ -10,7 +10,7 @@ import pandas as pd
 from skopt import Optimizer
 
 
-class PlotResults():
+class PlotResults:
     """
     A class to read in any completed refinement history file, create a Gaussain Process Optimizer
     and then do sampling on the result to create a corner plot.
@@ -29,8 +29,8 @@ class PlotResults():
         Number of points to plot on the corner plot, defaults to 100,000
     """
 
-    def __init__(self, filename: str, quantiles: 'list[float]'=None,
-                 MH_norm: float=20, points: int =100000):
+    def __init__(self, filename: str, quantiles: list[float] = None,
+                 MH_norm: float=20, points: int = 100000):
         self.filename = filename
         self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
         self.MH_norm = MH_norm
@@ -83,7 +83,7 @@ class PlotResults():
         return names, coordinates, minmax_coordinates, FoMs
 
 
-    def _expected_minimum_random_sampling(self) -> 'tuple[list, float, list, list[list]]':
+    def _expected_minimum_random_sampling(self) -> tuple[list, float, list, list[list]]:
         """
         This is almost verbatim a copy of code from scikit-optimize but with the samples as
         an additional output:
@@ -95,7 +95,7 @@ class PlotResults():
             location of the minimum.
         y_random[index_best_objective] : float
             the surrogate function value at the minimum.
-        y_random : np.array
+        y_random : np.ndarray
             An array of length "self.points" containing surrogate function values at each point
         random_samples : list[list]
             A list of length "self.points" containing the coordinates of each prediction
@@ -113,8 +113,8 @@ class PlotResults():
         return min_x, y_random[index_best_objective], y_random, random_samples
 
 
-    def _remove_points(self, chi_squared: 'list[float]',
-                       coords: 'list[list]') -> 'tuple[list, list]':
+    def _remove_points(self, chi_squared: list[float],
+                       coords: list[list]) -> tuple[list, list]:
         """
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
         where the likelihood of keeping a point is dependent on the exponent of the difference
@@ -221,7 +221,7 @@ class PlaintextDataPrinter(DataPrinter):
             n_step = history.iloc[-1].name
             output = history.loc[[n_step]].to_string(
                 col_space=12, index=False, header=False).split('\n')
-            data = '{:4d}'.format(n_step) + ''.join(output)
+            data = f"{n_step:4d}{''.join(output)}"
             print(data)
 
     def print_header(self, history) -> None:

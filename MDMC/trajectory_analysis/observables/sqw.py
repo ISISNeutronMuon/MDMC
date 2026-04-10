@@ -3,9 +3,10 @@ Module for AbstractSQw and total SQw class.
 """
 
 from contextlib import suppress
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 from numpy.testing import assert_allclose
 from scipy.interpolate import RectBivariateSpline
 
@@ -24,14 +25,14 @@ class SQwMixins:
     A mixin class for properties used by both SQw and FQt objects.
     """
 
-    def minimum_frames(self, dt: float = None) -> int:
+    def minimum_frames(self, dt: float) -> int:
         r"""
         Compute minimum number of ``CompactTrajectory`` frames to calculate ``dependent_variables``.
 
         Parameters
         ----------
-        dt : float, optional
-            The time separation of frames in ``fs``, default is `None`.
+        dt : float
+            The time separation of frames in ``fs``.
 
         Returns
         -------
@@ -78,7 +79,7 @@ class SQwMixins:
         # ensure we exceed the minimum number of frames needed
         return int(np.ceil(required_time / (2 * dt) + 1))
 
-    def maximum_frames(self) -> Optional[int]:
+    def maximum_frames(self) -> int | None:
         """
         Compute maximum number of ``CompactTrajectory`` frames to calculate ``dependent_variables``.
 
@@ -105,7 +106,7 @@ class SQwMixins:
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
-    def Q(self) -> Optional[np.array]:
+    def Q(self) -> npt.NDArray[np.floating] | None:
         """
         Get or set the momentum transfers.
 
@@ -120,7 +121,7 @@ class SQwMixins:
             return None
 
     @Q.setter
-    def Q(self, value: np.array) -> None:
+    def Q(self, value: np.ndarray) -> None:
         self.independent_variables['Q'] = value
 
 
@@ -208,7 +209,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
-    def E(self) -> 'np.array':
+    def E(self) -> np.ndarray:
         """
         Get the energies.
 
@@ -227,7 +228,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
-    def w(self) -> 'np.array':
+    def w(self) -> np.ndarray:
         """
         Get the angular frequencies.
 
@@ -241,7 +242,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw(self) -> Optional[list[np.ndarray]]:
+    def SQw(self) -> list[np.ndarray] | None:
         r"""
         Get the dynamic structure factor, :math:`S(Q, \omega{})` (in ``arb``).
 
@@ -258,7 +259,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw_err(self) -> Optional[list[np.ndarray]]:
+    def SQw_err(self) -> list[np.ndarray] | None:
         r"""
         Get the errors on the dynamic structure factor (in ``arb``).
 

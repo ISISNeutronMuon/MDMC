@@ -20,7 +20,7 @@ class NullEngine(MDEngine):
 
 
     @property
-    def saved_config(self) -> 'Configuration':
+    def saved_config(self) -> Configuration:
         """
         Returns an empty configuration.
 
@@ -89,8 +89,8 @@ class NullEngine(MDEngine):
         """
         pass
 
-    def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: Any) -> 'CompactTrajectory':
+    def convert_trajectory(self, start: int = 0, stop: int | None = None,
+                           step: int = 1, **settings: Any) -> CompactTrajectory:
         """
         Return an empty trajectory.
 

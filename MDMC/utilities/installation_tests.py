@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from glob import glob
 from importlib import import_module
 from os.path import basename, dirname, join
-from typing import Dict, Literal, Optional
+from typing import Literal
 
 from MDMC.common.factory import RegisterFactory
 
@@ -42,8 +42,8 @@ class InstlTestBase(ABC):
     """
 
     def __init__(self):
-        self._success: Optional[bool] = None
-        self.name: Optional[str] = None
+        self._success: bool | None = None
+        self.name: str | None = None
 
     @property
     def success(self) -> Literal['PASSED', 'FAILED', 'INCOMPLETE']:
@@ -98,7 +98,7 @@ class InstlTestFactory(RegisterFactory[InstlTestBase]):
     and creates instances of them.
     """
 
-    registry: Dict[str, InstlTestBase] = {}
+    registry: dict[str, InstlTestBase] = {}
 
     @classmethod
     def create(cls, key: str, *args, **kwargs) -> InstlTestBase:
@@ -129,7 +129,7 @@ def run_installation_tests():
         instl_test = InstlTestFactory.create(name)
         instl_test.run()
         # Padded with spaces to ensure alignment
-        print('{0: <30}   {1}'.format(instl_test.name, instl_test.success))
+        print(f'{instl_test.name: <30}   {instl_test.success}')
 
 
 @InstlTestFactory.register('core')

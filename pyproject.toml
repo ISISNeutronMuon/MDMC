@@ -81,7 +81,6 @@ override_SS05 = [  # override SS05 to allow docstrings starting with these words
 ]
 
 [tool.ruff]
-extend-include = ["*.ipynb"]
 line-length = 100
 indent-width = 4
 target-version = "py310"
@@ -90,6 +89,11 @@ target-version = "py310"
 extend-exclude = [
     ".#*",
     "__pycache__",
+    "*.ipynb",
+    "tests/*",
+    "examples/*",
+    "doc/*",
+    ".github/*",
 ]
 
 
@@ -115,7 +119,7 @@ select = [
 #    "NPY", # Numpy specific warnings
 #    "PTH", # Flake8 use pathlib
 #    "D",   # Pydocstyle
-#    "UP",  # Pyupgrade
+    "UP",  # Pyupgrade
 #    "FBT", # Flake8 boolean trap
 #    "C4",  # Flake8 comprehensions
 #    "PT",  # Flake8 pytest style
@@ -128,6 +132,7 @@ ignore = [
     "B028",  # No stacklevel in Warning
     "B905",  # No strict in zip
     "A003",  # Shadowing by attribute
+    "UP015", # Don't use 'r' mode parameter
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -135,3 +140,5 @@ convention = "numpy"
 
 [tool.isort]
 profile = "black"
+known-first-party = ["MDMC"]
+required-imports = ["from __future__ import annotations"]

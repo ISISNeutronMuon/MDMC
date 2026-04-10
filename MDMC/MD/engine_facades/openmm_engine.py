@@ -6,8 +6,9 @@ import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
 
-from MDMC.MD import LennardJones, Universe
+from MDMC.MD import LennardJones
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
@@ -48,9 +49,11 @@ class OpenMMEngine(MDEngine):
         np.ndarray
             The atomic positions.
         """
+        if self._saved_config is None:
+            raise TypeError("OpenMMEngine has not been run.")
         return self._saved_config
 
-    def setup_universe(self, universe: Universe, **settings: dict) -> None:
+    def setup_universe(self, universe: Universe, **settings: Any) -> None:
         """Set up the openmm system.
 
         Parameters
@@ -147,7 +150,7 @@ class OpenMMEngine(MDEngine):
         for i in reversed(range(self.openmm_system.getNumForces())):
             self.openmm_system.removeForce(i)
 
-    def setup_simulation(self, **settings: dict) -> None:
+    def setup_simulation(self, **settings: Any) -> None:
         """Set up the openmm simulation.
 
         Parameters
@@ -184,7 +187,7 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.setPositions(positions)
         self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
 
-    def minimize(self, n_steps: int, minimize_every: int = 10, **settings: dict) -> None:
+    def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
 
         Parameters
@@ -202,7 +205,7 @@ class OpenMMEngine(MDEngine):
         equilibration: bool,
         output_log: str = None,
         work_dir: str = None,
-        **settings: dict,
+        **settings: Any,
     ) -> None:
         """Run the simulation.
 
@@ -261,7 +264,7 @@ class OpenMMEngine(MDEngine):
         start: int = 0,
         stop: int = None,
         step: int = 1,
-        **settings: dict,
+        **settings: Any,
     ) -> CompactTrajectory:
         """Returns the MDMC compact trajectory.
 

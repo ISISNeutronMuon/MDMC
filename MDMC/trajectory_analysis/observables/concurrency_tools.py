@@ -1,9 +1,10 @@
 """Tools for concurrency in observable calculation."""
 
 import os
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from itertools import islice
-from typing import Iterable, TypeVar
+from typing import TypeVar
 
 T = TypeVar('T')
 
