@@ -17,6 +17,8 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from MDMC.readers.observables.csv_reader import csv_reader
 
 
@@ -32,7 +34,7 @@ def get_default_mdanse_settings(job_name: str) -> dict[str, Any]:
     return defaults
 
 
-def check_if_main(hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
+def check_if_main(name: str, hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
     if "tags" in hdf5_node.attrs and "main" in hdf5_node.attrs["tags"].split(","):
         main_result = hdf5_node.name
         axes = hdf5_node.attrs["axis"].split("|")
@@ -41,7 +43,7 @@ def check_if_main(hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]]
 
 
 def find_main_result(data_structure: h5py.File) -> tuple[str, list[str]]:
-    return data_structure.visit(check_if_main)
+    return data_structure.visititems(check_if_main)
 
 
 @ObservableFactory.register(("MDANSEObservable", "MDANSE"))
@@ -86,7 +88,7 @@ class MDANSEObservable(Observable):
     def maximum_frames(self) -> int:
         return 1e12
 
-    def calculate_from_MD(self, MD_input, verbose=0, **parameters):
+    def calculate_from_MD(self, MD_input, file_path: Path | None = None, verbose=0, **parameters):
         """Evaluate the function using the current parameter values.
 
         Gets the current values of parameters from trajectory attributes.
@@ -99,19 +101,19 @@ class MDANSEObservable(Observable):
             Ignored, by default 0.
         """
         self._origin = "MD"
-        self.job_instance = IJob.create(self.job_type, trajectory_input="mdmc")
+        self.job_instance = IJob.create(self.job_type)
         settings = get_default_mdanse_settings(self.job_type)
         settings["frames"] = [0, len(MD_input), 1, len(MD_input) // 2]
         for key, value in self.job_settings.items():
             settings[key] = value
-        settings["trajectory"] = MDMCTrajectory(MD_input)
+        settings["trajectory"] = file_path
         settings["output_files"] = ["dummy_name", ["FileInMemory"], "no logs"]
         self.job_instance.setup(settings)
         self.job_instance.run(settings, status=True)
         results = self.job_instance.results
         main_name, axes_names = find_main_result(results)
-        self._dependent_variables = {self.job_type: [results[main_name]]}
-        self._independent_variables = {name.split("/")[-1]: results[name] for name in axes_names}
+        self._dependent_variables = {self.job_type: results[main_name][:]}
+        self._independent_variables = {name.split("/")[-1]: results[name][:] for name in axes_names}
         self._errors = {self.job_type: [np.sqrt(self._dependent_variables[self.job_type][0])]}
 
     def read_from_file(self, reader: csv_reader):

@@ -272,6 +272,7 @@ class Control:
                  observable_pairs: Iterable[ObservablePair] = [],
                  **settings: Any):
 
+        self.recreated_independent_vars  = {}
         self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
@@ -770,7 +771,7 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
-    def dump_h5md(self, trj: CompactTrajectory):
+    def dump_h5md(self, trj: CompactTrajectory) -> Path:
         """
         Dump the trajectory as an H5MD file.
 
@@ -785,7 +786,7 @@ class Control:
         or the file name must be different for each trajectory,
         as if not the file will be continually overwritten.
         """
-        H5MD_build.write_H5MD(trj,
+        return H5MD_build.write_H5MD(trj,
                               filename=self.file_dump_prefix,
                               file_loc=self.file_dump_loc,
                               timestamp=timestamp_now(self.use_timestamp,
@@ -960,9 +961,11 @@ class Control:
         verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
 
+        h5md_traj_path = self.dump_h5md(trj)
+
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
-            obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            obs_timings = pair.MD_obs.calculate_from_MD(trj, file_path = h5md_traj_path, verbose=self.verbose, **self.settings)
             if pair.MD_obs.name =='SQw':
                 self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:

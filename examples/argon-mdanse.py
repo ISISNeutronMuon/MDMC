@@ -46,9 +46,9 @@ Ar_dispersion = Dispersion(universe,
 # same factor.
 simulation = Simulation(universe,
                         engine="openmm",
-                        time_step=10.18893,
+                        time_step=5.0,
                         temperature=120.,
-                        traj_step=15,
+                        traj_step=2,
                         openmm_platform="OpenCL")
 
 # Setup refinement of the force field parameters
@@ -86,13 +86,16 @@ control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
                   observable_pairs= [observable_pair],
-                  MD_steps=5700,
-                  equilibration_steps=8000,
-                  cont_slicing=True)
+                  MD_steps=15700,
+                  equilibration_steps=18000,
+                  cont_slicing=True,
+                  CMA_tolx = 1e-6,
+                  conv_tol = 1e-9,
+                  )
 
 # Energy Minimization and equilibration
-control.minimize(n_steps=5000)
-control.equilibrate(n_steps=5000)
+control.minimize(n_steps=15000)
+control.equilibrate(n_steps=15000)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
