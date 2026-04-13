@@ -48,7 +48,7 @@ simulation = Simulation(universe,
                         engine="openmm",
                         time_step=5.0,
                         temperature=120.,
-                        traj_step=2,
+                        traj_step=20,
                         openmm_platform="OpenCL")
 
 # Setup refinement of the force field parameters
@@ -80,14 +80,16 @@ observable_pair = ObservablePair(exp_obs=exp_observable,
                                  auto_scale=False)
 
 fit_parameters = universe.parameters
+fit_parameters['sigma'].constraints = [2.0, 4.0]
+fit_parameters['epsilon'].constraints = [0.5, 1.5]
 
 # Specify how the refinement is going to be controlled
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
                   observable_pairs= [observable_pair],
-                  MD_steps=15700,
-                  equilibration_steps=18000,
+                  MD_steps=10700,
+                  equilibration_steps=12000,
                   cont_slicing=True,
                   CMA_tolx = 1e-6,
                   conv_tol = 1e-9,
@@ -99,4 +101,4 @@ control.equilibrate(n_steps=15000)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=300)
+control.refine(n_steps=100)
