@@ -79,10 +79,10 @@ class RSquared_noneerror(FigureOfMerit):
                 md_s_q = np.trapezoid(MD_values[0], x=md_e, axis=-1)
                 exp_values /= exp_s_q[None, :, None]
                 MD_values /= md_s_q[None, :, None]
-                A = np.sum(MD_values * exp_values)
-                B = np.sum(exp_values ** 2)
-                obs_pair.rescale_factor = A / B
+            diff = (exp_values - MD_values)
+            value_unreduced = np.sum(diff ** 2)
+        else:
+            value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
