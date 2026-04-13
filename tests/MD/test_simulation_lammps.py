@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose
 import pytest
 
 from MDMC.common import units
-import MDMC.MD.engine_facades.lammps_engine as lmp_eng
+lmp_eng = pytest.importorskip("MDMC.MD.engine_facades.lammps_engine")
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential, LennardJones,
                                            Periodic)

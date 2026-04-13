@@ -1,10 +1,10 @@
 """The Gaussian-Process-Regression minimizer class"""
+
 from __future__ import annotations
 
 import itertools
-from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -13,11 +13,12 @@ from scipy.ndimage import minimum, minimum_position
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 
-from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
-    from MDMC.control import Control
+    from pathlib import Path
+
+    from MDMC.MD.parameters import Parameter, Parameters
 
 
 class GPR(Minimizer):
@@ -32,10 +33,14 @@ class GPR(Minimizer):
 
     Parameters
     ----------
-    control: Control
-        The ``Control`` object which uses this Minimizer.
-    parameters: Parameters
+    parameters : Parameters
         The parameters in the simulation Universe to be optimized
+    previous_history : Path or str or None
+        History to load.
+    n_steps : int
+        Number of steps to run.
+    results_filename : str, optional
+        File to dump results to.
 
     Attributes
     ----------
@@ -43,25 +48,32 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: Control, parameters: Parameters,
-                 previous_history: Path | str | None = None, **settings: Any):
+    def __init__(
+        self,
+        parameters: Parameters,
+        previous_history: Path | str | None = None,
+        *,
+        n_steps: int = 50,
+        results_filename: str | None = None,
+    ):
 
-        super().__init__(control, parameters, previous_history)
-        np.random.seed(0) # This should mean results are reproducible in tests
+        super().__init__(parameters, previous_history)
+        np.random.seed(0)  # This should mean results are reproducible in tests
+        self.n_steps = n_steps
 
-        (self.parameter_names,
-         self.parameter_point_array) = self.create_parameter_point_array(parameters)
-        self.results_filename = settings.get('results_filename')
+        (self.parameter_names, self.parameter_point_array) = self.create_parameter_point_array(
+            parameters,
+        )
+        self.results_filename = results_filename
         self.change_parameters()
         self.previous_history = previous_history
         self.state_changed = False
 
-    def create_parameter_point_array(self,
-                                     parameters: Parameters) -> tuple[list[str], list[tuple]]:
+    def create_parameter_point_array(self, parameters: Parameters) -> tuple[list[str], list[tuple]]:
         """
         Takes or creates the constraints of the parameters to be minimised and makes an array
         of points, placed on a Latin hypercube covering the space defined by the constraints.
-        The resulting array of coordinates is self.control.n_steps long.
+        The resulting array of coordinates is self.n_steps long.
 
         Parameters
         ----------
@@ -79,10 +91,12 @@ class GPR(Minimizer):
 
         samples = st.qmc.LatinHypercube(d=len(parameters), scramble=False, seed=1)
         try:
-            latin_points = samples.random(n=self.control.n_steps)
+            latin_points = samples.random(n=self.n_steps)
         except AttributeError as error:
-            raise AttributeError("GPR requires that the number of refinement steps "
-                                 "is set when initialising Control.") from error
+            raise AttributeError(
+                "GPR requires that the number of refinement steps "
+                "is set when initialising Control.",
+            ) from error
 
         lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
         upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
@@ -123,15 +137,17 @@ class GPR(Minimizer):
             upper_bound = parameter.constraints[1]
         except TypeError as error:
             if parameter.value > 0:
-                lower_bound = parameter.value*(1.0 - fraction)
-                upper_bound = parameter.value*(1.0 + fraction)
+                lower_bound = parameter.value * (1.0 - fraction)
+                upper_bound = parameter.value * (1.0 + fraction)
             elif parameter.value < 0:
-                lower_bound = parameter.value*(1.0 + fraction)
-                upper_bound = parameter.value*(1.0 - fraction)
+                lower_bound = parameter.value * (1.0 + fraction)
+                upper_bound = parameter.value * (1.0 - fraction)
             else:
-                raise ValueError(f"You have set parameter {parameter.name} value to zero and "
-                                 "have no constraints set for it. "
-                                 "Please set constraints for it") from error
+                raise ValueError(
+                    f"You have set parameter {parameter.name} value to zero and "
+                    "have no constraints set for it. "
+                    "Please set constraints for it",
+                ) from error
 
         parameter.constraints = [lower_bound, upper_bound]
 
@@ -147,7 +163,7 @@ class GPR(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.control.n_steps
+        return len(self.history) >= self.n_steps
 
     @property
     def history_columns(self) -> list[str]:
@@ -159,7 +175,7 @@ class GPR(Minimizer):
         list[str]
             A ``list`` of ``str`` containing all the column labels in the history
         """
-        return ['FoM'] + list(self.parameters)
+        return ["FoM"] + list(self.parameters)
 
     def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
@@ -214,8 +230,12 @@ class GPR(Minimizer):
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
-    def GPR_fit(self, filename: str | None = None,
-                alpha: float | None = 5, length_scale: float | None = 4):
+    def GPR_fit(
+        self,
+        filename: str | None = None,
+        alpha: float | None = 5,
+        length_scale: float | None = 4,
+    ):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement
         and can be read into a dataframe with the relevant parameters. Uses the recorded points
@@ -250,31 +270,33 @@ class GPR(Minimizer):
         if not filename:
             filename = self.results_filename
 
-        records = pd.read_csv(filename, delimiter=',')
-        records = records.astype(dtype=float, errors='ignore')
+        records = pd.read_csv(filename, delimiter=",")
+        records = records.astype(dtype=float, errors="ignore")
         # Convert to float where possible (i.e. not a string)
 
-        FOMs = records['FoM'].to_list()
+        FOMs = records["FoM"].to_list()
         min_FOM = np.min(FOMs)
-        min_par_index = records.index[records['FoM']==min_FOM].tolist()
+        min_par_index = records.index[records["FoM"] == min_FOM].tolist()
 
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'], errors='ignore')
+        records = records.drop(columns=["Unnamed: 0", "FoM", "Change state"], errors="ignore")
         # TODO this is hard coded to creation of history, may want to change
 
         min_pars = records.loc[min_par_index]
 
         coordinates = records.values.tolist()
 
-        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
-        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+        kernel = kernels.RBF(length_scale=np.ones(len(coordinates[0])) * length_scale)
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha=alpha)
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
         return fitted_GPR, min_FOM, min_pars
 
     @staticmethod
-    def GPR_predict(input_regressor,
-                    points: float | None = 100) -> tuple[list[tuple[float]], np.ndarray]:
+    def GPR_predict(
+        input_regressor,
+        points: float | None = 100,
+    ) -> tuple[list[tuple[float]], np.ndarray]:
         """
         Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
         between the minimum and maximum measured parameter values and predicts the FoM at each
@@ -311,9 +333,10 @@ class GPR(Minimizer):
         return point_array, prediction
 
     @staticmethod
-    def global_minimum_position(predicted_FOMs: np.ndarray,
-                                measured_parameter_coordinates: list[float]) \
-            -> tuple[np.ndarray, float]:
+    def global_minimum_position(
+        predicted_FOMs: np.ndarray,
+        measured_parameter_coordinates: list[float],
+    ) -> tuple[np.ndarray, float]:
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 
