@@ -56,8 +56,8 @@ exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'weight':1.,
                  'resolution':None,
                  'use_FFT': True,
-                 'auto_scale': False,
-                 'rescale_factor': 18.5,
+                 'auto_scale': True,
+                 # 'rescale_factor': 18.5,
                  'cont_slicing': True}]
 
 

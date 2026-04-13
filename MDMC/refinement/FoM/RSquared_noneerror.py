@@ -72,9 +72,16 @@ class RSquared_noneerror(FigureOfMerit):
             exp_values = np.array(
                 *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            A = np.sum(MD_values * exp_values)
-            B = np.sum(exp_values ** 2)
-            obs_pair.rescale_factor = A / B
+            exp_e = obs_pair.exp_obs.independent_variables["E"]
+            md_e = obs_pair.MD_obs.independent_variables["E"]
+            if MD_values.shape:
+                exp_s_q = np.trapezoid(exp_values[0], x=exp_e, axis=-1)
+                md_s_q = np.trapezoid(MD_values[0], x=md_e, axis=-1)
+                exp_values /= exp_s_q[None, :, None]
+                MD_values /= md_s_q[None, :, None]
+                A = np.sum(MD_values * exp_values)
+                B = np.sum(exp_values ** 2)
+                obs_pair.rescale_factor = A / B
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
