@@ -28,9 +28,7 @@ class DumpFreq(Enum):
         if not isinstance(value, str):
             return None
         value = value.upper()
-        for member in cls:
-            if value == member.name:
-                return member
+        return cls.__members__.get(value)
 
 
 class DumpExtent(Flag):
@@ -42,6 +40,13 @@ class DumpExtent(Flag):
     OBS = auto()  # Only the observables
     BOTH = TRAJ | OBS  # Both the trajectory and observables
 
+    @classmethod
+    def _missing_(cls, value):
+        if not isinstance(value, str):
+            return None
+        value = value.upper()
+        return cls.__members__.get(value)
+
 
 class ObsFormat(Flag):
     """
@@ -51,6 +56,13 @@ class ObsFormat(Flag):
     NONE = auto()
     MDA = auto()  # MDANSE MDA file
     ALL = MDA  # All supported formats
+
+    @classmethod
+    def _missing_(cls, value):
+        if not isinstance(value, str):
+            return None
+        value = value.upper()
+        return cls.__members__.get(value)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -74,7 +86,7 @@ class H5MDControl:
         Which files should be written out in the dump. Default is `DumpExtent.BOTH`
     observable_format : ObsFormat, optional
         Format to dump observables in. Default is `ObsFormat.NONE`.
-    timestamped: bool, optional
+    timestamp: bool, optional
         Whether a time stamp should be added to the output file names. Default is `False`
     """
 
@@ -85,7 +97,11 @@ class H5MDControl:
     frequency: DumpFreq = DumpFreq.NONE
     extent: DumpExtent = DumpExtent.BOTH
     observable_format: ObsFormat = ObsFormat.NONE
-    timestamped: bool = False
+    timestamp: bool = False
+
+    def __post_init__(self):
+        self.frequency = DumpFreq(self.frequency)
+        self.extent = DumpExtent(self.extent)
 
     def dump(self, trajectory: CompactTrajectory, observable_pairs: Iterable[ObservablePair]):
         """Dump combined data to appropriate locations.
@@ -132,7 +148,7 @@ class H5MDControl:
             trajectory,
             filename=self.file_prefix,
             file_loc=self.folder,
-            timestamp=self.timestamp(),
+            timestamp=self.get_timestamp(),
             creator_name=self.creator,
             creator_email=self.email,
         )
@@ -152,10 +168,10 @@ class H5MDControl:
                     obs_pair.MD_obs,
                     filename=self.file_prefix,
                     file_loc=self.folder,
-                    timestamp=self.timestamp(),
+                    timestamp=self.get_timestamp(),
                 )
 
-    def timestamp(self) -> str:
+    def get_timestamp(self) -> str:
         """Return a timestamp or an empty string for use in file names.
 
         The intention is to use a time stamp if the user requested it,
@@ -173,6 +189,6 @@ class H5MDControl:
         str
             Either a time stamp string or an empty string.
         """
-        if self.timestamped or self.frequency is DumpFreq.EVERY:
+        if self.timestamp or self.frequency is DumpFreq.EVERY:
             return datetime.now().strftime("_%Y-%m-%d--%H-%M-%S")
         return ""

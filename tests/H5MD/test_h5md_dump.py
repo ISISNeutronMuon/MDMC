@@ -1,12 +1,13 @@
-"""Tests that file_dump_frequency is dumping the correct files that are requested."""
+"""Tests that frequency is dumping the correct files that are requested."""
 
+import getpass
 from pathlib import Path
 
 import h5py
 import pytest
 
 from MDMC.control import Control
-from MDMC.control.h5md import DumpFreq, H5MDControl
+from MDMC.control.h5md import DumpFreq, H5MDControl, DumpExtent, ObsFormat
 from MDMC.readers import H5MD_reader
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -50,7 +51,7 @@ class MockControl(Control):
 
 
 class MockMinimizer(Minimizer):
-    """A Mock Class created as file_dump_frequency needs Minimizer._history"""
+    """A Mock Class created as H5MDControl.frequency needs Minimizer._history"""
 
     def __init__(self):
         self._history = []
@@ -77,6 +78,38 @@ class MockMinimizer(Minimizer):
         pass
 
 
+@pytest.mark.parametrize(
+    "inp, alt",
+    [
+        (
+            # Defaults
+            {},
+            {
+                "file_prefix": "trajectory",
+                "folder": Path("."),
+                "creator": getpass.getuser(),
+                "email": f"{getpass.getuser()}@unknown",
+                "frequency": DumpFreq.NONE,
+                "extent": DumpExtent.BOTH,
+                "observable_format": ObsFormat.NONE,
+                "timestamp": False,
+            },
+        ),
+        # Already enum
+        ({}, {"frequency": DumpFreq.NONE}),
+        # Check case-insensitive
+        ({}, {"frequency": "None"}),
+        ({}, {"frequency": "none"}),
+        ({}, {"frequency": "NoNE"}),
+        ({}, {"frequency": "NONE"}),
+        # Check numeric
+        ({}, {"frequency": 0}),
+    ],
+)
+def test_h5md_control_init(inp, alt):
+    assert H5MDControl(**inp) == H5MDControl(**alt)
+
+
 def test_save_all_trajectory(tmp_path):
     """
     Test that checks that the H5MD dumper.
@@ -88,7 +121,7 @@ def test_save_all_trajectory(tmp_path):
         frequency=DumpFreq.EVERY,
         file_prefix=FILE_NAME,
         folder=tmp_path,
-        timestamped=False,
+        timestamp=False,
         creator="test",
         email="test@test",
     )

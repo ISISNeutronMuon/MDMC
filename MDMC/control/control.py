@@ -16,11 +16,11 @@
 
 """A module for performing the refinement"""
 
-import datetime
 import logging
 import statistics
 from contextlib import suppress
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
