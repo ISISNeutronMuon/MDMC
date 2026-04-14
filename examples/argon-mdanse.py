@@ -59,6 +59,7 @@ exp_datasets = [{'file_name':'argon_dos_as_text.csv',
                  'type':'MDANSE',
                  'reader':'csv_reader',
                  'weight':1.,
+                 'auto_scale': True,
                  'resolution':None}]
 
 start_params = get_default_mdanse_settings("DensityOfStates")

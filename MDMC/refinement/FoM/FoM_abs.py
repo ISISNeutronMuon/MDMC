@@ -294,10 +294,6 @@ class ObservablePair:
             exp_y = first(self.exp_obs.dependent_variables.values())
             md_x = first(self.MD_obs.independent_variables.values())
             md_y = first(self.MD_obs.dependent_variables.values())
-            print(f"exp_x: {exp_x}")
-            print(f"exp_y: {exp_y}")
-            print(f"md_x: {md_x}")
-            print(f"md_y: {md_y}")
             md_y_matching = np.interp(exp_x,
                              md_x,
                              md_y)
