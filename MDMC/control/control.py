@@ -1,10 +1,10 @@
 """A module for performing the refinement"""
+
 import getpass
 import logging
 import statistics
 from collections.abc import Iterable
 from contextlib import suppress
-from copy import deepcopy
 from datetime import datetime
 from enum import Enum, Flag, auto
 from pathlib import Path
@@ -12,7 +12,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.interpolate import RectBivariateSpline, interp1d
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
@@ -35,6 +34,7 @@ class DumpFreq(Enum):
     """
     Enum for deciding how often the output files should be dumped.
     """
+
     #: Dump only the best by FoM.
     BEST = -1
     #: Dump no h5md trajectories.
@@ -47,17 +47,20 @@ class DumpExtent(Flag):
     """
     Choose which files are dumped.
     """
-    TRAJ = auto() # Only the trajectory file
-    OBS = auto() # Only the observables
-    BOTH = TRAJ | OBS # Both the trajectory and observables
+
+    TRAJ = auto()  # Only the trajectory file
+    OBS = auto()  # Only the observables
+    BOTH = TRAJ | OBS  # Both the trajectory and observables
 
 
 class ObsFormat(Flag):
     """
     Choose which files are dumped.
     """
-    MDA = auto() # MDANSE MDA file
-    ALL = MDA # All supported formats
+
+    MDA = auto()  # MDANSE MDA file
+    ALL = MDA  # All supported formats
+
 
 def timestamp_now(use_timestamp: bool = True, dump_frequency: DumpFreq = DumpFreq.EVERY) -> str:
     """Return a timestamp or an empty string for use in file names.
@@ -82,11 +85,17 @@ def timestamp_now(use_timestamp: bool = True, dump_frequency: DumpFreq = DumpFre
     return ""
 
 
-@repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_parameters', 'MD_steps',
-                'verbose')
+@repr_decorator(
+    "simulation",
+    "exp_datasets",
+    "FoM_calculator",
+    "minimizer",
+    "reset_config",
+    "fit_parameters",
+    "MD_steps",
+    "verbose",
+)
 class Control:
-
     """
     Controls the MDMC refinement
 
@@ -256,34 +265,42 @@ class Control:
         Number of molecular dynamics steps for each step of the refinement
     """
 
-    def __init__(self, simulation: Simulation, exp_datasets: list[dict],
-                 fit_parameters: Parameters,
-                 minimizer_type: str = 'CMAES', FoM_options: dict = None,
-                 reset_config: bool = True, MD_steps: int = None,
-                 equilibration_steps: int = 0,
-                 previous_history: Path | str | None = None,
-                 verbose: int = 0,
-                 print_all_settings: bool = False,
-                 file_dump_frequency: DumpFreq = DumpFreq.NONE,
-                 file_dump_extent: DumpExtent = DumpExtent.BOTH,
-                 file_dump_loc: Path = Path('.'),
-                 file_dump_timestamped: bool = False,
-                 file_dump_prefix: str = 'trajectory',
-                 observable_pairs: Iterable[ObservablePair] = [],
-                 **settings: Any):
+    def __init__(
+        self,
+        simulation: Simulation,
+        exp_datasets: list[dict],
+        fit_parameters: Parameters,
+        minimizer_type: str = "CMAES",
+        FoM_options: dict = None,
+        reset_config: bool = True,
+        MD_steps: int = None,
+        equilibration_steps: int = 0,
+        previous_history: Path | str | None = None,
+        verbose: int = 0,
+        print_all_settings: bool = False,
+        file_dump_frequency: DumpFreq = DumpFreq.NONE,
+        file_dump_extent: DumpExtent = DumpExtent.BOTH,
+        file_dump_loc: Path = Path("."),
+        file_dump_timestamped: bool = False,
+        file_dump_prefix: str = "trajectory",
+        observable_pairs: Iterable[ObservablePair] = (),
+        **settings: Any,
+    ):
 
-        self.recreated_independent_vars  = {}
+        self.recreated_independent_vars = {}
         self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.verbose = verbose
-        self.timings: dict = {'equilibrate': [],
-                        '_run_MD': [],
-                        'convert_trajectory': [],
-                        'FoM_calculator': [],
-                        'minimizer': [],
-                        'TOTAL STEP': []}
+        self.timings: dict = {
+            "equilibrate": [],
+            "_run_MD": [],
+            "convert_trajectory": [],
+            "FoM_calculator": [],
+            "minimizer": [],
+            "TOTAL STEP": [],
+        }
 
         if isinstance(file_dump_frequency, str):
             self.file_dump_frequency = DumpFreq[file_dump_frequency.upper()]
@@ -297,37 +314,33 @@ class Control:
         self.use_timestamp = file_dump_timestamped
         self.file_dump_loc = file_dump_loc
         self.h5md_creator = settings.get("h5md_creator_name", getpass.getuser())
-        self.h5md_email = settings.get("h5md_creator_email",
-                                       f"{getpass.getuser()}@unknown")
+        self.h5md_email = settings.get("h5md_creator_email", f"{getpass.getuser()}@unknown")
         if self.file_dump_frequency is not DumpFreq.NONE and "h5md_creator_name" not in settings:
-            logging.warning("`h5md_creator_name` not set, defaulting to: %s",
-                            self.h5md_creator)
+            logging.warning("`h5md_creator_name` not set, defaulting to: %s", self.h5md_creator)
         if self.file_dump_frequency is not DumpFreq.NONE and "h5md_creator_name" not in settings:
-            logging.warning("`h5md_creator_email` not set, defaulting to: %s",
-                            self.h5md_email)
+            logging.warning("`h5md_creator_email` not set, defaulting to: %s", self.h5md_email)
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         # if a Parameters object, convert to list first for comprehension
         if isinstance(fit_parameters, Parameters):
             fit_parameters = list(fit_parameters.values())
-        fit_parameters = [p for p in fit_parameters
-                          if (not (p.fixed or p.tied) and p.value != 0)]
+        fit_parameters = [p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.settings = settings
-        self.n_steps = settings.get('n_steps')
-        self.results_filename = settings.get('results_filename',
-                                f'results{timestamp_now()}.csv')
-        settings['results_filename'] = self.results_filename
-        settings['time_step_reductions'] = settings.get('time_step_reductions', 2)
+        self.n_steps = settings.get("n_steps")
+        self.results_filename = settings.get("results_filename", f"results{timestamp_now()}.csv")
+        settings["results_filename"] = self.results_filename
+        settings["time_step_reductions"] = settings.get("time_step_reductions", 2)
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create(minimizer_type, self,self.fit_parameters,
-                                                 previous_history, **settings)
+        self.minimizer = MinimizerFactory.create(
+            minimizer_type, self, self.fit_parameters, previous_history, **settings
+        )
         self.first_loaded_step = bool(previous_history)
 
         # Create experimental observables from datasets and placeholders for
@@ -337,70 +350,53 @@ class Control:
         if observable_pairs:
             logging.info("Using pre-defined observable pairs")
         else:
+            self.observable_pairs = []
+
             for dset in exp_datasets:
-                use_FFT = dset.get('use_FFT', True)
 
                 # keep the keys in the _dset_input_check function
                 # consistent with the ones retrieved from dset
-                self._input_check(dset, inputs=['type','reader', 'file_name'])
-                exp_observable = self._read_observable_from_file(dset['type'],
-                                                                dset['reader'],
-                                                                dset['file_name'],
-                                                                use_FFT)
-
-                if exp_observable.uniformity_requirements:
-                    exp_observable = self._make_data_uniform(exp_observable)
-
-                if "filter" in dset:  # Data below threshold should be zeroed.
-                    self._threshold_filter(
-                        exp_observable,
-                        abs_threshold=dset["filter"].get("abs", 0.),
-                        rel_threshold=dset["filter"].get("rel", 0.),
-                        magnitude=dset["filter"].get("use_magnitude", False),
-                        warn_threshold=dset["filter"].get("warn_threshold", 0.1),
+                if missing := {"type", "reader", "file_name"} - dset.keys():
+                    raise KeyError(
+                        "There was an issue retrieving the input: "
+                        f"Input {', '.join(missing)} missing "
+                        "from the dataset, please check your inputs again.",
                     )
 
-                MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
+                observable_pair = ObservableFactory.create_observable_pair_from_file(
+                    dset["type"],
+                    dset["reader"],
+                    dset["file_name"],
+                    dset.get("use_FFT", True),
+                    dset.get("filter"),
+                    dset["weight"],
+                    dset.get("auto_scale", False),
+                    dset.get("rescale_factor"),
+                )
 
-                self._validate_energy(MD_observable)
+                self._validate_energy(observable_pair.MD_obs)
 
-                auto_scale = dset.get('auto_scale', False)
-                rescale_factor = dset.get('rescale_factor')
-                if auto_scale and rescale_factor and self.verbose != -1:
-                    print('Both `rescale_factor` and `auto_scale` set for file {};'
-                        ' scaling will be automated to minimise FoM'
-                        ''.format(dset['file_name']))
-                    rescale_factor = 1.
-                elif not rescale_factor:
-                    rescale_factor = 1.
-
-                observable_pair = ObservablePair(exp_observable,
-                                                MD_observable,
-                                                dset['weight'],
-                                                rescale_factor=rescale_factor,
-                                                auto_scale=auto_scale)
                 self.observable_pairs.append(observable_pair)
-                self.recreated_independent_vars  = {}
+                self.recreated_independent_vars = {}
                 self.production_time_step = self.simulation.time_step
 
                 # Take the largest minimum number of MD_steps needed by any dataset
-                min_MD_steps_dset = self._calculate_minimum_MD_steps(
-                    observable_pair)
+                min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
                 minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
-        if FoM_options is None or FoM_options.get('error') is None:
-            FoM_error = 'exp'
+        if FoM_options is None or FoM_options.get("error") is None:
+            FoM_error = "exp"
         else:
-            FoM_error = FoM_options.get('error')
+            FoM_error = FoM_options.get("error")
 
-        if FoM_options is None or FoM_options.get('norm') is None:
-            FoM_norm = 'data_points'
+        if FoM_options is None or FoM_options.get("norm") is None:
+            FoM_norm = "data_points"
         else:
-            FoM_norm = FoM_options.get('norm')
+            FoM_norm = FoM_options.get("norm")
 
-        self.FoM_calculator = FoMFactory.create(FoM_error, self.observable_pairs,
-                                                norm=FoM_norm,
-                                                n_parameters=len(self.fit_parameters))
+        self.FoM_calculator = FoMFactory.create(
+            FoM_error, self.observable_pairs, norm=FoM_norm, n_parameters=len(self.fit_parameters)
+        )
         self.max_FoM = self.calculate_max_FoM()
 
         # Use specified MD_steps if supplied, else calculate
@@ -408,21 +404,22 @@ class Control:
         if MD_steps:
             try:
                 assert MD_steps >= minimum_MD_steps
-                if self.settings.get('cont_slicing', False):
+                if self.settings.get("cont_slicing", False):
                     self.MD_steps = MD_steps
                 else:
                     # Set self.MD_steps to be the largest number required by any of
                     # our observable pairs
                     maximum_MD_steps = minimum_MD_steps
                     for pair in self.observable_pairs:
-                        max_MD_steps_pair = self._calculate_maximum_MD_steps(
-                            MD_steps, pair)
+                        max_MD_steps_pair = self._calculate_maximum_MD_steps(MD_steps, pair)
                         maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
                     self.MD_steps = maximum_MD_steps
             except AssertionError as error:
-                raise ValueError('Experimental datasets provided require a '
-                                 f'minimum MD_steps value of {minimum_MD_steps} in order to '
-                                 'calculate observables') from error
+                raise ValueError(
+                    "Experimental datasets provided require a "
+                    f"minimum MD_steps value of {minimum_MD_steps} in order to "
+                    "calculate observables"
+                ) from error
         else:
             self.MD_steps = minimum_MD_steps
 
@@ -431,18 +428,23 @@ class Control:
             resolution_factory = ResolutionFactory()
             dt = self.simulation.time_step * self.simulation.traj_step
 
-            if 'resolution' not in dset:
+            if "resolution" not in dset:
                 # create list of user keys for resolutions to add to the error
-                userkeys = [setting.lower().replace('resolution', '')
-                            for setting in resolution_factory.registry]
+                userkeys = [
+                    setting.lower().replace("resolution", "")
+                    for setting in resolution_factory.registry
+                ]
 
-                raise KeyError("A resolution function must be added. Recognised functions are: " +
-                               ", ".join(userkeys) +
-                               ". If you meant to apply no resolution,"
-                               " then specify resolution as None for the exp_dataset parameters.")
+                raise KeyError(
+                    "A resolution function must be added. Recognised functions are: "
+                    + ", ".join(userkeys)
+                    + ". If you meant to apply no resolution,"
+                    " then specify resolution as None for the exp_dataset parameters."
+                )
 
-            resolution = resolution_factory.create_instance(dset['resolution'], dset['type'],
-                                                            dset['reader'], dt)
+            resolution = resolution_factory.create_instance(
+                dset["resolution"], dset["type"], dset["reader"], dt
+            )
 
             self.observable_pairs[i].exp_obs.resolution = resolution
             self.observable_pairs[i].MD_obs.resolution = resolution
@@ -457,30 +459,30 @@ class Control:
         ]
 
         index_array = [
-            '- Attributes',
-            '  Minimizer',
-            '  FoM type',
-            '  Number of observables',
-            '  Number of parameters',
+            "- Attributes",
+            "  Minimizer",
+            "  FoM type",
+            "  Number of observables",
+            "  Number of parameters",
         ]
 
         # Printing settings
         if print_all_settings:
             for item in ["MD_steps", "equilibration_steps", "reset_config", "verbose"]:
-                index_array.append(f'  {item}')
+                index_array.append(f"  {item}")
                 data_array.append([self.__dict__[item]])
 
             # pylint: disable=consider-using-dict-items
             index_array.append("- Control Settings")
             data_array.append(["-"])
             for setting in settings:
-                index_array.append(f'  {setting}')
+                index_array.append(f"  {setting}")
                 data_array.append([settings[setting]])
 
             index_array.append("- Parameters")
             data_array.append(["-"])
             for parameter in fit_parameters:
-                index_array.append(f'  {parameter.name}')
+                index_array.append(f"  {parameter.name}")
                 data_array.append([parameter.value])
 
             index_array.append("- Experimental Datasets")
@@ -488,31 +490,32 @@ class Control:
             if exp_datasets is not None:
                 for dataset in exp_datasets:
                     for key in dataset:
-                        index_array.append(f'  {key}')
+                        index_array.append(f"  {key}")
                         data_array.append([dataset[key]])
 
             index_array.append("- FoM Options")
             data_array.append(["-"])
             if FoM_options is not None:
                 for key in FoM_options:
-                    index_array.append(f'  {key}')
+                    index_array.append(f"  {key}")
                     data_array.append([FoM_options[key]])
 
-        setup_frame = pd.DataFrame(data=data_array,
-                                   index=index_array)
+        setup_frame = pd.DataFrame(data=data_array, index=index_array)
         if self.verbose != -1:
-            print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+            print(f"Control created with:\n{setup_frame.to_string(index=True, header=False)}\n")
 
         # set up data printer and attach minimiser history to it
-        self.data_printer = data_printers[settings.get('data_printer', 'plaintext')]()
+        self.data_printer = data_printers[settings.get("data_printer", "plaintext")]()
 
     def __str__(self) -> str:
-        exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
+        exp_dataset_types = [dataset["type"] for dataset in self.exp_datasets]
 
         # plural adds "s" to end of "parameter" if there is more than one parameter
-        plural = ("" if len(self.fit_parameters) == 1 else "s")
-        return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
-                f"using {exp_dataset_types} data types")
+        plural = "" if len(self.fit_parameters) == 1 else "s"
+        return (
+            f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
+            f"using {exp_dataset_types} data types"
+        )
 
     def refine(self, n_steps: int = None) -> None:
         """
@@ -539,8 +542,10 @@ class Control:
 
         if not n_steps:
             if self.n_steps is None:
-                raise ValueError('The number of maximum refinement steps needs to be'
-                                 ' specified and greater than 0.')
+                raise ValueError(
+                    "The number of maximum refinement steps needs to be"
+                    " specified and greater than 0."
+                )
         else:
             self.n_steps = n_steps
 
@@ -606,27 +611,32 @@ class Control:
         for i, observable_pair in enumerate(self.observable_pairs):
             if observable_pair.auto_scale:
                 dset = self.exp_datasets[i]
-                scaling_keys.append('  {}'.format(dset['file_name']))
+                scaling_keys.append("  {}".format(dset["file_name"]))
                 scaling_values.append([observable_pair.rescale_factor])
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
             if self.verbose != -1:
                 print(
-                f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
+                    f"\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}"
+                )
 
         if self.verbose >= 1:
             average_timing = statistics.mean(self.step_timings)
             if self.verbose != -1:
-                print(
-                f'\nAverage time per step was {np.round(average_timing, 2)} seconds.')
+                print(f"\nAverage time per step was {np.round(average_timing, 2)} seconds.")
 
         verbose_manager.finish("Refinement")
 
-    def minimize(self, n_steps: int,
-                 minimize_every: int = 10,
-                 verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: Any) -> None:
+    def minimize(
+        self,
+        n_steps: int,
+        minimize_every: int = 10,
+        verbose: bool = False,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: Any,
+    ) -> None:
         """
         Performs an MD run intertwined with periodic structure relaxation.
         This way after a local minimum is found, the system is taken
@@ -661,11 +671,11 @@ class Control:
                 on engine used.
         """
         try:
-            self.simulation.minimize(n_steps,minimize_every,verbose,
-                                        output_log,work_dir, **settings)
+            self.simulation.minimize(
+                n_steps, minimize_every, verbose, output_log, work_dir, **settings
+            )
         except Exception as exc:
-            raise Exception('Minimization failed, please check the parameter values.') from exc
-
+            raise Exception("Minimization failed, please check the parameter values.") from exc
 
     def auto_equilibrate(self):
         """
@@ -676,15 +686,21 @@ class Control:
         Auto equilibrate settings are prefixed with "auto_equil_" and
         these settings will be passed through to :func:`Simulation.auto_equilibrate`.
         """
-        auto_eq_settings = {key.removeprefix("auto_equil_"): val
-                            for key, val in self.settings.items()
-                            if key.startswith("auto_equil_")}
+        auto_eq_settings = {
+            key.removeprefix("auto_equil_"): val
+            for key, val in self.settings.items()
+            if key.startswith("auto_equil_")
+        }
         self.simulation.auto_equilibrate(**auto_eq_settings)
 
-
-    def equilibrate(self, n_steps: int = None, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings: Any) -> None:
-
+    def equilibrate(
+        self,
+        n_steps: int = None,
+        verbose: bool = False,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: Any,
+    ) -> None:
         """
         Run molecular dynamics to equilibrate the ``Universe``.
 
@@ -708,16 +724,22 @@ class Control:
             if not n_steps:
                 self.auto_equilibrate()
             else:
-                self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
+                self.simulation.run(n_steps, True, verbose, output_log, work_dir, **settings)
         except MDEngineError:
             try:
-                self.engine_recovery_from_equil(n_steps=n_steps,verbose=verbose,
-                                                output_log=output_log,work_dir=work_dir,**settings)
+                self.engine_recovery_from_equil(
+                    n_steps=n_steps,
+                    verbose=verbose,
+                    output_log=output_log,
+                    work_dir=work_dir,
+                    **settings,
+                )
             except MDEngineError as exc:
-                logging.exception('The MD engine produced an error. This is often due to '
-                'bad constraints or parameter values - please check these and try again.')
+                logging.exception(
+                    "The MD engine produced an error. This is often due to "
+                    "bad constraints or parameter values - please check these and try again."
+                )
                 raise MDEngineError from exc
-
 
     def step(self, bad_param_location: bool = False) -> None:
         """
@@ -740,8 +762,9 @@ class Control:
         elif not bad_param_location:
             # Generate FoM by running MD for this step and then calculate FoM
             fom, trj = self._generate_FoM()
-            if (self.file_dump_frequency is DumpFreq.EVERY
-               or (self.file_dump_frequency is DumpFreq.BEST and self.minimizer.is_best_FoM())):
+            if self.file_dump_frequency is DumpFreq.EVERY or (
+                self.file_dump_frequency is DumpFreq.BEST and self.minimizer.is_best_FoM()
+            ):
                 if DumpExtent.TRAJ in self.file_dump_extent:
                     self.dump_h5md(trj)
                 if DumpExtent.OBS in self.file_dump_extent:
@@ -786,13 +809,14 @@ class Control:
         or the file name must be different for each trajectory,
         as if not the file will be continually overwritten.
         """
-        return H5MD_build.write_H5MD(trj,
-                              filename=self.file_dump_prefix,
-                              file_loc=self.file_dump_loc,
-                              timestamp=timestamp_now(self.use_timestamp,
-                                                      self.file_dump_frequency),
-                              creator_name=self.h5md_creator,
-                              creator_email=self.h5md_email)
+        return H5MD_build.write_H5MD(
+            trj,
+            filename=self.file_dump_prefix,
+            file_loc=self.file_dump_loc,
+            timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+            creator_name=self.h5md_creator,
+            creator_email=self.h5md_email,
+        )
 
     def dump_observables(self, data_format: ObsFormat):
         """
@@ -805,14 +829,16 @@ class Control:
         """
         if ObsFormat.MDA in data_format:
             for obs_pair in self.observable_pairs:
-                write_MDA(obs_pair.MD_obs,
-                          filename=self.file_dump_prefix,
-                          file_loc=self.file_dump_loc,
-                          timestamp=timestamp_now(self.use_timestamp,
-                                                  self.file_dump_frequency),
-                          )
+                write_MDA(
+                    obs_pair.MD_obs,
+                    filename=self.file_dump_prefix,
+                    file_loc=self.file_dump_loc,
+                    timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+                )
 
-    def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
+    def plot_results(
+        self, filename: str = None, points: int = 100000, MH_norm: float = 20.0
+    ) -> None:
         """
         Instantiates an insstance of the PlotResults class and generates a cornerplot
         from the data in self.results_filename
@@ -835,15 +861,13 @@ class Control:
         """
         if filename is None:
             filename = self.results_filename
-        plotter = PlotResults(filename, MH_norm=MH_norm, points=points,
-                              quantiles=[0.34, 0.5, 0.68])
+        plotter = PlotResults(filename, MH_norm=MH_norm, points=points, quantiles=[0.34, 0.5, 0.68])
         cornerplot, means, stds = plotter.create_cornerplot()
 
         if self.verbose != -1:
-            print(f'Parameter means = {means}, Parameter errors = {stds}')
+            print(f"Parameter means = {means}, Parameter errors = {stds}")
 
         return cornerplot
-
 
     def _generate_FoM(self) -> float:
         """
@@ -879,69 +903,9 @@ class Control:
 
         self.simulation.engine.update_parameters()
 
-    @staticmethod
-    def _read_observable_from_file(
-            obstype: str,
-            reader: str,
-            file_name: str,
-            use_FFT: bool = True,
-    ) -> Observable:
-        """
-        Creates an Observable of the specified type and reads in data from file
-
-        Parameters
-        ----------
-        obstype : str
-            The ``type`` of the ``Observable``.
-        reader : str
-            The ``type`` of the ``Reader``.
-        file_name : str
-            The absolute or relative path and the file name.
-        use_FFT: bool, optional
-            Whether the Fast Fourier Transform should be used, default is True.
-
-        Returns
-        -------
-        Observable
-            An ``Observable`` of specified ``type``.
-        """
-
-        observable = ObservableFactory.create(obstype)
-        observable.read_from_file(reader=reader, file_name=file_name)
-        observable.use_FFT = use_FFT
-        return observable
-
-    @staticmethod
-    def _create_empty_observable(exp_observable: Observable, use_FFT: bool = True) -> Observable:
-        """
-        Creates a ``Observable`` without data but with independent variables
-        specified from another ``Observable``.  This is a placeholder in which
-        the ``Observable`` can be calculated from an MD trajectory.
-
-        Parameters
-        ----------
-        exp_observable : Observable
-            An ``Observable`` with defined independent variables.
-        use_FFT: bool, optional
-            boolean determining if the FFT should be used, default is True
-
-        Returns
-        -------
-        ``Observable``
-            An ``Observable`` with only independent variables and
-            ``origin == 'MD'``
-        """
-
-        observable = ObservableFactory.create(exp_observable.name)
-        observable.origin = 'MD'
-        observable.independent_variables = deepcopy(
-            exp_observable.independent_variables)
-        observable.use_FFT =  use_FFT
-        return observable
-
-    def _calculate_observables(self,
-                               simulation: Simulation,
-                               observable_pairs: list[ObservablePair]) -> None:
+    def _calculate_observables(
+        self, simulation: Simulation, observable_pairs: list[ObservablePair]
+    ) -> None:
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
@@ -965,9 +929,11 @@ class Control:
 
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
-            obs_timings = pair.MD_obs.calculate_from_MD(trj, file_path = h5md_traj_path, verbose=self.verbose, **self.settings)
-            if pair.MD_obs.name =='SQw':
-                self.recreated_independent_vars['SQw'] = pair.MD_obs.recreated_Q
+            obs_timings = pair.MD_obs.calculate_from_MD(
+                trj, file_path=h5md_traj_path, verbose=self.verbose, **self.settings
+            )
+            if pair.MD_obs.name == "SQw":
+                self.recreated_independent_vars["SQw"] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
@@ -1003,8 +969,7 @@ class Control:
 
         return traj_step * minimum_frames
 
-    def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: ObservablePair) -> int:
+    def _calculate_maximum_MD_steps(self, MD_steps: int, observable_pair: ObservablePair) -> int:
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
         able to use when calculating dependent variables whilst still being
@@ -1039,222 +1004,6 @@ class Control:
 
         return maximum_steps * (MD_steps // (maximum_steps))
 
-    @staticmethod
-    def _threshold_filter(obs: Observable,
-                          *,
-                          abs_threshold: float = 0.,
-                          rel_threshold: float = 0.,
-                          magnitude: bool = False,
-                          warn_threshold: float = 0.1) -> int:
-        """
-        Remove data below threshold in-place.
-
-        Removed data are set to zero and respective errors set to infinity
-        to avoid weighting.
-
-        Parameters
-        ----------
-        obs : Observable
-            Observable to filter.
-        abs_threshold : float
-            Minimum value below which to remove data.
-        rel_threshold : float
-            Proportion of the maximum value below which to remove data.
-        magnitude : bool
-            Whether the magnitude of the data must be below threshold
-            or the original values.
-        warn_threshold : float
-            Fraction of data over which to warn too much may have been removed.
-
-        Returns
-        -------
-        int
-            Number of data removed.
-
-        Notes
-        -----
-        If both abs and rel threshold provided, use the larger of the two, i.e.
-        the one which will remove the most data.
-        """
-        n_data = 0
-        n_skip = 0
-
-        for variable in obs.dependent_variables:
-
-            for values, errors in zip(obs.dependent_variables[variable],
-                                      obs.errors[variable]):
-                threshold = max(rel_threshold * values.max(), abs_threshold)
-
-                loc = np.abs(values) if magnitude else values
-                loc = loc < threshold
-
-                values[loc] = 0.
-                errors[loc] = np.inf
-                n_data += values.size
-                n_skip += np.count_nonzero(loc)
-
-        logging.info("Threshold (%g) removed %d data of %d",
-                     threshold, n_skip, n_data)
-
-        if n_skip / n_data > warn_threshold:
-            logging.warning("Over %d%% of data have been removed.",
-                            np.floor(100. * n_skip / n_data))
-
-        return n_skip
-
-    @staticmethod
-    def _is_data_uniform(observable: Observable) -> dict[str, dict[str, bool]]:
-        """
-        Checks if the values for each independent variable of an ``Observable`` are uniformly
-        spaced and if they start at zero. This information is returned in a single dictionary.
-
-        Parameters
-        ----------
-        observable : Observable
-            The ``Observable`` for which to check the independent variables.
-
-        Returns
-        -------
-        `Dict[str, Dict[str, bool]]`
-            An outer dictionary where the independent variables of the ``Observable`` are the keys,
-            and the values are another dictionary corresponding to that variable. This inner
-            dictionary has the same format for all variables, with the two keys 'uniform' and
-            'zeroed'. The values for these keys are booleans that state whether the data fulfils
-            the corresponding requirement.
-
-        Examples
-        --------
-        >>> _is_data_uniform(observable)
-        {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
-        """
-        uniformity_dict = {}
-        for var_key, var_data in observable.independent_variables.items():
-            uniform_data = np.linspace(
-                min(var_data), max(var_data), num=len(var_data))
-            is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-            uniformity_dict[var_key] = {
-                'uniform': is_uniform, 'zeroed': var_data[0] == 0}
-        return uniformity_dict
-
-    def _make_data_uniform(self, observable: Observable) -> Observable:
-        """
-        Takes an ``Observable``, checks the requirements for its ``independent_variables``
-        to be uniform or start at zero, creates uniform grids for the variables that do not
-        satisfy their requirement, interpolates the ``dependent_variables`` as needed,
-        and returns an ``Observable`` with the uniform/interpolated variables.
-        Limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
-        This may change in future.
-
-        Parameters
-        ----------
-        observable : Observable
-            An ``Observable`` for which the independent variables
-            need to be made uniform / to start at zero. Currently
-            limited to ``Observables`` for which the ``dependent_variables`` are two-dimensional.
-
-        Returns
-        -------
-        ``Observable``
-            Returns a copy of the passed ``Observable`` with the independent variables put onto
-            uniform grid (for the variables where that is necessary)
-            and the dependent variables interpolated onto the same grid
-        """
-        # get the uniformity requirements from the Observable
-        uniformity_required = observable.uniformity_requirements
-        if uniformity_required is None:
-            return observable
-
-        # determine for all independent_variables if they are currently uniform or start at zero
-        uniformity_state = self._is_data_uniform(observable)
-        # initialise helper list for the independent_variables that need to be made uniform
-        indep_vars_to_be_changed = []
-        # loop through requirements
-        for var_key, var_required in uniformity_required.items():
-            var_state = uniformity_state[var_key]
-            # if the variable has a requirement AND it is not satisfied
-            # (for either uniformity OR zero-start)
-            # then add it to the list of variables that need to be changed
-            if (var_required['uniform'] and not var_state['uniform']) or \
-                    (var_required['zeroed'] and not var_state['zeroed']):
-                indep_vars_to_be_changed.append(var_key)
-
-        # if all uniformity requirements are already satisfied
-        # simply return the original observable
-        if not indep_vars_to_be_changed:
-            return observable
-
-        # initialise a helper dictionary to hold the new independent variables
-        indep_var_uniform = {}
-        # loop through all independent variables
-        for var_key in uniformity_state:
-            # check if the independent variable needs to be made uniform
-            if var_key in indep_vars_to_be_changed:
-                data = observable.independent_variables[var_key]
-                minimum = 0 if uniformity_required[var_key]['zeroed'] else min(data)
-                uniform_data = np.linspace(minimum, max(data), num=len(data))
-                indep_var_uniform[var_key] = uniform_data
-            # if uniformity requirements are satisfied already,
-            # add the data points to the helper dictionary
-            else:
-                indep_var_uniform[var_key] = observable.independent_variables[var_key]
-
-        # get the indexing order of independent variables within the dependent variables
-        var_indexing = observable.dependent_variables_structure
-
-        # loop through the dependent variables and interpolate them
-        for var_key, data_list in observable.dependent_variables.items():
-            # Experimental Observables should only have 1 element in data_list
-            try:
-                assert len(data_list) == 1
-                data = data_list[0]
-            except AssertionError as error:
-                raise AssertionError('Expected experimental dataset to only have one dependent '
-                                     f'variable entry for {var_key}, '
-                                     f'but found {len(data_list)} instead') from error
-
-            # determine the dimension of the dependent variable
-            var_dimension = data.ndim
-            # interpolation for 1D
-            if var_dimension == 1:
-                x_data = observable.independent_variables[var_indexing[var_key][0]]
-                data_interpol = interp1d(x_data, data)
-                x_uniform = indep_var_uniform[var_indexing[var_key][0]]
-                uniform_data = data_interpol(x_uniform)
-                # repeat the interpolation for the errors
-                err_data = observable.errors[var_key][0]
-                err_data[err_data == float('inf')] = 0
-                err_interpol = interp1d(x_data, err_data)
-                err_uniform = err_interpol(x_uniform)
-                err_uniform[err_uniform == 0.] = float('inf')
-            # interpolation for 2D
-            elif var_dimension == 2:
-                # Because Observable.dependent_variables_structure gives the order in which
-                # the independent variables are represented in the np.shape of the data,
-                # we have to reverse the order of the x and y arrays for interpolation:
-                x_data = observable.independent_variables[var_indexing[var_key][1]]
-                y_data = observable.independent_variables[var_indexing[var_key][0]]
-                data_interpol = RectBivariateSpline(x_data, y_data, data.T)
-                # get the independent_variables that satisfy the uniformity requirements
-                # as created earlier
-                x_uniform = indep_var_uniform[var_indexing[var_key][1]]
-                y_uniform = indep_var_uniform[var_indexing[var_key][0]]
-                uniform_data = data_interpol(x_uniform, y_uniform).T
-                # repeat the interpolation for the errors
-                err_data = observable.errors[var_key][0]
-                err_data[err_data == float('inf')] = 0
-                err_interpol = RectBivariateSpline(x_data, y_data, err_data.T)
-                err_uniform = err_interpol(x_uniform, y_uniform).T
-                err_uniform[err_uniform == 0.] = float('inf')
-            else:
-                raise NotImplementedError(
-                    'Only 1D and 2D data can currently be made uniform')
-            # save the uniform data and errors back into the Observable
-            observable.dependent_variables[var_key] = [uniform_data]
-            observable.errors[var_key] = [err_uniform]
-        # finally, set the independent variables of the ``Observable`` to the uniform ones
-        observable.independent_variables = indep_var_uniform
-        return observable
-
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
@@ -1273,44 +1022,23 @@ class Control:
         """
 
         with suppress(AttributeError):
-
-            changed, traj_step, time_step, self.dt_required \
-                  = obs.validate_energy(self.simulation.time_step)
+            changed, traj_step, time_step, self.dt_required = obs.validate_energy(
+                self.simulation.time_step
+            )
             if changed:
                 self.simulation.traj_step = traj_step
                 self.simulation.time_step = time_step
-                logging.warning(" The given traj_step and time_step values were not"
+                logging.warning(
+                    " The given traj_step and time_step values were not"
                     " compatibile with the dataset specified.\nThe values "
                     "(whilst prioritising time_step) have been changed to"
                     " traj_step: %d, and time_step: %f. \n"
                     "Context: for this dataset, traj_step multiplied by time_step"
-                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
-
-    def _input_check(self, general_set, inputs) -> None:
-        """
-
-        Handles error for retrieving data from a set where the input is not found.
-        This was made in a general way to be used for any dataset or set of inputs.
-
-        Parameters
-        ----------
-        general_set : A general dataset
-            A variable that contains a set of information for input checking against,
-            for example 'dset' contains the observable type, file_name and reader type,
-            for checking inputs.
-
-        Returns
-        -------
-        None
-        """
-
-        for input_check in inputs:
-            try:
-                general_set[input_check]
-            except KeyError as error:
-                raise KeyError("There was an issue retrieving the input: "
-                               f" {input_check} "
-                                "from the dataset, please check your inputs again.") from error
+                    " must be ~= %f (6 d.p). \n",
+                    traj_step,
+                    time_step,
+                    self.dt_required,
+                )
 
     def _trim_dependent_variables(self) -> None:
         """
@@ -1332,16 +1060,20 @@ class Control:
                 md_obs = self.observable_pairs[index].MD_obs
 
                 recreated_independent_vars = self.recreated_independent_vars[obs]
-                if len(exp_obs.dependent_variables[obs][0]) != \
-                len(md_obs.dependent_variables[obs][0]):
+                if len(exp_obs.dependent_variables[obs][0]) != len(
+                    md_obs.dependent_variables[obs][0]
+                ):
+                    exp_obs.errors[obs][0] = [
+                        exp_obs.errors[obs][0][num] for num in recreated_independent_vars
+                    ]
+                    exp_obs.dependent_variables[obs][0] = [
+                        exp_obs.dependent_variables[obs][0][num]
+                        for num in recreated_independent_vars
+                    ]
 
-                    exp_obs.errors[obs][0] = \
-                    [exp_obs.errors[obs][0][num] for num in recreated_independent_vars]
-                    exp_obs.dependent_variables[obs][0] = \
-                    [exp_obs.dependent_variables[obs][0][num] for num in recreated_independent_vars]
-
-    def engine_recovery_from_equil(self, n_steps: int, verbose: bool,
-            output_log: str, work_dir: str, **settings: Any) -> None:
+    def engine_recovery_from_equil(
+        self, n_steps: int, verbose: bool, output_log: str, work_dir: str, **settings: Any
+    ) -> None:
         """
         Handles an MDEngineError thrown by the MD engine. Currently this error is only raised by
         LAMMPS.
@@ -1368,7 +1100,7 @@ class Control:
 
         counter = 0
         equil_works = False
-        attempt_limit = self.settings['time_step_reductions']
+        attempt_limit = self.settings["time_step_reductions"]
         while not equil_works and counter < attempt_limit:
             self.trial_reduce_time_step(reduction_factor=0.6)
             self.reset_engine()
@@ -1377,7 +1109,7 @@ class Control:
                 if not n_steps:
                     self.auto_equilibrate()
                 else:
-                    self.simulation.run(n_steps,True, verbose, output_log, work_dir,**settings)
+                    self.simulation.run(n_steps, True, verbose, output_log, work_dir, **settings)
                 equil_works = True
             except MDEngineError:
                 equil_works = False
@@ -1400,7 +1132,7 @@ class Control:
         # it is necessary to reset and setup the MD engine again
         self.simulation._setup()
 
-    def trial_reduce_time_step(self,reduction_factor) -> None:
+    def trial_reduce_time_step(self, reduction_factor) -> None:
         """
         Reduces the time_step by the reduction factor specified.
 
