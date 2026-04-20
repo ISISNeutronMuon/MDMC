@@ -607,31 +607,6 @@ class AbstractFQt(SQwMixins, Observable):
         """
         return {'FQt': ['Q', 't']}
 
-    @property
-    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
-        """
-        Get restrictions required for computing E & Q.
-
-        Capture the current limitations on the time 't' and reciprocal
-        lattice points 'Q' within the intermediate scattering function ``Observables``.
-
-        If using FFT, then 't' must be uniform and start at zero,
-        otherwise it has no restrictions. 'Q' must be uniform but does
-        not need to start at zero.
-
-        Returns
-        -------
-        dict[str, dict[str, bool]]
-            Dictionary of uniformity restrictions for 't' and 'Q'.
-        """
-
-        if self.use_FFT:
-            t_requirements = {'uniform': True, 'zeroed': True}
-        else:
-            t_requirements = {'uniform': False, 'zeroed': False}
-
-        return {'t': t_requirements, 'Q': {'uniform': True, 'zeroed': False}}
-
 
 @ObservableFactory.register(('IntermediateScatteringFunction', 'FQt'))
 class FQt(AbstractFQt):

@@ -2,7 +2,6 @@
 import getpass
 import logging
 import statistics
-from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum, Flag, auto
@@ -11,7 +10,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.interpolate import RectBivariateSpline, interp1d
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
@@ -330,7 +328,8 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
-        minimum_MD_steps = 0
+        min_time_step = np.inf
+        min_box_size = 0
         for dset in exp_datasets:
             use_FFT = dset.get('use_FFT', True)
 
@@ -342,9 +341,6 @@ class Control:
                                                              dset['file_name'],
                                                              use_FFT)
 
-            if exp_observable.uniformity_requirements:
-                exp_observable = self._make_data_uniform(exp_observable)
-
             if "filter" in dset:  # Data below threshold should be zeroed.
                 self._threshold_filter(
                     exp_observable,
@@ -355,8 +351,6 @@ class Control:
                 )
 
             MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
-
-            self._validate_energy(MD_observable)
 
             auto_scale = dset.get('auto_scale', False)
             rescale_factor = dset.get('rescale_factor')
@@ -377,10 +371,27 @@ class Control:
             self.recreated_independent_vars  = {}
             self.production_time_step = self.simulation.time_step
 
-            # Take the largest minimum number of MD_steps needed by any dataset
-            min_MD_steps_dset = self._calculate_minimum_MD_steps(
-                observable_pair)
-            minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
+            min_time_step = min(min_time_step, observable_pair.exp_obs.minimum_time_step())
+            min_box_size = max(min_box_size, observable_pair.exp_obs.min_box_size())
+
+        time_step = self.simulation.time_step
+        traj_step = self.simulation.traj_step
+        dt = time_step * traj_step
+        if dt > min_time_step:
+            raise ValueError(
+                f'Experimental datasets provided require a minimum time step '
+                f'value of {min_time_step} in order to calculate observables. '
+                f'Currently you are running the MD with a time step of '
+                f'{time_step} with a save every {traj_step} step the effective '
+                f'time step of observable calculations is therefore {dt}.')
+
+        dimensions = self.simulation.universe.dimensions
+        if not all(i > min_box_size for i in dimensions):
+            raise ValueError(
+                f'Experimental datasets provided require a minimum box size '
+                f'value of {min_box_size} in order to calculate observables. '
+                f'Currently you are running the MD with a simulation cell '
+                f'with dimensions {dimensions}.')
 
         if FoM_options is None or FoM_options.get('error') is None:
             FoM_error = 'exp'
@@ -397,28 +408,7 @@ class Control:
                                                 n_parameters=len(self.fit_parameters))
         self.max_FoM = self.calculate_max_FoM()
 
-        # Use specified MD_steps if supplied, else calculate
-        # cont_slicing produces small sub-trajectories, so calculation is unnecessary
-        if MD_steps:
-            try:
-                assert MD_steps >= minimum_MD_steps
-                if self.settings.get('cont_slicing', False):
-                    self.MD_steps = MD_steps
-                else:
-                    # Set self.MD_steps to be the largest number required by any of
-                    # our observable pairs
-                    maximum_MD_steps = minimum_MD_steps
-                    for pair in self.observable_pairs:
-                        max_MD_steps_pair = self._calculate_maximum_MD_steps(
-                            MD_steps, pair)
-                        maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
-                    self.MD_steps = maximum_MD_steps
-            except AssertionError as error:
-                raise ValueError('Experimental datasets provided require a '
-                                 f'minimum MD_steps value of {minimum_MD_steps} in order to '
-                                 'calculate observables') from error
-        else:
-            self.MD_steps = minimum_MD_steps
+        self.MD_steps = MD_steps
 
         # read in resolutions for experimental datasets
         for i, dset in enumerate(exp_datasets):
@@ -968,69 +958,6 @@ class Control:
         verbose_manager.finish("Calculating observables")
         return trj
 
-    def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
-        """
-        Calculates the minimum number of steps required for the MD engine in
-        order to calculate MD ``Observables`` objects with the same independent
-        variables as the experimental ``Observable`` objects.
-
-        Parameters
-        ----------
-        observable_pair : ObservablePair
-            ``ObservablesPair`` for which the required number of ``MD_steps``
-            is calculated
-
-        Returns
-        -------
-        `int`
-            Number of ``MD_steps``
-        """
-        time_step = self.simulation.time_step
-        traj_step = self.simulation.traj_step
-        # Calculate the time separation between trajectory frames, dt
-        dt = time_step * traj_step
-        # Calculate the minimum number of trajectory frames needed for the
-        # calculation of the dependent_variables of observable_pair
-        minimum_frames = observable_pair.exp_obs.minimum_frames(dt)
-
-        return traj_step * minimum_frames
-
-    def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: ObservablePair) -> int:
-        """
-        Calculates the maximum number of steps that ``observable_pair`` will be
-        able to use when calculating dependent variables whilst still being
-        below the ``MD_steps`` specified by the user. Any additional steps
-        beyond this would not contribute to the calculation.
-
-        If ``observable_pair.exp_obs.maximum_frames()`` is None, then all frames can be used so we
-        just return the largest multiple of ``traj_steps``.
-
-        Otherwise, we calculate the largest multiple of
-        ``traj_step * observable_pair.exp_obs.maximum_frames()``, as we can then calculate the
-        dependent variable multiple times by taking subsets of the total trajectory.
-
-        Parameters
-        ----------
-        MD_steps : int
-            The hard upper limit on the number of steps to run, as specified by
-            the user
-        observable_pair : ObservablePair
-            ``ObservablesPair`` for which the required number of ``MD_steps``
-            is calculated
-
-        Returns
-        -------
-        int
-            Maximum number of ``MD_steps`` needed
-        """
-        traj_step = self.simulation.traj_step
-        maximum_frames = observable_pair.exp_obs.maximum_frames()
-
-        maximum_steps = traj_step if maximum_frames is None else traj_step * maximum_frames
-
-        return maximum_steps * (MD_steps // (maximum_steps))
-
     @staticmethod
     def _threshold_filter(obs: Observable,
                           *,
@@ -1093,190 +1020,6 @@ class Control:
                             np.floor(100. * n_skip / n_data))
 
         return n_skip
-
-    @staticmethod
-    def _is_data_uniform(observable: Observable) -> dict[str, dict[str, bool]]:
-        """
-        Checks if the values for each independent variable of an ``Observable`` are uniformly
-        spaced and if they start at zero. This information is returned in a single dictionary.
-
-        Parameters
-        ----------
-        observable : Observable
-            The ``Observable`` for which to check the independent variables.
-
-        Returns
-        -------
-        `Dict[str, Dict[str, bool]]`
-            An outer dictionary where the independent variables of the ``Observable`` are the keys,
-            and the values are another dictionary corresponding to that variable. This inner
-            dictionary has the same format for all variables, with the two keys 'uniform' and
-            'zeroed'. The values for these keys are booleans that state whether the data fulfils
-            the corresponding requirement.
-
-        Examples
-        --------
-        >>> _is_data_uniform(observable)
-        {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
-        """
-        uniformity_dict = {}
-        for var_key, var_data in observable.independent_variables.items():
-            uniform_data = np.linspace(
-                min(var_data), max(var_data), num=len(var_data))
-            is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-            uniformity_dict[var_key] = {
-                'uniform': is_uniform, 'zeroed': var_data[0] == 0}
-        return uniformity_dict
-
-    def _make_data_uniform(self, observable: Observable) -> Observable:
-        """
-        Takes an ``Observable``, checks the requirements for its ``independent_variables``
-        to be uniform or start at zero, creates uniform grids for the variables that do not
-        satisfy their requirement, interpolates the ``dependent_variables`` as needed,
-        and returns an ``Observable`` with the uniform/interpolated variables.
-        Limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
-        This may change in future.
-
-        Parameters
-        ----------
-        observable : Observable
-            An ``Observable`` for which the independent variables
-            need to be made uniform / to start at zero. Currently
-            limited to ``Observables`` for which the ``dependent_variables`` are two-dimensional.
-
-        Returns
-        -------
-        ``Observable``
-            Returns a copy of the passed ``Observable`` with the independent variables put onto
-            uniform grid (for the variables where that is necessary)
-            and the dependent variables interpolated onto the same grid
-        """
-        # get the uniformity requirements from the Observable
-        uniformity_required = observable.uniformity_requirements
-        if uniformity_required is None:
-            return observable
-
-        # determine for all independent_variables if they are currently uniform or start at zero
-        uniformity_state = self._is_data_uniform(observable)
-        # initialise helper list for the independent_variables that need to be made uniform
-        indep_vars_to_be_changed = []
-        # loop through requirements
-        for var_key, var_required in uniformity_required.items():
-            var_state = uniformity_state[var_key]
-            # if the variable has a requirement AND it is not satisfied
-            # (for either uniformity OR zero-start)
-            # then add it to the list of variables that need to be changed
-            if (var_required['uniform'] and not var_state['uniform']) or \
-                    (var_required['zeroed'] and not var_state['zeroed']):
-                indep_vars_to_be_changed.append(var_key)
-
-        # if all uniformity requirements are already satisfied
-        # simply return the original observable
-        if not indep_vars_to_be_changed:
-            return observable
-
-        # initialise a helper dictionary to hold the new independent variables
-        indep_var_uniform = {}
-        # loop through all independent variables
-        for var_key in uniformity_state:
-            # check if the independent variable needs to be made uniform
-            if var_key in indep_vars_to_be_changed:
-                data = observable.independent_variables[var_key]
-                minimum = 0 if uniformity_required[var_key]['zeroed'] else min(data)
-                uniform_data = np.linspace(minimum, max(data), num=len(data))
-                indep_var_uniform[var_key] = uniform_data
-            # if uniformity requirements are satisfied already,
-            # add the data points to the helper dictionary
-            else:
-                indep_var_uniform[var_key] = observable.independent_variables[var_key]
-
-        # get the indexing order of independent variables within the dependent variables
-        var_indexing = observable.dependent_variables_structure
-
-        # loop through the dependent variables and interpolate them
-        for var_key, data_list in observable.dependent_variables.items():
-            # Experimental Observables should only have 1 element in data_list
-            try:
-                assert len(data_list) == 1
-                data = data_list[0]
-            except AssertionError as error:
-                raise AssertionError('Expected experimental dataset to only have one dependent '
-                                     f'variable entry for {var_key}, '
-                                     f'but found {len(data_list)} instead') from error
-
-            # determine the dimension of the dependent variable
-            var_dimension = data.ndim
-            # interpolation for 1D
-            if var_dimension == 1:
-                x_data = observable.independent_variables[var_indexing[var_key][0]]
-                data_interpol = interp1d(x_data, data)
-                x_uniform = indep_var_uniform[var_indexing[var_key][0]]
-                uniform_data = data_interpol(x_uniform)
-                # repeat the interpolation for the errors
-                err_data = observable.errors[var_key][0]
-                err_data[err_data == float('inf')] = 0
-                err_interpol = interp1d(x_data, err_data)
-                err_uniform = err_interpol(x_uniform)
-                err_uniform[err_uniform == 0.] = float('inf')
-            # interpolation for 2D
-            elif var_dimension == 2:
-                # Because Observable.dependent_variables_structure gives the order in which
-                # the independent variables are represented in the np.shape of the data,
-                # we have to reverse the order of the x and y arrays for interpolation:
-                x_data = observable.independent_variables[var_indexing[var_key][1]]
-                y_data = observable.independent_variables[var_indexing[var_key][0]]
-                data_interpol = RectBivariateSpline(x_data, y_data, data.T)
-                # get the independent_variables that satisfy the uniformity requirements
-                # as created earlier
-                x_uniform = indep_var_uniform[var_indexing[var_key][1]]
-                y_uniform = indep_var_uniform[var_indexing[var_key][0]]
-                uniform_data = data_interpol(x_uniform, y_uniform).T
-                # repeat the interpolation for the errors
-                err_data = observable.errors[var_key][0]
-                err_data[err_data == float('inf')] = 0
-                err_interpol = RectBivariateSpline(x_data, y_data, err_data.T)
-                err_uniform = err_interpol(x_uniform, y_uniform).T
-                err_uniform[err_uniform == 0.] = float('inf')
-            else:
-                raise NotImplementedError(
-                    'Only 1D and 2D data can currently be made uniform')
-            # save the uniform data and errors back into the Observable
-            observable.dependent_variables[var_key] = [uniform_data]
-            observable.errors[var_key] = [err_uniform]
-        # finally, set the independent variables of the ``Observable`` to the uniform ones
-        observable.independent_variables = indep_var_uniform
-        return observable
-
-    def _validate_energy(self, obs: Observable) -> None:
-        """
-        Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself. The time step and trajectory step
-        may be changed in the validate_energy method of the specific observable if necessary, to
-        achieve an energy separation that matches that of the experimental data.
-
-        Parameters
-        ----------
-        obs : Observable
-            ``Observable`` to validate
-
-        Returns
-        -------
-        None
-        """
-
-        with suppress(AttributeError):
-
-            changed, traj_step, time_step, self.dt_required \
-                  = obs.validate_energy(self.simulation.time_step)
-            if changed:
-                self.simulation.traj_step = traj_step
-                self.simulation.time_step = time_step
-                logging.warning(" The given traj_step and time_step values were not"
-                    " compatibile with the dataset specified.\nThe values "
-                    "(whilst prioritising time_step) have been changed to"
-                    " traj_step: %d, and time_step: %f. \n"
-                    "Context: for this dataset, traj_step multiplied by time_step"
-                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
 
     def _input_check(self, general_set, inputs) -> None:
         """

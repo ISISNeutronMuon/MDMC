@@ -73,9 +73,6 @@ class FakeObservable(Observable):
             self._errors = {"gauss2D": [np.sqrt(self.dependent_variables["gauss2D"][0])]}
         return self._errors
 
-    def minimum_frames(self, dt=None) -> int:
-        return 0
-
     def maximum_frames(self) -> int:
         return 1e12
 
@@ -117,10 +114,6 @@ class FakeObservable(Observable):
                            width_x=3.3,
                            width_y=2.1)]}
         self._errors = {"gauss2D": [np.sqrt(self._dependent_variables["gauss2D"][0])]}
-
-    @property
-    def uniformity_requirements(self):
-        return None
 
     @property
     def dependent_variables_structure(self):

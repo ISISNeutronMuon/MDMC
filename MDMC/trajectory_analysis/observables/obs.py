@@ -126,21 +126,11 @@ class Observable(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimum_frames(self, dt: float | None = None) -> int:
-        """
-        The no. of ``CompactTrajectory`` frames needed to calculate the ``dependent_variables``.
+    def minimum_time_step(self):
+        raise NotImplementedError
 
-        Parameters
-        ----------
-        dt : float, optional
-            The time separation of frames in ``fs``, default is `None`.
-
-        Returns
-        -------
-        int
-            The minimum number of frames.
-        """
-
+    @abstractmethod
+    def min_box_size(self):
         raise NotImplementedError
 
     @abstractmethod
@@ -245,30 +235,4 @@ class Observable(ABC):
               np.shape(dependent_variable1)=(np.size(independent_variable1),
                                              np.size(independent_variable2), ...)
         """
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
-        """
-        Get the current limitations on ``independent_variables`` of the ``Observable``.
-
-        It captures if the ``independent_variables`` are required to be uniform or to start at zero
-        The keys of the returned dictionary should be the variables that have such a restriction,
-        with the associated values being a dictionary with booleans
-        if the variables are 'uniform' or 'zeroed'.
-
-        Variables without any requirements do not need to be included, but can be included.
-
-        .. note::
-
-           If there are no uniformity requirements it is okay to return 'None'.
-
-        Returns
-        -------
-        dict[str, dict[str, bool]]
-            Dictionary of independent variables
-            with their uniformity restrictions represented as booleans.
-        """
-
         raise NotImplementedError

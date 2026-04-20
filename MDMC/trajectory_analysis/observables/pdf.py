@@ -128,24 +128,11 @@ class PairDistributionFunction(Observable):
     def errors(self, value: dict) -> None:
         self._errors = value
 
-    def minimum_frames(self, dt: float | None = None) -> int:
-        """
-        The minimum number of frames needed to calculate the ``dependent_variables``.
+    def minimum_time_step(self):
+        return np.inf
 
-        For PDF, this is 1.
-
-        Parameters
-        ----------
-        dt : float, optional
-            The time separation of frames in ``fs``, default is `None`, not
-            used.
-
-        Returns
-        -------
-        int
-            The minimum number of frames.
-        """
-        return 1
+    def min_box_size(self):
+        return 2 * np.max(self.r) + self.r_step / 2
 
     def maximum_frames(self) -> None:
         """
@@ -894,18 +881,3 @@ class PairDistributionFunction(Observable):
             The shape of the PDF dependent variable.
         """
         return {'PDF': ['r']}
-
-    @property
-    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
-        """
-        Define the current limitations on the atomic separation distance 'r'.
-
-        The requirement is that 'r' must be uniform, but it does not have to start at zero.
-
-        Returns
-        -------
-        dict[str, dict[str, bool]]
-            Dictionary of uniformity restrictions for 'r'.
-        """
-
-        return {'r': {'uniform': True, 'zeroed': False}}

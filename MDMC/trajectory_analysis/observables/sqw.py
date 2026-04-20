@@ -25,59 +25,13 @@ class SQwMixins:
     A mixin class for properties used by both SQw and FQt objects.
     """
 
-    def minimum_frames(self, dt: float) -> int:
-        r"""
-        Compute minimum number of ``CompactTrajectory`` frames to calculate ``dependent_variables``.
-
-        Parameters
-        ----------
-        dt : float
-            The time separation of frames in ``fs``.
-
-        Returns
-        -------
-        int
-            The minimum number of frames.
-
-        Notes
-        -----
-        Depends on ``self.use_FFT``.
-
-        If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
-        a reflection in time which only counts the end points once.
-
-        If `self.use_FFT == False`, there is not a hard minimum on number of frames. However, to
-        distinguish our smallest differences in energy :math:`F(Q,t)` needs to
-        cover at least a time period :math:`T_{min}` such that:
-
-        .. math::
-
-            T_{min} \sim \frac{h}{\Delta E_{min}}
-
-        Due to the aforementioned reflection in the time domain, to cover a
-        period of :math:`T_{min}` we only need :math:`N` frames:
-
-        .. math::
-
-            N = \frac{T_{min}}{2 \Delta t} + 1 = \frac{h}{2 \Delta t \Delta E_{min}} + 1
-        """
-
-        nE = len(self.E)
-        if self.use_FFT:
-            return nE + 1
-
-        # Either take the smallest absolute energy, or the smallest separation
-        # of energies we wish to discriminate between
-        minimum_abs_energy = np.min(np.abs(self.E[self.E != 0]))
-        minimum_energy_separation = np.min(np.diff(np.sort(self.E)))
-        limiting_energy = min(minimum_abs_energy, minimum_energy_separation)
-
+    def minimum_time_step(self):
         # h is in units of eV s whereas system units are meV fs, so apply a
         # factor of 1e3 * 1e15 to convert it
-        required_time = h * 1e18 / limiting_energy
-        # We need an integer number of frames, so round up using np.ceil to
-        # ensure we exceed the minimum number of frames needed
-        return int(np.ceil(required_time / (2 * dt) + 1))
+        return h * 1e18 / np.max(self.E)
+
+    def min_box_size(self):
+        return 2 * np.pi / np.min(self.Q)
 
     def maximum_frames(self) -> int | None:
         """
@@ -290,46 +244,6 @@ class AbstractSQw(SQwMixins, Observable):
     def recreated_Q(self, recreated_Q_pos: list):
         self._recreated_Q = recreated_Q_pos
 
-    def validate_energy(self, time_step: float = None):
-        """
-        Ensure ``dt`` is valid for computing energies.
-
-        Asserts that the user set frame separation ``dt`` leads to energy
-        separation that matches that of the experiment. If not, it
-        changes the time step and trajectory step to fix this. The time step value is
-        prioritised here.
-
-        Parameters
-        ----------
-        time_step : float, optional
-            User specified length of time for each update of the atoms trajectories
-            in the simulation, default is None.
-
-        Returns
-        -------
-        valid : bool
-            Whether ``dt`` is valid.
-        traj_step : Optional[int]
-            Ideal ``traj_step`` if provided.
-        time_step : Optional[float]
-            Ideal ``time_step`` if provided.
-        dt : float
-            Required ``dt``.
-        """
-
-        dt_required = self.calculate_dt()
-
-        if time_step is not None:
-            # Changing the time and traj step to fit the required dt value
-            # by finding the highest traj_step that can fit into the dt_required
-            traj_step = int(np.round(dt_required/time_step))
-            if traj_step == 0:
-                traj_step += 1
-            time_step = dt_required/traj_step
-
-            return True, traj_step, time_step, dt_required
-        return False, None, None, dt_required
-
     def calculate_from_MD(self,
                           MD_input: CompactTrajectory,
                           verbose: int = 0,
@@ -463,12 +377,12 @@ class AbstractSQw(SQwMixins, Observable):
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
-        if self.E is not None:
-            self.validate_energy(dt)
-        elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
-        else:
-            self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt)}
+        if self.E is None:
+            if self.independent_variables:
+                self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
+            else:
+                self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt)}
+
         # Overwrite independent variable 'Q' if it already exists
         with suppress(KeyError):
             self.independent_variables['Q'] = np.array(settings['Q_values'])
@@ -756,30 +670,6 @@ class AbstractSQw(SQwMixins, Observable):
         np.shape(self.SQw)=(np.size(self.Q), np.size(self.E)).
         """
         return {'SQw': ['Q', 'E']}
-
-    @property
-    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
-        """
-        Get restrictions required for computing E & Q.
-
-        Captures the current limitations on the energy 'E' and reciprocal
-        lattice points 'Q' within the dynamic structure factor ``Observables``.
-        If using FFT, then 'E' must be uniform and start at zero, otherwise it
-        has no restrictions. 'Q' must be uniform but does not need to start at
-        zero.
-
-        Returns
-        -------
-        dict[str, dict[str, bool]]
-            Dictionary of uniformity restrictions for 'E' and 'Q'.
-        """
-
-        if self.use_FFT:
-            e_requirements = {'uniform': True, 'zeroed': True}
-        else:
-            e_requirements = {'uniform': False, 'zeroed': False}
-
-        return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
