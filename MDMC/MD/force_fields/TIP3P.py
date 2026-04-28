@@ -3,7 +3,6 @@ from typing import Any
 from MDMC.MD.interaction_functions import NonBonded, HarmonicPotential
 from MDMC.MD.interactions import NonBondedForce, HarmonicPotentialForce
 from MDMC.MD.structures import Atom, Molecule
-from MDMC.MD.interactions import Bond, BondAngle
 
 
 class TIP3PMol(Molecule):
