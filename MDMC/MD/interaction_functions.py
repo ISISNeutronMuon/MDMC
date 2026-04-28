@@ -522,3 +522,10 @@ class LennardJones(InteractionFunction):
         super().__init__({'epsilon': epsilon, 'sigma': sigma})
         self.cutoff = settings.get('cutoff')
         self.solver = settings.get('long_range_solver')
+
+
+class NonBonded(InteractionFunction):
+
+    @inter_func_decorator(('charge', units.CHARGE), ('epsilon', units.ENERGY), ('sigma', units.LENGTH))
+    def __init__(self, charge: float, epsilon: float, sigma: float, **settings: Any):
+        super().__init__({'charge': charge, 'epsilon': epsilon, 'sigma': sigma})

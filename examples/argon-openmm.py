@@ -11,8 +11,8 @@ os.environ["OMP_NUM_THREADS"] = "4"
 
 
 from MDMC.control import Control
-from MDMC.MD import Atom, LennardJones, Simulation, Universe
-from MDMC.MD.interactions import Dispersion
+from MDMC.MD import Atom, NonBonded, Simulation, Universe
+from MDMC.MD.interactions import NonBondedInteraction
 
 # Build universe with density 0.0176 atoms per AA^-3
 density = 0.0176
@@ -28,10 +28,13 @@ universe.fill(Ar, num_density=density)
 
 # Above an universe of non-interacting argon atoms was created. Below
 # specify how these atoms will interact
-Ar_dispersion = Dispersion(universe,  # the universe our interaction applies to
-                           (Ar.atom_type, Ar.atom_type),  # the types of atoms to which it applies (only one type here!)
-                           cutoff=8.,  # the cutoff distance
-                           function=LennardJones(epsilon=1.0, sigma=3.0))
+Ar_dispersion = NonBondedInteraction(
+    universe,
+    Ar.atom_type,
+    cutoff=10.0,
+    ewald=1e-6,
+    function=NonBonded(charge=0.0, epsilon=1.0, sigma=3.0)
+)
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the

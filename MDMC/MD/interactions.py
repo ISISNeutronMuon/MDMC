@@ -703,6 +703,35 @@ class Coulombic(NonBondedInteraction):
                            atom_type in self.atom_types]))
 
 
+class NonBondedInteraction(NonBondedInteraction):
+
+    # I don't know why but dispersion and coulombic does this
+    __hash__ = NonBondedInteraction.__hash__
+
+    def __init__(self, universe: Universe, atom_type: int, **settings: Any):
+        self.ewald = settings.get('ewald')
+
+        self._atom_types = (atom_type, )
+        super().__init__(universe, **settings)
+        # Add interactions to all atoms
+        for atom in self.atoms:
+            atom.add_interaction(self)
+
+    def __eq__(self, other):
+        return other.atom_types == self.atom_types and isinstance(other, type(self))
+
+    @property
+    def atom_types(self):
+        return self._atom_types
+
+    @property
+    def atoms(self) -> list[Atom]:
+        return self.universe.atom_types[self._atom_types[0]]
+
+    def element_list(self) -> list:
+        return [self.universe.atom_types[self._atom_types[0]][0].element.symbol]
+
+
 @repr_decorator('function', 'n_atoms')
 class BondedInteraction(Interaction):
 

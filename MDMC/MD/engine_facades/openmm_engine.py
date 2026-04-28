@@ -6,7 +6,7 @@ import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
 
-from MDMC.MD import LennardJones
+from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -64,26 +64,42 @@ class OpenMMEngine(MDEngine):
 
         self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
 
-        for _type_ID, atom_type_group in universe.atom_types.items():
-            for _ in atom_type_group:
-                self.openmm_system.addParticle(float(atom_type_group[0].mass) * unit.amu)
+        for atom in self.universe.atoms:
+            self.openmm_system.addParticle(atom.mass * unit.amu)
 
-        for disp in universe.nonbonded_interactions:
-            if not isinstance(disp.function, LennardJones):
-                LOGGER.warning("Only LennardJones potential currently supported.")
-                continue
-            sigma = float(disp.function.sigma.value) * unit.angstrom
-            epsilon = float(disp.function.epsilon.value) * unit.kilojoules_per_mole
-            force = mm.NonbondedForce()
-            force.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
-            for _type_ID, atom_type_group in universe.atom_types.items():
-                for _ in atom_type_group:
-                    force.addParticle(0.0, sigma, epsilon)
-            force.setCutoffDistance(disp.cutoff * unit.angstrom)
-            force.setUseSwitchingFunction(True)
-            force.setSwitchingDistance(0.8 * disp.cutoff * unit.angstrom)
-            force.setUseDispersionCorrection(True)
-            self.openmm_system.addForce(force)
+        self.change_openmm_force_field()
+
+    def change_openmm_force_field(self):
+        """Change the OpenMM force fields."""
+        openmm_nobonded = mm.NonbondedForce()
+
+        for atom in self.universe.atoms:
+            nonbonded = [force for force in atom.nonbonded_interactions if isinstance(force.function, NonBonded)]
+            if len(nonbonded) != 1:
+                raise Exception("Unexpected number of non-bonded interactions.")
+            nonbonded = nonbonded[0]
+            charge = float(nonbonded.function.charge.value) * unit.coulomb
+            sigma = float(nonbonded.function.sigma.value) * unit.angstrom
+            epsilon = float(
+                nonbonded.function.epsilon.value) * unit.kilojoules_per_mole
+            openmm_nobonded.addParticle(charge, sigma, epsilon)
+
+        mdmc_nonbonded = [
+            force
+            for force in self.universe.interactions
+            if isinstance(force.function, NonBonded)
+        ]
+        cutoff = max(force.cutoff for force in mdmc_nonbonded)
+        ewald = min(force.ewald for force in mdmc_nonbonded)
+        openmm_nobonded.setNonbondedMethod(mm.NonbondedForce.PME)
+        openmm_nobonded.setCutoffDistance(cutoff * unit.angstrom)
+        openmm_nobonded.setEwaldErrorTolerance(ewald)
+        self.openmm_system.addForce(openmm_nobonded)
+
+    def clear_forces(self):
+        """Clear the OpenMM force fields from the OpenMM system."""
+        for i in reversed(range(self.openmm_system.getNumForces())):
+            self.openmm_system.removeForce(i)
 
     def setup_simulation(self, **settings: Any) -> None:
         """Set up the openmm simulation.
@@ -228,26 +244,10 @@ class OpenMMEngine(MDEngine):
         return self.compact_trajectory
 
     def update_parameters(self) -> None:
-        """Updates the ``OpenMMEngine`` force field parameters from the
-        ``Universe``.
-        """
-        i = 0
-        for disp in self.universe.nonbonded_interactions:
-            if not isinstance(disp.function, LennardJones):
-                continue
-            sigma = float(disp.function.sigma.value) * unit.angstrom
-            epsilon = float(disp.function.epsilon.value) * unit.kilojoules_per_mole
-
-            force = self.openmm_simulation.system.getForce(i)
-
-            j = 0
-            for _type_ID, atom_type_group in self.universe.atom_types.items():
-                for _ in atom_type_group:
-                    force.setParticleParameters(j, 0.0, sigma, epsilon)
-                    j += 1
-
-            force.updateParametersInContext(self.openmm_simulation.context)
-            i += 1
+        """Updates the ``OpenMMEngine`` force field parameters."""
+        self.clear_forces()
+        self.change_openmm_force_field()
+        self.openmm_simulation.context.reinitialize(preserveState=True)
 
     def save_config(self) -> None:
         """Sets ``self._saved_config`` to the current set of positions."""
