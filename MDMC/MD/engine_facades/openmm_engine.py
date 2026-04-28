@@ -1,3 +1,4 @@
+import itertools as it
 import logging
 from typing import Any
 
@@ -7,6 +8,7 @@ from openmm import unit
 from openmm.app import Simulation, Topology
 
 from MDMC.MD import NonBonded
+from MDMC.MD.interactions import NonBondedForce, HarmonicPotentialForce
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -72,22 +74,22 @@ class OpenMMEngine(MDEngine):
     def change_openmm_force_field(self):
         """Change the OpenMM force fields."""
         openmm_nobonded = mm.NonbondedForce()
-
         for atom in self.universe.atoms:
-            nonbonded = [force for force in atom.nonbonded_interactions if isinstance(force.function, NonBonded)]
+            nonbonded = [
+                force.function
+                for force in atom.nonbonded_interactions
+                if isinstance(force.function, NonBonded)
+            ]
             if len(nonbonded) != 1:
                 raise Exception("Unexpected number of non-bonded interactions.")
             nonbonded = nonbonded[0]
-            charge = float(nonbonded.function.charge.value) * unit.coulomb
-            sigma = float(nonbonded.function.sigma.value) * unit.angstrom
-            epsilon = float(
-                nonbonded.function.epsilon.value) * unit.kilojoules_per_mole
+            charge = nonbonded.charge.value * unit.coulomb
+            sigma = nonbonded.sigma.value * unit.angstrom
+            epsilon = nonbonded.epsilon.value * unit.kilojoules_per_mole
             openmm_nobonded.addParticle(charge, sigma, epsilon)
 
         mdmc_nonbonded = [
-            force
-            for force in self.universe.interactions
-            if isinstance(force.function, NonBonded)
+            force for force in self.universe.interactions if isinstance(force, NonBondedForce)
         ]
         cutoff = max(force.cutoff for force in mdmc_nonbonded)
         ewald = min(force.ewald for force in mdmc_nonbonded)
@@ -95,6 +97,25 @@ class OpenMMEngine(MDEngine):
         openmm_nobonded.setCutoffDistance(cutoff * unit.angstrom)
         openmm_nobonded.setEwaldErrorTolerance(ewald)
         self.openmm_system.addForce(openmm_nobonded)
+
+        bond_force = mm.HarmonicBondForce()
+        mdmc_harmonic = [
+            force
+            for force in self.universe.interactions
+            if isinstance(force, HarmonicPotentialForce)
+        ]
+        for force in mdmc_harmonic:
+            equil_length = force.function.equilibrium_state.value * unit.angstrom
+            force_const = (
+                force.function.potential_strength.value
+                * unit.kilojoules_per_mole
+                / unit.angstrom**2
+            )
+            for atm_i, atm_j in it.combinations(force.atoms, 2):
+                if (atm_i, atm_j) not in force.atom_types:
+                    continue
+                bond_force.addBond(atm_i.ID - 1, atm_j.ID - 1, equil_length, force_const)
+        self.openmm_system.addForce(bond_force)
 
     def clear_forces(self):
         """Clear the OpenMM force fields from the OpenMM system."""

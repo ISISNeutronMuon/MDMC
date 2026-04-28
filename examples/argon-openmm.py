@@ -12,7 +12,7 @@ os.environ["OMP_NUM_THREADS"] = "4"
 
 from MDMC.control import Control
 from MDMC.MD import Atom, NonBonded, Simulation, Universe
-from MDMC.MD.interactions import NonBondedInteraction
+from MDMC.MD.interactions import NonBondedForce
 
 # Build universe with density 0.0176 atoms per AA^-3
 density = 0.0176
@@ -26,9 +26,9 @@ Ar = Atom('Ar[36]', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
 universe.fill(Ar, num_density=density)
 
-# Above an universe of non-interacting argon atoms was created. Below
+# Above a universe of non-interacting argon atoms was created. Below
 # specify how these atoms will interact
-Ar_dispersion = NonBondedInteraction(
+NonBondedForce(
     universe,
     Ar.atom_type,
     cutoff=10.0,
@@ -39,12 +39,14 @@ Ar_dispersion = NonBondedInteraction(
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the
 # same factor.
-simulation = Simulation(universe,
-                        engine="openmm",
-                        time_step=10.18893,
-                        temperature=120.,
-                        traj_step=15,
-                        openmm_platform="OpenCL")
+simulation = Simulation(
+    universe,
+    engine="openmm",
+    time_step=10.18893,
+    temperature=120.,
+    traj_step=15,
+    openmm_platform="OpenCL"
+)
 
 # Energy Minimization and equilibration
 simulation.run(n_steps=30000, equilibration=True)
@@ -53,15 +55,17 @@ simulation.run(n_steps=30000, equilibration=True)
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental
 # dataset
-exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
-                 'type':'SQw',
-                 'reader':'xml_SQw',
-                 'weight':1.,
-                 'resolution':None,
-                 'use_FFT': True,
-                 'auto_scale': False,
-                 'rescale_factor': 18.5,
-                 'cont_slicing': True}]
+exp_datasets = [{
+    'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+    'type':'SQw',
+    'reader':'xml_SQw',
+    'weight':1.,
+    'resolution':None,
+    'use_FFT': True,
+    'auto_scale': False,
+    'rescale_factor': 18.5,
+    'cont_slicing': True
+}]
 
 
 fit_parameters = universe.parameters
@@ -69,13 +73,15 @@ fit_parameters['sigma'].constraints = [2.0, 4.0]
 fit_parameters['epsilon'].constraints = [0.5, 1.5]
 
 # Specify how the refinement is going to be controlled
-control = Control(simulation=simulation,
-                  exp_datasets=exp_datasets,
-                  fit_parameters=fit_parameters,
-                  reset_config=True,
-                  equilibration_steps=30000,
-                  MD_steps=16000,
-                  FoM_options={'error': 'none'})
+control = Control(
+    simulation=simulation,
+    exp_datasets=exp_datasets,
+    fit_parameters=fit_parameters,
+    reset_config=True,
+    equilibration_steps=30000,
+    MD_steps=16000,
+    FoM_options={'error': 'none'}
+)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 control.refine(n_steps=1000)

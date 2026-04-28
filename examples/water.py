@@ -9,7 +9,6 @@ from MDMC.MD.interactions import Bond, BondAngle
 
 from MDMC.control import Control
 from MDMC.MD import *
-from tests.test_data import data
 
 # Build universe
 # Cubic universe of side:
@@ -48,18 +47,22 @@ simulation = Simulation(universe,
                         traj_step=4000)
 
 # Setup refinement
+QENS = [{
+    'file_name':'../doc/tutorials/data/263K05Awat_LAMP',
+    'type':'SQw',
+    'reader':'LAMPSQw',
+    'weight':1.,
+    'auto_scale':True,
+    'use_FFT': True,
+    'filter': {
+        'abs': 0.1,              # All values below 0.1 to be removed
+        'rel': 0.1,              # All values less than 10% of maximum to be removed.
+        'use_magnitude': False,  # Use raw value (negative values will be removed)
+        'warn_threshold': 0.1,   # Warn if more than 10% of values are removed by this filter
+    },
+    'resolution':{'file': '../doc/tutorials/data/262p7K0A5van_LAMP'},
+}]
 
-# in general exp_datasets is a list of dictionaries with one dictionary per experimental dataset
-# below are 2 separate objects for the 2 datasets as they were measured at different temperatures
-exp_dataset_ILL = [{'file_name':data.READER_DATA['LAMPSQw'],
-                 'type':'SQw',
-                 'reader':'LAMPSQw',
-                 'weight':1.}]
-exp_dataset_ISIS = [{'file_name':data.READER_DATA['MantidSQw_one_file'],
-                 'type':'SQw',
-                 'reader':'MantidSQw',
-                 'weight':1.,
-                 'resolution':data._ABS_DIR_PATH+'/experimental_data/IRIS_26173_water_data_resolution.dat'}]
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters.as_array:
@@ -68,7 +71,7 @@ for p in universe.parameters.as_array:
 
 fit_parameters = universe.parameters
 control = Control(simulation=simulation,
-                  exp_datasets=exp_dataset_ISIS,
+                  exp_datasets=QENS,
                   fit_parameters=fit_parameters,
                   MC_norm=1,
                   minimizer_type="CMAES",
@@ -80,4 +83,4 @@ control.minimize(n_steps=5000)
 control.equilibrate(n_steps=25000)
 
 # Run refinement
-control.refine(n_steps=0)
+control.refine(n_steps=1000)

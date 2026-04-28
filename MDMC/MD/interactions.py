@@ -1,6 +1,7 @@
 """Module in which all interactions between structural units are defined.
 
- ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
+``Interaction`` is the abstract base class from which all interactions have to be derived.."""
+
 from __future__ import annotations
 
 import logging
@@ -28,9 +29,8 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-@repr_decorator('function')
+@repr_decorator("function")
 class Interaction(ABC):
-
     """
     Base class for interactions, both bonded, non-bonded and constraints
 
@@ -87,7 +87,7 @@ class Interaction(ABC):
         TypeError: object of type 'Atom' has no len()
         """
 
-        self.function = settings.get('function')
+        self.function = settings.get("function")
         self.name = self.__class__.__name__
 
     def __deepcopy__(self, memo=None) -> NoReturn:
@@ -95,14 +95,14 @@ class Interaction(ABC):
         Interactions cannot be copied
         """
 
-        raise AttributeError('Interactions cannot be deepcopied')
+        raise AttributeError("Interactions cannot be deepcopied")
 
     def __copy__(self) -> NoReturn:
         """
         Interactions cannot be copied
         """
 
-        raise AttributeError('Interactions cannot be copied')
+        raise AttributeError("Interactions cannot be copied")
 
     @property
     @abstractmethod
@@ -230,9 +230,8 @@ class Interaction(ABC):
             atom.add_interaction(self, from_interaction=True)
 
 
-@repr_decorator('function', 'atom_types', 'cutoff')
+@repr_decorator("function", "atom_types", "cutoff")
 class NonBondedInteraction(Interaction):
-
     """
     Base class for non-bonded interactions
 
@@ -254,12 +253,14 @@ class NonBondedInteraction(Interaction):
         self.universe = universe
         if self.universe:
             self.universe.add_nonbonded_interaction(self)
-        self.cutoff = settings.get('cutoff')
+        self.cutoff = settings.get("cutoff")
         super().__init__(**settings)
-        LOGGER.info('%s created: {function:%s, atom_types:%s}',
-                    self.__class__,
-                    self.function,
-                    self.atom_types)
+        LOGGER.info(
+            "%s created: {function:%s, atom_types:%s}",
+            self.__class__,
+            self.function,
+            self.atom_types,
+        )
 
     @abstractmethod
     def __eq__(self, other) -> bool:
@@ -285,8 +286,10 @@ class NonBondedInteraction(Interaction):
             ``NonBondedInteraction``
         """
 
-        return (f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  '
-                f' cutoff: {self.cutoff}')
+        return (
+            f"{self.__class__.__name__} interaction  atom_types: {self.atom_types}  "
+            f" cutoff: {self.cutoff}"
+        )
 
     @property
     @abstractmethod
@@ -348,7 +351,6 @@ class NonBondedInteraction(Interaction):
         self._cutoff = value
 
     def is_equivalent(self, other) -> bool:
-
         """
         Checks for equivalence between two ``NonBondedInteraction``s, specifically
         if they apply to the same ``atom_types``, have the same ``cuttoff`` and
@@ -366,15 +368,15 @@ class NonBondedInteraction(Interaction):
 
         if id(other) == id(self):
             return True
-        return (isinstance(other, type(self))
-                and (sorted(self.atom_types, key=id)
-                     == sorted(other.atom_types, key=id))
-                and self.cutoff == other.cutoff
-                and self.function == other.function)
+        return (
+            isinstance(other, type(self))
+            and (sorted(self.atom_types, key=id) == sorted(other.atom_types, key=id))
+            and self.cutoff == other.cutoff
+            and self.function == other.function
+        )
 
 
 class Dispersion(NonBondedInteraction):
-
     """
     A non-bonded dispersive interaction - either LJ or Buckingham
 
@@ -416,19 +418,19 @@ class Dispersion(NonBondedInteraction):
             try:
                 atom_type_pair = tuple(sorted(atom_type_pair))
             except TypeError as err:
-                raise TypeError('Atom types must be an iterable') from err
+                raise TypeError("Atom types must be an iterable") from err
             if len(atom_type_pair) != 2:
-                raise ValueError('Dispersion interactions should only be'
-                                 ' specified as existing between pairs of'
-                                 ' atom types')
-            if not all(isinstance(atom_type, (int, np.integer)) for atom_type
-                       in atom_type_pair):
-                raise TypeError('Each atom type must be int')
+                raise ValueError(
+                    "Dispersion interactions should only be"
+                    " specified as existing between pairs of"
+                    " atom types"
+                )
+            if not all(isinstance(atom_type, (int, np.integer)) for atom_type in atom_type_pair):
+                raise TypeError("Each atom type must be int")
             return atom_type_pair
 
         # Remove duplicates
-        self._atom_types = tuple({validate_atom_type_pair(atp) for atp
-                                  in atom_types})
+        self._atom_types = tuple({validate_atom_type_pair(atp) for atp in atom_types})
         super().__init__(universe, **settings)
         # Add interactions to all atoms
         for atom_type_pair in self.atoms:
@@ -436,12 +438,11 @@ class Dispersion(NonBondedInteraction):
                 for atom in atoms:
                     atom.add_interaction(self)
 
-        self.vdw_tail_correction = settings.get('vdw_tail_correction', False)
+        self.vdw_tail_correction = settings.get("vdw_tail_correction", False)
 
     def __eq__(self, other):
 
-        return other.atom_types == self.atom_types and isinstance(other,
-                                                                  type(self))
+        return other.atom_types == self.atom_types and isinstance(other, type(self))
 
     @property
     def atom_types(self):
@@ -464,8 +465,7 @@ class Dispersion(NonBondedInteraction):
             specified.
         """
 
-        return [map(lambda x: self.universe.atom_types[x], tpl) for tpl
-                in self.atom_types]
+        return [map(lambda x: self.universe.atom_types[x], tpl) for tpl in self.atom_types]
 
     def element_list(self) -> list:
         """
@@ -480,12 +480,13 @@ class Dispersion(NonBondedInteraction):
         # Each value in universe.atom_types dictionary contain list of atoms
         # with same elements, so use index 0
         # This is determined for all atom types in Dispersion interaction
-        return [self.universe.atom_types[atom_type][0].element.symbol
-                for tpl in self.atom_types
-                for atom_type in tpl]
+        return [
+            self.universe.atom_types[atom_type][0].element.symbol
+            for tpl in self.atom_types
+            for atom_type in tpl
+        ]
 
     def is_equivalent(self, other) -> bool:
-
         """
         Checks for equivalence between two ``Dispersion``s, specifically
         if they apply to the same ``atom_types``, have the same ``cuttoff``,
@@ -502,12 +503,12 @@ class Dispersion(NonBondedInteraction):
         bool
         """
 
-        return (super().is_equivalent(other)
-                and self.vdw_tail_correction == other.vdw_tail_correction)
+        return (
+            super().is_equivalent(other) and self.vdw_tail_correction == other.vdw_tail_correction
+        )
 
 
 class Coulombic(NonBondedInteraction):
-
     """
     A non-bonded coulombic interaction - either normal or modified Coulomb
 
@@ -584,22 +585,21 @@ class Coulombic(NonBondedInteraction):
         # as it raises a false positive on self.add_atoms
 
         try:
-            atom_types = settings['atom_types']
-            if settings.get('atoms'):
-                raise TypeError('Cannot pass both atoms and atom_types '
-                                'as parameters.')
+            atom_types = settings["atom_types"]
+            if settings.get("atoms"):
+                raise TypeError("Cannot pass both atoms and atom_types as parameters.")
             if isinstance(atom_types, (int, np.integer)):
                 # Account for init argument atom_types=atom_type
                 # rather than atom_types=[atom_type]
                 atom_types = [atom_types]
             if not universe:
-                raise TypeError('Coulombic requires a universe when '
-                                'atom_types are passed')
+                raise TypeError("Coulombic requires a universe when atom_types are passed")
 
             self.add_atom_types = MethodType(_add_atom_types, self)
             self._atom_types = atom_types
-            self._atoms = [atom for atom_type in self.atom_types
-                           for atom in universe.atom_types[atom_type]]
+            self._atoms = [
+                atom for atom_type in self.atom_types for atom in universe.atom_types[atom_type]
+            ]
             super().__init__(universe, **settings)
             # Add interaction to atoms
             for atom in self.atoms:
@@ -607,10 +607,11 @@ class Coulombic(NonBondedInteraction):
         except KeyError:
             self.add_atoms = MethodType(_add_atoms, self)
             try:
-                atoms = settings['atoms']
+                atoms = settings["atoms"]
             except KeyError as error:
-                raise TypeError('Coulombic takes either atom_types or atoms '
-                                'as parameters') from error
+                raise TypeError(
+                    "Coulombic takes either atom_types or atoms as parameters"
+                ) from error
             # Account for init argument atoms=atom rather than atoms=[atom]
             if is_atom(atoms):
                 atoms = [atoms]
@@ -622,14 +623,16 @@ class Coulombic(NonBondedInteraction):
             universe = self.atoms[0].universe
             super().__init__(universe, **settings)
 
-        charge = settings.get('charge')
+        charge = settings.get("charge")
         if charge is not None:
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(charge)
-            LOGGER.warning('%s: Coulombic interaction for the Atom object'
-                           'initialized with the Coulomb interaction function.',
-                           self.__class__)
+            LOGGER.warning(
+                "%s: Coulombic interaction for the Atom object"
+                "initialized with the Coulomb interaction function.",
+                self.__class__,
+            )
 
     def __len__(self) -> int:
         """
@@ -653,10 +656,11 @@ class Coulombic(NonBondedInteraction):
 
     def __eq__(self, other) -> bool:
 
-        return (isinstance(other, type(self))
-                and (sorted(self.atom_types, key=id)
-                     == sorted(other.atom_types, key=id))
-                and sorted(self.atoms, key=id) == sorted(other.atoms, key=id))
+        return (
+            isinstance(other, type(self))
+            and (sorted(self.atom_types, key=id) == sorted(other.atom_types, key=id))
+            and sorted(self.atoms, key=id) == sorted(other.atoms, key=id)
+        )
 
     @property
     def atoms(self) -> list[Atom]:
@@ -698,20 +702,25 @@ class Coulombic(NonBondedInteraction):
             The elements for which the ``Coulombic`` interaction applies
         """
 
-        return list(set([atom.element.symbol for atom in self._atoms]
-                        + [self.universe.atom_types[atom_type][0].element.symbol for
-                           atom_type in self.atom_types]))
+        return list(
+            set(
+                [atom.element.symbol for atom in self._atoms]
+                + [
+                    self.universe.atom_types[atom_type][0].element.symbol
+                    for atom_type in self.atom_types
+                ]
+            )
+        )
 
 
-class NonBondedInteraction(NonBondedInteraction):
-
+class NonBondedForce(NonBondedInteraction):
     # I don't know why but dispersion and coulombic does this
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: Universe, atom_type: int, **settings: Any):
-        self.ewald = settings.get('ewald')
+    def __init__(self, universe: Universe, atom_type: str | int, **settings: Any):
+        self.ewald = settings.get("ewald")
 
-        self._atom_types = (atom_type, )
+        self._atom_types = (atom_type,)
         super().__init__(universe, **settings)
         # Add interactions to all atoms
         for atom in self.atoms:
@@ -732,9 +741,41 @@ class NonBondedInteraction(NonBondedInteraction):
         return [self.universe.atom_types[self._atom_types[0]][0].element.symbol]
 
 
-@repr_decorator('function', 'n_atoms')
-class BondedInteraction(Interaction):
+class HarmonicPotentialForce(NonBondedInteraction):
+    # I don't know why but dispersion and coulombic does this
+    __hash__ = NonBondedInteraction.__hash__
 
+    def __init__(self, universe: Universe, atom_types: tuple, **settings: Any):
+
+        self._atom_types = atom_types
+        super().__init__(universe, **settings)
+        # Add interactions to all atoms
+        for atom_type_pair in self.atoms:
+            for atoms in atom_type_pair:
+                for atom in atoms:
+                    atom.add_interaction(self)
+
+    def __eq__(self, other):
+        return other.atom_types == self.atom_types and isinstance(other, type(self))
+
+    @property
+    def atom_types(self):
+        return tuple(sorted(self._atom_types))
+
+    @property
+    def atoms(self) -> list[tuple[list[Atom]]]:
+        return [map(lambda x: self.universe.atom_types[x], tpl) for tpl in self.atom_types]
+
+    def element_list(self) -> list:
+        return [
+            self.universe.atom_types[atom_type][0].element.symbol
+            for tpl in self.atom_types
+            for atom_type in tpl
+        ]
+
+
+@repr_decorator("function", "n_atoms")
+class BondedInteraction(Interaction):
     """
     Base class for bonded interactions
 
@@ -781,19 +822,21 @@ class BondedInteraction(Interaction):
     def __init__(self, *atom_tuples: list[tuple], **settings: Any):
 
         if atom_tuples and is_atom(atom_tuples[0]):
-            atom_tuples = (atom_tuples, )
+            atom_tuples = (atom_tuples,)
 
-        if settings.get('n_atoms'):
+        if settings.get("n_atoms"):
             # This ensures that BondedInteractions can also be __init__ with 0
             # atoms
             for tpl in atom_tuples:
-                self._validate_atoms(tpl, settings.get('n_atoms'))
+                self._validate_atoms(tpl, settings.get("n_atoms"))
         self.atoms = list(atom_tuples)
         super().__init__(**settings)
-        LOGGER.info('%s created: {function:%s, atom IDs:%s}',
-                    self.__class__,
-                    self.function,
-                    [tuple(map(lambda a: a.ID, tpl)) for tpl in self.atoms])
+        LOGGER.info(
+            "%s created: {function:%s, atom IDs:%s}",
+            self.__class__,
+            self.function,
+            [tuple(map(lambda a: a.ID, tpl)) for tpl in self.atoms],
+        )
 
     def __len__(self) -> int:
         """
@@ -825,10 +868,9 @@ class BondedInteraction(Interaction):
             The type, and number of atoms of the ``BondedInteraction``
         """
 
-        return f'{self.__class__.__name__} interaction applied to {len(self.atoms)} atom tuples'
+        return f"{self.__class__.__name__} interaction applied to {len(self.atoms)} atom tuples"
 
     def is_equivalent(self, other) -> bool:
-
         """
         Checks for equivalence between two ``BondedInteraction``s, specifically
         if they apply to the same ``atom_types`` and the same ``function``
@@ -844,10 +886,11 @@ class BondedInteraction(Interaction):
         bool
         """
 
-        return (id(other) == id(self) or
-                (isinstance(other, self.__class__)
-                and self.atom_types == other.atom_types
-                and self.function == other.function))
+        return id(other) == id(self) or (
+            isinstance(other, self.__class__)
+            and self.atom_types == other.atom_types
+            and self.function == other.function
+        )
 
     @property
     def atoms(self) -> list[tuple[Atom]]:
@@ -885,8 +928,7 @@ class BondedInteraction(Interaction):
             if len(atom_tuples) == 1 and is_atom(atom_tuples[0]):
                 atom_tuples = [(atom_tuples[0],)]
             else:
-                raise TypeError(
-                    'atom_tuples must be [(atom, ...), ...]') from error
+                raise TypeError("atom_tuples must be [(atom, ...), ...]") from error
 
         # Only assign interaction to atoms after these validation steps
         self._atoms = []
@@ -902,7 +944,6 @@ class BondedInteraction(Interaction):
 
     @property
     def atom_types(self) -> set[int | None]:
-
         """
         Get the `set` of all ``atom_type``s that this ``BondedInteraction``
         corresponds to, including `None` if appropriate.
@@ -991,11 +1032,10 @@ class BondedInteraction(Interaction):
 
         self._check_duplicates(atoms)
         if atoms in self.atoms:
-            raise ValueError('This interaction has already been applied to this'
-                             ' atom(s)')
+            raise ValueError("This interaction has already been applied to this atom(s)")
 
         self._atoms.append(atoms)
-        from_structure = settings.get('from_structure', False)
+        from_structure = settings.get("from_structure", False)
         if not from_structure:
             for atom in atoms:
                 atom.add_interaction(self, from_interaction=True)
@@ -1021,8 +1061,10 @@ class BondedInteraction(Interaction):
             If there is a duplicate ``Structure``
         """
 
-        err_msg = ('Each tuple in the list of atom tuples must be unique, and'
-                   ' each atom in a tuple must be unique')
+        err_msg = (
+            "Each tuple in the list of atom tuples must be unique, and"
+            " each atom in a tuple must be unique"
+        )
 
         # Check for duplicates (or reverse duplicates)
         try:
@@ -1057,7 +1099,7 @@ class BondedInteraction(Interaction):
         universe.add_bonded_interaction_pairs((self, atoms))
 
 
-@repr_decorator('constrained')
+@repr_decorator("constrained")
 class ConstrainableMixin:
     # pylint: disable=too-few-public-methods
     # as this is a mixin class
@@ -1086,13 +1128,12 @@ class ConstrainableMixin:
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
 
-        self.constrained = settings.get('constrained', False)
+        self.constrained = settings.get("constrained", False)
         super().__init__(*atom_tuples, **settings)
 
 
-@repr_decorator('function', 'constrained')
+@repr_decorator("function", "constrained")
 class Bond(ConstrainableMixin, BondedInteraction):
-
     """
     A bond between any two atoms. Requires exactly two atoms in each
     ``atom_tuple``.
@@ -1107,11 +1148,10 @@ class Bond(ConstrainableMixin, BondedInteraction):
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
 
-        settings['n_atoms'] = (2, )
+        settings["n_atoms"] = (2,)
         super().__init__(*atom_tuples, **settings)
 
     def is_equivalent(self, other) -> bool:
-
         """
         Checks for equivalence between two ``BondedInteraction``s, specifically
         if they apply to the same ``atom_types``, have the same ``function``
@@ -1130,9 +1170,8 @@ class Bond(ConstrainableMixin, BondedInteraction):
         return super().is_equivalent(other) and self.constrained == other.constrained
 
 
-@repr_decorator('function', 'constrained')
+@repr_decorator("function", "constrained")
 class BondAngle(ConstrainableMixin, BondedInteraction):
-
     """
     A bond angle between any two bonds
 
@@ -1156,11 +1195,10 @@ class BondAngle(ConstrainableMixin, BondedInteraction):
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
 
-        settings['n_atoms'] = (3, )
+        settings["n_atoms"] = (3,)
         super().__init__(*atom_tuples, **settings)
 
     def is_equivalent(self, other: BondedInteraction) -> bool:
-
         """
         Checks for equivalence between two ``BondedInteraction``s, specifically
         if they apply to the same ``atom_types``, have the same ``function``
@@ -1179,9 +1217,8 @@ class BondAngle(ConstrainableMixin, BondedInteraction):
         return super().is_equivalent(other) and self.constrained == other.constrained
 
 
-@repr_decorator('function', 'improper')
+@repr_decorator("function", "improper")
 class DihedralAngle(BondedInteraction):
-
     """
     A dihedral angle between any two sets of three atoms, ``ijk`` and ``jkl``.
 
@@ -1230,8 +1267,8 @@ class DihedralAngle(BondedInteraction):
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
 
-        settings['n_atoms'] = (4, )
-        self.improper = settings.get('improper', False)
+        settings["n_atoms"] = (4,)
+        self.improper = settings.get("improper", False)
         super().__init__(*atom_tuples, **settings)
 
     def _get_equivalent_structures(self, structs: list[tuple[Atom]]) -> list:
@@ -1252,8 +1289,9 @@ class DihedralAngle(BondedInteraction):
         if self.improper:
             equivalent = []
             for atom_tuple in structs:
-                equivalent += [(atom_tuple[0], ) + permutation for permutation
-                               in permutations(atom_tuple[1:])]
+                equivalent += [
+                    (atom_tuple[0],) + permutation for permutation in permutations(atom_tuple[1:])
+                ]
             return equivalent
         # Proper dihedrals are equivalent if they are reversed (as with Bond and
         # BondAngle)
