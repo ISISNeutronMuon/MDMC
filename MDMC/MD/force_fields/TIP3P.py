@@ -1,7 +1,7 @@
 from typing import Any
 
-from MDMC.MD.interaction_functions import NonBonded, HarmonicPotential
-from MDMC.MD.interactions import NonBondedForce, HarmonicPotentialForce
+from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded
+from MDMC.MD.interactions import HarmonicPotentialForce, NonBondedForce
 from MDMC.MD.structures import Atom, Molecule
 
 
@@ -51,6 +51,8 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
             universe,
             (("tip3p_O", "tip3p_H"),),
             function=HarmonicPotential(
-                equilibrium_state=r_OH, potential_strength=f_OH, interaction_type="bond"
+                equilibrium_state=r_OH,
+                potential_strength=f_OH,
+                interaction_type="bond",
             ),
         )

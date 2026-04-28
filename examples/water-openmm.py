@@ -51,7 +51,6 @@ QENS = [{
 
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
-print(universe.parameters)
 for p in universe.parameters.as_array:
     if p.type == 'charge':
         p.fixed = True
