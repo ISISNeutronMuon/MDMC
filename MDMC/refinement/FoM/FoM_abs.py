@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from more_itertools import first
-from scipy.interpolate import RegularGridInterpolator
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable

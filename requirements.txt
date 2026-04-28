@@ -17,3 +17,4 @@ cma==4.4.4
 h5py==3.16.0
 openmm==8.4.0
 more_itertools==10.8.0
+mdanse==2.0.0
