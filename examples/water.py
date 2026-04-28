@@ -76,7 +76,9 @@ control = Control(simulation=simulation,
                   MC_norm=1,
                   minimizer_type="CMAES",
                   MD_steps=804000,
-                  energy_resolution=13.6)
+                  energy_resolution=13.6,
+                  FoM_options={'error': 'none'}
+)
 
 # Energy Minimization and equilibration
 control.minimize(n_steps=5000)
