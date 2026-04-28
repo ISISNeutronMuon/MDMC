@@ -34,6 +34,7 @@ from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
+BOLTZ = unit.Quantity(1.3806503e-23, unit.joule / unit.kelvin)
 
 
 class OpenMMEngine(MDEngine):
@@ -257,7 +258,13 @@ class OpenMMEngine(MDEngine):
         for i in reversed(range(self.openmm_system.getNumForces())):
             self.openmm_system.removeForce(i)
 
-    def setup_simulation(self, **settings: Any) -> None:
+    def setup_simulation(
+        self,
+        *,
+        openmm_platform: str | None = None,
+        openmm_properties: dict | None = None,
+        **settings: Any,
+    ) -> None:
         """Set up the openmm simulation.
 
         Parameters
@@ -284,17 +291,30 @@ class OpenMMEngine(MDEngine):
         compound_integrator.addIntegrator(lang_int_2)
         compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
 
+        if openmm_platform is not None:
+            openmm_platform = mm.Platform.getPlatform(openmm_platform)
+
         self.openmm_simulation = Simulation(
             Topology(),
             self.openmm_system,
             compound_integrator,
-            mm.Platform.getPlatformByName(settings.get("openmm_platform", "CPU")),
-            settings.get("openmm_properties", {}),
+            openmm_platform,
+            openmm_properties,
         )
 
         positions = np.array([atom.position for atom in self.universe.atoms]) * unit.angstrom
         self.openmm_simulation.context.setPositions(positions)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
+
+        if any(np.any(atom.velocity) for atom in self.universe.atoms):
+            self.openmm_simulation.context.setVelocities(
+                np.array([atom.velocity for atom in self.universe.atoms])
+                * unit.angstrom
+                / unit.picosecond,
+            )
+        else:
+            self.openmm_simulation.context.setVelocitiesToTemperature(
+                self.temperature * unit.kelvin,
+            )
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
@@ -429,6 +449,22 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
     def eval(self, variable: str) -> Any:
+
+        match variable:
+            case "pe":
+                state = self.openmm_simulation.context.getState(getEnergy=True)
+                return state.getPotentialEnergy().value_in_unit(unit.kilojoule_per_mole)
+            case "temp":
+                integrator = self.openmm_simulation.context.getIntegrator()
+                if hasattr(integrator, "computeSystemTemperature"):
+                    return integrator.computeSystemTemperature().value_in_unit(unit.kelvin)
+
+                state = self.openmm_simulation.context.getState(getEnergy=True)
+                temp = (
+                    2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))
+                ).value_in_unit(unit.kelvin)
+                return temp
+
         raise NotImplementedError
 
 

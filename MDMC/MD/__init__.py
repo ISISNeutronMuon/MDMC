@@ -53,6 +53,7 @@ from .interactions import (
     DihedralAngle,
     Dispersion,
     Interaction,
+    NonBondedForce,
     NonBondedInteraction,
 )
 from .parameters import Parameter, Parameters
@@ -105,6 +106,7 @@ __all__ = [
     "DihedralAngle",
     "Dispersion",
     "Interaction",
+    "NonBondedForce",
     "NonBondedInteraction",
     "Universe",
     "KSpaceSolver",

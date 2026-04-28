@@ -1377,7 +1377,7 @@ class Simulation:
     time_step : float, optional
         Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
-        The ``MDEngine`` used for the simulation. Default is ``'lammps'``.
+        The ``MDEngine`` used for the simulation. Default is ``'openmm'``.
     **settings
         ``temperature`` (`float`)
             Simulation temperature in ``K``. Note that velocities of atoms in
@@ -1414,7 +1414,7 @@ class Simulation:
         the time separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
-        library. Default is ``'lammps'``.
+        library. Default is ``'openmm'``.
     settings : dict
         The settings passed to the ``Simulation``.  See the Parameters section
         for details.
@@ -1428,7 +1428,7 @@ class Simulation:
         universe: Universe,
         traj_step: int,
         time_step: float = 1.0,
-        engine: str = "lammps",
+        engine: str = "openmm",
         **settings,
     ):
 
