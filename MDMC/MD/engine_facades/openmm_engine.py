@@ -26,6 +26,7 @@ from openmm import unit
 from openmm.app import Simulation, Topology
 
 from MDMC.MD import NonBonded
+from MDMC.MD.interactions import NonBondedForce, HarmonicPotentialForce
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.interaction_functions import DummyInteractionFunction
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
@@ -251,6 +252,25 @@ class OpenMMEngine(MDEngine):
         self.openmm_system.addForce(bond_force)
         self.openmm_system.addForce(angle_force)
         self.openmm_system.addForce(mm.CMMotionRemover())
+
+        bond_force = mm.HarmonicBondForce()
+        mdmc_harmonic = [
+            force
+            for force in self.universe.interactions
+            if isinstance(force, HarmonicPotentialForce)
+        ]
+        for force in mdmc_harmonic:
+            equil_length = force.function.equilibrium_state.value * unit.angstrom
+            force_const = (
+                force.function.potential_strength.value
+                * unit.kilojoules_per_mole
+                / unit.angstrom**2
+            )
+            for atm_i, atm_j in it.combinations(force.atoms, 2):
+                if (atm_i, atm_j) not in force.atom_types:
+                    continue
+                bond_force.addBond(atm_i.ID - 1, atm_j.ID - 1, equil_length, force_const)
+        self.openmm_system.addForce(bond_force)
 
     def clear_forces(self):
         """Clear the OpenMM force fields from the OpenMM system."""
