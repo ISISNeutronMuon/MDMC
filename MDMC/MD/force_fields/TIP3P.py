@@ -9,13 +9,13 @@ class TIP3PMol(Molecule):
     def __init__(self, elements=("H", "O"), constrained=True, **settings: Any):
         H1 = Atom(elements[0], position=(0.9572, 0.0, 0.0), atom_type="tip3p_H")
         H2 = Atom(elements[0], position=(-0.2400, 0.9266, 0.0), atom_type="tip3p_H")
-        O = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type="tip3p_O")
+        O1 = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type="tip3p_O")
         settings = {
             "position": (0, 0, 0),
-            "atoms": [H1, H2, O],
+            "atoms": [H1, H2, O1],
             "interactions": [
-                Bond((H1, O), (H2, O), constrained=constrained),
-                BondAngle((H1, O, H2), constrained=constrained),
+                Bond((H1, O1), (H2, O1), constrained=constrained),
+                BondAngle((H1, O1, H2), constrained=constrained),
             ],
             "name": "tip3p",
         }
