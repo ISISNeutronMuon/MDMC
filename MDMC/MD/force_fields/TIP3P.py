@@ -69,7 +69,6 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
         )
         harmonicbond.equilibrium_state.parameter_name = "tip3p_OH_harmonicbond_equilibrium_state"
         harmonicbond.potential_strength.parameter_name = "tip3p_OH_harmonicbond_potential_strength"
-
         for interaction in universe.interactions:
             if isinstance(interaction, Bond):
                 interaction.function = harmonicbond
@@ -83,7 +82,6 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
         harmonicangle.potential_strength.parameter_name = (
             "tip3p_HOH_harmonicangle_potential_strength"
         )
-
         for interaction in universe.interactions:
             if isinstance(interaction, BondAngle):
                 interaction.function = harmonicangle
