@@ -741,39 +741,6 @@ class NonBondedForce(NonBondedInteraction):
         return [self.universe.atom_types[self._atom_types[0]][0].element.symbol]
 
 
-class HarmonicPotentialForce(NonBondedInteraction):
-    # I don't know why but dispersion and coulombic does this
-    __hash__ = NonBondedInteraction.__hash__
-
-    def __init__(self, universe: Universe, atom_types: tuple, **settings: Any):
-
-        self._atom_types = atom_types
-        super().__init__(universe, **settings)
-        # Add interactions to all atoms
-        for atom_type_pair in self.atoms:
-            for atoms in atom_type_pair:
-                for atom in atoms:
-                    atom.add_interaction(self)
-
-    def __eq__(self, other):
-        return other.atom_types == self.atom_types and isinstance(other, type(self))
-
-    @property
-    def atom_types(self):
-        return tuple(sorted(self._atom_types))
-
-    @property
-    def atoms(self) -> list[tuple[list[Atom]]]:
-        return [map(lambda x: self.universe.atom_types[x], tpl) for tpl in self.atom_types]
-
-    def element_list(self) -> list:
-        return [
-            self.universe.atom_types[atom_type][0].element.symbol
-            for tpl in self.atom_types
-            for atom_type in tpl
-        ]
-
-
 @repr_decorator("function", "n_atoms")
 class BondedInteraction(Interaction):
     """

@@ -1,7 +1,7 @@
 from typing import Any
 
 from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded
-from MDMC.MD.interactions import HarmonicPotentialForce, NonBondedForce
+from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.structures import Atom, Molecule
 
 
@@ -10,7 +10,15 @@ class TIP3PMol(Molecule):
         H1 = Atom(elements[0], position=(0.9572, 0.0, 0.0), atom_type="tip3p_H")
         H2 = Atom(elements[0], position=(-0.2400, 0.9266, 0.0), atom_type="tip3p_H")
         O = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type="tip3p_O")
-        settings = {"position": (0, 0, 0), "atoms": [H1, H2, O], "name": "tip3p"}
+        settings = {
+            "position": (0, 0, 0),
+            "atoms": [H1, H2, O],
+            "interactions": [
+                Bond((H1, O), (H2, O), constrained=constrained),
+                BondAngle((H1, O, H2), constrained=constrained),
+            ],
+            "name": "tip3p",
+        }
         super().__init__(**settings)
 
 
@@ -38,9 +46,9 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
         ewald=ewald,
         function=NonBonded(charge=q_O, epsilon=epsilon, sigma=sigma),
     )
-    nonbonded.function.charge.parameter_name = 'tip3p_O_nonbonded_charge'
-    nonbonded.function.epsilon.parameter_name = 'tip3p_O_nonbonded_epsilon'
-    nonbonded.function.sigma.parameter_name = 'tip3p_O_nonbonded_sigma'
+    nonbonded.function.charge.parameter_name = "tip3p_O_nonbonded_charge"
+    nonbonded.function.epsilon.parameter_name = "tip3p_O_nonbonded_epsilon"
+    nonbonded.function.sigma.parameter_name = "tip3p_O_nonbonded_sigma"
 
     nonbonded = NonBondedForce(
         universe,
@@ -49,19 +57,33 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
         ewald=ewald,
         function=NonBonded(charge=q_H, epsilon=0.0, sigma=0.0),
     )
-    nonbonded.function.charge.parameter_name = 'tip3p_H_nonbonded_charge'
-    nonbonded.function.epsilon.parameter_name = 'tip3p_H_nonbonded_epsilon'
-    nonbonded.function.sigma.parameter_name = 'tip3p_H_nonbonded_sigma'
+    nonbonded.function.charge.parameter_name = "tip3p_H_nonbonded_charge"
+    nonbonded.function.epsilon.parameter_name = "tip3p_H_nonbonded_epsilon"
+    nonbonded.function.sigma.parameter_name = "tip3p_H_nonbonded_sigma"
 
     if not constrained:
-        harmonic = HarmonicPotentialForce(
-            universe,
-            (("tip3p_O", "tip3p_H"),),
-            function=HarmonicPotential(
-                equilibrium_state=r_OH,
-                potential_strength=f_OH,
-                interaction_type="bond",
-            ),
+        harmonicbond = HarmonicPotential(
+            equilibrium_state=r_OH,
+            potential_strength=f_OH,
+            interaction_type="bond",
         )
-        harmonic.function.equilibrium_state.parameter_name = 'tip3p_OH_harmonic_equilibrium_state'
-        harmonic.function.potential_strength.parameter_name = 'tip3p_OH_harmonic_potential_strength'
+        harmonicbond.equilibrium_state.parameter_name = "tip3p_OH_harmonicbond_equilibrium_state"
+        harmonicbond.potential_strength.parameter_name = "tip3p_OH_harmonicbond_potential_strength"
+
+        for interaction in universe.interactions:
+            if isinstance(interaction, Bond):
+                interaction.function = harmonicbond
+
+        harmonicangle = HarmonicPotential(
+            equilibrium_state=a_HOH,
+            potential_strength=f_HOH,
+            interaction_type="angle",
+        )
+        harmonicangle.equilibrium_state.parameter_name = "tip3p_HOH_harmonicangle_equilibrium_state"
+        harmonicangle.potential_strength.parameter_name = (
+            "tip3p_HOH_harmonicangle_potential_strength"
+        )
+
+        for interaction in universe.interactions:
+            if isinstance(interaction, BondAngle):
+                interaction.function = harmonicangle

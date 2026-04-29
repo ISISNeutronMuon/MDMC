@@ -1,4 +1,3 @@
-import itertools as it
 import logging
 from typing import Any
 
@@ -8,8 +7,8 @@ from openmm import unit
 from openmm.app import Simulation, Topology
 
 from MDMC.MD import NonBonded
-from MDMC.MD.interactions import NonBondedForce, HarmonicPotentialForce
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
@@ -25,6 +24,7 @@ class OpenMMEngine(MDEngine):
         self.compact_trajectory = None
         self.temperature = None
         self._saved_config = None
+        self.MDMC_ID_to_idx = {}
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -66,7 +66,8 @@ class OpenMMEngine(MDEngine):
 
         self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
 
-        for atom in self.universe.atoms:
+        for i, atom in enumerate(self.universe.atoms):
+            self.MDMC_ID_to_idx[atom.ID] = i
             self.openmm_system.addParticle(atom.mass * unit.amu)
 
         self.change_openmm_force_field()
@@ -89,7 +90,7 @@ class OpenMMEngine(MDEngine):
             openmm_nobonded.addParticle(charge, sigma, epsilon)
 
         mdmc_nonbonded = [
-            force for force in self.universe.interactions if isinstance(force, NonBondedForce)
+            force for force in set(self.universe.interactions) if isinstance(force, NonBondedForce)
         ]
         cutoff = max(force.cutoff for force in mdmc_nonbonded)
         ewald = min(force.ewald for force in mdmc_nonbonded)
@@ -102,22 +103,36 @@ class OpenMMEngine(MDEngine):
 
         bond_force = mm.HarmonicBondForce()
         mdmc_harmonic = [
-            force
-            for force in self.universe.interactions
-            if isinstance(force, HarmonicPotentialForce)
+            force for force in set(self.universe.interactions) if isinstance(force, Bond)
         ]
         for force in mdmc_harmonic:
-            equil_length = force.function.equilibrium_state.value * unit.angstrom
+            equil_length = force.function.equilibrium_state.value * unit.angstroms
             force_const = (
                 force.function.potential_strength.value
                 * unit.kilojoules_per_mole
-                / unit.angstrom**2
+                / unit.angstroms**2
             )
-            for atm_i, atm_j in it.combinations(force.atoms, 2):
-                if (atm_i, atm_j) not in force.atom_types:
-                    continue
-                bond_force.addBond(atm_i.ID - 1, atm_j.ID - 1, equil_length, force_const)
+            for atm_i, atm_j in force.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                bond_force.addBond(i, j, equil_length, force_const)
         self.openmm_system.addForce(bond_force)
+
+        angle_force = mm.HarmonicAngleForce()
+        mdmc_harmonic = [
+            force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
+        ]
+        for force in mdmc_harmonic:
+            equil_angle = force.function.equilibrium_state.value * unit.degrees
+            force_const = (
+                force.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
+            )
+            for atm_i, atm_j, atm_k in force.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                k = self.MDMC_ID_to_idx[atm_k.ID]
+                angle_force.addAngle(i, j, k, equil_angle, force_const)
+        self.openmm_system.addForce(angle_force)
 
     def clear_forces(self):
         """Clear the OpenMM force fields from the OpenMM system."""
