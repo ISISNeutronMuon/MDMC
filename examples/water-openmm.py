@@ -14,7 +14,7 @@ os.environ["OMP_NUM_THREADS"] = "4"
 # 24.83602653 is 512 water molecules
 universe = Universe(dimensions=21.75)
 universe.fill(TIP3PMol(constrained=False), num_density=0.03356718472021752)
-add_tip3p_ff(universe, cutoff=10.0, ewald=1e-6, constrained=False)
+add_tip3p_ff(universe, cutoff=10.0, ewald=1e-6)
 
 # MD Engine setup
 # NOTE: the temperatures of the measured data sets are:
@@ -25,7 +25,7 @@ simulation = Simulation(
     engine="openmm",
     time_step=1.033916924,
     temperature=280,
-    traj_step=100,
+    traj_step=10,
     openmm_platform="OpenCL"
 )
 

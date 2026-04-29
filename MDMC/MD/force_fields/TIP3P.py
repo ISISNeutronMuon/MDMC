@@ -22,7 +22,7 @@ class TIP3PMol(Molecule):
         super().__init__(**settings)
 
 
-def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
+def add_tip3p_ff(universe, cutoff, ewald):
     # Charge Parameters
     q_O = -0.834  # e
     q_H = abs(q_O / 2)  # e
@@ -61,27 +61,26 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
     nonbonded.function.epsilon.parameter_name = "tip3p_H_nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = "tip3p_H_nonbonded_sigma"
 
-    if not constrained:
-        harmonicbond = HarmonicPotential(
-            equilibrium_state=r_OH,
-            potential_strength=f_OH,
-            interaction_type="bond",
-        )
-        harmonicbond.equilibrium_state.parameter_name = "tip3p_OH_harmonicbond_equilibrium_state"
-        harmonicbond.potential_strength.parameter_name = "tip3p_OH_harmonicbond_potential_strength"
-        for interaction in universe.interactions:
-            if isinstance(interaction, Bond):
-                interaction.function = harmonicbond
+    harmonicbond = HarmonicPotential(
+        equilibrium_state=r_OH,
+        potential_strength=f_OH,
+        interaction_type="bond",
+    )
+    harmonicbond.equilibrium_state.parameter_name = "tip3p_OH_harmonicbond_equilibrium_state"
+    harmonicbond.potential_strength.parameter_name = "tip3p_OH_harmonicbond_potential_strength"
+    for interaction in universe.interactions:
+        if isinstance(interaction, Bond):
+            interaction.function = harmonicbond
 
-        harmonicangle = HarmonicPotential(
-            equilibrium_state=a_HOH,
-            potential_strength=f_HOH,
-            interaction_type="angle",
-        )
-        harmonicangle.equilibrium_state.parameter_name = "tip3p_HOH_harmonicangle_equilibrium_state"
-        harmonicangle.potential_strength.parameter_name = (
-            "tip3p_HOH_harmonicangle_potential_strength"
-        )
-        for interaction in universe.interactions:
-            if isinstance(interaction, BondAngle):
-                interaction.function = harmonicangle
+    harmonicangle = HarmonicPotential(
+        equilibrium_state=a_HOH,
+        potential_strength=f_HOH,
+        interaction_type="angle",
+    )
+    harmonicangle.equilibrium_state.parameter_name = "tip3p_HOH_harmonicangle_equilibrium_state"
+    harmonicangle.potential_strength.parameter_name = (
+        "tip3p_HOH_harmonicangle_potential_strength"
+    )
+    for interaction in universe.interactions:
+        if isinstance(interaction, BondAngle):
+            interaction.function = harmonicangle
