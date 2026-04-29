@@ -74,32 +74,31 @@ class OpenMMEngine(MDEngine):
 
     def change_openmm_force_field(self):
         """Change the OpenMM force fields."""
-        openmm_nobonded = mm.NonbondedForce()
+        nonbonded = mm.NonbondedForce()
         for atom in self.universe.atoms:
-            nonbonded = [
+            mdmc_nonbonded = [
                 force.function
                 for force in atom.nonbonded_interactions
                 if isinstance(force.function, NonBonded)
             ]
-            if len(nonbonded) != 1:
+            if len(mdmc_nonbonded) != 1:
                 raise Exception("Unexpected number of non-bonded interactions.")
-            nonbonded = nonbonded[0]
-            charge = nonbonded.charge.value * unit.coulomb
-            sigma = nonbonded.sigma.value * unit.angstrom
-            epsilon = nonbonded.epsilon.value * unit.kilojoules_per_mole
-            openmm_nobonded.addParticle(charge, sigma, epsilon)
+            mdmc_nonbonded = mdmc_nonbonded[0]
+            charge = mdmc_nonbonded.charge.value * unit.elementary_charge
+            sigma = mdmc_nonbonded.sigma.value * unit.angstrom
+            epsilon = mdmc_nonbonded.epsilon.value * unit.kilojoules_per_mole
+            nonbonded.addParticle(charge, sigma, epsilon)
 
         mdmc_nonbonded = [
             force for force in set(self.universe.interactions) if isinstance(force, NonBondedForce)
         ]
         cutoff = max(force.cutoff for force in mdmc_nonbonded)
         ewald = min(force.ewald for force in mdmc_nonbonded)
-        openmm_nobonded.setNonbondedMethod(mm.NonbondedForce.PME)
-        openmm_nobonded.setCutoffDistance(cutoff * unit.angstrom)
-        openmm_nobonded.setEwaldErrorTolerance(ewald)
-        openmm_nobonded.setUseSwitchingFunction(False)
-        openmm_nobonded.setUseDispersionCorrection(False)
-        self.openmm_system.addForce(openmm_nobonded)
+        nonbonded.setNonbondedMethod(mm.NonbondedForce.PME)
+        nonbonded.setCutoffDistance(cutoff * unit.angstrom)
+        nonbonded.setEwaldErrorTolerance(ewald)
+        nonbonded.setUseSwitchingFunction(False)
+        nonbonded.setUseDispersionCorrection(False)
 
         bond_force = mm.HarmonicBondForce()
         mdmc_harmonic = [
@@ -118,7 +117,8 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 bond_force.addBond(i, j, equil_length, 2 * force_const)
-        self.openmm_system.addForce(bond_force)
+                # remove nonbonded interaction when atoms are bonded
+                nonbonded.addException(i, j, 0.0, 1.0, 0.0)
 
         angle_force = mm.HarmonicAngleForce()
         mdmc_harmonic = [
@@ -136,6 +136,12 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
+                # remove nonbonded interaction when atoms are connected
+                # by two bonds
+                nonbonded.addException(i, k, 0.0, 1.0, 0.0)
+
+        self.openmm_system.addForce(nonbonded)
+        self.openmm_system.addForce(bond_force)
         self.openmm_system.addForce(angle_force)
 
     def clear_forces(self):

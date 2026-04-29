@@ -55,7 +55,7 @@ def add_tip3p_ff(universe, cutoff, ewald):
         "tip3p_H",
         cutoff=cutoff,
         ewald=ewald,
-        function=NonBonded(charge=q_H, epsilon=0.0, sigma=0.0),
+        function=NonBonded(charge=q_H, epsilon=0.0, sigma=1.0),
     )
     nonbonded.function.charge.parameter_name = "tip3p_H_nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = "tip3p_H_nonbonded_epsilon"
@@ -78,9 +78,7 @@ def add_tip3p_ff(universe, cutoff, ewald):
         interaction_type="angle",
     )
     harmonicangle.equilibrium_state.parameter_name = "tip3p_HOH_harmonicangle_equilibrium_state"
-    harmonicangle.potential_strength.parameter_name = (
-        "tip3p_HOH_harmonicangle_potential_strength"
-    )
+    harmonicangle.potential_strength.parameter_name = "tip3p_HOH_harmonicangle_potential_strength"
     for interaction in universe.interactions:
         if isinstance(interaction, BondAngle):
             interaction.function = harmonicangle
