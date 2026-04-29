@@ -31,23 +31,30 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
     a_HOH = 104.52  # deg
     f_HOH = 230.12  # kJ mol^-1 rad^-2
 
-    NonBondedForce(
+    nonbonded = NonBondedForce(
         universe,
         "tip3p_O",
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(charge=q_O, epsilon=epsilon, sigma=sigma),
     )
-    NonBondedForce(
+    nonbonded.function.charge.parameter_name = 'tip3p_O_nonbonded_charge'
+    nonbonded.function.epsilon.parameter_name = 'tip3p_O_nonbonded_epsilon'
+    nonbonded.function.sigma.parameter_name = 'tip3p_O_nonbonded_sigma'
+
+    nonbonded = NonBondedForce(
         universe,
         "tip3p_H",
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(charge=q_H, epsilon=0.0, sigma=0.0),
     )
+    nonbonded.function.charge.parameter_name = 'tip3p_H_nonbonded_charge'
+    nonbonded.function.epsilon.parameter_name = 'tip3p_H_nonbonded_epsilon'
+    nonbonded.function.sigma.parameter_name = 'tip3p_H_nonbonded_sigma'
 
     if not constrained:
-        HarmonicPotentialForce(
+        harmonic = HarmonicPotentialForce(
             universe,
             (("tip3p_O", "tip3p_H"),),
             function=HarmonicPotential(
@@ -56,3 +63,5 @@ def add_tip3p_ff(universe, cutoff, ewald, constrained=True):
                 interaction_type="bond",
             ),
         )
+        harmonic.function.equilibrium_state.parameter_name = 'tip3p_OH_harmonic_equilibrium_state'
+        harmonic.function.potential_strength.parameter_name = 'tip3p_OH_harmonic_potential_strength'

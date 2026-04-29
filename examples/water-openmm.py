@@ -52,7 +52,8 @@ QENS = [{
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters.as_array:
-    if p.type == 'charge':
+    if not (p.parameter_name == 'tip3p_O_nonbonded_epsilon'
+            or p.parameter_name == 'tip3p_O_nonbonded_sigma'):
         p.fixed = True
 
 
