@@ -266,7 +266,9 @@ class OpenMMEngine(MDEngine):
             for atm_i, atm_j in force.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
-                bond_force.addBond(i, j, equil_length, force_const)
+                # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
+                # in lammps and therefore MDMC it is without the 1/2
+                bond_force.addBond(i, j, equil_length, 2 * force_const)
         self.openmm_system.addForce(bond_force)
 
         angle_force = mm.HarmonicAngleForce()
@@ -282,7 +284,9 @@ class OpenMMEngine(MDEngine):
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 k = self.MDMC_ID_to_idx[atm_k.ID]
-                angle_force.addAngle(i, j, k, equil_angle, force_const)
+                # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
+                # in lammps and therefore MDMC it is without the 1/2
+                angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
         self.openmm_system.addForce(angle_force)
 
     def clear_forces(self):
