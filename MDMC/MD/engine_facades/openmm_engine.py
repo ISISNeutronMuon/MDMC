@@ -269,7 +269,8 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 bond_force.addBond(i, j, equil_length, 2 * force_const)
-        self.openmm_system.addForce(bond_force)
+                # remove nonbonded interaction when atoms are bonded
+                nonbonded.addException(i, j, 0.0, 1.0, 0.0)
 
         angle_force = mm.HarmonicAngleForce()
         mdmc_harmonic = [
@@ -287,6 +288,12 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
+                # remove nonbonded interaction when atoms are connected
+                # by two bonds
+                nonbonded.addException(i, k, 0.0, 1.0, 0.0)
+
+        self.openmm_system.addForce(nonbonded)
+        self.openmm_system.addForce(bond_force)
         self.openmm_system.addForce(angle_force)
 
     def clear_forces(self):
