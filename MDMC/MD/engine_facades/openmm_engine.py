@@ -96,6 +96,8 @@ class OpenMMEngine(MDEngine):
         openmm_nobonded.setNonbondedMethod(mm.NonbondedForce.PME)
         openmm_nobonded.setCutoffDistance(cutoff * unit.angstrom)
         openmm_nobonded.setEwaldErrorTolerance(ewald)
+        openmm_nobonded.setUseSwitchingFunction(False)
+        openmm_nobonded.setUseDispersionCorrection(False)
         self.openmm_system.addForce(openmm_nobonded)
 
         bond_force = mm.HarmonicBondForce()
