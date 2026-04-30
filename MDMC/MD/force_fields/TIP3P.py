@@ -20,9 +20,45 @@ file, namely 2510.4 and 313.8 respectively."""
 
 from typing import Any
 
-from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded
-from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
+from MDMC.MD.force_fields.ff import WaterModel
+from MDMC.MD.interaction_functions import Coulomb, HarmonicPotential, LennardJones, NonBonded
+from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion, NonBondedForce
 from MDMC.MD.structures import Atom, Molecule
+
+
+class TIP3P(WaterModel):
+    """
+    TIP3P force field - LJ, Coulombic, fixed bond lengths and angles
+    """
+
+    n_body = 3
+
+    @property
+    def interaction_dictionary(self):
+
+        # Charge Parameters
+        q_O = -0.834  # e
+        q_H = abs(q_O / 2)  # e
+
+        # LJ Parameters
+        sigma = 3.151  # Ang
+        epsilon = 0.6363  # kJ mol^-1
+
+        # Bond Parameters
+        r_OH = 0.9572  # Ang
+        f_OH = 1882.8  # kJ mol^-1 Ang^-2
+
+        # Bond Angle Parameters
+        a_HOH = 104.52  # deg
+        f_HOH = 230.12  # kJ mol^-1 rad^-2
+
+        return {
+            (Coulombic, ("O",)): Coulomb(q_O),
+            (Coulombic, ("H",)): Coulomb(q_H),
+            (Dispersion, ("O", "O")): LennardJones(epsilon, sigma),
+            (Bond, ("H", "O")): HarmonicPotential(r_OH, f_OH, interaction_type="bond"),
+            (BondAngle, ("H", "O", "H")): HarmonicPotential(a_HOH, f_HOH, interaction_type="angle"),
+        }
 
 
 class TIP3PMol(Molecule):
