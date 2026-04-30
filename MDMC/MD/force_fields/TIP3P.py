@@ -38,9 +38,6 @@ from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Coulomb, HarmonicPotential, LennardJones
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 
-if TYPE_CHECKING:
-    from MDMC.MD import Universe
-
 
 class TIP3P(WaterModel):
     """
