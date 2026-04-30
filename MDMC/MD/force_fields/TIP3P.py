@@ -20,7 +20,6 @@ file, namely 2510.4 and 313.8 respectively."""
 
 from typing import Any
 
-from MDMC.MD import Universe
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Coulomb, HarmonicPotential, LennardJones, NonBonded
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion, NonBondedForce
@@ -96,7 +95,7 @@ class TIP3PMol(Molecule):
         super().__init__(**settings)
 
 
-def add_tip3p_ff(universe: Universe, cutoff: float, ewald: float):
+def add_tip3p_ff(universe: "Universe", cutoff: float, ewald: float):
     """Add the tip3p force field to the universe assuming that atoms
     with the tip3p atom type exists.
 
