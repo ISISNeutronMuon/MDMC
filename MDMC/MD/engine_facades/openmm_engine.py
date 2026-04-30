@@ -73,9 +73,7 @@ class OpenMMEngine(MDEngine):
             self.openmm_system.addParticle(atom.mass * unit.amu)
 
         # set bond constraints
-        mdmc_bonds = [
-            force for force in set(self.universe.interactions) if isinstance(force, Bond)
-        ]
+        mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         bond_dists = {}
         for mdmc_bond in mdmc_bonds:
             if not mdmc_bond.constrained:
@@ -142,9 +140,7 @@ class OpenMMEngine(MDEngine):
         nonbonded.setUseDispersionCorrection(False)
 
         bond_force = mm.HarmonicBondForce()
-        mdmc_bonds = [
-            force for force in set(self.universe.interactions) if isinstance(force, Bond)
-        ]
+        mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
             if mdmc_bond.constrained:
                 continue
@@ -172,7 +168,9 @@ class OpenMMEngine(MDEngine):
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (
-                mdmc_bondangle.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
+                mdmc_bondangle.function.potential_strength.value
+                * unit.kilojoules_per_mole
+                / unit.radians**2
             )
             for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
