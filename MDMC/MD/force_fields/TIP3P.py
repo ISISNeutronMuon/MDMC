@@ -18,12 +18,15 @@ having converted from their units of kcal to our kJ.
 Note that different values for bond strengths are given in the OPLSAA data
 file, namely 2510.4 and 313.8 respectively."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Coulomb, HarmonicPotential, LennardJones, NonBonded
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion, NonBondedForce
 from MDMC.MD.structures import Atom, Molecule
+
+if TYPE_CHECKING:
+    from MDMC.MD import Universe
 
 
 class TIP3P(WaterModel):
@@ -62,7 +65,21 @@ class TIP3P(WaterModel):
 
 
 class TIP3PMol(Molecule):
-    def __init__(self, elements=("H", "O"), constrained=True, **settings: Any):
+    """A TIP3P water molecule.
+
+    Parameters
+    ----------
+    elements : tuple[str, str]
+        Tuple of the elements to substitute into the water model.
+    constrained : bool
+        Constrains the bond length and angles if true.
+    **settings : Any
+        Other setting used to create the molecule.
+    """
+
+    def __init__(
+        self, elements: tuple[str, str] = ("H", "O"), constrained: bool = True, **settings: Any,
+    ):
         H1 = Atom(elements[0], position=(0.9572, 0.0, 0.0), atom_type="tip3p_H")
         H2 = Atom(elements[0], position=(-0.2400, 0.9266, 0.0), atom_type="tip3p_H")
         O1 = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type="tip3p_O")
@@ -78,7 +95,20 @@ class TIP3PMol(Molecule):
         super().__init__(**settings)
 
 
-def add_tip3p_ff(universe, cutoff, ewald):
+def add_tip3p_ff(universe: Universe, cutoff: float, ewald: float):
+    """Add the tip3p force field to the universe assuming that atoms
+    with the tip3p atom type exists.
+
+    Parameters
+    ----------
+    universe : Universe
+        The MDMC universe object.
+    cutoff : float
+        The cutoff distance (angstrom) used for nonbonded interactions.
+    ewald : float
+        The error tolerance for Ewald summation.
+
+    """
     # Charge Parameters
     q_O = -0.834  # e
     q_H = abs(q_O / 2)  # e

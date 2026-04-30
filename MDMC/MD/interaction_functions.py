@@ -534,6 +534,19 @@ class LennardJones(InteractionFunction):
 
 
 class NonBonded(InteractionFunction):
+    """Nonbonded interaction which is a sum of a coulomb and lennard-jones
+    interactions.
+
+    Parameters
+    ----------
+    charge : float
+        The charge in units of ``e``
+    epsilon : float
+        The LJ epsilon value in units of ``kJ mol^-1``
+    sigma : float
+        The LJ sigma value in units of ``Ang``
+    """
+
     @inter_func_decorator(
         ("charge", units.CHARGE),
         ("epsilon", units.ENERGY),

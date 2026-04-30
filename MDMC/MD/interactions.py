@@ -714,6 +714,21 @@ class Coulombic(NonBondedInteraction):
 
 
 class NonBondedForce(NonBondedInteraction):
+    """A non-bonded interaction which is a sum of the coulomb and
+    lennard-jones interactions.
+
+    Parameters
+    ----------
+    universe : Universe, optional
+        The ``Universe`` in which the ``Coulombic`` exists. Default is `None`.
+        Must be passed as a parameter if ``atom_types`` if passed.
+    **settings
+        ``ewald`` (`float`)
+            The error tolerance for Ewald summation.
+        ``cutoff`` (`float`)
+            The cutoff distance (angstrom) used for nonbonded interactions.
+    """
+
     # I don't know why but dispersion and coulombic does this
     __hash__ = NonBondedInteraction.__hash__
 
