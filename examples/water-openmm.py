@@ -52,16 +52,18 @@ QENS = [{
 
 # only refit the LJ parameters on oxygen
 for p in universe.parameters.as_array:
-    if not (p.parameter_name == 'tip3p_O_nonbonded_epsilon'
-            or p.parameter_name == 'tip3p_O_nonbonded_sigma'):
+    if p.parameter_name == 'tip3p_O_nonbonded_epsilon':
+        p.constraints = [0.4, 0.8]
+    elif p.parameter_name == 'tip3p_O_nonbonded_sigma':
+        p.constraints = [2.5, 3.5]
+    else:
         p.fixed = True
 
 
-fit_parameters = universe.parameters
 control = Control(
     simulation=simulation,
     exp_datasets=QENS,
-    fit_parameters=fit_parameters,
+    fit_parameters=universe.parameters,
     reset_config=True,
     equilibration_steps=30000,
     minimizer_type="CMAES",
