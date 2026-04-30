@@ -283,7 +283,9 @@ class OpenMMEngine(MDEngine):
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (
-                mdmc_bondangle.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
+                mdmc_bondangle.function.potential_strength.value
+                * unit.kilojoules_per_mole
+                / unit.radians**2
             )
             for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
