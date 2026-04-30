@@ -18,15 +18,13 @@ having converted from their units of kcal to our kJ.
 Note that different values for bond strengths are given in the OPLSAA data
 file, namely 2510.4 and 313.8 respectively."""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from MDMC.MD import Universe
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Coulomb, HarmonicPotential, LennardJones, NonBonded
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion, NonBondedForce
 from MDMC.MD.structures import Atom, Molecule
-
-if TYPE_CHECKING:
-    from MDMC.MD import Universe
 
 
 class TIP3P(WaterModel):
@@ -78,7 +76,10 @@ class TIP3PMol(Molecule):
     """
 
     def __init__(
-        self, elements: tuple[str, str] = ("H", "O"), constrained: bool = True, **settings: Any,
+        self,
+        elements: tuple[str, str] = ("H", "O"),
+        constrained: bool = True,
+        **settings: Any,
     ):
         H1 = Atom(elements[0], position=(0.9572, 0.0, 0.0), atom_type="tip3p_H")
         H2 = Atom(elements[0], position=(-0.2400, 0.9266, 0.0), atom_type="tip3p_H")
