@@ -95,7 +95,7 @@ class TIP3PMol(Molecule):
         super().__init__(**settings)
 
 
-def add_tip3p_ff(universe: "Universe", cutoff: float, ewald: float):
+def add_tip3p_ff(universe, cutoff: float, ewald: float):
     """Add the tip3p force field to the universe assuming that atoms
     with the tip3p atom type exists.
 
