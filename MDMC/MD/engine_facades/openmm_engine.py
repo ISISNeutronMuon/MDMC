@@ -52,7 +52,9 @@ class OpenMMEngine(MDEngine):
         """
         self.universe = universe
         self.openmm_system = mm.System()
-        # currently MDMC can only deal with orthorhombic lattices
+
+        # set the unit cell, note that currently MDMC can only deal with
+        # orthorhombic lattices
         box_matrix = (
             np.array(
                 [
@@ -63,13 +65,52 @@ class OpenMMEngine(MDEngine):
             )
             * unit.angstrom
         )
-
         self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
 
+        # add atoms
         for i, atom in enumerate(self.universe.atoms):
             self.MDMC_ID_to_idx[atom.ID] = i
             self.openmm_system.addParticle(atom.mass * unit.amu)
 
+        # set bond constraints
+        mdmc_bonds = [
+            force for force in set(self.universe.interactions) if isinstance(force, Bond)
+        ]
+        bond_dists = {}
+        for mdmc_bond in mdmc_bonds:
+            if not mdmc_bond.constrained:
+                continue
+            equil_length = mdmc_bond.function.equilibrium_state.value
+            for atm_i, atm_j in mdmc_bond.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
+                bond_dists[(i, j)] = equil_length
+                bond_dists[(j, i)] = equil_length
+
+        # set angle constraints
+        mdmc_bondangles = [
+            force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
+        ]
+        for mdmc_bondangle in mdmc_bondangles:
+            if not mdmc_bondangle.constrained:
+                continue
+            equil_angle = mdmc_bondangle.function.equilibrium_state.value
+            for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                k = self.MDMC_ID_to_idx[atm_k.ID]
+                b = bond_dists[(i, j)]
+                c = bond_dists[(j, k)]
+                a = np.sqrt(b**2 + c**2 - 2 * b * c * np.cos(np.deg2rad(equil_angle)))
+                # openmm doesn't have angle constraints, we expect
+                # bond constraints to be already set if angle
+                # constraints are set so we assume that bond constraints
+                # were already made above and can add a length constraint
+                # to fix the angle
+                self.openmm_system.addConstraint(i, k, a * unit.angstroms)
+
+        # add force field
         self.change_openmm_force_field()
 
     def change_openmm_force_field(self):
@@ -101,17 +142,19 @@ class OpenMMEngine(MDEngine):
         nonbonded.setUseDispersionCorrection(False)
 
         bond_force = mm.HarmonicBondForce()
-        mdmc_harmonic = [
+        mdmc_bonds = [
             force for force in set(self.universe.interactions) if isinstance(force, Bond)
         ]
-        for force in mdmc_harmonic:
-            equil_length = force.function.equilibrium_state.value * unit.angstroms
+        for mdmc_bond in mdmc_bonds:
+            if mdmc_bond.constrained:
+                continue
+            equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
             force_const = (
-                force.function.potential_strength.value
+                mdmc_bond.function.potential_strength.value
                 * unit.kilojoules_per_mole
                 / unit.angstroms**2
             )
-            for atm_i, atm_j in force.atoms:
+            for atm_i, atm_j in mdmc_bond.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
@@ -121,15 +164,17 @@ class OpenMMEngine(MDEngine):
                 nonbonded.addException(i, j, 0.0, 1.0, 0.0)
 
         angle_force = mm.HarmonicAngleForce()
-        mdmc_harmonic = [
+        mdmc_bondangles = [
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
-        for force in mdmc_harmonic:
-            equil_angle = force.function.equilibrium_state.value * unit.degrees
+        for mdmc_bondangle in mdmc_bondangles:
+            if mdmc_bondangle.constrained:
+                continue
+            equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (
-                force.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
+                mdmc_bondangle.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
             )
-            for atm_i, atm_j, atm_k in force.atoms:
+            for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 k = self.MDMC_ID_to_idx[atm_k.ID]

@@ -1,3 +1,22 @@
+"""A module for defining the TIP3P forcefield
+
+This definition of the TIP3P forcefield includes bond and bond angle strengths
+as these are needed for to create the required HarmonicPotentials. As a result,
+they can be used for simulating a flexible water molecule. However, TIP3P
+itself is a rigid model, and in order to replicate this a constraint algorithm
+should be used for all Bond and BondAngle objects.
+
+Parameters (excluding bond strengths) are from:
+    Comparison of simple potential functions for simulating liquid water
+    Jorgensen WL, Chandrasekhar J, Madura JD, Impey RW, Klein ML
+    The Journal of Chemical Physics. 79 (2): 926–935 (1983)
+
+The strengths provided are from:
+    https://lammps.sandia.gov/doc/Howto_tip3p.html
+having converted from their units of kcal to our kJ.
+
+Note that different values for bond strengths are given in the OPLSAA data
+file, namely 2510.4 and 313.8 respectively."""
 from typing import Any
 
 from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded
