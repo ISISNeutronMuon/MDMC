@@ -23,7 +23,7 @@ add_tip3p_ff(universe, cutoff=10.0, ewald=1e-6)
 simulation = Simulation(
     universe,
     engine="openmm",
-    time_step=1.033916924,
+    time_step=1.0,
     temperature=280,
     traj_step=10,
     openmm_platform="OpenCL"
@@ -67,7 +67,7 @@ control = Control(
     reset_config=True,
     equilibration_steps=30000,
     minimizer_type="CMAES",
-    MD_steps=804000,
+    MD_steps=424620,
     energy_resolution=13.6,
     FoM_options={'error': 'none'}
 )
