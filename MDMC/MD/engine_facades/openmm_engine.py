@@ -256,14 +256,16 @@ class OpenMMEngine(MDEngine):
         mdmc_harmonic = [
             force for force in set(self.universe.interactions) if isinstance(force, Bond)
         ]
-        for force in mdmc_harmonic:
-            equil_length = force.function.equilibrium_state.value * unit.angstroms
+        for mdmc_bond in mdmc_bonds:
+            if mdmc_bond.constrained:
+                continue
+            equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
             force_const = (
-                force.function.potential_strength.value
+                mdmc_bond.function.potential_strength.value
                 * unit.kilojoules_per_mole
                 / unit.angstroms**2
             )
-            for atm_i, atm_j in force.atoms:
+            for atm_i, atm_j in mdmc_bond.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
@@ -273,15 +275,17 @@ class OpenMMEngine(MDEngine):
                 nonbonded.addException(i, j, 0.0, 1.0, 0.0)
 
         angle_force = mm.HarmonicAngleForce()
-        mdmc_harmonic = [
+        mdmc_bondangles = [
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
-        for force in mdmc_harmonic:
-            equil_angle = force.function.equilibrium_state.value * unit.degrees
+        for mdmc_bondangle in mdmc_bondangles:
+            if mdmc_bondangle.constrained:
+                continue
+            equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (
-                force.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
+                mdmc_bondangle.function.potential_strength.value * unit.kilojoules_per_mole / unit.radians**2
             )
-            for atm_i, atm_j, atm_k in force.atoms:
+            for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 k = self.MDMC_ID_to_idx[atm_k.ID]
