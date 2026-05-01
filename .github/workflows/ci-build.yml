@@ -1,7 +1,8 @@
 name: CI
 # contains jobs which run on every pull request
 on:
-  pull_request:
+  - pull_request
+  - workflow_dispatch
 
 jobs:
   build:
@@ -129,3 +130,51 @@ jobs:
       run: |
         cd MDMC
         mypy . --show-error-codes --pretty
+
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-22.04
+    needs: build
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: install openmpi headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run:
+          pip install asv pandas
+
+      - name: Run benchmarks
+        shell: bash -l {0}
+        run: |
+          set -x
+
+          # ID this runner
+          asv machine --yes
+
+          # Run benchmarks for new and previous commits
+          # Exclude the long benchmarks
+          asv run -b '.*(?<!_long)\(' HEAD^!
+          asv run -b '.*(?<!_long)\(' HEAD~1^!
+          
+          echo -e "<details> <summary>Benchmark changes from master</summary>\n" > benchmark_results.md
+          asv compare --only-changed --split HEAD^ HEAD >> benchmark_results.md
+          echo "</details>" >> benchmark_results.md
+
+          python3 benchmarks/scripts/results_parser.py $(git rev-parse --short=8 HEAD)
+
+      - name: Create comment
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{env.PR_NUMBER}}
+          body-path: benchmark_results.md
