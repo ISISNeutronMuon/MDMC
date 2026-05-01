@@ -41,6 +41,7 @@ QENS = [{
     'auto_scale':True,
     'use_FFT': True,
     'resolution':{'file': '../doc/tutorials/data/262p7K0A5van_LAMP'},
+    'cont_slicing': True,
 }]
 
 
