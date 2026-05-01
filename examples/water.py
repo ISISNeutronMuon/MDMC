@@ -61,7 +61,7 @@ QENS = [{
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters.as_array:
-    if p.type != 'epsilon':
+    if p.type != 'epsilon' or p.type != 'sigma':
         p.fixed = True
 
 fit_parameters = universe.parameters
@@ -70,7 +70,7 @@ control = Control(simulation=simulation,
                   fit_parameters=fit_parameters,
                   MC_norm=1,
                   minimizer_type="CMAES",
-                  MD_steps=804000,
+                  MD_steps=424620,
                   energy_resolution=13.6,
                   FoM_options={'error': 'none'}
 )
