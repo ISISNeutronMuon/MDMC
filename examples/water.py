@@ -61,7 +61,7 @@ QENS = [{
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters.as_array:
-    if p.type != 'epsilon' or p.type != 'sigma':
+    if not (p.type == 'epsilon' or p.type == 'sigma'):
         p.fixed = True
 
 fit_parameters = universe.parameters
