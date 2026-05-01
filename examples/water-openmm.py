@@ -12,7 +12,7 @@ os.environ["OMP_NUM_THREADS"] = "4"
 # 18.6270199 A is 216 water molecules
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
-universe = Universe(dimensions=21.75)
+universe = Universe(dimensions=24.83602653)
 universe.fill(TIP3PMol(constrained=False), num_density=0.03356718472021752)
 add_tip3p_ff(universe, cutoff=10.0, ewald=1e-6)
 
@@ -40,12 +40,6 @@ QENS = [{
     'weight':1.,
     'auto_scale':True,
     'use_FFT': True,
-    'filter': {
-        'abs': 0.1,              # All values below 0.1 to be removed
-        'rel': 0.1,              # All values less than 10% of maximum to be removed.
-        'use_magnitude': False,  # Use raw value (negative values will be removed)
-        'warn_threshold': 0.1,   # Warn if more than 10% of values are removed by this filter
-    },
     'resolution':{'file': '../doc/tutorials/data/262p7K0A5van_LAMP'},
 }]
 
