@@ -96,12 +96,13 @@ class H5MDControl:
     email: str = f"{getpass.getuser()}@unknown"
     frequency: DumpFreq = DumpFreq.NONE
     extent: DumpExtent = DumpExtent.BOTH
-    observable_format: ObsFormat = ObsFormat.NONE
+    observable_format: ObsFormat = ObsFormat.ALL
     timestamp: bool = False
 
     def __post_init__(self):
         self.frequency = DumpFreq(self.frequency)
         self.extent = DumpExtent(self.extent)
+        self.observable_format = ObsFormat(self.observable_format)
 
     def dump(self, trajectory: CompactTrajectory, observable_pairs: Iterable[ObservablePair]):
         """Dump combined data to appropriate locations.
