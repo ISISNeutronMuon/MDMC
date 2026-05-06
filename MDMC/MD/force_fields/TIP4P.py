@@ -30,7 +30,7 @@ class TIP4PMol(Molecule):
             "atoms": [H1, H2, O1, M],
             "interactions": [
                 Bond((H1, O1), (H2, O1), constrained=True),
-                Bond((H1, M), (H2, M), (O1, M), constrained=True),
+                Bond((H1, M), (H2, M), (O1, M)),
                 BondAngle((H1, O1, H2), constrained=True),
             ],
             "name": "tip4p",
