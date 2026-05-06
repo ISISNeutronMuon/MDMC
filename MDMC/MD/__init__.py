@@ -24,6 +24,7 @@ from .interaction_functions import (
     HarmonicPotential,
     InteractionFunction,
     LennardJones,
+    NonBonded,
     Periodic,
     inter_func_decorator,
 )
@@ -79,6 +80,7 @@ __all__ = [
     "HarmonicPotential",
     "InteractionFunction",
     "LennardJones",
+    "NonBonded",
     "Periodic",
     "inter_func_decorator",
     "Bond",

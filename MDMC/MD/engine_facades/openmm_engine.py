@@ -6,8 +6,9 @@ import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
 
-from MDMC.MD import LennardJones
+from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
@@ -23,6 +24,7 @@ class OpenMMEngine(MDEngine):
         self.compact_trajectory = None
         self.temperature = None
         self._saved_config = None
+        self.MDMC_ID_to_idx = {}
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -50,7 +52,9 @@ class OpenMMEngine(MDEngine):
         """
         self.universe = universe
         self.openmm_system = mm.System()
-        # currently MDMC can only deal with orthorhombic lattices
+
+        # set the unit cell, note that currently MDMC can only deal with
+        # orthorhombic lattices
         box_matrix = (
             np.array(
                 [
@@ -61,29 +65,132 @@ class OpenMMEngine(MDEngine):
             )
             * unit.angstrom
         )
-
         self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
 
-        for _type_ID, atom_type_group in universe.atom_types.items():
-            for _ in atom_type_group:
-                self.openmm_system.addParticle(float(atom_type_group[0].mass) * unit.amu)
+        # add atoms
+        for i, atom in enumerate(self.universe.atoms):
+            self.MDMC_ID_to_idx[atom.ID] = i
+            self.openmm_system.addParticle(atom.mass * unit.amu)
 
-        for disp in universe.nonbonded_interactions:
-            if not isinstance(disp.function, LennardJones):
-                LOGGER.warning("Only LennardJones potential currently supported.")
+        # set bond constraints
+        mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
+        bond_dists = {}
+        for mdmc_bond in mdmc_bonds:
+            if not mdmc_bond.constrained:
                 continue
-            sigma = float(disp.function.sigma.value) * unit.angstrom
-            epsilon = float(disp.function.epsilon.value) * unit.kilojoules_per_mole
-            force = mm.NonbondedForce()
-            force.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
-            for _type_ID, atom_type_group in universe.atom_types.items():
-                for _ in atom_type_group:
-                    force.addParticle(0.0, sigma, epsilon)
-            force.setCutoffDistance(disp.cutoff * unit.angstrom)
-            force.setUseSwitchingFunction(True)
-            force.setSwitchingDistance(0.8 * disp.cutoff * unit.angstrom)
-            force.setUseDispersionCorrection(True)
-            self.openmm_system.addForce(force)
+            equil_length = mdmc_bond.function.equilibrium_state.value
+            for atm_i, atm_j in mdmc_bond.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
+                bond_dists[(i, j)] = equil_length
+                bond_dists[(j, i)] = equil_length
+
+        # set angle constraints
+        mdmc_bondangles = [
+            force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
+        ]
+        for mdmc_bondangle in mdmc_bondangles:
+            if not mdmc_bondangle.constrained:
+                continue
+            equil_angle = mdmc_bondangle.function.equilibrium_state.value
+            for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                k = self.MDMC_ID_to_idx[atm_k.ID]
+                b = bond_dists[(i, j)]
+                c = bond_dists[(j, k)]
+                a = np.sqrt(b**2 + c**2 - 2 * b * c * np.cos(np.deg2rad(equil_angle)))
+                # openmm doesn't have angle constraints, we expect
+                # bond constraints to be already set if angle
+                # constraints are set so we assume that bond constraints
+                # were already made above and can add a length constraint
+                # to fix the angle
+                self.openmm_system.addConstraint(i, k, a * unit.angstroms)
+
+        # add force field
+        self.change_openmm_force_field()
+
+    def change_openmm_force_field(self):
+        """Change the OpenMM force fields."""
+        nonbonded = mm.NonbondedForce()
+        for atom in self.universe.atoms:
+            mdmc_nonbonded = [
+                force.function
+                for force in atom.nonbonded_interactions
+                if isinstance(force.function, NonBonded)
+            ]
+            if len(mdmc_nonbonded) != 1:
+                raise Exception("Unexpected number of non-bonded interactions.")
+            mdmc_nonbonded = mdmc_nonbonded[0]
+            charge = mdmc_nonbonded.charge.value * unit.elementary_charge
+            sigma = mdmc_nonbonded.sigma.value * unit.angstrom
+            epsilon = mdmc_nonbonded.epsilon.value * unit.kilojoules_per_mole
+            nonbonded.addParticle(charge, sigma, epsilon)
+
+        mdmc_nonbonded = [
+            force for force in set(self.universe.interactions) if isinstance(force, NonBondedForce)
+        ]
+        cutoff = max(force.cutoff for force in mdmc_nonbonded)
+        ewald = min(force.ewald for force in mdmc_nonbonded)
+        nonbonded.setNonbondedMethod(mm.NonbondedForce.PME)
+        nonbonded.setCutoffDistance(cutoff * unit.angstrom)
+        nonbonded.setEwaldErrorTolerance(ewald)
+        nonbonded.setUseSwitchingFunction(False)
+        nonbonded.setUseDispersionCorrection(False)
+
+        bond_force = mm.HarmonicBondForce()
+        mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
+        for mdmc_bond in mdmc_bonds:
+            if mdmc_bond.constrained:
+                continue
+            equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
+            force_const = (
+                mdmc_bond.function.potential_strength.value
+                * unit.kilojoules_per_mole
+                / unit.angstroms**2
+            )
+            for atm_i, atm_j in mdmc_bond.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
+                # in lammps and therefore MDMC it is without the 1/2
+                bond_force.addBond(i, j, equil_length, 2 * force_const)
+                # remove nonbonded interaction when atoms are bonded
+                nonbonded.addException(i, j, 0.0, 1.0, 0.0)
+
+        angle_force = mm.HarmonicAngleForce()
+        mdmc_bondangles = [
+            force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
+        ]
+        for mdmc_bondangle in mdmc_bondangles:
+            if mdmc_bondangle.constrained:
+                continue
+            equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
+            force_const = (
+                mdmc_bondangle.function.potential_strength.value
+                * unit.kilojoules_per_mole
+                / unit.radians**2
+            )
+            for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
+                i = self.MDMC_ID_to_idx[atm_i.ID]
+                j = self.MDMC_ID_to_idx[atm_j.ID]
+                k = self.MDMC_ID_to_idx[atm_k.ID]
+                # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
+                # in lammps and therefore MDMC it is without the 1/2
+                angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
+                # remove nonbonded interaction when atoms are connected
+                # by two bonds
+                nonbonded.addException(i, k, 0.0, 1.0, 0.0)
+
+        self.openmm_system.addForce(nonbonded)
+        self.openmm_system.addForce(bond_force)
+        self.openmm_system.addForce(angle_force)
+
+    def clear_forces(self):
+        """Clear the OpenMM force fields from the OpenMM system."""
+        for i in reversed(range(self.openmm_system.getNumForces())):
+            self.openmm_system.removeForce(i)
 
     def setup_simulation(self, **settings: Any) -> None:
         """Set up the openmm simulation.
@@ -228,26 +335,10 @@ class OpenMMEngine(MDEngine):
         return self.compact_trajectory
 
     def update_parameters(self) -> None:
-        """Updates the ``OpenMMEngine`` force field parameters from the
-        ``Universe``.
-        """
-        i = 0
-        for disp in self.universe.nonbonded_interactions:
-            if not isinstance(disp.function, LennardJones):
-                continue
-            sigma = float(disp.function.sigma.value) * unit.angstrom
-            epsilon = float(disp.function.epsilon.value) * unit.kilojoules_per_mole
-
-            force = self.openmm_simulation.system.getForce(i)
-
-            j = 0
-            for _type_ID, atom_type_group in self.universe.atom_types.items():
-                for _ in atom_type_group:
-                    force.setParticleParameters(j, 0.0, sigma, epsilon)
-                    j += 1
-
-            force.updateParametersInContext(self.openmm_simulation.context)
-            i += 1
+        """Updates the ``OpenMMEngine`` force field parameters."""
+        self.clear_forces()
+        self.change_openmm_force_field()
+        self.openmm_simulation.context.reinitialize(preserveState=True)
 
     def save_config(self) -> None:
         """Sets ``self._saved_config`` to the current set of positions."""

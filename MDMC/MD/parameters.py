@@ -63,6 +63,7 @@ class Parameter:
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
+        self.parameter_name = None
         self.interactions_name = None
         self.functions_name = None
         self._interactions = []
