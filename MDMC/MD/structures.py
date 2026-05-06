@@ -1173,6 +1173,38 @@ class Atom(Structure):
                         zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
 
 
+class DummyElement:
+    mass = 0.0
+    symbol = 'X'
+
+
+class AverageSite3P(Atom):
+
+    def __init__(
+            self,
+            particles,
+            weights,
+            charge: float | None = None,
+            **settings: Any
+    ):
+        self.universe = None
+
+        Structure.__init__(self, (0., 0., 0.), (0., 0., 0.), name=settings.get('name', 'X'))
+        self._nonbonded_interactions = []
+        self._bonded_interaction_pairs = []
+
+        self.element = DummyElement()
+        self.mass = self.element.mass
+
+        self._atom_type = settings.get('atom_type')
+        self.cutoff = settings.get('cutoff')
+        self.charge = charge
+
+        self.particles = particles
+        self.weights = weights
+
+
+
 class Molecule(CompositeStructure):
     """
     Two or more bonded atoms

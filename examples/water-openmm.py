@@ -64,7 +64,12 @@ control = Control(
     minimizer_type="CMAES",
     MD_steps=424620,
     energy_resolution=13.6,
-    FoM_options={'error': 'none'}
+    FoM_options={'error': 'none'},
+    file_dump_frequency="every",
+    file_dump_extent="both",
+    file_dump_loc=".",
+    file_dump_timestamped=False,
+    file_dump_prefix="mdmc_water_unconstrained_new",
 )
 
 # Run refinement

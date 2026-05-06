@@ -80,8 +80,8 @@ class TIP3PMol(Molecule):
         constrained: bool = True,
         **settings: Any,
     ):
-        H1 = Atom(elements[0], position=(0.9572, 0.0, 0.0), atom_type="tip3p_H")
-        H2 = Atom(elements[0], position=(-0.2400, 0.9266, 0.0), atom_type="tip3p_H")
+        H1 = Atom(elements[0], position=(0.75695, 0.58588, 0.0), atom_type="tip3p_H")
+        H2 = Atom(elements[0], position=(-0.75695, 0.58588, 0.0), atom_type="tip3p_H")
         O1 = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type="tip3p_O")
         settings = {
             "position": (0, 0, 0),
@@ -155,8 +155,11 @@ def add_tip3p_ff(universe, cutoff: float, ewald: float):
     harmonicbond.equilibrium_state.parameter_name = "tip3p_OH_harmonicbond_equilibrium_state"
     harmonicbond.potential_strength.parameter_name = "tip3p_OH_harmonicbond_potential_strength"
     for interaction in universe.interactions:
-        if isinstance(interaction, Bond):
-            interaction.function = harmonicbond
+        if not isinstance(interaction, Bond):
+            continue
+        for atm_i, atm_j in interaction.atoms:
+            if sorted((atm_i.atom_type, atm_j.atom_type)) == ["tip3p_H", "tip3p_O"]:
+                interaction.function = harmonicbond
 
     harmonicangle = HarmonicPotential(
         equilibrium_state=a_HOH,
@@ -166,5 +169,12 @@ def add_tip3p_ff(universe, cutoff: float, ewald: float):
     harmonicangle.equilibrium_state.parameter_name = "tip3p_HOH_harmonicangle_equilibrium_state"
     harmonicangle.potential_strength.parameter_name = "tip3p_HOH_harmonicangle_potential_strength"
     for interaction in universe.interactions:
-        if isinstance(interaction, BondAngle):
-            interaction.function = harmonicangle
+        if not isinstance(interaction, BondAngle):
+            continue
+        for atm_i, atm_j, atm_k in interaction.atoms:
+            if sorted((atm_i.atom_type, atm_j.atom_type, atm_k.atom_type)) == [
+                "tip3p_H",
+                "tip3p_H",
+                "tip3p_O",
+            ]:
+                interaction.function = harmonicangle

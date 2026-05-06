@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+import networkx as nx
 import numpy as np
 import openmm as mm
 from openmm import unit
@@ -10,6 +11,7 @@ from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
+from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
@@ -25,6 +27,8 @@ class OpenMMEngine(MDEngine):
         self.temperature = None
         self._saved_config = None
         self.MDMC_ID_to_idx = {}
+        self.bond_graph = nx.Graph()
+        self.nonbonded_scaling = None
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -48,10 +52,11 @@ class OpenMMEngine(MDEngine):
             A molecular dynamics ``Universe`` which will be setup in the
             ``OpenMMEngine``.
         **settings
-            Not used.
+            Some settings which are used to set up the openmm engine.
         """
         self.universe = universe
         self.openmm_system = mm.System()
+        self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling")
 
         # set the unit cell, note that currently MDMC can only deal with
         # orthorhombic lattices
@@ -72,16 +77,31 @@ class OpenMMEngine(MDEngine):
             self.MDMC_ID_to_idx[atom.ID] = i
             self.openmm_system.addParticle(atom.mass * unit.amu)
 
+        for atom in self.universe.atoms:
+            if isinstance(atom, AverageSite3P):
+                i = self.MDMC_ID_to_idx[atom.ID]
+                j = self.MDMC_ID_to_idx[atom.particles[0].ID]
+                k = self.MDMC_ID_to_idx[atom.particles[1].ID]
+                m = self.MDMC_ID_to_idx[atom.particles[2].ID]
+                w_j = atom.weights[0]
+                w_k = atom.weights[1]
+                w_m = atom.weights[2]
+                self.openmm_system.setVirtualSite(
+                    i,
+                    mm.ThreeParticleAverageSite(j, k, m, w_j, w_k, w_m),
+                )
+
         # set bond constraints
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         bond_dists = {}
         for mdmc_bond in mdmc_bonds:
-            if not mdmc_bond.constrained:
-                continue
-            equil_length = mdmc_bond.function.equilibrium_state.value
             for atm_i, atm_j in mdmc_bond.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
+                self.bond_graph.add_edge(i, j)
+                if mdmc_bond.function is None or not mdmc_bond.constrained:
+                    continue
+                equil_length = mdmc_bond.function.equilibrium_state.value
                 self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
                 bond_dists[(i, j)] = equil_length
                 bond_dists[(j, i)] = equil_length
@@ -91,7 +111,7 @@ class OpenMMEngine(MDEngine):
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if not mdmc_bondangle.constrained:
+            if mdmc_bondangle.function is None or not mdmc_bondangle.constrained:
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value
             for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
@@ -156,8 +176,6 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 bond_force.addBond(i, j, equil_length, 2 * force_const)
-                # remove nonbonded interaction when atoms are bonded
-                nonbonded.addException(i, j, 0.0, 1.0, 0.0)
 
         angle_force = mm.HarmonicAngleForce()
         mdmc_bondangles = [
@@ -179,9 +197,18 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
-                # remove nonbonded interaction when atoms are connected
-                # by two bonds
-                nonbonded.addException(i, k, 0.0, 1.0, 0.0)
+
+        for i in range(self.universe.n_atoms):
+            for j, dist in nx.single_source_shortest_path_length(
+                self.bond_graph,
+                i,
+                cutoff=len(self.nonbonded_scaling),
+            ).items():
+                if j < i:
+                    continue
+                # scale nonbonded interaction when atoms are connected
+                # by a specific number of bonds away
+                nonbonded.addException(i, j, *self.nonbonded_scaling[dist - 1])
 
         self.openmm_system.addForce(nonbonded)
         self.openmm_system.addForce(bond_force)
