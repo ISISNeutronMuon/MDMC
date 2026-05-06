@@ -167,7 +167,7 @@ class OpenMMEngine(MDEngine):
         bond_force = mm.HarmonicBondForce()
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
-            if mdmc_bond.constrained:
+            if mdmc_bond.function is None or mdmc_bond.constrained:
                 continue
             equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
             force_const = (
@@ -187,7 +187,7 @@ class OpenMMEngine(MDEngine):
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if mdmc_bondangle.constrained:
+            if mdmc_bondangle.function is None or mdmc_bondangle.constrained:
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (
