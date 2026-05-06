@@ -34,6 +34,7 @@ class OpenMMEngine(MDEngine):
             [0.0, 0.0, 0.0],
             [0.5, 0.5, 0.5],
         ]
+        self.real_atom = []
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -95,6 +96,9 @@ class OpenMMEngine(MDEngine):
                     i,
                     mm.ThreeParticleAverageSite(j, k, m, w_j, w_k, w_m),
                 )
+                self.real_atom.append(False)
+            else:
+                self.real_atom.append(True)
 
         # set bond constraints
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
@@ -312,8 +316,10 @@ class OpenMMEngine(MDEngine):
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
         else:
             self.compact_trajectory = CompactTrajectory()
-            self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=len(self.universe.atoms))
-            reporter = CompactTrajectoryReporter(self.compact_trajectory, self.traj_step, n_steps)
+            self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
+            reporter = CompactTrajectoryReporter(
+                self.compact_trajectory, self.traj_step, n_steps, np.array(self.real_atom)
+            )
             self.openmm_simulation.reporters.append(reporter)
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
             self.openmm_simulation.currentStep = 0
@@ -358,11 +364,12 @@ class OpenMMEngine(MDEngine):
         CompactTrajectory
             The ``CompactTrajectory`` from the most recent production simulation.
         """
-        self.compact_trajectory.validateTypes([atom.atom_type for atom in self.universe.atoms])
-        atom_elements = [atom.element for atom in self.universe.atoms]
-        atom_masses = [atom.mass for atom in self.universe.atoms]
+        real_atoms = [atom for atom in self.universe.atoms if not isinstance(atom, AverageSite3P)]
+        self.compact_trajectory.validateTypes([atom.atom_type for atom in real_atoms])
+        atom_elements = [atom.element for atom in real_atoms]
+        atom_masses = [atom.mass for atom in real_atoms]
         self.compact_trajectory.labelAtoms(atom_elements, atom_masses)
-        self.compact_trajectory.setCharge([atom.charge for atom in self.universe.atoms])
+        self.compact_trajectory.setCharge([atom.charge for atom in real_atoms])
         self.compact_trajectory.postProcess()
         return self.compact_trajectory
 
@@ -390,7 +397,13 @@ class OpenMMEngine(MDEngine):
 
 
 class CompactTrajectoryReporter:
-    def __init__(self, compact_trajectory: CompactTrajectory, report_interval: int, n_steps: int):
+    def __init__(
+        self,
+        compact_trajectory: CompactTrajectory,
+        report_interval: int,
+        n_steps: int,
+        real_atom: np.ndarray,
+    ):
         """Reporter which saves MD results into the MDMC compact
         trajectory.
 
@@ -402,10 +415,13 @@ class CompactTrajectoryReporter:
             The interval which the MD results will be saved.
         n_steps : int
             The total number of step of the simulation.
+        real_atom : np.ndarray
+            An array of bools, true if the atom is not a dummy atom.
         """
         self.compact_trajectory = compact_trajectory
         self.report_interval = report_interval
         self.n_steps = n_steps
+        self.real_atom = real_atom
 
     def report(self, simulation: Simulation, state: mm.State):
         """Save the simulation data into the MDMC compact trajectory.
@@ -434,7 +450,7 @@ class CompactTrajectoryReporter:
         self.compact_trajectory.writeOneStep(
             step_num=step // self.report_interval,
             time=time,
-            positions=np.array(positions),
+            positions=np.array(positions)[self.real_atom],
         )
         self.compact_trajectory.setDimensions(np.array([a, b, c]), step_num=step)
 
