@@ -1185,7 +1185,7 @@ class AverageSite3P(Atom):
             particles,
             weights,
             charge: float | None = None,
-            **settings: Any
+            **settings: Any,
     ):
         self.universe = None
 

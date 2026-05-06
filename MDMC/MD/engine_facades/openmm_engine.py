@@ -318,7 +318,10 @@ class OpenMMEngine(MDEngine):
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
             reporter = CompactTrajectoryReporter(
-                self.compact_trajectory, self.traj_step, n_steps, np.array(self.real_atom)
+                self.compact_trajectory,
+                self.traj_step,
+                n_steps,
+                np.array(self.real_atom),
             )
             self.openmm_simulation.reporters.append(reporter)
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
