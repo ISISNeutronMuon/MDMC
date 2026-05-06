@@ -27,12 +27,9 @@ simulation = Simulation(
     temperature=280,
     traj_step=10,
     openmm_platform="OpenCL",
-    openmm_nonbonded_scaling=[
-        [0.0, 0.0, 0.0]
-    ]
 )
 
-simulation.run(n_steps=30000, equilibration=True)
+simulation.run(n_steps=300000, equilibration=True)
 
 
 # Setup refinement
@@ -63,7 +60,7 @@ control = Control(
     exp_datasets=QENS,
     fit_parameters=universe.parameters,
     reset_config=True,
-    equilibration_steps=30000,
+    equilibration_steps=300000,
     minimizer_type="CMAES",
     MD_steps=424620,
     energy_resolution=13.6,
