@@ -1,7 +1,7 @@
 import os
 
 from MDMC.MD import *
-from MDMC.MD.force_fields.TIP4P import TIP4PMol, add_tip4p2005_ff
+from MDMC.MD.force_fields.four_site_water import FourSiteWater, add_four_site_water_ff
 from MDMC.control import Control
 # Currently MDMC uses OMP_NUM_THREADS to control the number of processes
 # in the sqw calculation
@@ -13,8 +13,8 @@ os.environ["OMP_NUM_THREADS"] = "4"
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
 universe = Universe(dimensions=24.83602653)
-universe.fill(TIP4PMol(constrained=False), num_density=0.03356718472021752)
-add_tip4p2005_ff(universe, cutoff=10.0, ewald=1e-6)
+universe.fill(FourSiteWater(model_name="OPC"), num_density=0.03356718472021752)
+add_four_site_water_ff(universe, cutoff=10.0, ewald=1e-6, model_name="OPC")
 
 # MD Engine setup
 # NOTE: the temperatures of the measured data sets are:
@@ -50,10 +50,10 @@ QENS = [{
 
 # only refit the LJ parameters on oxygen
 for p in universe.parameters.as_array:
-    if p.parameter_name == 'tip4p_O_nonbonded_epsilon':
-        p.constraints = [0.4, 0.8]
-    elif p.parameter_name == 'tip4p_O_nonbonded_sigma':
-        p.constraints = [2.5, 3.5]
+    if p.parameter_name == 'OPC-O-nonbonded_epsilon':
+        p.constraints = [0.7, 1.1]
+    elif p.parameter_name == 'OPC-O-nonbonded_sigma':
+        p.constraints = [2.95, 3.35]
     else:
         p.fixed = True
 
