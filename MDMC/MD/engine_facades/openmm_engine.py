@@ -31,7 +31,6 @@ class OpenMMEngine(MDEngine):
         self.nonbonded_scaling = [
             [0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0],
             [0.5, 0.5, 0.5],
         ]
         self.real_atom = []
@@ -213,7 +212,7 @@ class OpenMMEngine(MDEngine):
                 i,
                 cutoff=len(self.nonbonded_scaling),
             ).items():
-                if j < i:
+                if j < i or dist == 0:
                     continue
                 # scale nonbonded interaction when atoms are connected
                 # by a specific number of bonds away
