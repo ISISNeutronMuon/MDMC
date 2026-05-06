@@ -28,7 +28,12 @@ class OpenMMEngine(MDEngine):
         self._saved_config = None
         self.MDMC_ID_to_idx = {}
         self.bond_graph = nx.Graph()
-        self.nonbonded_scaling = None
+        self.nonbonded_scaling = [
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0],
+            [0.5, 0.5, 0.5],
+        ]
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -56,7 +61,7 @@ class OpenMMEngine(MDEngine):
         """
         self.universe = universe
         self.openmm_system = mm.System()
-        self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling")
+        self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)
 
         # set the unit cell, note that currently MDMC can only deal with
         # orthorhombic lattices
