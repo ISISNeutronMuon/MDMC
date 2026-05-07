@@ -17,11 +17,11 @@ import numpy as np
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.MD.interaction_functions import Coulomb
-from MDMC.MD.parameters import Parameters
 from MDMC.utilities.structures import is_atom
 
 if TYPE_CHECKING:
     from MDMC.MD.interaction_functions import InteractionFunction
+    from MDMC.MD.parameters import Parameters
     from MDMC.MD.simulation import Universe
     from MDMC.MD.structures import Atom
 
@@ -124,8 +124,6 @@ class Interaction(ABC):
         Parameters
             A ``Parameters`` object containing each ``Parameter``
         """
-        if self.function is None:
-            return Parameters()
         return self.function.parameters
 
     @property

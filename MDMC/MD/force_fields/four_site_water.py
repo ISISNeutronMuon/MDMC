@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 
-from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded
+from MDMC.MD.interaction_functions import DummyInteractionFunction, HarmonicPotential, NonBonded
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.structures import Atom, AverageSite3P, Molecule
 
@@ -199,7 +199,8 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
                 f"{model_name}-O",
                 f"{model_name}-M",
             ]:
-                interaction.function = None
+                # add some dummy interaction function
+                interaction.function = DummyInteractionFunction()
 
     harmonicangle = HarmonicPotential(
         equilibrium_state=a_HOH,

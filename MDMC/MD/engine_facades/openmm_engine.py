@@ -9,6 +9,7 @@ from openmm.app import Simulation, Topology
 
 from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.interaction_functions import DummyInteractionFunction
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import AverageSite3P
@@ -107,7 +108,10 @@ class OpenMMEngine(MDEngine):
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 self.bond_graph.add_edge(i, j)
-                if mdmc_bond.function is None or not mdmc_bond.constrained:
+                if (
+                    isinstance(mdmc_bond.function, DummyInteractionFunction)
+                    or not mdmc_bond.constrained
+                ):
                     continue
                 equil_length = mdmc_bond.function.equilibrium_state.value
                 self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
@@ -119,7 +123,10 @@ class OpenMMEngine(MDEngine):
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if mdmc_bondangle.function is None or not mdmc_bondangle.constrained:
+            if (
+                isinstance(mdmc_bondangle.function, DummyInteractionFunction)
+                or not mdmc_bondangle.constrained
+            ):
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value
             for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
@@ -170,7 +177,7 @@ class OpenMMEngine(MDEngine):
         bond_force = mm.HarmonicBondForce()
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
-            if mdmc_bond.function is None or mdmc_bond.constrained:
+            if isinstance(mdmc_bond.function, DummyInteractionFunction) or mdmc_bond.constrained:
                 continue
             equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
             force_const = (
@@ -190,7 +197,10 @@ class OpenMMEngine(MDEngine):
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if mdmc_bondangle.function is None or mdmc_bondangle.constrained:
+            if (
+                isinstance(mdmc_bondangle.function, DummyInteractionFunction)
+                or mdmc_bondangle.constrained
+            ):
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (

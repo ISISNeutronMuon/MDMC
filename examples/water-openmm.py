@@ -29,7 +29,7 @@ simulation = Simulation(
     openmm_platform="OpenCL",
 )
 
-simulation.run(n_steps=300000, equilibration=True)
+simulation.run(n_steps=30000, equilibration=True)
 
 
 # Setup refinement
@@ -60,7 +60,7 @@ control = Control(
     exp_datasets=QENS,
     fit_parameters=universe.parameters,
     reset_config=True,
-    equilibration_steps=300000,
+    equilibration_steps=30000,
     minimizer_type="CMAES",
     MD_steps=424620,
     energy_resolution=13.6,
