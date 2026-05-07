@@ -246,33 +246,35 @@ class OpenMMEngine(MDEngine):
             Some settings which are used to set up the openmm
             simulation object.
         """
-        self.temperature = settings.get("temperature")
+        self.temperature = float(settings.get("temperature"))
+        time_step = float(self.time_step)
 
         compound_integrator = mm.CompoundIntegrator()
         lang_int_1 = mm.LangevinMiddleIntegrator(
-            self.temperature,
+            self.temperature * unit.kelvin,
             10.0 / unit.picoseconds,
-            self.time_step * unit.femtoseconds,
+            time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_1)
         lang_int_2 = mm.LangevinMiddleIntegrator(
-            self.temperature,
+            self.temperature * unit.kelvin,
             1.0 / unit.picoseconds,
-            self.time_step * unit.femtoseconds,
+            time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_2)
-        compound_integrator.addIntegrator(mm.VerletIntegrator(self.time_step * unit.femtoseconds))
+        compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
 
         self.openmm_simulation = Simulation(
             Topology(),
             self.openmm_system,
             compound_integrator,
-            mm.Platform.getPlatformByName(settings.get("openmm_platform")),
+            mm.Platform.getPlatformByName(settings.get("openmm_platform", "CPU")),
+            settings.get("openmm_properties", {}),
         )
 
         positions = np.array([atom.position for atom in self.universe.atoms]) * unit.angstrom
         self.openmm_simulation.context.setPositions(positions)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
+        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
@@ -313,7 +315,9 @@ class OpenMMEngine(MDEngine):
         if equilibration:
             try:
                 self.openmm_simulation.minimizeEnergy()
-                self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
+                self.openmm_simulation.context.setVelocitiesToTemperature(
+                    self.temperature * unit.kelvin,
+                )
                 self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
                 self.openmm_simulation.step(n_steps // 3)
                 self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)

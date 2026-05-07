@@ -13,8 +13,8 @@ os.environ["OMP_NUM_THREADS"] = "4"
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
 universe = Universe(dimensions=24.83602653)
-universe.fill(FourSiteWater(model_name="OPC"), num_density=0.03356718472021752)
-add_four_site_water_ff(universe, cutoff=10.0, ewald=1e-6, model_name="OPC")
+universe.fill(FourSiteWater(model_name="TIP4P-Ewald"), num_density=0.03356718472021752)
+add_four_site_water_ff(universe, cutoff=12.0, ewald=1e-4, model_name="TIP4P-Ewald")
 
 # MD Engine setup
 # NOTE: the temperatures of the measured data sets are:
@@ -27,6 +27,8 @@ simulation = Simulation(
     temperature=280,
     traj_step=10,
     openmm_platform="OpenCL",
+    # default precision on CUDA and OpenCL is single
+    openmm_properties={"Precision": "mixed"},
 )
 
 simulation.run(n_steps=30000, equilibration=True)
@@ -47,9 +49,9 @@ QENS = [{
 
 # only refit the LJ parameters on oxygen
 for p in universe.parameters.as_array:
-    if p.parameter_name == 'OPC-O-nonbonded_epsilon':
-        p.constraints = [0.7, 1.1]
-    elif p.parameter_name == 'OPC-O-nonbonded_sigma':
+    if p.parameter_name == 'TIP4P-Ewald-O-nonbonded_epsilon':
+        p.constraints = [0.5, 0.8]
+    elif p.parameter_name == 'TIP4P-Ewald-O-nonbonded_sigma':
         p.constraints = [2.95, 3.35]
     else:
         p.fixed = True
