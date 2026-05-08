@@ -92,12 +92,13 @@ class FourSiteWater(Molecule):
         H2 = Atom(elements[0], position=(-x, y, 0.0), atom_type=f"{model_name}-H")
         O1 = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type=f"{model_name}-O")
 
-        om = PARAMETERS[model_name]["OM"] / 2
-        weight = [1, om / y, om / y]
-        sum_w = sum(weight)
+        om = PARAMETERS[model_name]["OM"]
+        w_H = om / (2 * y)
+        w_O = 1 - 2 * w_H
+        print([w_O, w_H, w_H])
         M = AverageSite3P(
             particles=(O1, H1, H2),
-            weights=[i / sum_w for i in weight],
+            weights=[w_O, w_H, w_H],
             atom_type=f"{model_name}-M",
         )
         settings = {
