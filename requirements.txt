@@ -16,3 +16,4 @@ statsmodels==0.14.5
 cma==4.4.4
 h5py==3.16.0
 openmm==8.4.0
+networkx==3.6.1
