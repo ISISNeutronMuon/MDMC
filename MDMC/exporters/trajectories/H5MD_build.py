@@ -22,6 +22,7 @@ H5MD_DATA = {
 }
 
 ROOT_TRAJECTORY = "particles/all"
+CHUNKED_DATASETS = {"position", "velocity", "force"}
 
 
 def create_empty_groups(open_file: h5py.File, groups: list[str]):
@@ -78,6 +79,7 @@ def create_simulation_data(
     step_increment: int = None,
     time_offset: int = None,
     step_offset: int = None,
+    chunk_limit: int = 128,
 ):
     """
     Store data about the simulation.
@@ -103,10 +105,17 @@ def create_simulation_data(
     """
     group = open_file[ROOT_TRAJECTORY]
     if time_increment is None:
-        subdata = group.create_dataset(group_name, data=value)
+        subdata = group.create_dataset(group_name, data=value, chunks=True)
     else:
         subgroup = group.create_group(group_name)
-        subdata = subgroup.create_dataset("value", data=value)
+        if group_name not in CHUNKED_DATASETS:
+            subdata = subgroup.create_dataset("value", data=value, chunks=True)
+        else:
+            subdata = subgroup.create_dataset(
+                "value",
+                data=value,
+                chunks=(1, chunk_limit, 3),
+            )
         time_link = group.visit(lambda name: name if "time" in name else None)
         step_link = group.visit(lambda name: name if "step" in name else None)
         if time_link is not None:
@@ -161,6 +170,7 @@ def write_H5MD(
     *,
     timestamp: str,
     file_loc: Path = Path("."),
+    chunk_size: int = 128,
     **settings,
 ):
     """
@@ -196,7 +206,7 @@ def write_H5MD(
         step_increment = None
         step_offset = None
 
-    file_path_name = Path(file_loc, f"{filename}{timestamp}_traj").with_suffix('.h5')
+    file_path_name = Path(file_loc, f"{filename}{timestamp}_traj").with_suffix(".h5")
 
     if not settings.get("creator_name") or not settings.get("creator_email"):
         raise ValueError("No creator_name or creator_email provided.")
@@ -214,7 +224,9 @@ def write_H5MD(
         create_empty_groups(file, no_data_groups)
 
         create_metadata_group(
-            file, creator_name=settings["creator_name"], creator_email=settings["creator_email"],
+            file,
+            creator_name=settings["creator_name"],
+            creator_email=settings["creator_email"],
         )
 
         charge = trajectory.atom_charges
@@ -266,7 +278,7 @@ def write_H5MD(
             ]
 
         for grp_name, data in simulation_data.items():
-            create_simulation_data(file, grp_name, *data)
+            create_simulation_data(file, grp_name, *data, chunk_limit=chunk_size)
 
         create_box_data(file, trajectory)
         atom_symbols_data = np.array(symbol_list, dtype=object)
