@@ -111,21 +111,11 @@ def create_simulation_data(
         if group_name not in CHUNKED_DATASETS:
             subdata = subgroup.create_dataset("value", data=value, chunks=True)
         else:
-            data_shape = value.shape
-            n_atoms = data_shape[1]
-            if n_atoms < chunk_limit:
-                padded_n_atoms = n_atoms
-            else:
-                padded_n_atoms = np.ceil(n_atoms / chunk_limit) * chunk_limit
-            padded_shape = (data_shape[0], padded_n_atoms, data_shape[2])
             subdata = subgroup.create_dataset(
                 "value",
-                shape=padded_shape,
-                dtype="f4",
+                data=value,
                 chunks=(1, chunk_limit, 3),
             )
-            subdata[:, :n_atoms, :] = value
-            subdata[:, n_atoms:, :] = np.nan
         time_link = group.visit(lambda name: name if "time" in name else None)
         step_link = group.visit(lambda name: name if "step" in name else None)
         if time_link is not None:
