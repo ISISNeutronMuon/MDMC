@@ -56,6 +56,13 @@ class ThreeSiteWater(Molecule):
         model_name: str = "TIP3P",
         **settings: Any,
     ):
+        if model_name not in PARAMETERS:
+            raise KeyError(
+                f"{model_name!r} is not available, only the following "
+                f"three site water models are implemented: "
+                f"{', '.join(PARAMETERS.keys())}.",
+            )
+
         oh = PARAMETERS[model_name]["OH"]
         hoh = PARAMETERS[model_name]["HOH"]
         x = oh * np.cos(np.deg2rad(90 - hoh / 2))
@@ -90,6 +97,13 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
     model_name : str
         The name of the model of that parameters that will be taken from.
     """
+    if model_name not in PARAMETERS:
+        raise KeyError(
+            f"{model_name!r} is not available, only the following "
+            f"three site water models are implemented: "
+            f"{', '.join(PARAMETERS.keys())}.",
+        )
+
     # Charge Parameters
     q_O = PARAMETERS[model_name]["q_O"]
     q_H = PARAMETERS[model_name]["q_H"]

@@ -84,6 +84,13 @@ class FourSiteWater(Molecule):
         model_name: str = "TIP4P",
         **settings: Any,
     ):
+        if model_name not in PARAMETERS:
+            raise KeyError(
+                f"{model_name!r} is not available, only the following "
+                f"four site water models are implemented: "
+                f"{', '.join(PARAMETERS.keys())}.",
+            )
+
         oh = PARAMETERS[model_name]["OH"]
         hoh = PARAMETERS[model_name]["HOH"]
         x = oh * np.cos(np.deg2rad(90 - hoh / 2))
@@ -95,7 +102,6 @@ class FourSiteWater(Molecule):
         om = PARAMETERS[model_name]["OM"]
         w_H = om / (2 * y)
         w_O = 1 - 2 * w_H
-        print([w_O, w_H, w_H])
         M = AverageSite3P(
             particles=(O1, H1, H2),
             weights=[w_O, w_H, w_H],
@@ -129,6 +135,13 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
     model_name : str
         The name of the model of that parameters that will be taken from.
     """
+    if model_name not in PARAMETERS:
+        raise KeyError(
+            f"{model_name!r} is not available, only the following "
+            f"four site water models are implemented: "
+            f"{', '.join(PARAMETERS.keys())}.",
+        )
+
     # Charge Parameters
     q_M = PARAMETERS[model_name]["q_M"]
     q_H = PARAMETERS[model_name]["q_H"]
