@@ -231,6 +231,7 @@ class OpenMMEngine(MDEngine):
         self.openmm_system.addForce(nonbonded)
         self.openmm_system.addForce(bond_force)
         self.openmm_system.addForce(angle_force)
+        self.openmm_system.addForce(mm.CMMotionRemover())
 
     def clear_forces(self):
         """Clear the OpenMM force fields from the OpenMM system."""
@@ -406,7 +407,7 @@ class OpenMMEngine(MDEngine):
     def reset_config(self) -> None:
         """Resets the atomic positions of the simulation to that in ``saved_config``."""
         self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
+        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
     def eval(self, variable: str) -> Any:
         raise NotImplementedError
