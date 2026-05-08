@@ -1470,8 +1470,8 @@ class Simulation:
 
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
-                 verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: Any) -> None:
+                 verbose: bool = False, output_log: str | None = None,
+                 work_dir: str | None = None, **settings: Any) -> None:
         """
         Performs an MD run intertwined with periodic structure relaxation.
         This way after a local minimum is found, the system is taken

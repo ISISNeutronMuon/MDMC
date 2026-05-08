@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import cma
 import numpy as np
@@ -14,8 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from MDMC.control import Control
-    from MDMC.MD import Parameters
+    from MDMC.MD.parameters import Parameter, Parameters
 
 
 class CMAES(Minimizer):
@@ -28,8 +27,6 @@ class CMAES(Minimizer):
 
     Parameters
     ----------
-    control: Control
-        The ``Control`` object which uses this Minimizer.
     sigma0: float, optional
         Initial standard deviation of the generated parameters.
     CMA_popsize: int, optional
@@ -53,18 +50,22 @@ class CMAES(Minimizer):
 
     def __init__(
         self,
-        control: Control,
-        parameters: Parameters,
+        parameters: Parameters | list[Parameter],
         previous_history: Path | str | None = None,
-        **settings: Any,
+        *,
+        sigma0: float = 0.2,
+        conv_tol: float = 1e-4,
+        min_steps: int = 2,
+        CMA_elitist: bool =False,
+        CMA_popsize: int | None = None,
+        CMA_tolx: float = 1e-3,
     ):
-        super().__init__(control, parameters, previous_history)
+        super().__init__(parameters, previous_history)
 
         self.current_iteration = 1
-        self.parameters = parameters
-        self.sigma0 = settings.get("sigma0", 0.2)
-        self.conv_tol = settings.get("conv_tol", 1e-4)
-        self.min_steps = settings.get("min_steps", 2)
+        self.sigma0 = sigma0
+        self.conv_tol = conv_tol
+        self.min_steps = min_steps
 
         self.previous_history = previous_history
         self.state_changed = False
@@ -83,10 +84,10 @@ class CMAES(Minimizer):
             self.sigma0,
             {
                 "bounds": opt_bounds,
-                "CMA_elitist": settings.get("CMA_elitist", False),
-                "popsize": settings.get("CMA_popsize"),
+                "CMA_elitist": CMA_elitist,
+                "popsize": CMA_popsize,
                 "tolfun": self.conv_tol * 100,
-                "tolx": settings.get("CMA_tolx", 1e-3),
+                "tolx": CMA_tolx,
                 "tolfunhist": self.conv_tol * 10,
             },
         )

@@ -8,7 +8,7 @@ from MDMC.MD.interaction_functions import LennardJones
 from MDMC.MD.interactions import Dispersion
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.MD.structures import Atom
-
+from MDMC.refinement.minimizers.CMAES import CMAES
 from tests.test_data import data
 
 pytestmark = [pytest.mark.dlpoly]
@@ -59,14 +59,20 @@ def exp_datasets():
              'auto_scale': True,
              'resolution': None}]
 
+@pytest.fixture
+def minimizer(universe):
+    return CMAES(
+        universe.parameters
+    )
+
 
 @pytest.fixture
-def control(simulation, universe, exp_datasets):
+def control(simulation, minimizer, exp_datasets):
     """ Control for argon """
 
     return Control(simulation=simulation,
                    exp_datasets=exp_datasets,
-                   fit_parameters=universe.parameters,
+                   minimizer=minimizer,
                    equilibration_steps=1000,
                    MD_steps=1140)
 

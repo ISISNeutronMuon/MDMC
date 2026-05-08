@@ -1,6 +1,7 @@
 """
 Tests the GPO minimizer class
 """
+
 from unittest.mock import patch
 
 import numpy as np
@@ -12,29 +13,15 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.MD.parameters import Parameters, Parameter
 
 
-class MockControl:
-
-    def __init__(self, n_steps: int):
-        self.n_steps = n_steps
-
-
-@pytest.fixture(scope="module")
-def mockcontrol():
-
-    def _mockcontrol(n_steps: int = 4) -> MockControl:
-        return MockControl(n_steps=n_steps)
-
-    return _mockcontrol
-
-
 @pytest.fixture
 def parameters():
     """
     A fixture returning two arbitrary `Parameter` objects
     wrapped in a `Parameters` collection.
     """
-    return Parameters([Parameter(name='parameter1', value=1.),
-                Parameter(name='parameter2', value=2.)])
+    return Parameters(
+        [Parameter(name="parameter1", value=1.0), Parameter(name="parameter2", value=2.0)],
+    )
 
 
 @pytest.fixture
@@ -43,12 +30,16 @@ def constrained_parameters():
     A fixture returning two arbitrary `Parameter` objects with constraints on their values,
     wrapped in a `Parameters` collection.
     """
-    return Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
-                Parameter(name='parameter2', value=2., constraints=(1.0, 4.0))])
+    return Parameters(
+        [
+            Parameter(name="parameter1", value=1.0, constraints=(0.5, 2.0)),
+            Parameter(name="parameter2", value=2.0, constraints=(1.0, 4.0)),
+        ],
+    )
 
 
 @pytest.fixture
-def GPO_with_history(mockcontrol, parameters):
+def GPO_with_history(parameters):
     """
     Creates an instance of GPO with a 10-step history
 
@@ -58,7 +49,7 @@ def GPO_with_history(mockcontrol, parameters):
         A GPO object with a history of 10 steps
     """
 
-    minimizer = GPO(mockcontrol(10), parameters)
+    minimizer = GPO(parameters, n_steps=10)
     for i in range(1, 11):
         minimizer.step(FoM=i)
     return minimizer
@@ -66,7 +57,7 @@ def GPO_with_history(mockcontrol, parameters):
 
 @pytest.fixture
 def mocked_df():
-   return pd.DataFrame(
+    return pd.DataFrame(
         columns=["Unnamed: 0", "FoM", "parameter1 (#7)", "parameter2 (#8)"],
         data=[
             [0, 1, 1.0, 2.0],
@@ -78,8 +69,9 @@ def mocked_df():
             [6, 7, 0.93540608596101, 1.8776663534533826],
             [7, 8, 0.855686055831339, 2.4710408940692625],
             [8, 9, 0.7105919182646769, 1.9649678706679081],
-            [9, 10, 1.1302665513264398, 1.4146366407329378]
-        ])
+            [9, 10, 1.1302665513264398, 1.4146366407329378],
+        ],
+    )
 
 
 @pytest.fixture
@@ -87,57 +79,56 @@ def correct_output_data():
     return [(1.0, 2.0), 1.0, (1.0, 2.0), 1.0]
 
 
-@pytest.mark.parametrize('mock_history, expected',
-                         [([[3, 4], [2, 3], [2, 3]], False),
-                          ([[3, 4], [2, 3],
-                            [2, 3], [2, 3]], True)])
-def test_GPO_has_converged(mockcontrol, mock_history, expected):
+@pytest.mark.parametrize(
+    "mock_history, expected",
+    [([[3, 4], [2, 3], [2, 3]], False), ([[3, 4], [2, 3], [2, 3], [2, 3]], True)],
+)
+def test_GPO_has_converged(mock_history, expected):
     """Test that the array of points to be simulated is created correctly"""
-    parameter = Parameters(Parameter(name='A', value=1))
-    gpo = MinimizerFactory.create('GPO', mockcontrol(n_steps=4), parameter)
+    parameter = Parameters(Parameter(name="A", value=1))
+    gpo = GPO(parameter, n_steps=4)
     gpo._history = mock_history
     assert gpo.has_converged() == expected
 
 
-def test_GPO_step(mockcontrol):
+def test_GPO_step():
     """Tests GPO is able to find the minima of a single cycle of a cosine function"""
-    parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
-    gpo = MinimizerFactory.create('GPO', mockcontrol(n_steps=100), parameter, n_points=100)
-    gpo._history=[]
+    parameter = Parameters(Parameter(name="a", value=1.5, constraints=[-2.0, 4.0]))
+    gpo = GPO(parameter, n_steps=100)
+    gpo._history = []
     for _ in range(25):
-        x = parameter['a'].value
-        FoM=np.cos(x)+3.0
+        x = parameter["a"].value
+        FoM = np.cos(x) + 3.0
         gpo.step(FoM)
     assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
 
 
-def test_GPO_set_parameter_values(mockcontrol, constrained_parameters):
+def test_GPO_set_parameter_values(constrained_parameters):
     """Tests set_parameter_values can set values correctly"""
 
-    gpo = MinimizerFactory.create('GPO', mockcontrol(), constrained_parameters,
-                                            n_points=3)
-    gpo.set_parameter_values(['parameter1'], [1.9])
-    assert gpo.parameters['parameter1'].value == 1.9
+    gpo = GPO(constrained_parameters)
+    gpo.set_parameter_values(["parameter1"], [1.9])
+    assert gpo.parameters["parameter1"].value == 1.9
 
-    gpo.set_parameter_values(['parameter1', 'parameter2'], [0.6, 1.56])
-    assert gpo.parameters['parameter1'].value == 0.6
-    assert gpo.parameters['parameter2'].value == 1.56
+    gpo.set_parameter_values(["parameter1", "parameter2"], [0.6, 1.56])
+    assert gpo.parameters["parameter1"].value == 0.6
+    assert gpo.parameters["parameter2"].value == 1.56
 
     with pytest.raises(ValueError):
-        gpo.set_parameter_values(['parameter1'], [0.0])
+        gpo.set_parameter_values(["parameter1"], [0.0])
     with pytest.raises(ValueError):
-        gpo.set_parameter_values(['parameter2'], [7.0])
+        gpo.set_parameter_values(["parameter2"], [7.0])
 
 
-@pytest.mark.parametrize("has_converged_value",
-                         [True, False])
+@pytest.mark.parametrize("has_converged_value", [True, False])
 def test_converge_message_in_output(GPO_with_history, has_converged_value):
     """Tests that the convergence message is present in the final output"""
 
-    with patch("MDMC.refinement.minimizers.GPO.GPO.has_converged",
-               autospec=True,
-               return_value=has_converged_value):
-
+    with patch(
+        "MDMC.refinement.minimizers.GPO.GPO.has_converged",
+        autospec=True,
+        return_value=has_converged_value,
+    ):
         converged = GPO_with_history.has_converged()
         output_message = GPO_with_history.present_result()
         if converged:

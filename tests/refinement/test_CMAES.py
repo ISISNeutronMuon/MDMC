@@ -49,7 +49,7 @@ def parameters():
 
 
 @pytest.fixture
-def CMAES_with_history(mockcontrol, parameters):
+def CMAES_with_history(parameters):
     """
     Creates an instance of CMAES with a random, 10-step history
 
@@ -57,7 +57,7 @@ def CMAES_with_history(mockcontrol, parameters):
     -------
         A CMAES object with a random history of 10 steps
     """
-    minimizer = CMAES(mockcontrol, parameters)
+    minimizer = CMAES(parameters)
     randomizer = random.Random()
     for _ in range(60):
         minimizer.step(FoM=randomizer.uniform(0.1, 1000))

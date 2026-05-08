@@ -1,9 +1,10 @@
 """The Gaussian-Process-Optimizer minimizer class"""
+
 from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 from skopt import Optimizer
@@ -12,7 +13,6 @@ from MDMC.refinement.minimizers.GPR import GPR
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
-    from MDMC.control import Control
     from MDMC.MD.parameters import Parameters
 
 
@@ -41,20 +41,20 @@ class GPO(Minimizer):
 
     Parameters
     ----------
-    control: Control
-        The ``Control`` object which uses this Minimizer.
-    parameters: Parameters
+    parameters : Parameters
         The parameters in the simulation Universe to be optimized.
     previous_history : Path
         The Path to a results file containing previous refinement data.
+    n_steps : int
+        The number of refinement steps to use.
 
     Settings
     ----------
     n_initial: int, optional
         The number of points used for the initial latin hypercube coverage of the parameter
         space. Optional. If no value is given it defaults to 20. Note that if the
-        associated ``Control`` objects has a maximum number of refinement steps (defined in
-        ``Control.n_steps``) which is smaller than ``n_initial`` then that value will be
+        associated maximum number of refinement steps (defined in
+        ``n_steps``) is smaller than ``n_initial`` then that value will be
         used instead.
 
     Attributes
@@ -63,40 +63,52 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: Control, parameters: Parameters,
-                 previous_history: Path | str | None = None, **settings: Any):
-        super().__init__(control, parameters, previous_history)
+    def __init__(
+        self,
+        parameters: Parameters,
+        previous_history: Path | str | None = None,
+        *,
+        n_steps: int = 50,
+        n_initial: int = 20,
+    ):
+        super().__init__(parameters, previous_history)
 
         self.parameters = parameters
-        self.n_initial = settings.get('n_initial', 20)
+        self.n_initial = n_initial
         self.previous_history = previous_history
         self.state_changed = False
-        if self.control.n_steps:
-            self.n_initial = min(self.control.n_steps, self.n_initial)
+        self.n_steps = n_steps
+        if self.n_steps:
+            self.n_initial = min(self.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
         self.predicted_min_pos = []
         # Ensure all parameters have bounds
-        self.parameter_bounds = [tuple(GPR.create_bounds(parameter))
-                                 for parameter in parameters.values()]
+        self.parameter_bounds = [
+            tuple(GPR.create_bounds(parameter)) for parameter in parameters.values()
+        ]
 
         self.parameter_names = [str(name) for name in parameters]
 
-        np.random.seed(7) # This should mean results are reproducible in tests
+        np.random.seed(7)  # This should mean results are reproducible in tests
 
         # Initialise the optimizer, use Gaussian process estimator, an acquisition function which
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-        initial_points = self.n_initial
         if not self._history or len(self._history) < self.n_initial:
             initial_points = self.n_initial
         else:
             initial_points = len(self._history)
 
         self.optimizer = Optimizer(
-            self.parameter_bounds, "GP", acq_func="gp_hedge",
-            acq_optimizer="lbfgs", initial_point_generator= "lhs",
-            n_initial_points=initial_points, model_queue_size=1)
+            self.parameter_bounds,
+            "GP",
+            acq_func="gp_hedge",
+            acq_optimizer="lbfgs",
+            initial_point_generator="lhs",
+            n_initial_points=initial_points,
+            model_queue_size=1,
+        )
 
     @property
     def history_columns(self) -> list[str]:
@@ -109,20 +121,19 @@ class GPO(Minimizer):
             A ``list`` of ``str`` containing all the column labels in the history
         """
 
-        return ['FoM'] + list(self.parameters)
+        return ["FoM"] + list(self.parameters)
 
     def has_converged(self) -> bool:
         """
         Checks if the refinement process has finished, i.e. if the number of points is
-        equal to or greater than the number of maximum refinement points of the associated
-        ``Control`` object.
+        equal to or greater than the number of maximum refinement steps.
 
         Returns
         -------
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.control.n_steps + self.previous_steps
+        return len(self.history) >= self.n_steps + self.previous_steps
 
     def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
@@ -169,8 +180,8 @@ class GPO(Minimizer):
 
         self.optimizer.tell(values, float(self.FoM))
 
-        self.predicted_FoM = self.optimizer.get_result()['fun']
-        self.predicted_min_pos = self.optimizer.get_result()['x']
+        self.predicted_FoM = self.optimizer.get_result()["fun"]
+        self.predicted_min_pos = self.optimizer.get_result()["x"]
         history = [self.FoM]
         self.state_changed = True
 
