@@ -42,11 +42,10 @@ def gaussian(x: np.ndarray, sigma: float, mu: float = 0.0, norm: bool = True) ->
         A discretised Gaussian distribution of the same length as ``x``.
     """
 
-    y = np.exp(-0.5 * ((x - mu) / sigma)**2)
+    y = np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
     if norm:
-
-        y /= (sigma * np.sqrt(2.0 * np.pi))
+        y /= sigma * np.sqrt(2.0 * np.pi)
 
     return y
 

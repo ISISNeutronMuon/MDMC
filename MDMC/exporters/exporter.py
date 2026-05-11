@@ -17,13 +17,14 @@
 """
 Module for exporter abstract class.
 """
+
 from abc import ABC, abstractmethod
 from typing import Any
 
 from MDMC.common.decorators import repr_decorator
 
 
-@repr_decorator('file')
+@repr_decorator("file")
 class Exporter(ABC):
     """
     Abstract context manager class that defines methods common to all exporters.
@@ -46,7 +47,7 @@ class Exporter(ABC):
         """
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
-        self.file = open(self.file_name, 'w', encoding='UTF-8')
+        self.file = open(self.file_name, "w", encoding="UTF-8")
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """

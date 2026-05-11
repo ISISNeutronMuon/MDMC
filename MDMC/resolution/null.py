@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A class for the null object for Resolution classes."""
+
 from typing import Any
 
 from MDMC.resolution.resolution import Resolution

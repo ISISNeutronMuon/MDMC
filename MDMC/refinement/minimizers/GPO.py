@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """The Gaussian-Process-Optimizer minimizer class"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -79,12 +80,17 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: Control, parameters: Parameters,
-                 previous_history: Path | str | None = None, **settings: Any):
+    def __init__(
+        self,
+        control: Control,
+        parameters: Parameters,
+        previous_history: Path | str | None = None,
+        **settings: Any,
+    ):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
-        self.n_initial = settings.get('n_initial', 20)
+        self.n_initial = settings.get("n_initial", 20)
         self.previous_history = previous_history
         self.state_changed = False
         if self.control.n_steps:
@@ -92,12 +98,13 @@ class GPO(Minimizer):
         self.predicted_FoM = 1e9
         self.predicted_min_pos = []
         # Ensure all parameters have bounds
-        self.parameter_bounds = [tuple(GPR.create_bounds(parameter))
-                                 for parameter in parameters.values()]
+        self.parameter_bounds = [
+            tuple(GPR.create_bounds(parameter)) for parameter in parameters.values()
+        ]
 
         self.parameter_names = [str(name) for name in parameters]
 
-        np.random.seed(7) # This should mean results are reproducible in tests
+        np.random.seed(7)  # This should mean results are reproducible in tests
 
         # Initialise the optimizer, use Gaussian process estimator, an acquisition function which
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
@@ -110,9 +117,14 @@ class GPO(Minimizer):
             initial_points = len(self._history)
 
         self.optimizer = Optimizer(
-            self.parameter_bounds, "GP", acq_func="gp_hedge",
-            acq_optimizer="lbfgs", initial_point_generator= "lhs",
-            n_initial_points=initial_points, model_queue_size=1)
+            self.parameter_bounds,
+            "GP",
+            acq_func="gp_hedge",
+            acq_optimizer="lbfgs",
+            initial_point_generator="lhs",
+            n_initial_points=initial_points,
+            model_queue_size=1,
+        )
 
     @property
     def history_columns(self) -> list[str]:
@@ -125,7 +137,7 @@ class GPO(Minimizer):
             A ``list`` of ``str`` containing all the column labels in the history
         """
 
-        return ['FoM'] + list(self.parameters)
+        return ["FoM"] + list(self.parameters)
 
     def has_converged(self) -> bool:
         """
@@ -185,8 +197,8 @@ class GPO(Minimizer):
 
         self.optimizer.tell(values, float(self.FoM))
 
-        self.predicted_FoM = self.optimizer.get_result()['fun']
-        self.predicted_min_pos = self.optimizer.get_result()['x']
+        self.predicted_FoM = self.optimizer.get_result()["fun"]
+        self.predicted_min_pos = self.optimizer.get_result()["x"]
         history = [self.FoM]
         self.state_changed = True
 

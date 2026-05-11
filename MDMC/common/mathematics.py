@@ -33,9 +33,8 @@ from numpy.fft import fft, ifft
 
 #: Array of standard unit vectors.
 #: Used as a standard basis of 3D space.
-UNIT_VECTOR = np.array([[1., 0., 0.],
-                        [0., 1., 0.],
-                        [0., 0., 1.]])
+UNIT_VECTOR = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+
 
 @overload
 def correlation(input1: np.ndarray, *, normalise: bool = False) -> np.ndarray: ...
@@ -45,9 +44,11 @@ def correlation(input1: np.ndarray, *, normalise: bool = False) -> np.ndarray: .
 def correlation(input1: np.ndarray, input2: np.ndarray, normalise: bool = False) -> np.ndarray: ...
 
 
-def correlation(input1: np.ndarray,
-                input2: np.ndarray = None,
-                normalise: bool = False) -> np.ndarray:
+def correlation(
+    input1: np.ndarray,
+    input2: np.ndarray = None,
+    normalise: bool = False,
+) -> np.ndarray:
     """
     Compute the correlation of two vectors.
 
@@ -78,9 +79,7 @@ def correlation(input1: np.ndarray,
 
     fft1 = fft(input1, n=(num_steps * 2), axis=0)
 
-    fft2 = (fft1
-            if input2 is None else
-            fft(input2, n=(num_steps * 2), axis=0))
+    fft2 = fft1 if input2 is None else fft(input2, n=(num_steps * 2), axis=0)
 
     # Calculate the cyclic correlation function
     cyclic_corr = ifft(np.conjugate(fft1) * fft2, axis=0)
@@ -89,11 +88,11 @@ def correlation(input1: np.ndarray,
     # 1 / (N - m)
     # where m is the number of each individual step
     if normalise:
-        prefactor = 1. / (num_steps - np.arange(num_steps))
+        prefactor = 1.0 / (num_steps - np.arange(num_steps))
         if len(np.shape(cyclic_corr)) > 1:
             cyclic_corr = np.sum(cyclic_corr, axis=1)
     else:
-        prefactor = 1.
+        prefactor = 1.0
 
     corr = prefactor * np.real(cyclic_corr[0:num_steps])
 
@@ -133,7 +132,7 @@ def faster_correlation(input1: np.ndarray, input2: np.ndarray) -> np.ndarray:
     # Normalise for variable number of contributions to each correlation:
     # 1 / (N - m)
     # where m is the number of each individual step
-    prefactor = 1. / (num_steps - np.arange(num_steps))
+    prefactor = 1.0 / (num_steps - np.arange(num_steps))
     # I have to guarantee that the array is a 2D array on input
     cyclic_corr = np.sum(cyclic_corr, axis=1)
 
@@ -142,8 +141,10 @@ def faster_correlation(input1: np.ndarray, input2: np.ndarray) -> np.ndarray:
     return corr
 
 
-def faster_autocorrelation(input1: np.ndarray,
-                           weights: np.ndarray | float | None = None) -> np.ndarray:
+def faster_autocorrelation(
+    input1: np.ndarray,
+    weights: np.ndarray | float | None = None,
+) -> np.ndarray:
     """
     The autocorrelation of a vector.
 
@@ -174,7 +175,7 @@ def faster_autocorrelation(input1: np.ndarray,
     # Normalise for variable number of contributions to each correlation:
     # 1 / (num_steps - m)
     # where m is the number of each individual step
-    prefactor = 1. / (num_steps - np.arange(num_steps))
+    prefactor = 1.0 / (num_steps - np.arange(num_steps))
     # I have to guarantee that the array is a 2D array on input
     if weights is not None:
         try:

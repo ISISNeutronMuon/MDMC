@@ -17,6 +17,7 @@
 """
 Module for ``Configuration`` and related classes.
 """
+
 from __future__ import annotations
 
 import weakref
@@ -41,7 +42,7 @@ class AtomCollection:
     Base class for ``Configurations``.
     """
 
-    __slots__ = ('_universe', )
+    __slots__ = ("_universe",)
 
     @property
     def universe(self) -> Universe | None:
@@ -88,9 +89,8 @@ class AtomCollection:
         return self.universe.dimensions
 
 
-@repr_decorator('data')
+@repr_decorator("data")
 class Configuration(AtomCollection):
-
     """
     A ``Configuration`` stores ``Atom`` objects and their positions and velocities.
 
@@ -114,12 +114,12 @@ class Configuration(AtomCollection):
         The ``Universe`` of the ``Configuration``.
     """
 
-    __slots__ = ('_data', 'element_set', '_structure_list')
+    __slots__ = ("_data", "element_set", "_structure_list")
 
     def __init__(self, *structures: Structure, **settings: Any):
 
         if "universe" in settings:
-            self.universe = settings['universe']
+            self.universe = settings["universe"]
         elif structures:
             self.universe = structures[0].universe
         else:
@@ -132,7 +132,7 @@ class Configuration(AtomCollection):
             return True
         if isinstance(other, self.__class__):
             for k in self.__slots__:
-                if k == '_universe':
+                if k == "_universe":
                     # As Configurations can have Universes as an attribute, and
                     # vice versa, skip comparison to prevent infinite recursion
                     continue
@@ -157,7 +157,7 @@ class Configuration(AtomCollection):
         list[Atom]
             A `list` of all ``Atom`` s in ``Configuration``.
         """
-        return self.data['atom']
+        return self.data["atom"]
 
     @property
     def atom_positions(self) -> list[np.ndarray]:
@@ -169,7 +169,7 @@ class Configuration(AtomCollection):
         list[numpy.ndarray]
             A `list` of ``Atom.position`` s in ``Configuration``.
         """
-        return self.data['position']
+        return self.data["position"]
 
     @property
     def atom_velocities(self) -> list[np.ndarray]:
@@ -182,7 +182,7 @@ class Configuration(AtomCollection):
             A `list` of ``Atom.velocity` s in ``Configuration``.
         """
 
-        return self.data['velocity']
+        return self.data["velocity"]
 
     @property
     def element_list(self) -> list[str]:
@@ -208,7 +208,7 @@ class Configuration(AtomCollection):
             A `list` of ``Molecule``.
         """
 
-        return self.filter_structures(lambda x: x.structure_type == 'Molecule')
+        return self.filter_structures(lambda x: x.structure_type == "Molecule")
 
     @property
     def structure_list(self) -> list[Structure]:
@@ -237,11 +237,10 @@ class Configuration(AtomCollection):
             A structured NumPy ``array`` with ``'atom'``, ``'position'``, and
             ``'velocity'`` fields.
         """
-        return np.array([(atom, atom.position, atom.velocity)
-                         for atom in self._data],
-                        dtype=[('atom', 'object'),
-                               ('position', 'object'),
-                               ('velocity', 'object')])
+        return np.array(
+            [(atom, atom.position, atom.velocity) for atom in self._data],
+            dtype=[("atom", "object"), ("position", "object"), ("velocity", "object")],
+        )
 
     @data.setter
     def data(self, structures: np.ndarray) -> None:
@@ -287,7 +286,7 @@ class Configuration(AtomCollection):
         try:
             assert structure.universe is self.universe
         except AssertionError as error:
-            raise AssertionError('Atoms are not all from same universe') from error
+            raise AssertionError("Atoms are not all from same universe") from error
 
     def __add__(self, configuration: Configuration) -> Configuration:
         """
@@ -332,7 +331,7 @@ class Configuration(AtomCollection):
 
         return len(self.atoms)
 
-    def __getitem__(self, item: Literal['atom', 'position', 'velocity']) -> np.ndarray:
+    def __getitem__(self, item: Literal["atom", "position", "velocity"]) -> np.ndarray:
         """
         Parameters
         ----------
@@ -401,9 +400,11 @@ class Configuration(AtomCollection):
 
         return self.filter_atoms(lambda x: x.element.symbol == element)
 
-    def scale(self,
-              factor: float,
-              vectors: Literal['positions', 'velocities'] = 'positions') -> None:
+    def scale(
+        self,
+        factor: float,
+        vectors: Literal["positions", "velocities"] = "positions",
+    ) -> None:
         """
         Scale either ``atom_positions`` or ``atom_velocities`` by a factor.
 
@@ -423,9 +424,8 @@ class Configuration(AtomCollection):
         raise NotImplementedError
 
 
-@repr_decorator('time', 'data')
+@repr_decorator("time", "data")
 class TemporalConfiguration(Configuration):
-
     """
     A configuration which has a time associated with it.
 
@@ -439,7 +439,7 @@ class TemporalConfiguration(Configuration):
         Extra options to pass to superclass.
     """
 
-    __slots__ = ('time', )
+    __slots__ = ("time",)
 
     def __init__(self, time: float, *structures: Structure, **settings: Any) -> None:
 

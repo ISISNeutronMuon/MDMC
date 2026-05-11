@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A module for refinement minimizers."""
+
 from . import CMAES, GPO, GPR, minimizer_abs, minimizer_factory
 
 __all__ = [

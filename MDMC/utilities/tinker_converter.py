@@ -56,8 +56,13 @@ def read_prm(fname: str, ncols: int = 14) -> pd.DataFrame:
         from the ``.prm`` file.
     """
 
-    return pd.read_csv(fname, delim_whitespace=True, error_bad_lines=False,
-                       header=None, names=dummy_headers(0, ncols))
+    return pd.read_csv(
+        fname,
+        delim_whitespace=True,
+        error_bad_lines=False,
+        header=None,
+        names=dummy_headers(0, ncols),
+    )
 
 
 def parse_prm(dataframe: pd.DataFrame) -> tuple[pd.DataFrame, ...]:
@@ -77,78 +82,118 @@ def parse_prm(dataframe: pd.DataFrame) -> tuple[pd.DataFrame, ...]:
     """
 
     ncols = len(dataframe.columns)
-    dtypes = np.array([['atom',
-                        ['c3'] + dummy_headers(8, ncols),
-                        ['atom_type', 'atom_group', 'name', 'atomic_num',
-                         'mass', 'nbonds']],
-                       ['vdw',
-                        dummy_headers(4, ncols),
-                        ['atom_type', 'sigma', 'epsilon']],
-                       ['bond',
-                        dummy_headers(5, ncols),
-                        ['atom_group1', 'atom_group2', 'potential_strength',
-                         'equilibrium_state']],
-                       ['angle',
-                        dummy_headers(6, ncols),
-                        ['atom_group1', 'atom_group2', 'atom_group3',
-                         'potential_strength', 'equilibrium_state']],
-                       ['imptors',
-                        dummy_headers(8, ncols),
-                        ['atom_group2', 'atom_group3', 'atom_group1',
-                         'atom_group4', 'K1', 'd1', 'n1']],
-                       ['torsion',
-                        [],
-                        ['atom_group1', 'atom_group2', 'atom_group3',
-                         'atom_group4', 'K1', 'd1', 'n1', 'K2', 'd2', 'n2',
-                         'K3', 'd3', 'n3']],
-                       ['charge',
-                        dummy_headers(3, ncols),
-                        ['atom_type', 'charge']]])
+    dtypes = np.array(
+        [
+            [
+                "atom",
+                ["c3"] + dummy_headers(8, ncols),
+                ["atom_type", "atom_group", "name", "atomic_num", "mass", "nbonds"],
+            ],
+            ["vdw", dummy_headers(4, ncols), ["atom_type", "sigma", "epsilon"]],
+            [
+                "bond",
+                dummy_headers(5, ncols),
+                ["atom_group1", "atom_group2", "potential_strength", "equilibrium_state"],
+            ],
+            [
+                "angle",
+                dummy_headers(6, ncols),
+                [
+                    "atom_group1",
+                    "atom_group2",
+                    "atom_group3",
+                    "potential_strength",
+                    "equilibrium_state",
+                ],
+            ],
+            [
+                "imptors",
+                dummy_headers(8, ncols),
+                ["atom_group2", "atom_group3", "atom_group1", "atom_group4", "K1", "d1", "n1"],
+            ],
+            [
+                "torsion",
+                [],
+                [
+                    "atom_group1",
+                    "atom_group2",
+                    "atom_group3",
+                    "atom_group4",
+                    "K1",
+                    "d1",
+                    "n1",
+                    "K2",
+                    "d2",
+                    "n2",
+                    "K3",
+                    "d3",
+                    "n3",
+                ],
+            ],
+            ["charge", dummy_headers(3, ncols), ["atom_type", "charge"]],
+        ],
+    )
 
-    atoms, disps, bonds, angles, impropers, propers, charges = \
-        tuple(parse_dataframe(filter_dataframe([dtype[0]], dataframe, ['c0']),
-                              *dtype[1:])
-              for dtype in dtypes)
+    atoms, disps, bonds, angles, impropers, propers, charges = tuple(
+        parse_dataframe(filter_dataframe([dtype[0]], dataframe, ["c0"]), *dtype[1:])
+        for dtype in dtypes
+    )
 
     # Combine charges with atoms
-    atoms.insert(3, 'charge', charges.charge.to_numpy())
+    atoms.insert(3, "charge", charges.charge.to_numpy())
 
     # Change atomic number to element
-    atoms['atomic_num'] = \
-        atoms['atomic_num'].apply(lambda x: periodictable.elements[int(x)])
-    atoms.rename(columns={'atomic_num': 'element'}, inplace=True)
+    atoms["atomic_num"] = atoms["atomic_num"].apply(lambda x: periodictable.elements[int(x)])
+    atoms.rename(columns={"atomic_num": "element"}, inplace=True)
 
     # Rearrange order of proper and improper dihedrals
     # For proper dihedrals, just the parameters need to be rearranged, as the
     # convention for the atom order is the same as MDMC (end1 central1 central2
     # end2).
-    propers = propers[['atom_group1', 'atom_group2', 'atom_group3',
-                       'atom_group4', 'K1', 'n1', 'd1', 'K2', 'n2', 'd2',
-                       'K3', 'n3', 'd3']]
+    propers = propers[
+        [
+            "atom_group1",
+            "atom_group2",
+            "atom_group3",
+            "atom_group4",
+            "K1",
+            "n1",
+            "d1",
+            "K2",
+            "n2",
+            "d2",
+            "K3",
+            "n3",
+            "d3",
+        ]
+    ]
     # For improper dihedrals, the atom_groups are rearranged so that the central
     # atom is first (in keeping with LAMMPS anf GROMACS). This occurs because
     # the atom order in TINKER is end1, end2, central, end3 for impropers.
-    impropers = impropers[['atom_group1', 'atom_group2', 'atom_group3',
-                           'atom_group4', 'K1', 'n1', 'd1']]
+    impropers = impropers[
+        ["atom_group1", "atom_group2", "atom_group3", "atom_group4", "K1", "n1", "d1"]
+    ]
 
     # Convert units
     disps.epsilon = convert_units(disps.epsilon)
     bonds.potential_strength = convert_units(bonds.potential_strength)
     angles.potential_strength = convert_units(angles.potential_strength)
     impropers.K1 = convert_units(impropers.K1)
-    for k_parameter in ['K1', 'K2', 'K3']:
+    for k_parameter in ["K1", "K2", "K3"]:
         propers[k_parameter] = convert_units(propers[k_parameter])
 
     return atoms, disps, bonds, angles, impropers, propers
 
 
-def write_force_field_module(fname: str,
-                             atoms: pd.DataFrame,
-                             *interactions: pd.DataFrame,
-                             path: str = None,
-                             module_docstring: str = None,
-                             class_docstring: str = None,
-                             **settings):
+def write_force_field_module(
+    fname: str,
+    atoms: pd.DataFrame,
+    *interactions: pd.DataFrame,
+    path: str = None,
+    module_docstring: str = None,
+    class_docstring: str = None,
+    **settings,
+):
     """
     Write a temporary module to allow Tinker potentials to be imported.
 
@@ -178,42 +223,40 @@ def write_force_field_module(fname: str,
     without considering the case.
     """
 
-    line_length = settings.get('line_length', 80)
-    data_fname = settings.get('data_fname', fname)
+    line_length = settings.get("line_length", 80)
+    data_fname = settings.get("data_fname", fname)
 
-    imports = 'from MDMC.MD.force_fields.ff import FileForceField\n'
+    imports = "from MDMC.MD.force_fields.ff import FileForceField\n"
 
     if path is None:
-        path = os.path.abspath(
-            force_fields.__file__).replace('__init__.py', '')
+        path = os.path.abspath(force_fields.__file__).replace("__init__.py", "")
     if module_docstring is None:
-        module_docstring = (f'"""A module for defining the {fname} force field. This'
-                            ' was generated from the corresponding TINKER'
-                            ' file."""')
+        module_docstring = (
+            f'"""A module for defining the {fname} force field. This'
+            " was generated from the corresponding TINKER"
+            ' file."""'
+        )
     if class_docstring is None:
-        class_docstring = ('"""\n'
-                           f'{fname} force field, with defined atoms and'
-                           ' interactions\n')
-    data_fname = path + 'data/' + data_fname + '.dat'
-    with open(path + fname + '.py', 'w', encoding='UTF-8') as module:
-        module.write(wrap_docstring(module_docstring, line_length) + '\n' * 2)
-        module.write(imports + '\n' * 2)
-        module.write(f'class {fname}(FileForceField):\n\n')
-        module.write(textwrap.indent(wrap_docstring(class_docstring,
-                                                    line_length), ' ' * 4)
-                     + '\n\n')
-        module.write(textwrap.indent(f'file_name = "{data_fname}"\n',
-                                     ' ' * 4))
+        class_docstring = f'"""\n{fname} force field, with defined atoms and interactions\n'
+    data_fname = path + "data/" + data_fname + ".dat"
+    with open(path + fname + ".py", "w", encoding="UTF-8") as module:
+        module.write(wrap_docstring(module_docstring, line_length) + "\n" * 2)
+        module.write(imports + "\n" * 2)
+        module.write(f"class {fname}(FileForceField):\n\n")
+        module.write(
+            textwrap.indent(wrap_docstring(class_docstring, line_length), " " * 4) + "\n\n",
+        )
+        module.write(textwrap.indent(f'file_name = "{data_fname}"\n', " " * 4))
 
     # Write a dat file which contains all atoms and interactions
     # Use pandas to output as CSV
 
 
 def write_data(
-        fname: str,
-        atoms: pd.DataFrame,
-        path: str = None,
-        **settings,
+    fname: str,
+    atoms: pd.DataFrame,
+    path: str = None,
+    **settings,
 ) -> None:
     """
     Write forcefield data to a ``.dat`` file.
@@ -241,45 +284,51 @@ def write_data(
     ``<type>s`` and ``<type>_function``
     Which define the presence of parameters and the function to compute them.
     """
-    inter_types = ['disps', 'bonds', 'angles', 'propers', 'impropers']
-    disps, bonds, angles, propers, impropers = (settings.get(inter_type, []) for
-                                                inter_type in inter_types)
+    inter_types = ["disps", "bonds", "angles", "propers", "impropers"]
+    disps, bonds, angles, propers, impropers = (
+        settings.get(inter_type, []) for inter_type in inter_types
+    )
 
-    inter_functions = [settings.get(inter_type[:-1] + '_function') for
-                       inter_type in inter_types]
+    inter_functions = [settings.get(inter_type[:-1] + "_function") for inter_type in inter_types]
 
-    orig_file = settings.get('orig_file')
+    orig_file = settings.get("orig_file")
 
     if path is None:
-        path = os.path.abspath(force_fields.__file__).replace('__init__.py',
-                                                              'data/')
-    full_fname = path + fname + '.dat'
+        path = os.path.abspath(force_fields.__file__).replace("__init__.py", "data/")
+    full_fname = path + fname + ".dat"
     # First line describes number of each data type
-    description = (f'Atoms={len(atoms)} Dispersions={len(disps)} Bonds={len(bonds)} '
-                   f'BondAngles={len(angles)} Propers={len(propers)} Impropers={len(impropers)}\n')
+    description = (
+        f"Atoms={len(atoms)} Dispersions={len(disps)} Bonds={len(bonds)} "
+        f"BondAngles={len(angles)} Propers={len(propers)} Impropers={len(impropers)}\n"
+    )
     # Second line describes types of interactions
-    inter_functions = ('Dispersion={} Bond={} BondAngle={} Proper={}'
-                       ' Improper={}\n'.format(*inter_functions))
+    inter_functions = "Dispersion={} Bond={} BondAngle={} Proper={} Improper={}\n".format(
+        *inter_functions,
+    )
     # Metadata about the file
-    original_file_str = f' It was generated from {orig_file}\n' if orig_file else '\n'
-    date = datetime.today().strftime('%Y-%m-%d')
-    metadata = wrap_docstring(f'\nThis file contains the {fname} force field. It was'
-                              f' created on {date}.'
-                              + original_file_str, 80)
-    with open(full_fname, 'w', encoding='UTF-8') as out_datafile:
+    original_file_str = f" It was generated from {orig_file}\n" if orig_file else "\n"
+    date = datetime.today().strftime("%Y-%m-%d")
+    metadata = wrap_docstring(
+        f"\nThis file contains the {fname} force field. It was"
+        f" created on {date}." + original_file_str,
+        80,
+    )
+    with open(full_fname, "w", encoding="UTF-8") as out_datafile:
         out_datafile.write(description)
         out_datafile.write(inter_functions)
         out_datafile.write(metadata)
 
-    for name, data in [('Atoms', atoms),
-                       ('Dispersions', disps),
-                       ('Bonds', bonds),
-                       ('Bond Angles', angles),
-                       ('Proper Dihedrals', propers),
-                       ('Improper Dihedrals', impropers)]:
-        with open(full_fname, 'a', encoding='UTF-8') as out_datafile:
-            out_datafile.write('\n' + name + '\n')
-            data.to_csv(out_datafile, sep='\t', index=False)
+    for name, data in [
+        ("Atoms", atoms),
+        ("Dispersions", disps),
+        ("Bonds", bonds),
+        ("Bond Angles", angles),
+        ("Proper Dihedrals", propers),
+        ("Improper Dihedrals", impropers),
+    ]:
+        with open(full_fname, "a", encoding="UTF-8") as out_datafile:
+            out_datafile.write("\n" + name + "\n")
+            data.to_csv(out_datafile, sep="\t", index=False)
 
 
 def dummy_headers(start: int, end: int) -> list[str]:
@@ -299,7 +348,7 @@ def dummy_headers(start: int, end: int) -> list[str]:
         A `str` (``c{i}``) for each i between start and end (exclusive).
     """
 
-    return [f'c{i}' for i in range(start, end)]
+    return [f"c{i}" for i in range(start, end)]
 
 
 def parse_dataframe(dataframe: pd.DataFrame, drop: list, names: list) -> pd.DataFrame:
@@ -328,7 +377,7 @@ def parse_dataframe(dataframe: pd.DataFrame, drop: list, names: list) -> pd.Data
 
     try:
         # Assume that dataframe will have a header 'c0' which is always dropped
-        dataframe = dataframe.drop(columns=['c0'] + drop)
+        dataframe = dataframe.drop(columns=["c0"] + drop)
     except KeyError:
         dataframe = dataframe.drop(columns=drop)
     dataframe.columns = names
@@ -350,5 +399,4 @@ def convert_units(series: pd.Series) -> str:
         Value in kJ.
     """
 
-    return (series.astype(float) * units.kcal
-            / units.mol).round(decimals=5).astype(str)
+    return (series.astype(float) * units.kcal / units.mol).round(decimals=5).astype(str)

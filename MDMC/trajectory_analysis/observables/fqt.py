@@ -17,6 +17,7 @@
 """
 Module for Intermediate Scattering Function class.
 """
+
 import logging
 from abc import abstractmethod
 from collections.abc import Callable, Generator
@@ -142,13 +143,13 @@ class AbstractFQt(SQwMixins, Observable):
             1D array of times in ``fs``.
         """
 
-        return self.independent_variables['t']
+        return self.independent_variables["t"]
 
     @t.setter
     @unit_decorator(unit=units.TIME)
     def t(self, value: np.ndarray) -> None:
 
-        self.independent_variables['t'] = value
+        self.independent_variables["t"] = value
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
@@ -163,16 +164,20 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         try:
-            return self.dependent_variables['FQt']
+            return self.dependent_variables["FQt"]
         except KeyError:
             return None
 
     @FQt.setter
     def FQt(self, value: list[np.ndarray]) -> None:
-        self.dependent_variables['FQt'] = value
+        self.dependent_variables["FQt"] = value
 
-    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
-                          **settings: Any) -> None:
+    def calculate_from_MD(
+        self,
+        MD_input: CompactTrajectory,
+        verbose: int = 0,
+        **settings: Any,
+    ) -> None:
         """
         Calculate the intermediate scattering function from a trajectory.
 
@@ -204,7 +209,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # if Q_values are specified, set Q to them
         with suppress(KeyError):
-            self.Q = np.array(settings['Q_values'])
+            self.Q = np.array(settings["Q_values"])
 
         self.t = MD_input.times - MD_input.times[0]
         self._trajectory = MD_input
@@ -215,42 +220,43 @@ class AbstractFQt(SQwMixins, Observable):
         except AttributeError:
             print("DEBUG: no universe dimensions in the CompactTrajectory")
             try:
-                self.universe_dimensions = np.array(settings['dimensions'])
+                self.universe_dimensions = np.array(settings["dimensions"])
             except KeyError as error:
-                raise AttributeError('Either trajectory requires a dimensions'
-                                     ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD') from error
+                raise AttributeError(
+                    "Either trajectory requires a dimensions"
+                    " attribute or dimensions must be passed"
+                    " when calling calculate_from_MD",
+                ) from error
 
-        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
-                                 * UNIT_VECTOR)
+        self.reciprocal_basis = np.array(2.0 * np.pi / self.universe_dimensions) * UNIT_VECTOR
 
         # calculate Q vectors from Q
-        self.n_Q_vectors = settings.get('n_Q_vectors', 50)
+        self.n_Q_vectors = settings.get("n_Q_vectors", 50)
         try:
-            Q_vectors = settings['Q_vectors']
+            Q_vectors = settings["Q_vectors"]
         except KeyError:
             Q_vectors = self._calculate_Q_vectors(self.Q)
 
         # Calculate FQt for each Q value
         # 'Q_v' is a list of Q_vectors corresponding to a single Q
-        FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
-                              in Q_vectors])
+        FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v in Q_vectors])
 
         # Get the positions of the recreated_q_values
         if (self.Q is not None) and (len(self.Q) != len(self.Q_values)):
-            self.recreated_Q.extend(np.where(value == self.Q)[0][0]
-                                    for value in self.Q_values)
+            self.recreated_Q.extend(np.where(value == self.Q)[0][0] for value in self.Q_values)
             self.Q = [val for val in self.Q if val in self.Q_values]
 
-            logging.warning(" The specified universe dimensions were not able to recreate the"
-                            " lowest q values of the experimental data and so this data has been"
-                            " trimmed accordingly.")
+            logging.warning(
+                " The specified universe dimensions were not able to recreate the"
+                " lowest q values of the experimental data and so this data has been"
+                " trimmed accordingly.",
+            )
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
         # FQt_size is the number of Q values if specified, and otherwise we
         # assume Q is taken from settings and use the number of lists of vectors instead
-        FQt_size = len(self.Q_values) if self.Q_values is not None else len(settings['Q_vectors'])
+        FQt_size = len(self.Q_values) if self.Q_values is not None else len(settings["Q_vectors"])
         self.FQt = FQt_array[:FQt_size]
 
     def _calculate_Q_vectors(self, Q_values: list) -> Generator[list, None, None]:
@@ -276,7 +282,7 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         # Only valid for uniform Q_values
-        Q_step = (Q_values[1] - Q_values[0]) / 2.
+        Q_step = (Q_values[1] - Q_values[0]) / 2.0
 
         updated_Q_values = []
         for Q in Q_values:
@@ -314,8 +320,7 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         # define a cube in reciprocal space
-        x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
-                               in self.reciprocal_basis)
+        x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b in self.reciprocal_basis)
 
         # get the point group of the universe; we can use Wyckoff symmetries
         # to generate vectors more quickly
@@ -324,20 +329,21 @@ class AbstractFQt(SQwMixins, Observable):
         # create components of the Q vector for each axis on each lattice point in the cube
         # note we are only defining vector components for one octant of the cube -
         # Wyckoff symmetries will reflect them into other octants for us
-        vector_x = (np.array(list(range(0, x_max + 1))).reshape(-1, 1)
-                    * self.reciprocal_basis[0])
-        vector_y = (np.array(list(range(0, y_max + 1))).reshape(-1, 1)
-                    * self.reciprocal_basis[1])
-        vector_z = (np.array(list(range(0, z_max + 1))).reshape(-1, 1)
-                    * self.reciprocal_basis[2])
+        vector_x = np.array(list(range(0, x_max + 1))).reshape(-1, 1) * self.reciprocal_basis[0]
+        vector_y = np.array(list(range(0, y_max + 1))).reshape(-1, 1) * self.reciprocal_basis[1]
+        vector_z = np.array(list(range(0, z_max + 1))).reshape(-1, 1) * self.reciprocal_basis[2]
 
         Q_vectors: list = []
         # combine to create overall vectors for each lattice point in the cube
         # the 'if' part of the generator comprehension ensures that we aren't generating
         # large numbers of duplicate vectors from multiple vectors within the same symmetry group
-        vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z)
-                   if not any(v in Q_vectors for v in
-                              wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
+        vectors = (
+            (x[0] + x[1] + x[2])
+            for x in product(vector_x, vector_y, vector_z)
+            if not any(
+                v in Q_vectors for v in wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)
+            )
+        )
 
         # get all vectors that fit our requirements
         for vector in vectors:
@@ -454,8 +460,8 @@ class AbstractFQt(SQwMixins, Observable):
             An array of rho values for each timestep summed over the
             atoms in the system, corresponding to each Q.
         """
-        def helper_coherent(configs: np.ndarray,
-                            q_vector: np.ndarray) -> np.ndarray:
+
+        def helper_coherent(configs: np.ndarray, q_vector: np.ndarray) -> np.ndarray:
             """
             Wrapper for `calculate_rho` and the summation of the resulting array.
 
@@ -479,9 +485,7 @@ class AbstractFQt(SQwMixins, Observable):
             """
             return next(calculate_rho(configs, [q_vector])).sum(axis=1)
 
-        rho_config = np.zeros((len(config),
-                               len(single_Q_vectors)),
-                              dtype=complex)
+        rho_config = np.zeros((len(config), len(single_Q_vectors)), dtype=complex)
         executor = create_executor()
 
         # For the np.dot product to be broadcast correctly,
@@ -494,9 +498,9 @@ class AbstractFQt(SQwMixins, Observable):
         # with similar values of |Q|.
         # The following lines split the calculation by multiplying
         # the trajectory by each q vector separately.
-        futures = core_batch(executor.submit(helper_coherent,
-                                             configs, vector)
-                             for vector in single_Q_vectors)
+        futures = core_batch(
+            executor.submit(helper_coherent, configs, vector) for vector in single_Q_vectors
+        )
         # Append to rho_config as completed, block until all futures added
         q_num = 0
         for future_batch in futures:
@@ -547,7 +551,7 @@ class AbstractFQt(SQwMixins, Observable):
             # the FFT, we crop it to match the energy points. This should
             # already be the case, but if the energy values and trajectories
             # are manually provided it may not be.
-            self.FQt = self.FQt[:, :nE + 1]
+            self.FQt = self.FQt[:, : nE + 1]
 
         if resolution is not None:
             self.apply_resolution(resolution)
@@ -560,7 +564,7 @@ class AbstractFQt(SQwMixins, Observable):
             # FFT and reduce the energy dimension to positive energies
             SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
         else:
-            SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
+            SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype="complex")
             for i, E in enumerate(energy):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
                 # sums over the time/energy dimension as required for a
@@ -568,14 +572,13 @@ class AbstractFQt(SQwMixins, Observable):
                 # h_bar is in units of eV s whereas system units are meV fs, so
                 # apply a factor of 1e3 * 1e15 to convert it
                 exp = np.exp(-1j * E * self.t[:-1] / (h_bar * 1e18))
-                exp_neg = np.exp(
-                    1j * E * self.t[-1:0:-1] / (h_bar * 1e18))
+                exp_neg = np.exp(1j * E * self.t[-1:0:-1] / (h_bar * 1e18))
                 exp_mirror = np.append(exp, exp_neg)
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
         # Normalisation requires factor of dt (in ps, so convert from fs)
         # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
-        dt = (self.t[1] - self.t[0]) / 1000.
+        dt = (self.t[1] - self.t[0]) / 1000.0
         # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
@@ -621,7 +624,7 @@ class AbstractFQt(SQwMixins, Observable):
         It also means that:
         np.shape(self.FQt)=(np.size(self.Q), np.size(self.t)).
         """
-        return {'FQt': ['Q', 't']}
+        return {"FQt": ["Q", "t"]}
 
     @property
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
@@ -642,14 +645,14 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         if self.use_FFT:
-            t_requirements = {'uniform': True, 'zeroed': True}
+            t_requirements = {"uniform": True, "zeroed": True}
         else:
-            t_requirements = {'uniform': False, 'zeroed': False}
+            t_requirements = {"uniform": False, "zeroed": False}
 
-        return {'t': t_requirements, 'Q': {'uniform': True, 'zeroed': False}}
+        return {"t": t_requirements, "Q": {"uniform": True, "zeroed": False}}
 
 
-@ObservableFactory.register(('IntermediateScatteringFunction', 'FQt'))
+@ObservableFactory.register(("IntermediateScatteringFunction", "FQt"))
 class FQt(AbstractFQt):
     """
     Class to process the intermediate scattering function for the total dynamic structure factor.
@@ -666,11 +669,15 @@ class FQt(AbstractFQt):
 
         elements_list = create_list_of_element_objects(self._trajectory.element_set)
 
-        self.weights = {str(element): {'coh': element.neutron.b_c if element.neutron.b_c \
-                                       is not None else 0,
-                                       'incoh': element.neutron.b_c_i if element.neutron.b_c_i \
-                                       is not None else calc_incoherent_scatt_length(str(element))}
-                                       for element in elements_list}
+        self.weights = {
+            str(element): {
+                "coh": element.neutron.b_c if element.neutron.b_c is not None else 0,
+                "incoh": element.neutron.b_c_i
+                if element.neutron.b_c_i is not None
+                else calc_incoherent_scatt_length(str(element)),
+            }
+            for element in elements_list
+        }
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
@@ -685,23 +692,22 @@ class FQt(AbstractFQt):
             # Get the positions of all atoms (the configuration) of each
             # element over time such that ``element_configs`` has time as its
             # first dimension and each atom of ``element`` as its second
-            indexes = np.where(np.array(self._trajectory.element_list)
-                               == element)
+            indexes = np.where(np.array(self._trajectory.element_list) == element)
             element_configs = self._trajectory.position[:, indexes[0], :]
             rho_element[element] = self.calculate_rho_config(element_configs, single_Q_vectors)
 
             # Incoherent contribution
-            incoh_weights = self.weights[element]['incoh']
+            incoh_weights = self.weights[element]["incoh"]
 
             # rearrange the axes so that calculate_rho broadcasts correctly
             element_configs = np.swapaxes(element_configs, 1, 2)
             element_configs = np.swapaxes(element_configs, 0, 2)
 
             rho_all = calculate_rho(element_configs, single_Q_vectors)
-            futures = core_batch(executor.submit(faster_autocorrelation,
-                                                 rho.T,
-                                                 weights=incoh_weights**2)
-                                 for rho in rho_all)
+            futures = core_batch(
+                executor.submit(faster_autocorrelation, rho.T, weights=incoh_weights**2)
+                for rho in rho_all
+            )
             for future_batch in futures:
                 results = [future.result() for future in future_batch]
                 for result in results:
@@ -711,10 +717,11 @@ class FQt(AbstractFQt):
         for element1 in elements:
             for element2 in elements:
                 # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q += self.weights[element1]['coh'] \
-                    * self.weights[element2]['coh'] \
-                    * faster_correlation(rho_element[element1],
-                                         rho_element[element2])[:n_t]
+                FQt_single_Q += (
+                    self.weights[element1]["coh"]
+                    * self.weights[element2]["coh"]
+                    * faster_correlation(rho_element[element1], rho_element[element2])[:n_t]
+                )
 
         # Normalise to the number of orthogonal vectors
         # default to 1 if there are no vectors to avoid division by 0
@@ -777,20 +784,26 @@ def get_point_group(dimensions: np.ndarray) -> str:
     # if all sides equal, all are true; if two sides equal, one is true;
     # if no sides equal, zero are true;
 
-    equal_sides = sum([dimensions[0] == dimensions[1],
-                       dimensions[0] == dimensions[2],
-                       dimensions[1] == dimensions[2]])
+    equal_sides = sum(
+        [
+            dimensions[0] == dimensions[1],
+            dimensions[0] == dimensions[2],
+            dimensions[1] == dimensions[2],
+        ],
+    )
 
     if equal_sides == 3:  # cubic
-        return 'm-3m'
+        return "m-3m"
     if equal_sides == 1:  # tetragonal
         # False == 0 in duck typing, so this only keeps
         # the side equal to True
-        unique_side = ((dimensions[0] == dimensions[1]) * ' (z)'
-                       + (dimensions[0] == dimensions[2]) * ' (y)'
-                       + (dimensions[1] == dimensions[2]) * ' (x)')
-        return '4/mmm' + unique_side
-    return 'mmm'  # orthorhombic
+        unique_side = (
+            (dimensions[0] == dimensions[1]) * " (z)"
+            + (dimensions[0] == dimensions[2]) * " (y)"
+            + (dimensions[1] == dimensions[2]) * " (x)"
+        )
+        return "4/mmm" + unique_side
+    return "mmm"  # orthorhombic
 
 
 def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
@@ -833,17 +846,59 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
         x, y, z = point
         # it's ugly, but an order of magnitude faster if we just list all the
         # symmetries out, calculate and return them
-        return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z), (z, x, y), (z, -x, -y),
-                 (-z, -x, y), (-z, x, -y), (y, z, x), (-y, z, -x), (y, -z, -x), (-y, -z, x),
-                 (y, x, -z), (-y, -x, -z), (y, -x, z), (-y, x, z), (x, z, -y), (-x, z, y),
-                 (-x, -z, -y), (x, -z, y), (z, y, -x), (z, -y, x), (-z, y, x), (-z, -y, -x),
-                 (-x, -y, -z), (x, y, -z), (x, -y, z), (-x, y, z), (-z, -x, -y), (-z, x, y),
-                 (z, x, -y), (z, -x, y), (-y, -z, -x), (y, -z, x), (-y, z, x), (y, z, -x),
-                 (-y, -x, z), (y, x, z), (-y, x, -z), (y, -x, -z), (-x, -z, y), (x, -z, -y),
-                 (x, z, y), (-x, z, -y), (-z, -y, x), (-z, y, -x), (z, -y, -x), (z, y, x)})
+        return {
+            (x, y, z),
+            (-x, -y, z),
+            (-x, y, -z),
+            (x, -y, -z),
+            (z, x, y),
+            (z, -x, -y),
+            (-z, -x, y),
+            (-z, x, -y),
+            (y, z, x),
+            (-y, z, -x),
+            (y, -z, -x),
+            (-y, -z, x),
+            (y, x, -z),
+            (-y, -x, -z),
+            (y, -x, z),
+            (-y, x, z),
+            (x, z, -y),
+            (-x, z, y),
+            (-x, -z, -y),
+            (x, -z, y),
+            (z, y, -x),
+            (z, -y, x),
+            (-z, y, x),
+            (-z, -y, -x),
+            (-x, -y, -z),
+            (x, y, -z),
+            (x, -y, z),
+            (-x, y, z),
+            (-z, -x, -y),
+            (-z, x, y),
+            (z, x, -y),
+            (z, -x, y),
+            (-y, -z, -x),
+            (y, -z, x),
+            (-y, z, x),
+            (y, z, -x),
+            (-y, -x, z),
+            (y, x, z),
+            (-y, x, -z),
+            (y, -x, -z),
+            (-x, -z, y),
+            (x, -z, -y),
+            (x, z, y),
+            (-x, z, -y),
+            (-z, -y, x),
+            (-z, y, -x),
+            (z, -y, -x),
+            (z, y, x),
+        }
 
     def tetragonal(
-            unique_side: Literal['x', 'y', 'z'],
+        unique_side: Literal["x", "y", "z"],
     ) -> Callable[[ThreeVec], set[ThreeVec]]:
         """
         The symmetries of a point in a tetragonal group.
@@ -875,9 +930,24 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
                 A calculated set of the symmetries for the point.
             """
             x, y, z = point
-            return ({(x, y, z), (-x, -y, z), (-y, x, z), (y, -x, z), (-x, y, -z), (x, -y, -z),
-                    (y, x, -z), (-y, -x, -z), (-x, -y, -z), (x, y, -z), (y, -x, -z), (-y, x, -z),
-                    (x, -y, z), (-x, y, z), (-y, -x, z), (y, x, z)})
+            return {
+                (x, y, z),
+                (-x, -y, z),
+                (-y, x, z),
+                (y, -x, z),
+                (-x, y, -z),
+                (x, -y, -z),
+                (y, x, -z),
+                (-y, -x, -z),
+                (-x, -y, -z),
+                (x, y, -z),
+                (y, -x, -z),
+                (-y, x, -z),
+                (x, -y, z),
+                (-x, y, z),
+                (-y, -x, z),
+                (y, x, z),
+            }
 
         def tetragonal_y(point: ThreeVec) -> set[ThreeVec]:
             """
@@ -892,11 +962,26 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
             -------
             set[tuple[float, float, float]]
                 A calculated set of the symmetries for the point.
-                """
+            """
             x, y, z = point
-            return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
-                    (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
-                    (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
+            return {
+                (x, y, z),
+                (x, -y, z),
+                (x, y, -z),
+                (x, -y, -z),
+                (-x, y, z),
+                (-x, -y, z),
+                (-x, y, -z),
+                (-x, -y, -z),
+                (z, y, x),
+                (z, -y, x),
+                (z, y, -x),
+                (z, -y, -x),
+                (-z, y, x),
+                (-z, -y, x),
+                (-z, y, -x),
+                (-z, -y, -x),
+            }
 
         def tetragonal_x(point: ThreeVec) -> set[ThreeVec]:
             """
@@ -913,14 +998,27 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
                 A calculated set of the symmetries for the point.
             """
             x, y, z = point
-            return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
-                    (x, -y, -z), (-x, -y, -z), (x, z, y), (-x, z, y), (x, z, -y), (-x, z, -y),
-                    (x, -z, y), (-x, -z, y), (x, -z, -y), (-x, -z, -y)})
+            return {
+                (x, y, z),
+                (-x, y, z),
+                (x, y, -z),
+                (-x, y, -z),
+                (x, -y, z),
+                (-x, -y, z),
+                (x, -y, -z),
+                (-x, -y, -z),
+                (x, z, y),
+                (-x, z, y),
+                (x, z, -y),
+                (-x, z, -y),
+                (x, -z, y),
+                (-x, -z, y),
+                (x, -z, -y),
+                (-x, -z, -y),
+            }
 
         # get the correct function and return it as the group function
-        side = {'x': tetragonal_x,
-                'y': tetragonal_y,
-                'z': tetragonal_z}
+        side = {"x": tetragonal_x, "y": tetragonal_y, "z": tetragonal_z}
 
         return side[unique_side]
 
@@ -940,14 +1038,24 @@ def wyckoff_symmetries(point: ThreeVec, point_group: str) -> set[ThreeVec]:
         """
 
         x, y, z = point
-        return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z),
-                (-x, -y, -z), (x, y, -z), (x, -y, z), (-x, y, z)})
+        return {
+            (x, y, z),
+            (-x, -y, z),
+            (-x, y, -z),
+            (x, -y, -z),
+            (-x, -y, -z),
+            (x, y, -z),
+            (x, -y, z),
+            (-x, y, z),
+        }
 
-    groups = {'m-3m': cubic,
-              '4/mmm (x)': tetragonal('x'),
-              '4/mmm (y)': tetragonal('y'),
-              '4/mmm (z)': tetragonal('z'),
-              'mmm': orthorhombic}
+    groups = {
+        "m-3m": cubic,
+        "4/mmm (x)": tetragonal("x"),
+        "4/mmm (y)": tetragonal("y"),
+        "4/mmm (z)": tetragonal("z"),
+        "mmm": orthorhombic,
+    }
 
     return groups[point_group](point)
 

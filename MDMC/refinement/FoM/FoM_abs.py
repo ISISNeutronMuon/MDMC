@@ -24,9 +24,8 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
-@repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale')
+@repr_decorator("weight", "exp_obs", "MD_obs", "rescale_factor", "auto_scale")
 class ObservablePair:
-
     """
     Contains a pair of observables for calculating the FoM
 
@@ -50,8 +49,14 @@ class ObservablePair:
         for physical effects that might impact the scaling. Default is `False`.
     """
 
-    def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float,
-                 rescale_factor: float = 1., auto_scale: bool = False):
+    def __init__(
+        self,
+        exp_obs: Observable,
+        MD_obs: Observable,
+        weight: float,
+        rescale_factor: float = 1.0,
+        auto_scale: bool = False,
+    ):
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
@@ -76,7 +81,7 @@ class ObservablePair:
 
     @exp_obs.setter
     def exp_obs(self, exp_obs: Observable) -> None:
-        self.validate_obs(exp_obs, 'experiment')
+        self.validate_obs(exp_obs, "experiment")
         self._exp_obs = exp_obs
 
     @property
@@ -96,7 +101,7 @@ class ObservablePair:
 
     @MD_obs.setter
     def MD_obs(self, MD_obs: Observable) -> None:
-        self.validate_obs(MD_obs, 'MD')
+        self.validate_obs(MD_obs, "MD")
         self._MD_obs = MD_obs
 
     @property
@@ -122,7 +127,7 @@ class ObservablePair:
         try:
             weight = float(weight)
         except ValueError as error:
-            raise TypeError('weight must be a float') from error
+            raise TypeError("weight must be a float") from error
         self.validate_weight(weight)
         self._weight = weight
 
@@ -187,11 +192,10 @@ class ObservablePair:
         """
 
         # Check origin is correct
-        assert obs.origin == origin, ('The observable does not have the correct'
-                                      ' origin')
+        assert obs.origin == origin, "The observable does not have the correct origin"
 
         try:
-            other_obs = self.exp_obs if obs.origin == 'MD' else self.MD_obs
+            other_obs = self.exp_obs if obs.origin == "MD" else self.MD_obs
         except AttributeError:
             other_obs = None
 
@@ -199,34 +203,35 @@ class ObservablePair:
         # have the same shapes, check errors have the same shapes, check
         # observables have the same type
         if other_obs:
-            indep_e_mess = 'Independent variables must be identical'
-            assert (obs.independent_variables.keys() ==
-                    other_obs.independent_variables.keys()), indep_e_mess
+            indep_e_mess = "Independent variables must be identical"
+            assert obs.independent_variables.keys() == other_obs.independent_variables.keys(), (
+                indep_e_mess
+            )
             for k in obs.independent_variables:
-                assert np.all(obs.independent_variables[k] ==
-                              other_obs.independent_variables[k]), indep_e_mess
+                assert np.all(obs.independent_variables[k] == other_obs.independent_variables[k]), (
+                    indep_e_mess
+                )
 
             # Try/except deals with empty observable case (no dependent
             # variables and errors)
             try:
-                dep_e_mess = 'Dependent variables must have the same shape'
-                assert (obs.dependent_variables.keys() ==
-                        other_obs.dependent_variables.keys()), dep_e_mess
+                dep_e_mess = "Dependent variables must have the same shape"
+                assert obs.dependent_variables.keys() == other_obs.dependent_variables.keys(), (
+                    dep_e_mess
+                )
                 for k in obs.dependent_variables:
-                    assert (np.shape(obs.dependent_variables[k]) ==
-                            np.shape(other_obs.dependent_variables[k])), \
-                        dep_e_mess
+                    assert np.shape(obs.dependent_variables[k]) == np.shape(
+                        other_obs.dependent_variables[k],
+                    ), dep_e_mess
 
-                err_e_mess = 'Errors must have the same shape'
+                err_e_mess = "Errors must have the same shape"
                 assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess
                 for k in obs.errors:
-                    assert (np.shape(obs.errors[k]) ==
-                            np.shape(other_obs.errors[k])), err_e_mess
+                    assert np.shape(obs.errors[k]) == np.shape(other_obs.errors[k]), err_e_mess
             except AttributeError:
                 pass
 
-            assert isinstance(obs, type(other_obs)), ('Observables are not of'
-                                                      ' the same type')
+            assert isinstance(obs, type(other_obs)), "Observables are not of the same type"
 
     @staticmethod
     def validate_weight(weight: float) -> None:
@@ -244,9 +249,7 @@ class ObservablePair:
             If the ``weight`` is not positive or is infinite
         """
 
-        assert weight > 0. and weight != float('inf'), ('Weight must be a'
-                                                        ' finite positive'
-                                                        ' float')
+        assert weight > 0.0 and weight != float("inf"), "Weight must be a finite positive float"
 
     def check_types(self) -> None:
         """
@@ -304,9 +307,9 @@ class ObservablePair:
             into account.
         """
 
-        diff = (np.array(*self.exp_obs.dependent_variables.values())
-                * self.rescale_factor
-                - np.array(*self.MD_obs.dependent_variables.values()))
+        diff = np.array(
+            *self.exp_obs.dependent_variables.values(),
+        ) * self.rescale_factor - np.array(*self.MD_obs.dependent_variables.values())
 
         return diff
 
@@ -323,8 +326,9 @@ class ObservablePair:
             account.
         """
 
-        errors = (self.calculate_exp_errors() ** 2
-                  + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
+        errors = (
+            self.calculate_exp_errors() ** 2 + np.array(*self.MD_obs.errors.values()) ** 2
+        ) ** 0.5
 
         return errors
 
@@ -343,9 +347,8 @@ class ObservablePair:
         return np.array(*self.exp_obs.errors.values()) * self.rescale_factor
 
 
-@repr_decorator('value', 'obs_pairs')
+@repr_decorator("value", "obs_pairs")
 class FigureOfMerit(ABC):
-
     """
     Abstract class that defines methods common to all figure of merit
     calculators
@@ -369,29 +372,34 @@ class FigureOfMerit(ABC):
         The Figure of Merit for all ``obs_pairs``
     """
 
-    def __init__(self,
-                 obs_pairs: list[ObservablePair],
-                 norm: str = 'data_points',
-                 n_parameters: int = None):
+    def __init__(
+        self,
+        obs_pairs: list[ObservablePair],
+        norm: str = "data_points",
+        n_parameters: int = None,
+    ):
 
         self.obs_pairs = list(obs_pairs)
         self.value = None
         self.n_parameters = 0
 
-        if norm == 'data_points':
+        if norm == "data_points":
             self.norm = True
-        elif norm == 'dof':
+        elif norm == "dof":
             if n_parameters is None:
-                raise ValueError('`n_parameters` must be provided if using '
-                                 'degrees of freedom normalisation.')
+                raise ValueError(
+                    "`n_parameters` must be provided if using degrees of freedom normalisation.",
+                )
             self.norm = True
             self.n_parameters = n_parameters
-        elif norm == 'none':
+        elif norm == "none":
             self.norm = False
         else:
-            raise ValueError('Unrecognised value for `norm` passed, should be '
-                             'one of "data_points", "dof", "none", but it was '
-                             f'"{norm}"')
+            raise ValueError(
+                "Unrecognised value for `norm` passed, should be "
+                'one of "data_points", "dof", "none", but it was '
+                f'"{norm}"',
+            )
 
     def calculate(self) -> float:
         """
@@ -410,11 +418,10 @@ class FigureOfMerit(ABC):
         """
 
         total_weight = sum(obs_pair.weight for obs_pair in self.obs_pairs)
-        value_unreduced = sum(self.calculate_single_FoM(obs_pair)
-                                  for obs_pair in self.obs_pairs)
+        value_unreduced = sum(self.calculate_single_FoM(obs_pair) for obs_pair in self.obs_pairs)
         self.value = value_unreduced / total_weight
 
-        if self.value < 0.:
+        if self.value < 0.0:
             raise ValueError("FoM was calculated to be negative, which is impossible.")
         return self.value
 
@@ -437,8 +444,7 @@ class FigureOfMerit(ABC):
         """
 
         if self.norm:
-            norm_factor = np.size(
-                *obs_pair.MD_obs.dependent_variables.values())
+            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
             norm_factor -= self.n_parameters
         else:
             norm_factor = 1

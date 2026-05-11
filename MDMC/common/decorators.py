@@ -92,7 +92,9 @@ def unit_decorator(unit: str | None) -> Callable:
                     return unit_creator(self, value, self.unit)
                 return func(self, value)
             return unit_creator(self, value, unit)
+
         return wrapper
+
     return decorator
 
 
@@ -151,7 +153,9 @@ def unit_decorator_getter(unit: str | None) -> Callable:
                     return unit_creator(self, self.unit)
                 return func(self)
             return unit_creator(self, unit)
+
         return wrapper
+
     return decorator
 
 
@@ -218,7 +222,7 @@ def set_docstring(docstring: str) -> Callable:
     """
 
     # Ignore pylint warning for decorator inner function docstrings
-    #pylint: disable=missing-docstring
+    # pylint: disable=missing-docstring
     def decorator(doc_object):
         # docstring must be set outside of wrapper. This means that
         # functools.wraps can be used to preserve the docstring of a function,
@@ -226,14 +230,17 @@ def set_docstring(docstring: str) -> Callable:
         doc_object.__doc__ = wrap_docstring(docstring, 80)
         # Decoration of function, method or property requires returning wrapper
         if isinstance(doc_object, FunctionType):
+
             @wraps(doc_object)
             def wrapper(*args, **settings):
                 return doc_object(*args, **settings)
+
             return wrapper
         # Decoration of classes
         if isinstance(doc_object, type):
             return doc_object
-        raise TypeError('set_docstring cannot be applied to this type')
+        raise TypeError("set_docstring cannot be applied to this type")
+
     return decorator
 
 
@@ -309,7 +316,7 @@ def mod_docstring(replacements: dict[str, str]) -> Callable:
     """
 
     # Ignore pylint warning for decorator inner function docstrings
-    #pylint: disable=missing-docstring
+    # pylint: disable=missing-docstring
     def decorator(doc_object):
         # docstring must be modified outside of wrapper. This means that
         # functools.wraps can be used to preserve the docstring of a function,
@@ -322,14 +329,17 @@ def mod_docstring(replacements: dict[str, str]) -> Callable:
         # Don't type check for properties as this decorator must precede
         # property decorator
         if isinstance(doc_object, FunctionType):
+
             @wraps(doc_object)
             def wrapper(*args, **settings):
                 return doc_object(*args, **settings)
+
             return wrapper
         # Decoration of classes
         if isinstance(doc_object, type):
             return doc_object
-        raise TypeError('mod_docstring cannot be applied to this type')
+        raise TypeError("mod_docstring cannot be applied to this type")
+
     return decorator
 
 
@@ -364,40 +374,39 @@ def wrap_docstring(docstring: str, line_length: int) -> str:
     prev_line = None
     prev_indent = None
 
-    for line in docstring.split('\n'):
+    for line in docstring.split("\n"):
         # Get indent of right length for line
-        indent = (len(line) - len(line.strip())) * ' '
+        indent = (len(line) - len(line.strip())) * " "
         if len(indent) >= line_length:
-            raise ValueError('The line length is shorter than one or more'
-                             ' indents')
+            raise ValueError("The line length is shorter than one or more indents")
         # If previous line was wrapped and has same length of indent, then
         # prepend it to this line
         if prev_line is not None:
-            if prev_indent == indent and '.. math::' not in line:
-                line = prev_line + ' ' + textwrap.dedent(line)
+            if prev_indent == indent and ".. math::" not in line:
+                line = prev_line + " " + textwrap.dedent(line)
             else:
-                wrapped.append('\n' + prev_line)
+                wrapped.append("\n" + prev_line)
         # Wrap line if the length is greater than the line length
         if len(line) > line_length:
             wrap = textwrap.wrap(line, line_length, subsequent_indent=indent)
             prev_line = wrap[-1]
-            wrap = ['\n' + element for element in wrap[:-1]]
+            wrap = ["\n" + element for element in wrap[:-1]]
             wrapped += wrap
             prev_indent = indent
         else:
             prev_line = None
-            wrapped.append('\n' + line)
+            wrapped.append("\n" + line)
     # If last line in docstring was wrapped, append this to the array
     if prev_line is not None:
-        wrapped.append('\n' + prev_line)
+        wrapped.append("\n" + prev_line)
     # Accounting for case of docstring starting on line after """
-    if wrapped[0] == '\n':
+    if wrapped[0] == "\n":
         del wrapped[0]
     # Accounting for case of docstring starting on same line as """
-    elif wrapped[0][0] == '\n':
+    elif wrapped[0][0] == "\n":
         wrapped[0] = wrapped[0][1:]
 
-    return ''.join(wrapped)
+    return "".join(wrapped)
 
 
 def repr_decorator(attribute: str, *attributes: str | None):
@@ -464,15 +473,16 @@ def repr_decorator(attribute: str, *attributes: str | None):
             # Using getattr rather than __dict__ avoids problems with __slots__
             # and properties
             repr_dict = {attr: getattr(self, attr) for attr in attrs}
-            attributes_str = ''.join([key + ': ' + repr(value) + ',\n  '
-                                      for key, value in repr_dict.items()])
-            attributes_str = attributes_str.strip(',\n ')
-            return (f'<{self.__class__.__name__}\n'
-                    f' {{{attributes_str}}}>')
+            attributes_str = "".join(
+                [key + ": " + repr(value) + ",\n  " for key, value in repr_dict.items()],
+            )
+            attributes_str = attributes_str.strip(",\n ")
+            return f"<{self.__class__.__name__}\n {{{attributes_str}}}>"
 
         cls.__repr__ = __repr__
 
         return cls
+
     return decorator
 
 
@@ -494,6 +504,7 @@ def weakref_cache(maxsize: int = 128) -> Callable:
     `function`
         Decorated function with LRU cache.
     """
+
     def wrapper(func):
 
         @functools.lru_cache(maxsize)  # create a 'semi-static' cached version of the method
@@ -530,9 +541,10 @@ def time_function_execution(func: Callable) -> Callable:
     `function`
         Decorated function with attached timer.
     """
+
     def decorated_func(*args, **kwargs):
         tk = TimeKeeper()
-        fname = " ".join(str(x) for x in [func.__name__, 'in', func.__module__])
+        fname = " ".join(str(x) for x in [func.__name__, "in", func.__module__])
         # print(fname)
         # print(args)
         # print(kwargs)
@@ -540,6 +552,7 @@ def time_function_execution(func: Callable) -> Callable:
         start_time = time()
         results = func(*args, **kwargs)
         end_time = time()
-        tk.time_passed(fname, abs(end_time-start_time))
+        tk.time_passed(fname, abs(end_time - start_time))
         return results
+
     return decorated_func

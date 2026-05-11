@@ -103,18 +103,20 @@ class CompactTrajectory:
         Extra options.
     """
 
-    def __init__(self,
-                 n_steps: int = 0,
-                 n_atoms: int = 1,
-                 useVelocity: bool = False,
-                 bits_per_number: int = 8,
-                 **settings: Any):
+    def __init__(
+        self,
+        n_steps: int = 0,
+        n_atoms: int = 1,
+        useVelocity: bool = False,
+        bits_per_number: int = 8,
+        **settings: Any,
+    ):
         # The development plan is to use the units defined here to calculate conversion factors,
         # and use these factors when writing the numbers into the arrays.
         # For now, we define the units here:
-        self.position_unit = units.SYSTEM['LENGTH']
-        self.time_unit = units.SYSTEM['TIME']
-        self.velocity_unit = units.SYSTEM['LENGTH'] / units.SYSTEM['TIME']
+        self.position_unit = units.SYSTEM["LENGTH"]
+        self.time_unit = units.SYSTEM["TIME"]
+        self.velocity_unit = units.SYSTEM["LENGTH"] / units.SYSTEM["TIME"]
         self.dtype = self._get_dtype(bits_per_number)  # this sets the data type to np.float64
         # The underlying assumption is that the number of atoms,
         # and the atom types, stay CONSTANT within the trajectory,
@@ -128,7 +130,7 @@ class CompactTrajectory:
         # but different from 0. This way if an observable tried to calculate the Q vectors
         # or, more precisely, reciprocal space vectors
         # from an unpopulated CompactTrajectory, it would not divide by zero.
-        self.dimensions = 0.1*np.ones(3)  # avoids divide-by-zero errors, explained above.
+        self.dimensions = 0.1 * np.ones(3)  # avoids divide-by-zero errors, explained above.
         self.changing_dimensions = None
         self.element_list = []  # chemical element (str) defined for each atom
         self.element_set = set()  # set of chemical elements (str) present in the trajectory
@@ -157,7 +159,7 @@ class CompactTrajectory:
         if n_steps > 0:
             self.preAllocate(n_steps=n_steps, n_atoms=n_atoms, useVelocity=useVelocity)
         try:
-            self.universe = settings['universe']
+            self.universe = settings["universe"]
         except KeyError:
             self.universe = None
 
@@ -201,20 +203,18 @@ class CompactTrajectory:
         """
         new_ct = CompactTrajectory()
         all_data = H5MD_reader.read_all_data(file_name)
-        n_atoms = len(all_data['species'])
-        n_steps = all_data['no_steps']
-        new_ct.preAllocate(n_atoms=n_atoms,
-                           n_steps=n_steps,
-                           useVelocity=True)
-        new_ct.time = all_data['time']
+        n_atoms = len(all_data["species"])
+        n_steps = all_data["no_steps"]
+        new_ct.preAllocate(n_atoms=n_atoms, n_steps=n_steps, useVelocity=True)
+        new_ct.time = all_data["time"]
         new_ct.setCharge(all_data["charge"])
         new_ct.setDimensions(all_data["box_dimension"])
-        new_ct.position = all_data['position']
-        new_ct.velocity = all_data['velocity']
-        new_ct.atom_masses = all_data['mass']
-        new_ct.atom_types = new_ct.validateTypes(all_data['atom_symbol'])
-        new_ct.element_list = all_data['atom_symbol']
-        new_ct.element_set = list(set(all_data['atom_symbol']))
+        new_ct.position = all_data["position"]
+        new_ct.velocity = all_data["velocity"]
+        new_ct.atom_masses = all_data["mass"]
+        new_ct.atom_types = new_ct.validateTypes(all_data["atom_symbol"])
+        new_ct.element_list = all_data["atom_symbol"]
+        new_ct.element_set = list(set(all_data["atom_symbol"]))
         return new_ct
 
     def setBytesPerNumber(self, bytes_per_number: int = 8):
@@ -246,8 +246,7 @@ class CompactTrajectory:
             self.position = self.position.astype(self.dtype)
             if self.velocity is not None:
                 self.velocity = self.velocity.astype(self.dtype)
-            self.changing_dimensions = self.changing_dimensions.astype(
-                self.dtype)
+            self.changing_dimensions = self.changing_dimensions.astype(self.dtype)
 
     def __len__(self):
         if self.position is None:
@@ -255,7 +254,7 @@ class CompactTrajectory:
         # Since it is not guaranteed that the postProcess method has been run,
         # we explicitly limit the indices to those which have been written into.
         # The length corresponds to the number of simulation steps.
-        return len(self.position[self.first_index:self.last_index + 1])
+        return len(self.position[self.first_index : self.last_index + 1])
 
     def __getitem__(self, index: int | slice):
         # different behaviour:
@@ -267,13 +266,14 @@ class CompactTrajectory:
             start, stop, step = index.start, index.stop, index.step
         except AttributeError as exc:
             if index >= self.__len__():
-                raise IndexError("Trying to access a nonexistent time"
-                                 " frame in the CompactTrajectory.") from exc
-            return self.subtrajectory(index, index+1, 1)
+                raise IndexError(
+                    "Trying to access a nonexistent time frame in the CompactTrajectory.",
+                ) from exc
+            return self.subtrajectory(index, index + 1, 1)
 
         return self.subtrajectory(start, stop, step)
 
-    def __eq__(self, other: 'CompactTrajectory') -> bool:
+    def __eq__(self, other: "CompactTrajectory") -> bool:
         if not self.is_allocated == other.is_allocated:
             return False
         if not self.is_populated == other.is_populated:
@@ -282,23 +282,31 @@ class CompactTrajectory:
             return False
         if not self.has_velocity == other.has_velocity:
             return False
-        are_the_same = (other.position_unit == self.position_unit and
-                        other.time_unit == self.time_unit and
-                        other.velocity_unit == self.velocity_unit and
-                        other.dtype == self.dtype)
+        are_the_same = (
+            other.position_unit == self.position_unit
+            and other.time_unit == self.time_unit
+            and other.velocity_unit == self.velocity_unit
+            and other.dtype == self.dtype
+        )
         if are_the_same:
-            are_the_same = np.all([
-                self.n_atoms == other.n_atoms,
-                self.first_index == other.first_index,
-                self.last_index == other.last_index])
+            are_the_same = np.all(
+                [
+                    self.n_atoms == other.n_atoms,
+                    self.first_index == other.first_index,
+                    self.last_index == other.last_index,
+                ],
+            )
         else:
             print("Failed header comparison")
         if are_the_same:
-            are_the_same = np.all([
-                np.allclose(other.dimensions.shape, self.dimensions.shape),
-                np.allclose(other.position.shape, self.position.shape),
-                np.allclose(other.time.shape, self.time.shape),
-                np.allclose(other.changing_dimensions.shape, self.changing_dimensions.shape)])
+            are_the_same = np.all(
+                [
+                    np.allclose(other.dimensions.shape, self.dimensions.shape),
+                    np.allclose(other.position.shape, self.position.shape),
+                    np.allclose(other.time.shape, self.time.shape),
+                    np.allclose(other.changing_dimensions.shape, self.changing_dimensions.shape),
+                ],
+            )
         else:
             print("Failed index comparison")
         if are_the_same:
@@ -308,20 +316,28 @@ class CompactTrajectory:
             print(f"Dimensions  other: {other.dimensions.shape}, self: {self.dimensions.shape}")
             print(f"Position    other: {other.position.shape}, self: {self.position.shape}")
             print(f"Time        other: {other.time.shape}, self: {self.time.shape}")
-            print(f"CDim        other: {other.changing_dimensions.shape}"
-                  f"self: {self.changing_dimensions.shape}")
+            print(
+                f"CDim        other: {other.changing_dimensions.shape}"
+                f"self: {self.changing_dimensions.shape}",
+            )
         if are_the_same:
             if self.is_fixedbox:
-                are_the_same = np.all([
-                    np.allclose(other.dimensions, self.dimensions),
-                    np.allclose(other.position, self.position),
-                    np.allclose(other.time, self.time)])
+                are_the_same = np.all(
+                    [
+                        np.allclose(other.dimensions, self.dimensions),
+                        np.allclose(other.position, self.position),
+                        np.allclose(other.time, self.time),
+                    ],
+                )
             else:
-                are_the_same = np.all([
-                    np.allclose(other.dimensions, self.dimensions),
-                    np.allclose(other.position, self.position),
-                    np.allclose(other.time, self.time),
-                    np.allclose(other.changing_dimensions, self.changing_dimensions)])
+                are_the_same = np.all(
+                    [
+                        np.allclose(other.dimensions, self.dimensions),
+                        np.allclose(other.position, self.position),
+                        np.allclose(other.time, self.time),
+                        np.allclose(other.changing_dimensions, self.changing_dimensions),
+                    ],
+                )
         else:
             print("Failed universe comparison")
         if are_the_same:
@@ -330,13 +346,16 @@ class CompactTrajectory:
         else:
             print("Failed array comparison")
         if are_the_same:
-            are_the_same = np.all([
-                np.all(other.atom_types == self.atom_types),
-                other.n_atoms == self.n_atoms,
-                np.allclose(other.atom_charges, self.atom_charges),
-                np.allclose(other.atom_masses, self.atom_masses),
-                other.element_list == self.element_list,
-                other.element_set == self.element_set])
+            are_the_same = np.all(
+                [
+                    np.all(other.atom_types == self.atom_types),
+                    other.n_atoms == self.n_atoms,
+                    np.allclose(other.atom_charges, self.atom_charges),
+                    np.allclose(other.atom_masses, self.atom_masses),
+                    other.element_list == self.element_list,
+                    other.element_set == self.element_set,
+                ],
+            )
         else:
             print("Failed velocity comparison")
         if not are_the_same:
@@ -403,14 +422,15 @@ class CompactTrajectory:
         ~numpy.ndarray
             Concatenation of separate data arrays.
         """
-        return np.column_stack([
-            np.arange(self.n_steps),
-            self.time,
-            # there used to be a TemporalConfiguration here as well.
-        ])
+        return np.column_stack(
+            [
+                np.arange(self.n_steps),
+                self.time,
+                # there used to be a TemporalConfiguration here as well.
+            ],
+        )
 
-    def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
-                    useVelocity: bool = False):
+    def preAllocate(self, n_steps: int = 1, n_atoms: int = 1, useVelocity: bool = False):
         """
         Allocate array space for data.
 
@@ -486,8 +506,7 @@ class CompactTrajectory:
         self.atom_charges = np.array(charge_list)
         return True
 
-    def setDimensions(self, frame_dimensions: np.ndarray = None,
-                      step_num: int = -1):
+    def setDimensions(self, frame_dimensions: np.ndarray = None, step_num: int = -1):
         """
         Write the simulation box dimensions into the object header.
 
@@ -520,15 +539,20 @@ class CompactTrajectory:
             # we save the dimensions
             self.changing_dimensions[step_num] = frame_dimensions
             # per simulation step now.
-            self.dimensions = self.changing_dimensions[self.first_index:self.last_index+1].mean(
-                0)
+            self.dimensions = self.changing_dimensions[self.first_index : self.last_index + 1].mean(
+                0,
+            )
             # ^^^^^^^^^^^^^
             # now that we have discovered that the dimensions change,
             # we use the mean value over time as the dimensions parameter.
 
-    def writeOneStep(self, step_num: int = -1, time: float = -1.0,
-                     positions: np.ndarray = None,
-                     velocities: np.ndarray = None):
+    def writeOneStep(
+        self,
+        step_num: int = -1,
+        time: float = -1.0,
+        positions: np.ndarray = None,
+        velocities: np.ndarray = None,
+    ):
         """
         Write the atom properties of a single frame into the trajectory arrays.
 
@@ -668,9 +692,11 @@ class CompactTrajectory:
             return True  # and have not changed
         return False  # case 3: atom_types have been set and have changed.
 
-    def labelAtoms(self,
-                   atom_symbols: dict[int, str] = None,
-                   atom_masses: dict[int, float] = None) -> bool:
+    def labelAtoms(
+        self,
+        atom_symbols: dict[int, str] = None,
+        atom_masses: dict[int, float] = None,
+    ) -> bool:
         """
         Create internal atom references.
 
@@ -715,17 +741,24 @@ class CompactTrajectory:
         in case we had allocated too many due to some rounding error.
         """
         if not self.is_populated:
-            self.position = self.position[self.first_index:self.last_index+1]
-            self.time = self.time[self.first_index:self.last_index+1]
+            self.position = self.position[self.first_index : self.last_index + 1]
+            self.time = self.time[self.first_index : self.last_index + 1]
             if self.velocity is not None:
-                self.velocity = self.velocity[self.first_index:self.last_index+1]
-            self.changing_dimensions = self.changing_dimensions[self.first_index:self.last_index+1]
+                self.velocity = self.velocity[self.first_index : self.last_index + 1]
+            self.changing_dimensions = self.changing_dimensions[
+                self.first_index : self.last_index + 1
+            ]
             self.first_index = 0
-            self.last_index = len(self.position)-1
+            self.last_index = len(self.position) - 1
             self.is_populated = True
 
-    def subtrajectory(self, start: int = 0, stop: int = -1, step: int = 1,
-                      atom_filter: list[int] = None):
+    def subtrajectory(
+        self,
+        start: int = 0,
+        stop: int = -1,
+        step: int = 1,
+        atom_filter: list[int] = None,
+    ):
         """
         Slice a ``CompactTrajectory``.
 
@@ -804,12 +837,12 @@ class CompactTrajectory:
         temp.has_velocity = self.has_velocity
         temp.is_fixedbox = self.is_fixedbox
         temp.first_index = 0
-        temp.last_index = len(temp.position)-1
+        temp.last_index = len(temp.position) - 1
         temp.n_steps = len(temp.position)
         temp.postProcess()
         return temp
 
-    def filter_by_time(self, start: float, end: float = None) -> 'CompactTrajectory':
+    def filter_by_time(self, start: float, end: float = None) -> "CompactTrajectory":
         """
         Filter to within time defined by ``start`` and ``end``.
 
@@ -845,14 +878,14 @@ class CompactTrajectory:
             index = np.where(self.time == start)[0].ravel()
             if not index.size:
                 raise ValueError("The specified time range contains no MD frames")
-            return self.subtrajectory(index[0], index[0]+1)
+            return self.subtrajectory(index[0], index[0] + 1)
 
         index = np.where((self.time >= start) & (self.time < end))[0].ravel()
         if not index.size:
             raise ValueError("The specified time range contains no MD frames")
         return self.subtrajectory(index[0], len(index))
 
-    def filter_by_element(self, elements: list[str]) -> 'CompactTrajectory':
+    def filter_by_element(self, elements: list[str]) -> "CompactTrajectory":
         """
         Filter subtrajectory by chemical symbol.
 
@@ -877,7 +910,7 @@ class CompactTrajectory:
         index = np.sort(index)
         return self.subtrajectory(0, len(self), step=1, atom_filter=index)
 
-    def filter_by_type(self, types: list[int]) -> 'CompactTrajectory':
+    def filter_by_type(self, types: list[int]) -> "CompactTrajectory":
         """
         Filter subtrajectory by atom ID.
 
@@ -926,7 +959,7 @@ class CompactTrajectory:
         try:
             element = self.element_list[atom_number]
         except AttributeError:
-            element = '?'
+            element = "?"
 
         try:
             velocity = self.velocity[step_number, atom_number, :]
@@ -938,14 +971,11 @@ class CompactTrajectory:
         except IndexError:
             charge = 0.0
 
-        return Atom(element,
-                    self.position[step_number, atom_number, :],
-                    velocity,
-                    charge=charge)
+        return Atom(element, self.position[step_number, atom_number, :], velocity, charge=charge)
 
 
 def configurations_as_compact_trajectory(
-        *configs: list[TemporalConfiguration],
+    *configs: list[TemporalConfiguration],
 ) -> CompactTrajectory:
     """
     Populate ``CompactTrajectory`` arrays from list of ``TemporalConfiguration``.
@@ -966,13 +996,16 @@ def configurations_as_compact_trajectory(
         No configurations provided.
     """
     if not configs:
-        raise TypeError("At least one Configuration is needed"
-                        " for the CompactTrajectory.fromConfigs()")
+        raise TypeError(
+            "At least one Configuration is needed for the CompactTrajectory.fromConfigs()",
+        )
 
-    traj = CompactTrajectory(n_steps=len(configs),
-                             n_atoms=len(configs[0].atoms),
-                             useVelocity=len(configs[0].atom_velocities) > 0,
-                             universe=configs[0].universe)
+    traj = CompactTrajectory(
+        n_steps=len(configs),
+        n_atoms=len(configs[0].atoms),
+        useVelocity=len(configs[0].atom_velocities) > 0,
+        universe=configs[0].universe,
+    )
 
     for step_number, config in enumerate(configs):
         try:
@@ -982,13 +1015,14 @@ def configurations_as_compact_trajectory(
         if len(config.data) > 0:
             atpos = np.vstack(config.atom_positions)
             atvel = np.vstack(config.atom_velocities)
-            traj.writeOneStep(step_num=step_number,
-                              time=current_time,
-                              positions=atpos,
-                              velocities=atvel)
+            traj.writeOneStep(
+                step_num=step_number,
+                time=current_time,
+                positions=atpos,
+                velocities=atvel,
+            )
         else:
-            traj.writeEmptyStep(step_num=step_number,
-                                time=current_time)
+            traj.writeEmptyStep(step_num=step_number, time=current_time)
         try:
             dim = config.universe.dimensions
         except AttributeError:

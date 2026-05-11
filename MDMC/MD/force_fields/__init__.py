@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A module for force field classes."""
+
 from . import OPLSAA, SPC, SPCE, ff, force_field_factory
 
 __all__ = [

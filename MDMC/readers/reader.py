@@ -15,15 +15,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Module for reader abstract class"""
+
 from abc import ABC, abstractmethod
 from typing import IO, Any
 
 from MDMC.common.decorators import repr_decorator
 
 
-@repr_decorator('file')
+@repr_decorator("file")
 class Reader(ABC):
-
     """
     Abstract class that defines methods common to all readers
 
@@ -48,7 +48,7 @@ class Reader(ABC):
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file = open(self.file_name, 'r', encoding='UTF-8')
+        self.file = open(self.file_name, "r", encoding="UTF-8")
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the open file after parsing"""

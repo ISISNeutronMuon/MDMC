@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A module containing a class for storing packmol systems and their metadata"""
+
 import logging
 import math
 import warnings
@@ -51,8 +52,11 @@ def calculate_volume(dimensions: tuple[float], container_type: str = None) -> fl
         case "sphere":
             return (4 / 3) * math.pi * (dimensions[0] ** 3)
         case _:
-            raise ValueError("The type of container is unsupported or none."
-                             "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
+            raise ValueError(
+                "The type of container is unsupported or none."
+                'Currently only "cube", "box", and "sphere" are supported.',
+            )
+
 
 class PackmolSetup:
     """
@@ -67,10 +71,13 @@ class PackmolSetup:
         self._system_settings: dict = {}
         self._system_settings["tolerance"] = 2.0  # packmol default tolerance
 
-    def add_fixed_structure(self, structure: Structure,
-                           position: tuple[float] = (0., 0., 0.),
-                           rotation: tuple[float] = (0., 0., 0.),
-                           centre: bool = True) -> None:
+    def add_fixed_structure(
+        self,
+        structure: Structure,
+        position: tuple[float] = (0.0, 0.0, 0.0),
+        rotation: tuple[float] = (0.0, 0.0, 0.0),
+        centre: bool = True,
+    ) -> None:
         """
         Add a single structure (atom or molecule) in a fixed position to the setup.
 
@@ -92,20 +99,24 @@ class PackmolSetup:
         if structure not in self._structures:
             self._structures.append(structure)
 
-        self._structure_settings.append({
-            "structure": structure,
-            "number": 1,
-            "center": centre,
-            "fixed": " ".join([str(number) for number in position+rotation]),
-        })
+        self._structure_settings.append(
+            {
+                "structure": structure,
+                "number": 1,
+                "center": centre,
+                "fixed": " ".join([str(number) for number in position + rotation]),
+            },
+        )
 
-    def add_container(self,
-                      structure: Structure,
-                      dimensions: tuple,
-                      origin: tuple = (0., 0., 0.),
-                      density: float = 0.,
-                      n_structures: int = 0,
-                      container_type: str = None) -> None:
+    def add_container(
+        self,
+        structure: Structure,
+        dimensions: tuple,
+        origin: tuple = (0.0, 0.0, 0.0),
+        density: float = 0.0,
+        n_structures: int = 0,
+        container_type: str = None,
+    ) -> None:
         """
         Adds a container to the setup
         Only density or n_structures need to be provided at one time,
@@ -137,20 +148,27 @@ class PackmolSetup:
             dimensions, n_structures = self.resolve_density(dimensions, density, container_type)
 
         if container_type == "box":
-            dimensions = tuple(i+j for i, j in zip(origin, dimensions))
+            dimensions = tuple(i + j for i, j in zip(origin, dimensions))
 
-        self._structure_settings.append({
-            "structure": structure,
-            "number": n_structures,
-            # Packmol needs the origin information explicitly
-            f"inside {container_type}": " ".join([str(number) for number in origin+dimensions]),
-        })
+        self._structure_settings.append(
+            {
+                "structure": structure,
+                "number": n_structures,
+                # Packmol needs the origin information explicitly
+                f"inside {container_type}": " ".join(
+                    [str(number) for number in origin + dimensions],
+                ),
+            },
+        )
 
-    def add_cube(self, structure: Structure,
-                 size: float,
-                 origin: tuple[float] = (0., 0., 0.),
-                 density: float = 0.,
-                 n_structures: int = 0) -> None:
+    def add_cube(
+        self,
+        structure: Structure,
+        size: float,
+        origin: tuple[float] = (0.0, 0.0, 0.0),
+        density: float = 0.0,
+        n_structures: int = 0,
+    ) -> None:
         """
         Add a cube of randomly-packed structures.
         At least two of "size", "density" or "number" must be filled in order to
@@ -171,18 +189,23 @@ class PackmolSetup:
         n_structures: optional, int
             An integer number of structures to fill the cube with.
         """
-        self.add_container(structure=structure,
-                           dimensions=(size,),
-                           origin=origin,
-                           density=density,
-                           n_structures=n_structures,
-                           container_type="cube")
+        self.add_container(
+            structure=structure,
+            dimensions=(size,),
+            origin=origin,
+            density=density,
+            n_structures=n_structures,
+            container_type="cube",
+        )
 
-    def add_box(self, structure: Structure,
-                lengths: tuple[float],
-                origin: tuple[float] = (0., 0., 0.),
-                density: float = 0.,
-                n_structures: int = 0) -> None:
+    def add_box(
+        self,
+        structure: Structure,
+        lengths: tuple[float],
+        origin: tuple[float] = (0.0, 0.0, 0.0),
+        density: float = 0.0,
+        n_structures: int = 0,
+    ) -> None:
         """
         Add a cuboid box of randomly-packed structures.
         At least two of "lengths", "density" or "number" must be filled in order to
@@ -204,18 +227,23 @@ class PackmolSetup:
             An integer number of structures to fill the box with.
             Defaults to 0.
         """
-        self.add_container(structure=structure,
-                           dimensions=lengths,
-                           origin=origin,
-                           density=density,
-                           n_structures=n_structures,
-                           container_type="box")
+        self.add_container(
+            structure=structure,
+            dimensions=lengths,
+            origin=origin,
+            density=density,
+            n_structures=n_structures,
+            container_type="box",
+        )
 
-    def add_sphere(self, structure: Structure,
-                   radius: float,
-                   origin: tuple[float] = (0., 0., 0.),
-                   density: float = 0.,
-                   n_structures: int = 0) -> None:
+    def add_sphere(
+        self,
+        structure: Structure,
+        radius: float,
+        origin: tuple[float] = (0.0, 0.0, 0.0),
+        density: float = 0.0,
+        n_structures: int = 0,
+    ) -> None:
         """
         Add a sphere of randomly-packed structures.
         At least two of "size", "density" or "number" must be filled in order to
@@ -237,12 +265,14 @@ class PackmolSetup:
             An integer number of structures to fill the box with.
             Defaults to 0.
         """
-        self.add_container(structure=structure,
-                           dimensions=(radius,),
-                           origin=origin,
-                           density=density,
-                           n_structures=n_structures,
-                           container_type="sphere")
+        self.add_container(
+            structure=structure,
+            dimensions=(radius,),
+            origin=origin,
+            density=density,
+            n_structures=n_structures,
+            container_type="sphere",
+        )
 
     def remove_structure(self, structure: Structure) -> None:
         """
@@ -254,18 +284,20 @@ class PackmolSetup:
             The `Structure` (atom or molecule) object to remove from the setup.
         """
         if structure not in self._structures:
-            warnings.warn(f"The removal of the structure {structure} was requested,"
-                          " but no such structure is in the system.")
-        self._structure_settings = [setting
-                                    for setting in self._structure_settings
-                                    if setting["structure"] != structure]
+            warnings.warn(
+                f"The removal of the structure {structure} was requested,"
+                " but no such structure is in the system.",
+            )
+        self._structure_settings = [
+            setting for setting in self._structure_settings if setting["structure"] != structure
+        ]
         self._structures.remove(structure)
 
     def validate_setup(self) -> None:
         """Ensures that the setup is valid - shows errors and warnings for issues with the setup"""
         error_messages = []
         tol = self._system_settings["tolerance"]
-        if (tol is None or tol <= 0.):
+        if tol is None or tol <= 0.0:
             error_messages.append("The system tolerance must be set.")
 
         if len(self._structures) == 0:
@@ -278,20 +310,25 @@ class PackmolSetup:
                 error_messages.append("There are settings without an associated structure.")
             # Each structure needs to have at least one "number" setting
             if "number" not in settings:
-                error_messages.append(f"The number of {structure}"
-                                      " structures needs to be specified.")
+                error_messages.append(
+                    f"The number of {structure} structures needs to be specified.",
+                )
             # Each structure must have at least one constraint
             if not np.any([self._is_constraint(key) for key in settings]):
-                error_messages.append(f"Structure {structure} must"
-                                      " have a spatial constraint attached.")
+                error_messages.append(
+                    f"Structure {structure} must have a spatial constraint attached.",
+                )
             # Each structure must have values for their respective constraints
             if np.any([settings_dict[key] is None for key in settings]):
-                error_messages.append(f"Structure {structure} has unfilled values"
-                                      " for its settings.")
+                error_messages.append(
+                    f"Structure {structure} has unfilled values for its settings.",
+                )
 
         if error_messages:
-            raise RuntimeError("The packmol setup is invalid for the following reasons:\n"
-                               + "\n".join(error_messages))
+            raise RuntimeError(
+                "The packmol setup is invalid for the following reasons:\n"
+                + "\n".join(error_messages),
+            )
 
     def get_settings(self) -> tuple[dict, list[dict]]:
         """
@@ -319,7 +356,7 @@ class PackmolSetup:
             A 6-tuple of the minimum and maximum sizes of the setup in the following format:
             (x_min, y_min, z_min, x_max, y_max, z_max)
         """
-        dims = np.zeros(shape=(1,6))
+        dims = np.zeros(shape=(1, 6))
         # Extract coordinates for each container
         for index, mol_dict in enumerate(self._structure_settings):
             keys = mol_dict.keys()
@@ -345,7 +382,6 @@ class PackmolSetup:
         maximum = [float(np.amax(dims[:, i])) for i in range(3, 6)]
         return np.subtract(maximum, minimum)
 
-
     @staticmethod
     def _is_constraint(setting_name: str) -> bool:
         """
@@ -361,15 +397,14 @@ class PackmolSetup:
         `bool`
             True if the setting is a constraint, False otherwise
         """
-        return setting_name in ["inside cube",
-                                "inside box",
-                                "inside sphere",
-                                "fixed"]
+        return setting_name in ["inside cube", "inside box", "inside sphere", "fixed"]
 
     @staticmethod
-    def resolve_density(dimensions: tuple[float],
-                        density: float = 0.,
-                        container_type: str = None) -> tuple:
+    def resolve_density(
+        dimensions: tuple[float],
+        density: float = 0.0,
+        container_type: str = None,
+    ) -> tuple:
         """
         Takes a volume of type "box", "cube", or "sphere", with nominal dimensions,
         tries to fill that volume to the given density, and changes the dimensions
@@ -392,23 +427,25 @@ class PackmolSetup:
             1) A tuple of the (possibly) revised dimensions of the volume
             2) The number of structures needed to meet the density
         """
-        if density == 0. or 0. in dimensions:
+        if density == 0.0 or 0.0 in dimensions:
             raise ValueError("Density or dimension(s) is set to 0.")
 
         volume = calculate_volume(dimensions, container_type)
         integer_num_mol = round(density * volume)
         optimal_volume = integer_num_mol / density
 
-        scale_factor = (optimal_volume/volume)**(1/3)
+        scale_factor = (optimal_volume / volume) ** (1 / 3)
         if container_type == "box":
-            scaled_lengths = [size*scale_factor for size in dimensions]
+            scaled_lengths = [size * scale_factor for size in dimensions]
         else:
-            scaled_lengths = [dim*scale_factor for dim in dimensions]
+            scaled_lengths = [dim * scale_factor for dim in dimensions]
 
         if scale_factor != 1.0:
-            info_string = (f"The dimensions of the container are changed to {scaled_lengths} "
-                           f"to achieve the requested density of {density} "
-                            "with a whole number of structures")
+            info_string = (
+                f"The dimensions of the container are changed to {scaled_lengths} "
+                f"to achieve the requested density of {density} "
+                "with a whole number of structures"
+            )
             # TODO: Find a way to silence this to not clog the output during testing
             print(info_string)
             LOGGER.info(msg=info_string)

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Module for observable reader abstract class"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -29,9 +30,9 @@ from MDMC.readers.reader import Reader
 if TYPE_CHECKING:
     from MDMC.trajectory_analysis.observables.obs import Observable
 
-@repr_decorator('data')
-class ObservableReader(Reader):
 
+@repr_decorator("data")
+class ObservableReader(Reader):
     """
     Abstract class that defines methods common to all readers for observables
 
@@ -40,7 +41,7 @@ class ObservableReader(Reader):
 
     def assign(self, observable: Observable) -> None:
         # disable pylint warning about writing to the `Observable`
-        #pylint: disable=protected-access
+        # pylint: disable=protected-access
         """
         Abstract method to assign the parsed information into the `Observable`
 
@@ -66,9 +67,11 @@ class ObservableReader(Reader):
             the dependent variables
         """
 
-        return {"independent": self.independent_variables,
-                "dependent": self.dependent_variables,
-                "errors": self.errors}
+        return {
+            "independent": self.independent_variables,
+            "dependent": self.dependent_variables,
+            "errors": self.errors,
+        }
 
     @property
     @abstractmethod
@@ -136,6 +139,7 @@ class ObservableReader(Reader):
 
 class SQwReader(ObservableReader, ABC):
     """Abstract base subclass that adds attributes & methods common to all SQw readers"""
+
     # pylint: disable=attribute-defined-outside-init
     # to avoid it flagging up on private attributes in getters
 
@@ -198,7 +202,7 @@ class SQwReader(ObservableReader, ABC):
         return self._w
 
     @w.setter
-    @unit_decorator(unit=units.Unit('ps') ** -1)
+    @unit_decorator(unit=units.Unit("ps") ** -1)
     def w(self, value: float) -> None:
         self._w = value
 
@@ -234,7 +238,7 @@ class SQwReader(ObservableReader, ABC):
         return self._Q
 
     @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
+    @unit_decorator(unit=units.LENGTH**-1)
     def Q(self, value: float) -> None:
 
         self._Q = value
@@ -297,7 +301,7 @@ class PDFReader(ObservableReader, ABC):
         return self._r
 
     @r.setter
-    @unit_decorator(unit=units.Unit('Ang'))
+    @unit_decorator(unit=units.Unit("Ang"))
     def r(self, value) -> None:
 
         self._r = value
@@ -315,7 +319,7 @@ class PDFReader(ObservableReader, ABC):
         return self._PDF
 
     @PDF.setter
-    @unit_decorator(unit=units.Unit('barn'))
+    @unit_decorator(unit=units.Unit("barn"))
     def PDF(self, value: float) -> None:
         self._PDF = value
 
@@ -331,6 +335,6 @@ class PDFReader(ObservableReader, ABC):
         return self._PDF_err
 
     @PDF_err.setter
-    @unit_decorator(unit=units.Unit('barn'))
+    @unit_decorator(unit=units.Unit("barn"))
     def PDF_err(self, value: float) -> None:
         self._PDF_err = value

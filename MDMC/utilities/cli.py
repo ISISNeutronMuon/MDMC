@@ -21,6 +21,7 @@ Notes
 -----
 This is only used to provide a simple method for users to run installation tests.
 """
+
 import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
 from textwrap import dedent
@@ -40,21 +41,27 @@ def get_parser() -> ArgumentParser:
 
     description = "The MDMC command line interface."
 
-    epilog = dedent('''
+    epilog = dedent("""
     Usage Examples
     --------------
     To run all tests of the MDMC installation:
 
         MDMC test
-    ''')
+    """)
 
-    parser = ArgumentParser(prog='MDMC', description=description, add_help=True,
-                            epilog=epilog, formatter_class=RawTextHelpFormatter)
+    parser = ArgumentParser(
+        prog="MDMC",
+        description=description,
+        add_help=True,
+        epilog=epilog,
+        formatter_class=RawTextHelpFormatter,
+    )
     parser.set_defaults(func=parser.print_help)
     subparsers = parser.add_subparsers()
     _add_test_subparser(subparsers)
 
     return parser
+
 
 # subparsers not typed because it is protected class (special action object)
 
@@ -69,13 +76,16 @@ def _add_test_subparser(subparsers: ArgumentParser) -> None:
         Subparser for installation tests.
     """
 
-    test_help = '''
+    test_help = """
     This is used to test the installation of the MDMC core
     components and optional functionality. If a test fails, please consult the
-    log file for further details.'''
+    log file for further details."""
 
-    test_subparser = subparsers.add_parser('test', help=test_help,
-                                           formatter_class=RawTextHelpFormatter)
+    test_subparser = subparsers.add_parser(
+        "test",
+        help=test_help,
+        formatter_class=RawTextHelpFormatter,
+    )
     test_subparser.set_defaults(func=run_installation_tests)
 
 

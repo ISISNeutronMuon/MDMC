@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
 
 class AtomContainer(ABC):
-
     """
     A collection of ``Atom`` objects
 

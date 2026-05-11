@@ -40,7 +40,6 @@ from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 
 
 class TIP3PFB(WaterModel):
-
     """
     TIP3P-FB force field - LJ, Coulombic, fixed bond lengths and angles
     """
@@ -57,27 +56,25 @@ class TIP3PFB(WaterModel):
         # J. Phys. Chem. Lett. 2014, 5, 11, 1885–1891
 
         # Charge Parameters
-        q_O = -0.84844      # e
-        q_H = abs(q_O/2)    # e
+        q_O = -0.84844  # e
+        q_H = abs(q_O / 2)  # e
 
         # LJ Parameters
-        sigma = 3.1780      # Ang
-        epsilon = 0.65214   # kJ mol^-1
+        sigma = 3.1780  # Ang
+        epsilon = 0.65214  # kJ mol^-1
 
         # Bond Parameters
-        r_OH = 1.0118       # Ang
-        f_OH = 1882.8       # kJ mol^-1 Ang^-2
+        r_OH = 1.0118  # Ang
+        f_OH = 1882.8  # kJ mol^-1 Ang^-2
 
         # Bond Angle Parameters
-        a_HOH = 108.15      # deg
-        f_HOH = 230.12      # kJ mol^-1 rad^-2
+        a_HOH = 108.15  # deg
+        f_HOH = 230.12  # kJ mol^-1 rad^-2
 
         return {
-            (Coulombic, ('O',)): Coulomb(q_O),
-            (Coulombic, ('H',)): Coulomb(q_H),
-            (Dispersion, ('O', 'O')): LennardJones(epsilon, sigma),
-            (Bond,
-             ('H', 'O')): HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
-            (BondAngle,
-             ('H', 'O', 'H')): HarmonicPotential(a_HOH, f_HOH,
-                                                 interaction_type='angle')}
+            (Coulombic, ("O",)): Coulomb(q_O),
+            (Coulombic, ("H",)): Coulomb(q_H),
+            (Dispersion, ("O", "O")): LennardJones(epsilon, sigma),
+            (Bond, ("H", "O")): HarmonicPotential(r_OH, f_OH, interaction_type="bond"),
+            (BondAngle, ("H", "O", "H")): HarmonicPotential(a_HOH, f_HOH, interaction_type="angle"),
+        }

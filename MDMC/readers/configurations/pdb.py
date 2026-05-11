@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Module for reading pdb files"""
+
 # pylint: disable=no-name-in-module
 import itertools
 from typing import Any
@@ -44,7 +45,8 @@ class ProteinDataBankReader(ConfigurationReader):
             pdb_reader.parse()
             water = pdb_reader.molecules[0]
     """
-    extension = 'pdb'
+
+    extension = "pdb"
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
@@ -65,11 +67,15 @@ class ProteinDataBankReader(ConfigurationReader):
                 atom_id = int(line[6:12].split()[-1])
                 _molecule_id = int(line[22:26].split()[-1])
                 element = line[76:78].split()[-1]
-                current_atom_pos = [float(pos.split()[-1]) for pos in
-                                    (line[30:38], line[38:46], line[46:54])]  # xyz positions
+                current_atom_pos = [
+                    float(pos.split()[-1]) for pos in (line[30:38], line[38:46], line[46:54])
+                ]  # xyz positions
                 atom_name = line[12:16].split()[-1]
-                current_atom_obj = Atom(element.capitalize(), position=current_atom_pos,
-                                        name=atom_name)
+                current_atom_obj = Atom(
+                    element.capitalize(),
+                    position=current_atom_pos,
+                    name=atom_name,
+                )
                 self._atoms.append(current_atom_obj)
                 molecule[atom_id] = current_atom_obj
 

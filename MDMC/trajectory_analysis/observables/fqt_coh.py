@@ -26,10 +26,9 @@ from MDMC.trajectory_analysis.observables.fqt import AbstractFQt
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
-@ObservableFactory.register(('CoherentIntermediateScatteringFunction',
-                             'FQtCoherent',
-                             'FQtCoh',
-                             'FQt_coh'))
+@ObservableFactory.register(
+    ("CoherentIntermediateScatteringFunction", "FQtCoherent", "FQtCoh", "FQt_coh"),
+)
 class FQtCoherent(AbstractFQt):
     """
     Class for processing the intermediate scattering function for coherent dynamic structure factor.
@@ -39,8 +38,10 @@ class FQtCoherent(AbstractFQt):
         """Calculate the neutron weighting for coherent scattering."""
         elements_list = create_list_of_element_objects(self._trajectory.element_set)
 
-        self.weights = {str(element): element.neutron.b_c if element.neutron.b_c is not None \
-                        else 0 for element in elements_list}
+        self.weights = {
+            str(element): element.neutron.b_c if element.neutron.b_c is not None else 0
+            for element in elements_list
+        }
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
@@ -64,10 +65,11 @@ class FQtCoherent(AbstractFQt):
         for element1 in elements:
             for element2 in elements:
                 # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q += (self.weights[element1] *
-                                 self.weights[element2] *
-                                 faster_correlation(rho_element[element1],
-                                                    rho_element[element2])[:n_t])
+                FQt_single_Q += (
+                    self.weights[element1]
+                    * self.weights[element2]
+                    * faster_correlation(rho_element[element1], rho_element[element2])[:n_t]
+                )
 
         # Normalise to the number of orthogonal vectors
         try:

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """XML reader for SQw data"""
+
 import logging
 import xml.etree.ElementTree as ET
 from typing import Any, TextIO
@@ -27,8 +28,8 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
-class XML_SQw(SQwReader):
 
+class XML_SQw(SQwReader):
     """
     An XML reader for SQw data
     """
@@ -47,11 +48,11 @@ class XML_SQw(SQwReader):
         _root = _tree.getroot()
         _root_dict = self.dict_from_element(_root)
 
-        n_Q = int(_root_dict['n-q-points'])
-        n_w = int(_root_dict['n-omega-points'])
+        n_Q = int(_root_dict["n-q-points"])
+        n_w = int(_root_dict["n-omega-points"])
 
-        Q_unit = units.Unit(_root_dict['q-unit'])
-        w_unit = units.Unit(_root_dict['omega-unit'])
+        Q_unit = units.Unit(_root_dict["q-unit"])
+        w_unit = units.Unit(_root_dict["omega-unit"])
 
         # Local variable Q is used for setting self.Q after all children of
         # self._root have been parsed. This is required because a set cannot be
@@ -64,19 +65,19 @@ class XML_SQw(SQwReader):
         self.SQw_err = []
 
         for child in _root:
-            if child.tag == 'SQomega':
+            if child.tag == "SQomega":
                 child_dict = self.dict_from_element(child)
-                Q.add(float(child_dict['q']))
-                w.add(float(child_dict['omega']))
+                Q.add(float(child_dict["q"]))
+                w.add(float(child_dict["omega"]))
 
                 # Account for 'no data' in SQw
-                SQw = child_dict['S']
-                if SQw == 'no data':
-                    self.SQw.append(0.)
-                    self.SQw_err.append(0.)
+                SQw = child_dict["S"]
+                if SQw == "no data":
+                    self.SQw.append(0.0)
+                    self.SQw_err.append(0.0)
                 else:
                     self.SQw.append(float(SQw))
-                    self.SQw_err.append(float(child_dict['error']))
+                    self.SQw_err.append(float(child_dict["error"]))
 
         # Account for unit conversion after creating the variables
         self.Q = np.sort(np.array(list(Q)))
@@ -94,13 +95,12 @@ class XML_SQw(SQwReader):
         # with our approach of calculating SQw from MD. The resulting arrays must satisfy:
         # np.shape(SQw) == (np.size(Q), np.size(E))
         self.SQw = np.transpose(np.reshape(np.array(self.SQw), [n_w, n_Q]))
-        self.SQw_err = np.transpose(np.reshape(
-            np.array(self.SQw_err), [n_w, n_Q]))
+        self.SQw_err = np.transpose(np.reshape(np.array(self.SQw_err), [n_w, n_Q]))
 
         # Change any zero error points to
         # inf so that error calculations can still be performed on them.
-        if np.any(self.SQw_err <= 0.):
-            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+        if np.any(self.SQw_err <= 0.0):
+            self.SQw_err[np.where(self.SQw_err <= 0.0)] = float("inf")
             msg = "\n We have set the error bar to infinity for any zero error values, this allows \
                 us to calculate chi-squared but effectively ignores these points, this may not \
                 be what you want to do, consider using a FoM which doesn't need errors i f\

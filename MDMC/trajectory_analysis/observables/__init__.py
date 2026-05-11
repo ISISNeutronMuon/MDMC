@@ -33,6 +33,7 @@ For instance an SQw observable can be instantiated using either of the aliases:
     sqw = observables.SQw()                     # This line...
     sqw = observables.DynamicStructureFactor()  # ...is equivalent to this line
 """
+
 from collections import defaultdict
 from importlib import import_module
 from pathlib import Path
@@ -44,8 +45,7 @@ def _merge_obs_aliases(registry: dict[str, type]) -> list[str]:
     inverse_registry = defaultdict(list)
     for reg_name, reg_class in registry.items():
         inverse_registry[reg_class].append(reg_name)
-    aliases = [' / '.join(reg_names)
-               for reg_names in inverse_registry.values()]
+    aliases = [" / ".join(reg_names) for reg_names in inverse_registry.values()]
     return aliases
 
 
@@ -56,12 +56,12 @@ _BASE_NAME = Path(__file__).parent
 MODULE_NAMES = _BASE_NAME.glob("*.py")
 for module_name in MODULE_NAMES:
     if (
-            module_name.is_file() and
-            not module_name.samefile(__file__) and
-            not module_name.name.startswith('_') and
-            module_name.name != 'obs.py'
+        module_name.is_file()
+        and not module_name.samefile(__file__)
+        and not module_name.name.startswith("_")
+        and module_name.name != "obs.py"
     ):
-        import_module(__name__ + '.' + module_name.stem)
+        import_module(__name__ + "." + module_name.stem)
 
 # Get the names and classes of observables registered with ObservableFactory
 OBS_REGISTRY = obs_factory.ObservableFactory.registry
@@ -78,4 +78,4 @@ for name in OBS_NAMES:
 # There is a one to many mapping from classes to names (due to aliases), so
 # merge these and insert them into the module docstring
 OBS_ALIASES = _merge_obs_aliases(OBS_REGISTRY)
-__doc__ = __doc__.replace('DYNAMIC_OBS_ALIASES', '\n'.join(OBS_ALIASES))  # noqa: A001
+__doc__ = __doc__.replace("DYNAMIC_OBS_ALIASES", "\n".join(OBS_ALIASES))  # noqa: A001

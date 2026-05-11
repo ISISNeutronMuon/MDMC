@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Module containing an abstract base class for MD engine facades"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -31,15 +32,16 @@ class MDEngine(ABC):
 
     def __repr__(self) -> str:
 
-        return ('<{0}\n'
-                ' {{MD_engine: {MD_engine},\n'
-                ' exp_datasets: {exp_datasets},\n'
-                ' FoM_calculator: {FoM_calculator},\n'
-                ' minimizer: {minimizer},\n'
-                ' reset_config: {reset_config},\n'
-                ' fit_parameters: {fit_parameters},\n'
-                ' settings: {settings}}}>').format(self.__class__.__name__,
-                                                   **self.__dict__)
+        return (
+            "<{0}\n"
+            " {{MD_engine: {MD_engine},\n"
+            " exp_datasets: {exp_datasets},\n"
+            " FoM_calculator: {FoM_calculator},\n"
+            " minimizer: {minimizer},\n"
+            " reset_config: {reset_config},\n"
+            " fit_parameters: {fit_parameters},\n"
+            " settings: {settings}}}>"
+        ).format(self.__class__.__name__, **self.__dict__)
 
     @property
     @abstractmethod
@@ -69,9 +71,11 @@ class MDEngine(ABC):
         try:
             return self._parent_simulation
         except AttributeError as error:
-            raise AttributeError("This MD engine does not belong to a simulation. "
-                                 "MD engines should be created through initialising Simulations."
-                                 "") from error
+            raise AttributeError(
+                "This MD engine does not belong to a simulation. "
+                "MD engines should be created through initialising Simulations."
+                "",
+            ) from error
 
     @parent_simulation.setter
     def parent_simulation(self, value: Simulation) -> None:
@@ -147,8 +151,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimize(self, n_steps: int, minimize_every: int = 10,
-                 **settings: Any) -> None:
+    def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """
         Minimizes the simulation energy
 
@@ -180,8 +183,13 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: Any) -> CompactTrajectory:
+    def convert_trajectory(
+        self,
+        start: int = 0,
+        stop: int = None,
+        step: int = 1,
+        **settings: Any,
+    ) -> CompactTrajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
@@ -250,6 +258,7 @@ class MDEngine(ABC):
         """
 
         raise NotImplementedError
+
 
 class MDEngineError(Exception):
     "Raised when MD engine raises an exception from a run command"

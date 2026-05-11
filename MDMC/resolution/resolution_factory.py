@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A factory pattern for instantiating Resolution objects."""
+
 import warnings
 from functools import singledispatchmethod
 from pathlib import Path
@@ -30,15 +31,14 @@ class ResolutionFactory(ModuleFactory[Resolution]):
 
     Any function in `MDMC.resolution` s can be instantiated using this factory.
     """
+
     registry: dict[str, Resolution] = {}
     curr_path = Path(__file__).parent
     curr_pack = __package__
     exclude = (curr_path / "__init__.py", curr_path / "resolution_factory.py")
 
     @classmethod
-    def create_instance(cls,
-                        resolution: dict | float | str | None,
-                        *args: Any) -> Resolution:
+    def create_instance(cls, resolution: dict | float | str | None, *args: Any) -> Resolution:
         """
         Create a Resolution object from a dictionary.
 
@@ -60,7 +60,7 @@ class ResolutionFactory(ModuleFactory[Resolution]):
         """
 
         resolution = cls._standardise_input(resolution)
-        function_name = list(resolution.keys())[0].title() + 'Resolution'
+        function_name = list(resolution.keys())[0].title() + "Resolution"
         function_res = list(resolution.values())[0]
 
         if function_name == "FileResolution":
@@ -98,20 +98,25 @@ class ResolutionFactory(ModuleFactory[Resolution]):
         SyntaxWarning
             If ``resolution`` is a dict with multiple lines, or a float.
         """
-        raise NotImplementedError("Format of resolution function not recognised."
-                                  " It should be a one-line dictionary, but can also"
-                                  " be a number (for Gaussian resolution), a string"
-                                  " (for resolution from file), or explicitly stated as"
-                                  " None if resolution application is not needed.")
+        raise NotImplementedError(
+            "Format of resolution function not recognised."
+            " It should be a one-line dictionary, but can also"
+            " be a number (for Gaussian resolution), a string"
+            " (for resolution from file), or explicitly stated as"
+            " None if resolution application is not needed.",
+        )
 
     @_standardise_input.register
     @staticmethod
     def _(resolution: dict) -> dict:
         if len(resolution) > 1:
-            warnings.warn("The resolution dict should only have one line; ignoring"
-                          " all lines except the first."
-                          " Dictionaries are technically unordered, so"
-                          " this may cause unintended behaviour!", SyntaxWarning)
+            warnings.warn(
+                "The resolution dict should only have one line; ignoring"
+                " all lines except the first."
+                " Dictionaries are technically unordered, so"
+                " this may cause unintended behaviour!",
+                SyntaxWarning,
+            )
             res = {list(resolution.keys())[0]: list(resolution.values())[0]}
         else:
             res = resolution
@@ -122,22 +127,24 @@ class ResolutionFactory(ModuleFactory[Resolution]):
     @_standardise_input.register
     @staticmethod
     def _(resolution: str) -> dict:
-        return {'file': resolution}
+        return {"file": resolution}
 
     @_standardise_input.register(int)
     @_standardise_input.register(float)
     @staticmethod
     def _(resolution: float) -> dict:
-        warnings.warn("Assuming energy resolution is Gaussian. To change this,"
-                      " input energy resolution as {'function': 'value'}, where"
-                      " 'function' is your desired resolution approximation function.",
-                      SyntaxWarning)
-        return {'gaussian': float(resolution)}
+        warnings.warn(
+            "Assuming energy resolution is Gaussian. To change this,"
+            " input energy resolution as {'function': 'value'}, where"
+            " 'function' is your desired resolution approximation function.",
+            SyntaxWarning,
+        )
+        return {"gaussian": float(resolution)}
 
     @_standardise_input.register
     @staticmethod
     def _(resolution: None) -> dict:
-        return {'null': 0}
+        return {"null": 0}
 
 
 ResolutionFactory.scan()

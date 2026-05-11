@@ -22,7 +22,6 @@ Contents
 Control
 """
 
-
 from .control import Control
 from .plot_results import PlotResults
 

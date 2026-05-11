@@ -27,13 +27,13 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Universe
 
+
 class NullEngine(MDEngine):
     """An MD engine which does not run any MD.
 
     This is meant to test the optimisation procedure by generating results quickly.
     It passes the parameters from the Universe object to the observable calculation
     by setting attributes of the output trajectory to be parameter values."""
-
 
     @property
     def saved_config(self) -> Configuration:
@@ -77,8 +77,7 @@ class NullEngine(MDEngine):
         """
         pass
 
-    def minimize(self, n_steps: int, minimize_every: int = 10,
-                 **settings: Any) -> None:
+    def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """
         Do nothing.
 
@@ -105,8 +104,13 @@ class NullEngine(MDEngine):
         """
         pass
 
-    def convert_trajectory(self, start: int = 0, stop: int | None = None,
-                           step: int = 1, **settings: Any) -> CompactTrajectory:
+    def convert_trajectory(
+        self,
+        start: int = 0,
+        stop: int | None = None,
+        step: int = 1,
+        **settings: Any,
+    ) -> CompactTrajectory:
         """
         Return an empty trajectory.
 

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Reader for pair distribution function data from LAMP's ascii files"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -25,6 +26,7 @@ from MDMC.readers.observables.obs_reader import PDFReader
 
 if TYPE_CHECKING:
     from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
+
 
 class LAMPPDF(PDFReader):
     """
@@ -53,8 +55,7 @@ class LAMPPDF(PDFReader):
         no labels are specified, the column header in the data file is used as the label.
     """
 
-    def __init__(self, file_name: str, pdf_col: int = 3,
-                partial_strings: list[tuple] = None):
+    def __init__(self, file_name: str, pdf_col: int = 3, partial_strings: list[tuple] = None):
         super().__init__(file_name)
         self.pdf_col = pdf_col
         self.partial_pdfs = {}
@@ -62,7 +63,7 @@ class LAMPPDF(PDFReader):
 
     def assign(self, observable: PairDistributionFunction) -> None:
         # disable pylint warning about writing to the `Observable`
-        #pylint: disable=protected-access
+        # pylint: disable=protected-access
         """
         Method to assign the data parsed by the LAMPPDF reader to a PDF `Observable`.
 
@@ -78,7 +79,6 @@ class LAMPPDF(PDFReader):
         observable.partial_strings = self.partial_strings
 
     def parse(self, **settings: Any) -> None:
-
         """
         Parse the file information
 
@@ -94,11 +94,11 @@ class LAMPPDF(PDFReader):
         for i, line in enumerate(self.file):
             columns = line.strip().split()
             if i == 2:
-                #extract column headers if needed
+                # extract column headers if needed
                 if self.partial_strings is None:
                     self.partial_strings = columns[4:]
             elif i == 3:
-                #the 4th line contains information on the time-step and number of rows/distances
+                # the 4th line contains information on the time-step and number of rows/distances
                 r_array = np.zeros(int(columns[1]))
             elif i > 3:
                 r_array[i - 4] = float(columns[1])
@@ -107,19 +107,21 @@ class LAMPPDF(PDFReader):
         pdf_array = np.array(pdf_array)
 
         self.r = r_array
-        self.PDF = pdf_array[:, self.pdf_col-3]
+        self.PDF = pdf_array[:, self.pdf_col - 3]
         self.PDF_err = np.zeros(np.shape(self.PDF))
 
         # select partial pair columns by deleting the total PDF column
-        pp_array = np.delete(pdf_array, self.pdf_col-3, axis=1)
+        pp_array = np.delete(pdf_array, self.pdf_col - 3, axis=1)
         try:
             assert np.shape(pp_array)[1] == len(self.partial_strings)
         except AssertionError as error:
-            msg = (f'The number of partial pair labels ({len(self.partial_strings)}) is not the '
-                   f'same as the number of data columns for the pairs ({np.shape(pp_array)[1]}). '
-                   f'This is either because the number of labels passed is incorrect or because '
-                   f'the column labels are not recognised correctly, e.g. due to an unexpected '
-                   f'delimiter.')
+            msg = (
+                f"The number of partial pair labels ({len(self.partial_strings)}) is not the "
+                f"same as the number of data columns for the pairs ({np.shape(pp_array)[1]}). "
+                f"This is either because the number of labels passed is incorrect or because "
+                f"the column labels are not recognised correctly, e.g. due to an unexpected "
+                f"delimiter."
+            )
             raise AssertionError(msg) from error
         for i, string in enumerate(self.partial_strings):
             self.partial_pdfs[string] = pp_array[:, i]

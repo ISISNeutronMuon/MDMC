@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import islice
 from typing import TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def create_executor() -> ThreadPoolExecutor:

@@ -89,9 +89,7 @@ class TimeKeeper:
         for kk, nc in self.number_of_calls.items():
             strk = str(kk)
             if strk in self.execution_time:
-                results.append([strk,
-                                nc,
-                                self.execution_time[kk]])
+                results.append([strk, nc, self.execution_time[kk]])
         return results
 
     def total_time(self) -> float:

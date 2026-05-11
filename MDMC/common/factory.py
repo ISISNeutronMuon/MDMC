@@ -25,7 +25,7 @@ from inspect import getmembers, isabstract, isclass
 from pathlib import Path
 from typing import Generic, TypeVar, get_args
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 # Inheritors define own registry
 # pylint: disable=no-member
@@ -40,6 +40,7 @@ class Factory(ABC):  # noqa: B024 - Abstract class no abs meth.
     registry : dict[str, Callable]
         Dictionary of keys to names.
     """
+
     @classmethod
     def get(cls, key: str) -> Callable[..., T]:
         """
@@ -97,6 +98,7 @@ class ModuleFactory(Factory, ABC, Generic[T]):
     exclude : Sequence[Path]
         Paths to exclude from search.
     """
+
     curr_path: Path = None
     curr_pack: str = None
     exclude: Sequence[Path] = ()
@@ -115,11 +117,7 @@ class ModuleFactory(Factory, ABC, Generic[T]):
             module = import_module("." + path.stem, cls.curr_pack)
             classes = getmembers(
                 module,
-                lambda m: (
-                    isclass(m) and
-                    not isabstract(m) and
-                    issubclass(m, cls.supported_types())
-                ),
+                lambda m: isclass(m) and not isabstract(m) and issubclass(m, cls.supported_types()),
             )
 
             for name, type_ in classes:

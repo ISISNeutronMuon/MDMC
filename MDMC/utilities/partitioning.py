@@ -19,6 +19,7 @@ Partitioning utilities.
 
 Utilities related to partitioning iterators into their composite components.
 """
+
 from collections.abc import Callable, Iterable
 from itertools import tee
 
@@ -46,15 +47,15 @@ def partition(items: iter, predicate: Callable[[any], bool]) -> tuple:
     """
 
     iter_a, iter_b = tee((predicate(item), item) for item in items)
-    return ((item for pred, item in iter_a if pred),
-            (item for pred, item in iter_b if not pred))
+    return ((item for pred, item in iter_a if pred), (item for pred, item in iter_b if not pred))
 
 
-def partition_interactions(interactions: Iterable[Interaction],
-                           names: list[str],
-                           unpartitioned: bool = False,
-                           lst: bool = False) -> tuple[Interaction, ...]:
-
+def partition_interactions(
+    interactions: Iterable[Interaction],
+    names: list[str],
+    unpartitioned: bool = False,
+    lst: bool = False,
+) -> tuple[Interaction, ...]:
     """
     Partition an ``iterable`` of ``Interaction`` s by a `list` ``names``.
 

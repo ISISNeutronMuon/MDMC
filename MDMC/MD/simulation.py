@@ -16,7 +16,8 @@
 
 """Module for setting up and running the simulation
 
- Classes for the simulation box, minimizer and integrator."""
+Classes for the simulation box, minimizer and integrator."""
+
 from __future__ import annotations
 
 import logging
@@ -52,18 +53,22 @@ if TYPE_CHECKING:
 
 
 LOGGER = logging.getLogger(__name__)
-_FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
-                 ', '.join(ForceFieldFactory.available_names())}
+_FF_DOCSTRING = {"DYNAMIC_FORCE_FIELD_LIST": ", ".join(ForceFieldFactory.available_names())}
 
 # pylint: disable=too-few-public-methods
 # as many classes here are small MD engine compatibility
 
 
-@repr_decorator('dimensions', 'kspace_solver', 'electrostatic_solver',
-                'dispersive_solver', 'constraint_algorithm', 'parameters')
+@repr_decorator(
+    "dimensions",
+    "kspace_solver",
+    "electrostatic_solver",
+    "dispersive_solver",
+    "constraint_algorithm",
+    "parameters",
+)
 @mod_docstring(_FF_DOCSTRING)
 class Universe(AtomContainer):
-
     """
     Class where the configuration and topology are defined
 
@@ -147,7 +152,7 @@ class Universe(AtomContainer):
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
-        self._solvent_density = 0.
+        self._solvent_density = 0.0
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         if force_field:
@@ -155,28 +160,26 @@ class Universe(AtomContainer):
         else:
             self._force_fields = None
 
-        self.kspace_solver = settings.get('kspace_solver')
-        self.electrostatic_solver = settings.get('electrostatic_solver')
-        self.dispersive_solver = settings.get('dispersive_solver')
+        self.kspace_solver = settings.get("kspace_solver")
+        self.electrostatic_solver = settings.get("electrostatic_solver")
+        self.dispersive_solver = settings.get("dispersive_solver")
 
-        self.verbose = settings.get('verbose', True)
+        self.verbose = settings.get("verbose", True)
         # kspace_solver is mutually exclusive with the other two solver
         # attributes
-        if self.kspace_solver and (self.electrostatic_solver or
-                                   self.dispersive_solver):
-            msg = 'No other solver may be passed if kspace_solver is passed.'
-            LOGGER.error('%s has kspace_solver and %s. %s',
-                         self.__class__,
-                         'electrostatic_solver' if self.electrostatic_solver
-                         else 'dispersive_solver',
-                         msg)
+        if self.kspace_solver and (self.electrostatic_solver or self.dispersive_solver):
+            msg = "No other solver may be passed if kspace_solver is passed."
+            LOGGER.error(
+                "%s has kspace_solver and %s. %s",
+                self.__class__,
+                "electrostatic_solver" if self.electrostatic_solver else "dispersive_solver",
+                msg,
+            )
             raise ValueError(msg)
 
-        self.constraint_algorithm = settings.get('constraint_algorithm')
+        self.constraint_algorithm = settings.get("constraint_algorithm")
 
-        LOGGER.info(r'%s created: {dimensions:%s}',
-                    self.__class__,
-                    self.dimensions)
+        LOGGER.info(r"%s created: {dimensions:%s}", self.__class__, self.dimensions)
 
         if self.verbose:
             setup_frame = "Universe created with:"
@@ -188,12 +191,12 @@ class Universe(AtomContainer):
                 setup_frame += f"\nNumber of atoms    {self.n_atoms}"
             print(setup_frame)
 
-
-
     def __str__(self) -> str:
 
-        return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
-                f'{self.n_nonbonded} nonbonded interactions, and dimensions of {self.dimensions}')
+        return (
+            f"Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, "
+            f"{self.n_nonbonded} nonbonded interactions, and dimensions of {self.dimensions}"
+        )
 
     def __eq__(self, other) -> bool:
         if id(other) == id(self):
@@ -237,37 +240,26 @@ class Universe(AtomContainer):
 
         if isinstance(dimensions, float):
             if dimensions <= 0:
-                msg = 'Only positive values for the Universe dimensions are currently supported.'
-                LOGGER.error('%s: {dimensions: %s} %s',
-                             self.__class__,
-                             dimensions,
-                             msg)
+                msg = "Only positive values for the Universe dimensions are currently supported."
+                LOGGER.error("%s: {dimensions: %s} %s", self.__class__, dimensions, msg)
                 raise ValueError(msg)
             self._dimensions = np.array([dimensions] * 3)
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
                 if any(dim <= 0 for dim in np.array(dimensions)):
-                    msg = ('Only positive values for the Universe dimensions '
-                           'are currently supported.')
-                    LOGGER.error('%s: {dimensions: %s} %s',
-                                 self.__class__,
-                                 dimensions,
-                                 msg)
+                    msg = (
+                        "Only positive values for the Universe dimensions are currently supported."
+                    )
+                    LOGGER.error("%s: {dimensions: %s} %s", self.__class__, dimensions, msg)
                     raise ValueError(msg)
                 self._dimensions = np.array(dimensions)
             else:
-                msg = '3 dimensions must be specified'
-                LOGGER.error('%s: {dimensions: %s} %s',
-                             self.__class__,
-                             dimensions,
-                             msg)
+                msg = "3 dimensions must be specified"
+                LOGGER.error("%s: {dimensions: %s} %s", self.__class__, dimensions, msg)
                 raise ValueError(msg)
         else:
-            msg = 'dimensions must be a float or 3 element list of floats.'
-            LOGGER.error('%s: {dimensions: %s} %s',
-                         self.__class__,
-                         dimensions,
-                         msg)
+            msg = "dimensions must be a float or 3 element list of floats."
+            LOGGER.error("%s: {dimensions: %s} %s", self.__class__, dimensions, msg)
             raise TypeError(msg)
 
     @property
@@ -384,8 +376,13 @@ class Universe(AtomContainer):
             The ``Parameters`` objects defined within ``Universe``
         """
         if self._parameters is None:
-            self._parameters = Parameters([parameter for interaction in self.interactions
-                           for parameter in interaction.parameters.as_array])
+            self._parameters = Parameters(
+                [
+                    parameter
+                    for interaction in self.interactions
+                    for parameter in interaction.parameters.as_array
+                ],
+            )
         return self._parameters
 
     @parameters.setter
@@ -393,7 +390,7 @@ class Universe(AtomContainer):
         self._parameters = Parameters(input_list)
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** 3)
+    @unit_decorator_getter(unit=units.LENGTH**3)
     def volume(self) -> float:
         """
         Get the volume of the ``Universe``
@@ -440,7 +437,6 @@ class Universe(AtomContainer):
 
     @property
     def element_lookup(self) -> dict[str, Atom]:
-
         """
         Get the elements by ID in the ``Universe``
 
@@ -540,7 +536,6 @@ class Universe(AtomContainer):
 
     @property
     def top_level_structure_list(self) -> list[Structure]:
-
         """
         Get a `list` of the top level ``Structure`` objects that exist in the
         ``Universe``. This does not include any ``Structure`` that are a subunit
@@ -563,7 +558,6 @@ class Universe(AtomContainer):
 
     @property
     def equivalent_top_level_structures_dict(self) -> dict[Structure, int]:
-
         """
         Get a `dict` of equivalent top level ``Structure`` objects that
         exist in the ``Universe`` as keys, and the number of ``Structure``
@@ -638,7 +632,7 @@ class Universe(AtomContainer):
         return self._atom_type_interactions
 
     @property
-    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
+    @unit_decorator_getter(unit=units.MASS / units.LENGTH**3)
     def density(self) -> float:
         """
         Get the mass density of the ``Universe``
@@ -652,7 +646,7 @@ class Universe(AtomContainer):
         return sum(atom.mass for atom in self.atoms) / self.volume
 
     @property
-    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
+    @unit_decorator_getter(unit=units.MASS / units.LENGTH**3)
     def solvent_density(self) -> float:
         """
         Get the mass density of a solvent added using ``solvate()``
@@ -692,8 +686,7 @@ class Universe(AtomContainer):
         else:
             # Sorting is just to ensure consistent order. As interactions will have
             # different types, sort by id
-            inter_key = (atom.element.symbol, ) + tuple(sorted(atom.interactions,
-                                                        k=id))
+            inter_key = (atom.element.symbol,) + tuple(sorted(atom.interactions, k=id))
 
         if atom.atom_type:
             atom_type = atom.atom_type
@@ -704,9 +697,9 @@ class Universe(AtomContainer):
                 atom_type = self.atom_type_interactions[inter_key]
             except KeyError:
                 # Get lowest missing interger in self.atom_type_interactions
-                atom_type = next(filterfalse(set(
-                    self.atom_type_interactions.values()).__contains__,
-                    count(1)))
+                atom_type = next(
+                    filterfalse(set(self.atom_type_interactions.values()).__contains__, count(1)),
+                )
                 self._update_atom_type_interactions(inter_key, atom_type)
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
@@ -735,19 +728,26 @@ class Universe(AtomContainer):
         if key not in self.atom_type_interactions:
             self.atom_type_interactions[key] = atom_type
         else:
-            msg = ('assignments cannot be made to atom_type_interactions keys'
-                   'which already possess values.')
-            LOGGER.error('%s: {key: %s, atom_type_interactions: %s} %s',
-                         self.__class__,
-                         key,
-                         self.atom_type_interactions,
-                         msg)
+            msg = (
+                "assignments cannot be made to atom_type_interactions keys"
+                "which already possess values."
+            )
+            LOGGER.error(
+                "%s: {key: %s, atom_type_interactions: %s} %s",
+                self.__class__,
+                key,
+                self.atom_type_interactions,
+                msg,
+            )
             raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structure(self, structure: Structure | int,
-                      force_field: str | None = None,
-                      center: bool = False) -> None:
+    def add_structure(
+        self,
+        structure: Structure | int,
+        force_field: str | None = None,
+        center: bool = False,
+    ) -> None:
         """
         Adds a single ``Structure`` to the ``Universe``, with optional
         ``ForceField`` applying only to that ``Structure``
@@ -766,7 +766,7 @@ class Universe(AtomContainer):
         """
 
         if center:
-            structure.position = self.dimensions / 2.
+            structure.position = self.dimensions / 2.0
         structure.universe = self
         self.configuration.add_structure(structure)
         for atom in structure.atoms:
@@ -778,8 +778,13 @@ class Universe(AtomContainer):
             self.add_force_field(force_field, *structure.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
-    def fill(self, structures: Structure, force_field: str = None,
-             num_density: float = None, num_struc_units: int = None) -> None:
+    def fill(
+        self,
+        structures: Structure,
+        force_field: str = None,
+        num_density: float = None,
+        num_struc_units: int = None,
+    ) -> None:
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
 
@@ -823,33 +828,32 @@ class Universe(AtomContainer):
         if num_density is None and num_struc_units is not None:
             num_density = num_struc_units / np.prod(self.dimensions)
         elif num_density is not None and num_struc_units is not None:
-            msg = ('Cannot pass both num_density and num_struc_units to'
-                   ' fill the universe with.')
-            LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
-                         ' %s',
-                         self.__class__,
-                         num_density,
-                         num_struc_units,
-                         msg)
+            msg = "Cannot pass both num_density and num_struc_units to fill the universe with."
+            LOGGER.error(
+                "%s: {num_density: %s, num_struc_units: %s} %s",
+                self.__class__,
+                num_density,
+                num_struc_units,
+                msg,
+            )
             raise ValueError(msg)
         elif num_density is None and num_struc_units is None:
-            msg = ('The fill method takes either num_density or'
-                   ' num_struc_units as a parameter.')
-            LOGGER.error('%s %s',
-                         self.__class__,
-                         msg)
+            msg = "The fill method takes either num_density or num_struc_units as a parameter."
+            LOGGER.error("%s %s", self.__class__, msg)
             raise ValueError(msg)
 
-        n_units_xyz = self.dimensions * (num_density ** (1. / 3.))
+        n_units_xyz = self.dimensions * (num_density ** (1.0 / 3.0))
         n_units_xyz = n_units_xyz.astype(int)
 
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
         bounds = structures.bounding_box
-        mn = np.array((0., 0., 0.)) - (bounds.min - structures.position)
+        mn = np.array((0.0, 0.0, 0.0)) - (bounds.min - structures.position)
         mx = self.dimensions - (bounds.min - structures.position)
-        positions = [np.linspace(mi, ma, n_units, endpoint=False)
-                     for mi, ma, n_units in zip(mn, mx, n_units_xyz)]
+        positions = [
+            np.linspace(mi, ma, n_units, endpoint=False)
+            for mi, ma, n_units in zip(mn, mx, n_units_xyz)
+        ]
         positions = sorted(product(*positions))
 
         # Add the first structural unit and force field (if specified) before
@@ -861,9 +865,12 @@ class Universe(AtomContainer):
             self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_force_field(self, force_field: str,
-                        *interactions: Interaction,
-                        **settings: Any) -> None:
+    def add_force_field(
+        self,
+        force_field: str,
+        *interactions: Interaction,
+        **settings: Any,
+    ) -> None:
         """
         Adds a force field to the specified ``interactions``.  If no
         ``interactions`` are passed, the force field is applied to all
@@ -890,7 +897,7 @@ class Universe(AtomContainer):
         """
 
         self._force_fields = ForceFieldFactory.create(force_field)
-        add_dispersions = settings.get('add_dispersions', False)
+        add_dispersions = settings.get("add_dispersions", False)
 
         if add_dispersions:
             if isinstance(add_dispersions, list):
@@ -898,11 +905,11 @@ class Universe(AtomContainer):
             elif isinstance(add_dispersions, bool):
                 atoms = self.atoms
             else:
-                msg = ('add_dispersions parameter of add_force_field method'
-                       'must be a list of Atoms or a bool.')
-                LOGGER.error('%s: {add_dispersions: %s}',
-                             self.__class__,
-                             add_dispersions)
+                msg = (
+                    "add_dispersions parameter of add_force_field method"
+                    "must be a list of Atoms or a bool."
+                )
+                LOGGER.error("%s: {add_dispersions: %s}", self.__class__, add_dispersions)
                 raise TypeError(msg)
             # Get unique atom types and add dispersions for each of these
             atom_types = {atom.atom_type for atom in atoms}
@@ -922,8 +929,10 @@ class Universe(AtomContainer):
         except AttributeError:
             pass
 
-    def add_bonded_interaction_pairs(self,
-                                     *bonded_interaction_pairs: tuple[Interaction, Atom]) -> None:
+    def add_bonded_interaction_pairs(
+        self,
+        *bonded_interaction_pairs: tuple[Interaction, Atom],
+    ) -> None:
         """
         Adds one or more interaction pairs to the ``Universe``
 
@@ -936,8 +945,7 @@ class Universe(AtomContainer):
 
         self._bonded_interaction_pairs.update(bonded_interaction_pairs)
 
-    def add_nonbonded_interaction(self,
-                                  *nonbonded_interactions: tuple[Interaction, Atom]) -> None:
+    def add_nonbonded_interaction(self, *nonbonded_interactions: tuple[Interaction, Atom]) -> None:
         # ignore line too long linting as it is necessary for URL formatting
         # pylint: disable=line-too-long
         """
@@ -984,16 +992,15 @@ class Universe(AtomContainer):
         pairs_interactions = {}
         # Find pairwise combinations of N atom_types in the universe
         # Where each pair (i, j) has 0 < i, j <= N   and    i <= j
-        atom_type_pairs = ((i, j) for i, j in product(self.atom_types,
-                                                      repeat=2)
-                           if i <= j)
+        atom_type_pairs = ((i, j) for i, j in product(self.atom_types, repeat=2) if i <= j)
         # Create dict of interactions for each atom type pair
         for pair in atom_type_pairs:
-            pairs_interactions[pair] = [inter for inter in self.interactions
-                                        if (isinstance(inter, Dispersion)
-                                             and pair in inter.atom_types) or
-                                            (isinstance(inter, Coulombic)
-                                             and any(elem in inter.atom_types for elem in pair))]
+            pairs_interactions[pair] = [
+                inter
+                for inter in self.interactions
+                if (isinstance(inter, Dispersion) and pair in inter.atom_types)
+                or (isinstance(inter, Coulombic) and any(elem in inter.atom_types for elem in pair))
+            ]
 
         return pairs_interactions
 
@@ -1016,10 +1023,15 @@ class Universe(AtomContainer):
 
         return any(position > self.dimensions) or any(position < [0, 0, 0])
 
-    @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
-    def solvate(self, density: float,
-                tolerance: float = 1., solvent: str = 'SPCE',
-                max_iterations: int = 100, **settings: Any) -> None:
+    @mod_docstring({"DYNAMIC_SOLVENT_LIST": ", ".join(get_solvent_names())})
+    def solvate(
+        self,
+        density: float,
+        tolerance: float = 1.0,
+        solvent: str = "SPCE",
+        max_iterations: int = 100,
+        **settings: Any,
+    ) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
         coordinates.
@@ -1067,59 +1079,57 @@ class Universe(AtomContainer):
         # solvent_density of a Universe.
         if abs(density * 100) <= abs(tolerance):
             return
-        if self.solvent_density != 0.:
-            msg = ('The universe has already been solvated. The density of a'
-                   ' previously added solvent cannot be changed.')
-            LOGGER.error('%s: {solvent_density: %s, density: %s}. %s',
-                         self.__class__,
-                         self.solvent_density,
-                         density, msg)
+        if self.solvent_density != 0.0:
+            msg = (
+                "The universe has already been solvated. The density of a"
+                " previously added solvent cannot be changed."
+            )
+            LOGGER.error(
+                "%s: {solvent_density: %s, density: %s}. %s",
+                self.__class__,
+                self.solvent_density,
+                density,
+                msg,
+            )
             raise ValueError(msg)
         # Get the prelim scaling of the orig box required to achieve density
-        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3.)]
-                               * 3)
+        dim_scaling = np.array([(solvent_config.density / density) ** (1.0 / 3.0)] * 3)
 
-        scale_factor = 0.
+        scale_factor = 0.0
         counter = 0
         # Offset the atom_types of the solvent_config by the maximum atom_type
         # in the Universe.
         max_atom_type = max(self.atom_types.keys(), default=0)
 
         solvent_config.offset_atom_types(max_atom_type)
-        difference = float('inf')
+        difference = float("inf")
 
         while abs(difference * 100) >= abs(tolerance):
-
             counter += 1
             dim_scaling *= 1 + scale_factor
             box_dimensions = orig_box_dimensions * dim_scaling
             num_tiles = np.array(self.dimensions / box_dimensions)
             # Binary list for axes along which whole num of tiles are used.
-            wrap = np.array([1 if direc.is_integer() else 0
-                             for direc in num_tiles])
+            wrap = np.array([1 if direc.is_integer() else 0 for direc in num_tiles])
             num_tiles = np.ceil(num_tiles).astype(int)
 
             mols = []
-            for trans_vect in product(range(0, num_tiles[0]),
-                                      range(0, num_tiles[1]),
-                                      range(0, num_tiles[2])):
-
+            for trans_vect in product(
+                range(0, num_tiles[0]),
+                range(0, num_tiles[1]),
+                range(0, num_tiles[2]),
+            ):
                 solvent_config.reset_molecules()
                 for mol_key, mol in tuple(solvent_config.molecules.items()):
-
                     atom_positions = mol.values()
                     CoM = solvent_config.molec_from_dict(mol).position
 
                     remove = False
                     for pos in atom_positions:
-
-                        pos += (dim_scaling
-                                * (CoM + trans_vect * orig_box_dimensions)
-                                - CoM)
+                        pos += dim_scaling * (CoM + trans_vect * orig_box_dimensions) - CoM
                         # Create binary list indicating the axes along
                         # which the atom is out of bounds.
-                        axes = np.array([1 if i > j else 0
-                                         for i, j in zip(pos, self.dimensions)])
+                        axes = np.array([1 if i > j else 0 for i, j in zip(pos, self.dimensions)])
                         # Translates position if wrapping required.
                         pos -= wrap * axes * num_tiles * box_dimensions
                         remove = self._check_out_of_bounds(pos)
@@ -1134,15 +1144,18 @@ class Universe(AtomContainer):
                         del solvent_config.molecules[mol_key]
                 mols += solvent_config.molecules_from_coords(
                     solvent_config.molecules,
-                    universe=self)
+                    universe=self,
+                )
 
             # Check the density
             actual = (len(mols) * solvent_mass) / self.volume
             difference = (actual - density) / density
             scale_factor = difference / counter
             if counter > max_iterations:
-                msg = ('100 Iterations have been tried but the universe is not solvated'
-                   ' to within tolerance. Try increasing the tolerance or Universe size')
+                msg = (
+                    "100 Iterations have been tried but the universe is not solvated"
+                    " to within tolerance. Try increasing the tolerance or Universe size"
+                )
                 LOGGER.error(msg)
                 raise ValueError(msg)
 
@@ -1159,21 +1172,18 @@ class Universe(AtomContainer):
         nonbonded_interactions = []
         for interaction in self.nonbonded_interactions:
             inter_atom_types = np.array(interaction.atom_types).flatten()
-            if len(set(inter_atom_types).intersection(
-                    solvent_config.atom_types.values())) >= 1:
+            if len(set(inter_atom_types).intersection(solvent_config.atom_types.values())) >= 1:
                 nonbonded_interactions.append(interaction)
 
         # Apply the force field of the solvent to the Universe
         try:
-            self.add_force_field(solvent, *set(bonded_interactions
-                                               + nonbonded_interactions))
+            self.add_force_field(solvent, *set(bonded_interactions + nonbonded_interactions))
             # If BondedInteractions are constrained, apply a constrain algorithm
             if solvent_config.constrained:
-                self.constraint_algorithm = settings.get('constraint_algorithm',
-                                                         Shake(1e-4, 100))
+                self.constraint_algorithm = settings.get("constraint_algorithm", Shake(1e-4, 100))
 
             if self.verbose:
-                print(f'Force field created by solvent {solvent}')
+                print(f"Force field created by solvent {solvent}")
 
         except ImportError:
             pass
@@ -1203,7 +1213,7 @@ class KSpaceSolver:
 
     def __init__(self, **settings: Any):
 
-        self.accuracy = settings.get('accuracy')
+        self.accuracy = settings.get("accuracy")
 
     @property
     def name(self):
@@ -1251,8 +1261,7 @@ class PPPM(KSpaceSolver):
 
         if not isinstance(other, self.__class__):
             return False
-        return all(v == getattr(other, k)
-                   for k, v in self.__dict__.items())
+        return all(v == getattr(other, k) for k, v in self.__dict__.items())
 
     def __ne__(self, other) -> bool:
 
@@ -1260,7 +1269,6 @@ class PPPM(KSpaceSolver):
 
 
 class ConstraintAlgorithm:
-
     """
     Class describing the algorithm and parameters which are applied to
     constrain ``BondedInteraction`` objects
@@ -1320,7 +1328,6 @@ class ConstraintAlgorithm:
 
 
 class Shake(ConstraintAlgorithm):
-
     """
     Holds the parameters which are required for the SHAKE algorithm to be
     applied to the constrained interactions
@@ -1352,9 +1359,8 @@ class Rattle(ConstraintAlgorithm):
     """
 
 
-@repr_decorator('universe', 'engine', 'settings')
+@repr_decorator("universe", "engine", "settings")
 class Simulation:
-
     """
     Sets up the molecular dynamics engine and parameters for how it should run
 
@@ -1417,8 +1423,14 @@ class Simulation:
     """
 
     # TODO: Potentially separate out universe and simulation setup
-    def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., engine: str = "lammps", **settings):
+    def __init__(
+        self,
+        universe: Universe,
+        traj_step: int,
+        time_step: float = 1.0,
+        engine: str = "lammps",
+        **settings,
+    ):
 
         self.universe = universe
         self.traj_step = traj_step
@@ -1426,14 +1438,18 @@ class Simulation:
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self.engine.parent_simulation = self
-        self.verbose = settings.get('verbose', True)
+        self.verbose = settings.get("verbose", True)
         self._setup()
 
-        self.setup_msg = f'Simulation created with {engine} engine'
+        self.setup_msg = f"Simulation created with {engine} engine"
         if self.settings:
-            settings_strings = ''.join([f'{key}: {value} {units.SYSTEM.get(key.upper(),"")} \n'
-                                for key, value in self.settings.items()])
-            self.setup_msg += f' and settings:\n{str(settings_strings)}\n'
+            settings_strings = "".join(
+                [
+                    f"{key}: {value} {units.SYSTEM.get(key.upper(), '')} \n"
+                    for key, value in self.settings.items()
+                ],
+            )
+            self.setup_msg += f" and settings:\n{str(settings_strings)}\n"
         if self.verbose:
             print(self.setup_msg)
 
@@ -1484,10 +1500,15 @@ class Simulation:
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps: int,
-                 minimize_every: int = 10,
-                 verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: Any) -> None:
+    def minimize(
+        self,
+        n_steps: int,
+        minimize_every: int = 10,
+        verbose: bool = False,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: Any,
+    ) -> None:
         """
         Performs an MD run intertwined with periodic structure relaxation.
         This way after a local minimum is found, the system is taken
@@ -1528,15 +1549,28 @@ class Simulation:
         # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
 
-        verbose_manager.step(f"Running minimization every {minimize_every} steps "
-                             f"in an MD run with {n_steps} steps")
-        self.engine.minimize(n_steps, minimize_every, output_log=output_log, work_dir=work_dir,
-                             **settings)
+        verbose_manager.step(
+            f"Running minimization every {minimize_every} steps in an MD run with {n_steps} steps",
+        )
+        self.engine.minimize(
+            n_steps,
+            minimize_every,
+            output_log=output_log,
+            work_dir=work_dir,
+            **settings,
+        )
 
         verbose_manager.finish("Minimization")
 
-    def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings: Any) -> None:
+    def run(
+        self,
+        n_steps: int,
+        equilibration: bool = False,
+        verbose: bool = False,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: Any,
+    ) -> None:
         """
         Runs the MD simulation for the specified number of steps. Trajectories
         for the simulation are only saved when ``equilibration`` is `False`.
@@ -1560,7 +1594,7 @@ class Simulation:
             Working directory for the MD engine to write to. Default is `None`.
         """
 
-        process = 'equilibration' if equilibration else 'simulation'
+        process = "equilibration" if equilibration else "simulation"
 
         verbose_manager = VerboseManager.instance()
         # to match legacy use of verbose on this function (where verbose was bool) we use bool
@@ -1570,11 +1604,18 @@ class Simulation:
         verbose_manager.step(f"Running {process} for {n_steps} steps")
 
         if n_steps < self.traj_step:
-            warnings.warn(f"Run length ({n_steps}) less than dump frequency ({self.traj_step}), "
-                          "run may not produce usable output.")
+            warnings.warn(
+                f"Run length ({n_steps}) less than dump frequency ({self.traj_step}), "
+                "run may not produce usable output.",
+            )
 
-        self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
-                        work_dir=work_dir, **self.settings)
+        self.engine.run(
+            n_steps=n_steps,
+            equilibration=equilibration,
+            output_log=output_log,
+            work_dir=work_dir,
+            **self.settings,
+        )
 
         verbose_manager.finish(f"{process.capitalize()}")
 
@@ -1584,11 +1625,11 @@ class Simulation:
     # this is safe and has better readability
     def auto_equilibrate(
         self,
-        variables: list[str] = ('temp', 'pe'),
+        variables: list[str] = ("temp", "pe"),
         eq_step: int = 10,
         window_size: int = 100,
         tolerance: float = 0.01,
-        max_step = 10000,
+        max_step=10000,
     ) -> tuple[int, dict]:
         """
         Equilibrate until the specified list of variables have stabilised.
@@ -1632,7 +1673,7 @@ class Simulation:
             """
             variable_values = vals_dict[var]
             window = variable_values[-window_size:]
-            results = kpss(window, regression='c')
+            results = kpss(window, regression="c")
             # results[1] is the p-value from the test
             # we base our tolerance on the p-value, where the alternative hypothesis
             # for KPSS is "NOT stationary" - statsmodels also never gives a p above
@@ -1654,8 +1695,7 @@ class Simulation:
             raise ValueError("Auto-equilibration stability not reached after {max_step} steps.")
 
         total_steps = len(list(vals_dict.values())[0]) * eq_step
-        print("Auto-equilibration has detected stability "
-             f"after {total_steps} equilibration steps.")
+        print(f"Auto-equilibration has detected stability after {total_steps} equilibration steps.")
         return total_steps, vals_dict
 
     @property

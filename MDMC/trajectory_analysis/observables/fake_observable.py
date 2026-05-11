@@ -44,7 +44,8 @@ def gaussian_2D(
     )
     return y_results.reshape((len(y_results), 1)) * x_results.reshape((1, len(x_results)))
 
-@ObservableFactory.register(('FakeObservable', 'gauss2D'))
+
+@ObservableFactory.register(("FakeObservable", "gauss2D"))
 class FakeObservable(Observable):
     """Calculates a function and ignores the trajectory contents.
 
@@ -54,6 +55,7 @@ class FakeObservable(Observable):
         width_x=3.3
         width_y=2.1
     """
+
     def __init__(self):
         super().__init__()
         self._name = "gauss2D"
@@ -107,13 +109,19 @@ class FakeObservable(Observable):
         verbose : int, optional
             Ignored, by default 0.
         """
-        self._origin = 'MD'
-        self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis,
-                           self.y_axis,
-                           centre_x=MD_input.parameters.get("centre_x"),
-                           centre_y=MD_input.parameters.get("centre_y"),
-                           width_x=MD_input.parameters.get("width_x"),
-                           width_y=MD_input.parameters.get("width_y"))]}
+        self._origin = "MD"
+        self._dependent_variables = {
+            "gauss2D": [
+                gaussian_2D(
+                    self.x_axis,
+                    self.y_axis,
+                    centre_x=MD_input.parameters.get("centre_x"),
+                    centre_y=MD_input.parameters.get("centre_y"),
+                    width_x=MD_input.parameters.get("width_x"),
+                    width_y=MD_input.parameters.get("width_y"),
+                ),
+            ],
+        }
         self._errors = {"gauss2D": [np.sqrt(self._dependent_variables["gauss2D"][0])]}
 
     def read_from_file(self, reader, file_name):
@@ -125,13 +133,19 @@ class FakeObservable(Observable):
             width_x=3.3
             width_y=2.1
         """
-        self._origin = 'experiment'
-        self._dependent_variables = {"gauss2D": [gaussian_2D(self.x_axis,
-                           self.y_axis,
-                           centre_x=5.0,
-                           centre_y=4.0,
-                           width_x=3.3,
-                           width_y=2.1)]}
+        self._origin = "experiment"
+        self._dependent_variables = {
+            "gauss2D": [
+                gaussian_2D(
+                    self.x_axis,
+                    self.y_axis,
+                    centre_x=5.0,
+                    centre_y=4.0,
+                    width_x=3.3,
+                    width_y=2.1,
+                ),
+            ],
+        }
         self._errors = {"gauss2D": [np.sqrt(self._dependent_variables["gauss2D"][0])]}
 
     @property
@@ -140,4 +154,4 @@ class FakeObservable(Observable):
 
     @property
     def dependent_variables_structure(self):
-        return {'gauss2D': ['y', 'x']}
+        return {"gauss2D": ["y", "x"]}

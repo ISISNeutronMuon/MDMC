@@ -41,7 +41,6 @@ from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 
 
 class SPCE(WaterModel):
-
     """
     SPCE force field - LJ, Coulombic, fixed bond lengths and angles
     """
@@ -52,27 +51,25 @@ class SPCE(WaterModel):
     def interaction_dictionary(self):
 
         # Charge Parameters
-        q_O = -0.8476       # e
-        q_H = abs(q_O/2)    # e
+        q_O = -0.8476  # e
+        q_H = abs(q_O / 2)  # e
 
         # LJ Parameters
-        sigma = 3.166      # Ang
-        epsilon = 0.6502   # kJ mol^-1
+        sigma = 3.166  # Ang
+        epsilon = 0.6502  # kJ mol^-1
 
         # Bond Parameters
-        r_OH = 1.000       # Ang
-        f_OH = 4637.       # kJ mol^-1 Ang^-2
+        r_OH = 1.000  # Ang
+        f_OH = 4637.0  # kJ mol^-1 Ang^-2
 
         # Bond Angle Parameters
-        a_HOH = 109.47     # deg
-        f_HOH = 383.       # kJ mol^-1 rad^-2
+        a_HOH = 109.47  # deg
+        f_HOH = 383.0  # kJ mol^-1 rad^-2
 
         return {
-            (Coulombic, ('O',)): Coulomb(q_O),
-            (Coulombic, ('H',)): Coulomb(q_H),
-            (Dispersion, ('O', 'O')): LennardJones(epsilon, sigma),
-            (Bond,
-             ('H', 'O')): HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
-            (BondAngle,
-             ('H', 'O', 'H')): HarmonicPotential(a_HOH, f_HOH,
-                                                 interaction_type='angle')}
+            (Coulombic, ("O",)): Coulomb(q_O),
+            (Coulombic, ("H",)): Coulomb(q_H),
+            (Dispersion, ("O", "O")): LennardJones(epsilon, sigma),
+            (Bond, ("H", "O")): HarmonicPotential(r_OH, f_OH, interaction_type="bond"),
+            (BondAngle, ("H", "O", "H")): HarmonicPotential(a_HOH, f_HOH, interaction_type="angle"),
+        }

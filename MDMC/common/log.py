@@ -21,9 +21,11 @@ This module configures logging for MDMC.
 import logging
 
 
-def start_logging(logfile: str = "MDMC.log",
-                  level: int = logging.INFO,
-                  capture_warnings: bool = True):
+def start_logging(
+    logfile: str = "MDMC.log",
+    level: int = logging.INFO,
+    capture_warnings: bool = True,
+):
     """
     Start one or more loggers to capture log information from MDMC.
 
@@ -86,14 +88,15 @@ def _capture_warnings(logger: logging.Logger):
 
     logging.captureWarnings(True)
     warnings_logger = logging.getLogger("py.warnings")
-    file_handler = list(filter(lambda x: isinstance(x, logging.StreamHandler),
-                               logger.handlers))[0]
+    file_handler = list(filter(lambda x: isinstance(x, logging.StreamHandler), logger.handlers))[0]
     warnings_logger.addHandler(file_handler)
 
 
-def create_logger(name: str = "MDMC",
-                  logfile: str = "MDMC.log",
-                  level: int = logging.INFO) -> logging.Logger:
+def create_logger(
+    name: str = "MDMC",
+    logfile: str = "MDMC.log",
+    level: int = logging.INFO,
+) -> logging.Logger:
     """
     Create a formatter logger which outputs to a log file.
 
@@ -116,9 +119,8 @@ def create_logger(name: str = "MDMC",
     logger.setLevel(level)
 
     # Setup log file handler
-    logging_fh = logging.FileHandler(logfile, mode='w')
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging_fh = logging.FileHandler(logfile, mode="w")
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     logging_fh.setFormatter(formatter)
     logger.addHandler(logging_fh)
 

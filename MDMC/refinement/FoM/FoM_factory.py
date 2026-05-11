@@ -18,6 +18,7 @@
 Factory class for generating Figure of Merits
 And ObservablePair class fro defining the obseravble pairs used to calculate the Figure of Merit
 """
+
 from pathlib import Path
 
 from MDMC.common.factory import ModuleFactory
@@ -31,6 +32,7 @@ class FoMFactory(ModuleFactory[FigureOfMerit]):
     Any FoM within the FoM folder can be created with a string of the class name, as
     long as it is a subclass of ``FigureOfMerit``.
     """
+
     registry: dict[str, FigureOfMerit] = {}
     curr_path = Path(__file__).parent
     curr_pack = __package__
@@ -41,12 +43,14 @@ class FoMFactory(ModuleFactory[FigureOfMerit]):
         super().scan()
 
         # Add aliases
-        FoMFactory.registry |= {key.lower()
-                                .removeprefix("chisquared")
-                                .removeprefix("rsquared")
-                                .removeprefix("_")
-                                .removesuffix("error") : val
-                                for key, val in FoMFactory.registry.items()}
+        FoMFactory.registry |= {
+            key.lower()
+            .removeprefix("chisquared")
+            .removeprefix("rsquared")
+            .removeprefix("_")
+            .removesuffix("error"): val
+            for key, val in FoMFactory.registry.items()
+        }
 
 
 FoMFactory.scan()
