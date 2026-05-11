@@ -29,7 +29,6 @@ from MDMC.readers.configurations.conf_reader import ConfigurationReader
 
 
 class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
-
     """
     Provides a factory for creating readers.
 
@@ -37,6 +36,7 @@ class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
     string of the class name, as long as it is a subclass of
     ``ConfigurationReader``.
     """
+
     registry: dict[str, ConfigurationReader] = {}
     curr_path = Path(__file__).parent
     curr_pack = __package__
@@ -44,7 +44,6 @@ class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
 
     @classmethod
     def create_reader_from_ext(cls, extension: str, file_name: str) -> ConfigurationReader:
-
         """
         Parameters
         ----------
@@ -74,7 +73,7 @@ class ConfigurationReaderFactory(ModuleFactory[ConfigurationReader]):
         if extension in ioformats:
             return ASEReader(file_name)
 
-        raise NotImplementedError(
-            f'No implemented reader is compatible with {extension} extension')
+        raise NotImplementedError(f"No implemented reader is compatible with {extension} extension")
+
 
 ConfigurationReaderFactory.scan()

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Converts ASE Atoms objects into MDMC Molecules."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -28,6 +29,7 @@ from MDMC.MD.structures import Atom, Molecule
 
 if TYPE_CHECKING:
     from MDMC.MD import BondedInteraction, Structure, Universe
+
 
 def ASE_to_MDMC(atoms: ase.Atoms) -> list[Atom]:
     """
@@ -61,24 +63,37 @@ def ASE_to_MDMC(atoms: ase.Atoms) -> list[Atom]:
     # one bond list is generated per neighbour list; we should only
     # have one neighbour list here.
     for index, bonds in enumerate(analysis.unique_bonds[0]):
-        interactions_list.extend([Bond(atoms_list[index],
-                                       atoms_list[bonded_atom])
-                                       for bonded_atom in bonds])
+        interactions_list.extend(
+            [Bond(atoms_list[index], atoms_list[bonded_atom]) for bonded_atom in bonds],
+        )
 
     for index, bonds in enumerate(analysis.unique_angles[0]):
-        interactions_list.extend([BondAngle(atoms_list[index],
-                                            atoms_list[bonded_atoms[0]],
-                                            atoms_list[bonded_atoms[1]])
-                                            for bonded_atoms in bonds])
+        interactions_list.extend(
+            [
+                BondAngle(
+                    atoms_list[index],
+                    atoms_list[bonded_atoms[0]],
+                    atoms_list[bonded_atoms[1]],
+                )
+                for bonded_atoms in bonds
+            ],
+        )
 
     for index, bonds in enumerate(analysis.unique_dihedrals[0]):
-        interactions_list.extend([DihedralAngle(atoms_list[index],
-                                                atoms_list[bonded_atoms[0]],
-                                                atoms_list[bonded_atoms[1]],
-                                                atoms_list[bonded_atoms[2]])
-                                                for bonded_atoms in bonds])
+        interactions_list.extend(
+            [
+                DihedralAngle(
+                    atoms_list[index],
+                    atoms_list[bonded_atoms[0]],
+                    atoms_list[bonded_atoms[1]],
+                    atoms_list[bonded_atoms[2]],
+                )
+                for bonded_atoms in bonds
+            ],
+        )
 
     return atoms_list
+
 
 def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
     """
@@ -95,14 +110,18 @@ def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
         An ``ASE.Atom`` object which is equivalent to ``atom``
     """
 
-    return ase.atom.Atom(position=atom.position,
-                         mass=atom.mass,
-                         symbol=atom.element.symbol,
-                         charge=atom.charge)
+    return ase.atom.Atom(
+        position=atom.position,
+        mass=atom.mass,
+        symbol=atom.element.symbol,
+        charge=atom.charge,
+    )
 
 
-def MDMC_to_ASE(structure: Structure | Universe | list[Atom],
-                cell: np.ndarray | None = None) -> ase.Atoms:
+def MDMC_to_ASE(
+    structure: Structure | Universe | list[Atom],
+    cell: np.ndarray | None = None,
+) -> ase.Atoms:
     """
     Convert an MDMC Structure into an ase.Atoms object.
     Note that ASE infers bonds from the atoms' covalent radius.
@@ -124,6 +143,6 @@ def MDMC_to_ASE(structure: Structure | Universe | list[Atom],
         structure = Molecule(atoms=structure)
 
     if cell is None:
-        cell = np.array([0., 0., 0.])
+        cell = np.array([0.0, 0.0, 0.0])
 
     return ase.Atoms([_convert_to_ase_atom(atom) for atom in structure.atoms], cell=cell)

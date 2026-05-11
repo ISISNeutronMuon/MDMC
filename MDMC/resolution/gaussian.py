@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """The Gaussian resolution subclass"""
+
 import numpy as np
 
 from MDMC.common.constants import h_bar
@@ -37,7 +38,7 @@ class GaussianResolution(Resolution):
 
         return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
-    def window_in_w(self, w: np.ndarray, mu: float = 0., norm: bool = True) -> np.ndarray:
+    def window_in_w(self, w: np.ndarray, mu: float = 0.0, norm: bool = True) -> np.ndarray:
         """
         Calculate the Gaussian window function in frequency space.
 
@@ -91,4 +92,4 @@ class GaussianResolution(Resolution):
         Represent a ``GaussianResolution`` object as the given FWHM energy resolution.
         """
 
-        return "Resolution" + str({'gaussian': self.e_res})
+        return "Resolution" + str({"gaussian": self.e_res})

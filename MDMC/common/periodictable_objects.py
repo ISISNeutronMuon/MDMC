@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Utility methods for dealing with periodictable atom_objects """
+"""Utility methods for dealing with periodictable atom_objects"""
 
 import periodictable
 
@@ -40,11 +40,11 @@ def create_list_of_element_objects(old_elements: list) -> list:
 
     elements_list = []
     for element in old_elements:
-        if '-' in element:
-            new_element = element.split('-')
+        if "-" in element:
+            new_element = element.split("-")
             atom_object = periodictable.elements.symbol(new_element[1])[int(new_element[0])]
-        elif '[' in element:
-            new_element = element.split('[')
+        elif "[" in element:
+            new_element = element.split("[")
             # remove closed bracket from string
             new_element[1] = new_element[1][:-1]
             atom_object = periodictable.elements.symbol(new_element[0])[int(new_element[1])]

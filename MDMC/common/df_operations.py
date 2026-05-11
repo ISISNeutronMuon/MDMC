@@ -25,21 +25,27 @@ import pandas as pd
 
 
 @overload
-def filter_dataframe(values: Sequence,
-                     dataframe: pd.DataFrame,
-                     column_names: list[str]) -> pd.DataFrame: ...
+def filter_dataframe(
+    values: Sequence,
+    dataframe: pd.DataFrame,
+    column_names: list[str],
+) -> pd.DataFrame: ...
 
 
 @overload
-def filter_dataframe(values: Sequence,
-                     dataframe: pd.DataFrame,
-                     column_regex: str) -> pd.DataFrame: ...
+def filter_dataframe(
+    values: Sequence,
+    dataframe: pd.DataFrame,
+    column_regex: str,
+) -> pd.DataFrame: ...
 
 
-def filter_dataframe(values: Sequence,
-                     dataframe: pd.DataFrame,
-                     column_names: list[str] = None,
-                     column_regex: str = None) -> pd.DataFrame:
+def filter_dataframe(
+    values: Sequence,
+    dataframe: pd.DataFrame,
+    column_names: list[str] = None,
+    column_regex: str = None,
+) -> pd.DataFrame:
     """
     Ignore duplicated rows (i.e. only return the first occurence of any duplicated row).
 
@@ -77,17 +83,19 @@ def filter_dataframe(values: Sequence,
     """
 
     if column_names and column_regex:
-        raise ValueError('Only one of column_names and column_regex can be'
-                         ' passed')
+        raise ValueError("Only one of column_names and column_regex can be passed")
     # Use column names or regex to set column names
-    column_names = (column_names if column_names is not None
-                    else list(dataframe.filter(regex=column_regex)))
+    column_names = (
+        column_names if column_names is not None else list(dataframe.filter(regex=column_regex))
+    )
 
     # Raise an error if there are more values than columns (as every value must
     # be found in a column)
     if len(column_names) < len(values):
-        raise ValueError(f'There must be at least as many columns ({len(column_names)}) as'
-                         f' values ({len(values)})')
+        raise ValueError(
+            f"There must be at least as many columns ({len(column_names)}) as"
+            f" values ({len(values)})",
+        )
 
     # Filter all columns of dataframe which match column_regex for the first
     # value in values
@@ -109,24 +117,30 @@ def filter_dataframe(values: Sequence,
 
 
 @overload
-def filter_ordered_dataframe(values: Sequence,
-                             dataframe: pd.DataFrame,
-                             column_names: list[str],
-                             wildcard: str = None) -> pd.DataFrame: ...
+def filter_ordered_dataframe(
+    values: Sequence,
+    dataframe: pd.DataFrame,
+    column_names: list[str],
+    wildcard: str = None,
+) -> pd.DataFrame: ...
 
 
 @overload
-def filter_ordered_dataframe(values: Sequence,
-                             dataframe: pd.DataFrame,
-                             column_regex: str,
-                             wildcard: str = None) -> pd.DataFrame: ...
+def filter_ordered_dataframe(
+    values: Sequence,
+    dataframe: pd.DataFrame,
+    column_regex: str,
+    wildcard: str = None,
+) -> pd.DataFrame: ...
 
 
-def filter_ordered_dataframe(values: Sequence,
-                             dataframe: pd.DataFrame,
-                             column_names: list[str] = None,
-                             column_regex: str = None,
-                             wildcard: str = None) -> pd.DataFrame:
+def filter_ordered_dataframe(
+    values: Sequence,
+    dataframe: pd.DataFrame,
+    column_names: list[str] = None,
+    column_regex: str = None,
+    wildcard: str = None,
+) -> pd.DataFrame:
     """
     Filter a ``pd.DataFrame`` with an iterable of ordered values.
 
@@ -173,25 +187,26 @@ def filter_ordered_dataframe(values: Sequence,
     """
 
     if column_names and column_regex:
-        raise ValueError('Only one of column_names and column_regex can be'
-                         ' passed')
+        raise ValueError("Only one of column_names and column_regex can be passed")
     # Use column names or regex to set column names
-    column_names = (column_names if column_names is not None
-                    else list(dataframe.filter(regex=column_regex)))
+    column_names = (
+        column_names if column_names is not None else list(dataframe.filter(regex=column_regex))
+    )
 
     # Raise an error if there are more values than columns (as every value must
     # be found in a column)
     if len(column_names) < len(values):
-        raise ValueError(f'There must be at least as many columns ({len(column_names)}) as'
-                         f' values ({len(values)})')
+        raise ValueError(
+            f"There must be at least as many columns ({len(column_names)}) as"
+            f" values ({len(values)})",
+        )
 
     # Whether all elements of each row have the same order as values (including
     # wildcard)
-    bool_rows = dataframe[column_names].agg(lambda x: all(x[i] in
-                                                          [values[i], wildcard]
-                                                          for i
-                                                          in range(len(x))),
-                                            axis="columns")
+    bool_rows = dataframe[column_names].agg(
+        lambda x: all(x[i] in [values[i], wildcard] for i in range(len(x))),
+        axis="columns",
+    )
     filtered_dataframe = dataframe.loc[bool_rows]
 
     return filtered_dataframe.drop_duplicates()

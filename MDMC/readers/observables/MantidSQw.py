@@ -26,6 +26,7 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
+
 class MantidSQw(SQwReader):
     """
     A class for reading SQw files from Mantid
@@ -65,12 +66,11 @@ class MantidSQw(SQwReader):
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file_variables = open(self.file_name, encoding='UTF-8')
+        self.file_variables = open(self.file_name, encoding="UTF-8")
         try:
-            self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
+            self.file_detectors = open(self.file_name + "_detectors", encoding="UTF-8")
         except FileNotFoundError:
             self.file_detectors = None
-
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes variable and detector files after parsing"""
@@ -87,8 +87,7 @@ class MantidSQw(SQwReader):
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.E, self.SQw, self.SQw_err = self.parse_variables(
-            self.file_variables)
+        self.E, self.SQw, self.SQw_err = self.parse_variables(self.file_variables)
         if self.file_detectors is not None:
             self.Q = self.parse_detectors(self.file_detectors)
         else:
@@ -106,8 +105,8 @@ class MantidSQw(SQwReader):
 
         # Mantid sets errors to 0 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them.
-        if np.any(self.SQw_err <= 0.):
-            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+        if np.any(self.SQw_err <= 0.0):
+            self.SQw_err[np.where(self.SQw_err <= 0.0)] = float("inf")
             msg = "We have set the error bar to infinity for any zero error values, this allows\
                 us to calculate chi-squared but effectively ignores these points, this may not\
                 be what you want to do, consider using a FoM which doesn't need errors if\
@@ -136,26 +135,26 @@ class MantidSQw(SQwReader):
         for line in file:
             line = line.strip()
             # Skip any lines which are comments or headers
-            if line[0] == '#':
+            if line[0] == "#":
                 continue
 
-            strings = line.split(',')
+            strings = line.split(",")
             if len(strings) == 1:
                 self.detector_ID_or_Q.append(strings[0])
-                data.append({'X': [], 'Y': [], 'E': []})
+                data.append({"X": [], "Y": [], "E": []})
             else:
-                data[-1]['X'].append(self._make_float(strings[0]))
-                data[-1]['Y'].append(self._make_float(strings[1]))
-                data[-1]['E'].append(self._make_float(strings[2]))
+                data[-1]["X"].append(self._make_float(strings[0]))
+                data[-1]["Y"].append(self._make_float(strings[1]))
+                data[-1]["E"].append(self._make_float(strings[2]))
 
-        X = np.array(data[0]['X'])
+        X = np.array(data[0]["X"])
         Y = np.zeros((len(self.detector_ID_or_Q), len(X)))
         E = np.zeros((len(self.detector_ID_or_Q), len(X)))
         for i, datum in enumerate(data):
             # X data should be the same for each detector
-            assert np.all(np.array(datum['X']) == X)
-            Y[i] = np.array(datum['Y'])
-            E[i] = np.array(datum['E'])
+            assert np.all(np.array(datum["X"]) == X)
+            Y[i] = np.array(datum["Y"])
+            E[i] = np.array(datum["E"])
 
         return X, Y, E
 
@@ -177,26 +176,25 @@ class MantidSQw(SQwReader):
         Q = np.zeros(len(self.detector_ID_or_Q))
         for i, line in enumerate(file):
             if i == 0:
-                headings = line.split(', ')
+                headings = line.split(", ")
                 try:
-                    ID_header = 'Spectrum No'
+                    ID_header = "Spectrum No"
                     spectrum_index = headings.index(ID_header)
                 except ValueError as error:
-                    raise ValueError(f'Detector file must have the heading "{ID_header}"') \
-                        from error
+                    raise ValueError(
+                        f'Detector file must have the heading "{ID_header}"',
+                    ) from error
 
                 try:
-                    Q_header = 'Q'
+                    Q_header = "Q"
                     Q_index = headings.index(Q_header)
                 except ValueError as error:
-                    raise ValueError(f'Detector file must have the heading "{Q_header}"') \
-                        from error
+                    raise ValueError(f'Detector file must have the heading "{Q_header}"') from error
             else:
                 values = line.split()
                 spectrum_no = values[spectrum_index]
                 Q_value = values[Q_index]
                 # Ensure that we assign Q values in the same order as detector_IDs
-                Q[self.detector_ID_or_Q.index(
-                    spectrum_no)] = self._make_float(Q_value)
+                Q[self.detector_ID_or_Q.index(spectrum_no)] = self._make_float(Q_value)
 
         return Q

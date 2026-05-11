@@ -26,28 +26,28 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
-eV_in_Joules = 1.602176634 * 10**(-19)
+eV_in_Joules = 1.602176634 * 10 ** (-19)
 mole = 6.02214076 * 10**23
 
 conversion_to_meV = {
-    'J' : 6.2415091e+21,
-    'kJ' : 6.2415091e+24,
-    'kcal' : 2.6114474e+25,
-    'cal' : 2.6114474e+22,
-    'kJ/mol' : 6.2415091e+24 / mole,
-    'kcal/mol' :  2.6114474e+25 / mole,
-    'J/mol' : 6.2415091e+21 / mole,
-    'cal/mol' :  2.6114474e+22 / mole,
-    'rad/ps' : 0.6582231395941951,
-    'rad/fs' : 0.6582231395941951 *1e3,
-    'rad/ns' : 0.6582231395941951 *1e-3,
-    '1/ps' : 0.6582231395941951 * 2*np.pi,
-    '1/fs' : 0.6582231395941951 *1e3 * 2*np.pi,
-    '1/ns' : 0.6582231395941951 *1e-3 * 2*np.pi,
-    'meV' : 1.0,
-    'eV' : 1e3,
-    'keV' : 1e6,
-    'ueV' : 1e-3,
+    "J": 6.2415091e21,
+    "kJ": 6.2415091e24,
+    "kcal": 2.6114474e25,
+    "cal": 2.6114474e22,
+    "kJ/mol": 6.2415091e24 / mole,
+    "kcal/mol": 2.6114474e25 / mole,
+    "J/mol": 6.2415091e21 / mole,
+    "cal/mol": 2.6114474e22 / mole,
+    "rad/ps": 0.6582231395941951,
+    "rad/fs": 0.6582231395941951 * 1e3,
+    "rad/ns": 0.6582231395941951 * 1e-3,
+    "1/ps": 0.6582231395941951 * 2 * np.pi,
+    "1/fs": 0.6582231395941951 * 1e3 * 2 * np.pi,
+    "1/ns": 0.6582231395941951 * 1e-3 * 2 * np.pi,
+    "meV": 1.0,
+    "eV": 1e3,
+    "keV": 1e6,
+    "ueV": 1e-3,
 }
 
 
@@ -71,8 +71,8 @@ class MDANSESQw(SQwReader):
     def __init__(self, file_name: str):
         super().__init__(file_name)
         self.file_variables = None
-        self.first_row = 'Q'
-        self.first_column = 'E'
+        self.first_row = "Q"
+        self.first_column = "E"
         self.q_unit = None
         self.e_unit = None
         self.transpose_data = True
@@ -96,38 +96,38 @@ class MDANSESQw(SQwReader):
         value = None
         # This loop will only read the header of the file,
         # and stop as soon as it reaches the data
-        with open(self.file_name, 'r', encoding='utf-8') as source:
+        with open(self.file_name, "r", encoding="utf-8") as source:
             for line in source:
                 tokens = line.split()
                 if len(tokens) == 0:
                     continue
-                if '#' in tokens[0]:
+                if "#" in tokens[0]:
                     header.append(line)
                 else:
                     break
         # This part will find the relevant part of the header
         # and extract the information about the axes.
         for line in header:
-            if '1st' in line or 'First' in line:
-                axis_signature = line.split(':')[-1]
+            if "1st" in line or "First" in line:
+                axis_signature = line.split(":")[-1]
                 variable = axis_signature.split()[0]
                 unit = axis_signature.split()[1].strip("()")
-                unit.replace('ang', 'Ang')  # we need this since Unit cannot handle 'ang'
-                if variable == 'q':
-                    value = 'Q'
+                unit.replace("ang", "Ang")  # we need this since Unit cannot handle 'ang'
+                if variable == "q":
+                    value = "Q"
                     q_unit = Unit(unit)
                     try:
                         _ = q_unit.conversion_factor
                     except KeyError:
-                        logger.warning('Unit %s not recognised, replaced with 1/Ang', str(unit))
-                        q_unit = Unit('1')/SYSTEM["LENGTH"]
+                        logger.warning("Unit %s not recognised, replaced with 1/Ang", str(unit))
+                        q_unit = Unit("1") / SYSTEM["LENGTH"]
                     self.q_unit = q_unit
-                elif variable == 'omega':
-                    value = 'E'
+                elif variable == "omega":
+                    value = "E"
                     try:
                         conversion_to_meV[unit]
                     except KeyError:
-                        self.e_unit = 'arb. u.'
+                        self.e_unit = "arb. u."
                     else:
                         self.e_unit = unit
                 else:
@@ -136,7 +136,7 @@ class MDANSESQw(SQwReader):
                 self.first_row = value
             if "column:" in line:
                 self.first_column = value
-        if self.first_row != 'Q':
+        if self.first_row != "Q":
             self.transpose_data = False
 
     def parse(self, **settings: Any) -> None:
@@ -150,10 +150,10 @@ class MDANSESQw(SQwReader):
         """
         self.parse_header()
 
-        if self.first_row == 'Q' and self.first_column == 'E':
-            self.Q = self.file_variables[0, 1:] # Entry at [0,0] is always zero
+        if self.first_row == "Q" and self.first_column == "E":
+            self.Q = self.file_variables[0, 1:]  # Entry at [0,0] is always zero
             self.E = self.file_variables[1:, 0]
-        elif self.first_row == 'E' and self.first_column == 'Q':
+        elif self.first_row == "E" and self.first_column == "Q":
             self.E = self.file_variables[0, 1:]
             self.Q = self.file_variables[1:, 0]
         self.Q *= self.q_unit.conversion_factor
@@ -162,12 +162,12 @@ class MDANSESQw(SQwReader):
             self.SQw = self.file_variables[1:, 1:].T
         else:
             self.SQw = self.file_variables[1:, 1:]
-        self.SQw_err = self.SQw*0.01  # TODO: When MDANSE outputs an error, read it in
-        if np.any(self.SQw <= 0.):
-            self.SQw[np.where(self.SQw <= 0.)] = 0.0
+        self.SQw_err = self.SQw * 0.01  # TODO: When MDANSE outputs an error, read it in
+        if np.any(self.SQw <= 0.0):
+            self.SQw[np.where(self.SQw <= 0.0)] = 0.0
         # Change and zero errors into inf so that error calculations can still be performed on them.
-        if np.any(self.SQw_err <= 0.):
-            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+        if np.any(self.SQw_err <= 0.0):
+            self.SQw_err[np.where(self.SQw_err <= 0.0)] = float("inf")
             msg = "We have set the error bar to infinity for any zero error values, this allows\
                 us to calculate chi-squared but effectively ignores these points, this may not\
                 be what you want to do, consider using a FoM which doesn't need errors if\

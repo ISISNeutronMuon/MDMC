@@ -17,6 +17,7 @@
 """
 A module for a class to export a packmol input file.
 """
+
 from __future__ import annotations
 
 from copy import copy
@@ -35,14 +36,15 @@ class PackmolInputExporter(Exporter):
     """
     A class to export `PackmolSetup` objects into packmol input files.
     """
+
     INDENT = "  "
 
     def write(
-            self,
-            setup: PackmolSetup,
-            structure_file_names: dict,
-            output_name: str = "output_file.pdb",
-            **settings: Any,
+        self,
+        setup: PackmolSetup,
+        structure_file_names: dict,
+        output_name: str = "output_file.pdb",
+        **settings: Any,
     ) -> None:
         """
         Write the data contained in a `PackmolSetup` object to a packmol input file.
@@ -60,10 +62,14 @@ class PackmolInputExporter(Exporter):
         """
         system_settings, mol_settings = setup.get_settings()
         tol = system_settings["tolerance"]
-        self.file.writelines(["# Created by MDMC\n",
-                              f"tolerance {tol}\n",
-                              "filetype pdb\n",
-                              f"output {output_name}\n"])
+        self.file.writelines(
+            [
+                "# Created by MDMC\n",
+                f"tolerance {tol}\n",
+                "filetype pdb\n",
+                f"output {output_name}\n",
+            ],
+        )
         self.file.write("\n")
 
         for molecule_setting in mol_settings:
@@ -77,6 +83,6 @@ class PackmolInputExporter(Exporter):
             constraint_settings = copy(molecule_setting)
             constraint_settings.pop("structure")
             for setting, value in constraint_settings.items():
-                self.file.writelines(self.INDENT+f"{setting} {value}\n")
+                self.file.writelines(self.INDENT + f"{setting} {value}\n")
             self.file.write("end structure\n")
             self.file.write("\n")

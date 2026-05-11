@@ -22,9 +22,9 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 def slice_trajectory(
-        trj: CompactTrajectory,
-        subtrj_len: int,
-        cont_slicing: bool = False,
+    trj: CompactTrajectory,
+    subtrj_len: int,
+    cont_slicing: bool = False,
 ) -> Iterable[CompactTrajectory]:
     """
     Takes a ``CompactTrajectory`` object and slices it into a list of shorter
@@ -65,8 +65,10 @@ def slice_trajectory(
     trj_len = len(trj)
 
     if trj_len < subtrj_len:
-        raise IndexError(f'The sub-trajectory length of {subtrj_len} was larger than '
-                         f'the length of the parent trajectory of {trj_len}.')
+        raise IndexError(
+            f"The sub-trajectory length of {subtrj_len} was larger than "
+            f"the length of the parent trajectory of {trj_len}.",
+        )
 
     if cont_slicing:
         first_frame = 0
@@ -75,5 +77,5 @@ def slice_trajectory(
         first_frame = trj_len % subtrj_len
         slice_step = subtrj_len
 
-    for i in range(first_frame, trj_len-subtrj_len+1, slice_step):
-        yield trj.subtrajectory(i, i+subtrj_len)
+    for i in range(first_frame, trj_len - subtrj_len + 1, slice_step):
+        yield trj.subtrajectory(i, i + subtrj_len)

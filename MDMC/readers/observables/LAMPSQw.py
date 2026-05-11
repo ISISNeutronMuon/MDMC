@@ -26,8 +26,8 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 logger = logging.getLogger(__name__)
 
-class LAMPSQw(SQwReader):
 
+class LAMPSQw(SQwReader):
     """
     A class for reading SQw files from LAMP
 
@@ -62,9 +62,9 @@ class LAMPSQw(SQwReader):
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file_indep = open(self.file_name, encoding='UTF-8')
-        self.file_dep = open(self.file_name + 'ascii', encoding='UTF-8')
-        self.file_dep_err = open(self.file_name + 'ascii_e', encoding='UTF-8')
+        self.file_indep = open(self.file_name, encoding="UTF-8")
+        self.file_dep = open(self.file_name + "ascii", encoding="UTF-8")
+        self.file_dep_err = open(self.file_name + "ascii_e", encoding="UTF-8")
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes all three files after parsing"""
@@ -88,8 +88,8 @@ class LAMPSQw(SQwReader):
         # LAMP sets errors -1 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them but
         # result in inf.
-        if np.any(self.SQw_err <= 0.):
-            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+        if np.any(self.SQw_err <= 0.0):
+            self.SQw_err[np.where(self.SQw_err <= 0.0)] = float("inf")
             msg = "We have set the error bar to infinity for any zero error values, this allows\
                 us to calculate chi-squared but effectively ignores these points, this may not\
                 be what you want to do, consider using a FoM which doesn't need errors if\
@@ -135,8 +135,9 @@ class LAMPSQw(SQwReader):
                 _ = next(file)
                 break
 
-        file_split = iter([word for line in file for word in line.split(" ")
-                           if "Y_COORDINATES" not in line])
+        file_split = iter(
+            [word for line in file for word in line.split(" ") if "Y_COORDINATES" not in line],
+        )
 
         X = self._get_data(file_split, self._X_dim)
         Y = self._get_data(file_split, self._Y_dim)

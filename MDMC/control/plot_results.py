@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A module for plotting data and results of a minimization."""
+
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -45,15 +46,21 @@ class PlotResults:
         Number of points to plot on the corner plot, defaults to 100,000
     """
 
-    def __init__(self, filename: str, quantiles: list[float] = None,
-                 MH_norm: float=20, points: int = 100000):
+    def __init__(
+        self,
+        filename: str,
+        quantiles: list[float] = None,
+        MH_norm: float = 20,
+        points: int = 100000,
+    ):
         self.filename = filename
         self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
         self.MH_norm = MH_norm
         self.points = points
 
-        self.parameter_names, self.parameter_coords,\
-        self.minmax_coords, self.FoMs = self.get_measured_points()
+        self.parameter_names, self.parameter_coords, self.minmax_coords, self.FoMs = (
+            self.get_measured_points()
+        )
 
         # Create the optimizer
         try:
@@ -62,17 +69,24 @@ class PlotResults:
             # for 'meaningful' plots, but technically anything with 2 points can be minimised and
             # shouldn't cause an error.
             old_optimizer_min = 10
-            self.optimizer = Optimizer(self.minmax_coords,"GP",
-                                       n_initial_points=min(old_optimizer_min, len(self.FoMs)),
-                                       acq_func="gp_hedge", acq_optimizer="sampling",
-                                         model_queue_size=1)
+            self.optimizer = Optimizer(
+                self.minmax_coords,
+                "GP",
+                n_initial_points=min(old_optimizer_min, len(self.FoMs)),
+                acq_func="gp_hedge",
+                acq_optimizer="sampling",
+                model_queue_size=1,
+            )
             if len(self.FoMs) < old_optimizer_min:
-                logging.warning("You have only used %d refinement steps,"
-                                " use a larger number for more meaningful plots.",
-                                len(self.FoMs))
+                logging.warning(
+                    "You have only used %d refinement steps,"
+                    " use a larger number for more meaningful plots.",
+                    len(self.FoMs),
+                )
         except ValueError as error:
-            raise ValueError("Insufficient number of refinement steps,"
-                             " please use at least 10.") from error
+            raise ValueError(
+                "Insufficient number of refinement steps, please use at least 10.",
+            ) from error
 
         # Train the optimizer
         self.optimizer.tell(self.parameter_coords, self.FoMs)
@@ -84,20 +98,20 @@ class PlotResults:
         --------
         tuple of (parameter names, parameter coordinates, min and max parameters, FoM's)
         """
-        records = pd.read_csv(self.filename, delimiter=',')
-        records = records.astype(dtype=float, errors='ignore')
+        records = pd.read_csv(self.filename, delimiter=",")
+        records = records.astype(dtype=float, errors="ignore")
         # Convert to float where possible (i.e. not a string)
 
-        FoMs = records['FoM'].to_list()
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'], errors='ignore')
+        FoMs = records["FoM"].to_list()
+        records = records.drop(columns=["Unnamed: 0", "FoM", "Change state"], errors="ignore")
         # TODO this is hard coded to creation of history, may want to change
 
         coordinates = records.values.tolist()
         names = records.columns.tolist()
-        minmax_coordinates = [(min(np.array(coord)),
-                               max(np.array(coord))) for coord in np.array(coordinates).T]
+        minmax_coordinates = [
+            (min(np.array(coord)), max(np.array(coord))) for coord in np.array(coordinates).T
+        ]
         return names, coordinates, minmax_coordinates, FoMs
-
 
     def _expected_minimum_random_sampling(self) -> tuple[list, float, list, list[list]]:
         """
@@ -128,9 +142,7 @@ class PlotResults:
 
         return min_x, y_random[index_best_objective], y_random, random_samples
 
-
-    def _remove_points(self, chi_squared: list[float],
-                       coords: list[list]) -> tuple[list, list]:
+    def _remove_points(self, chi_squared: list[float], coords: list[list]) -> tuple[list, list]:
         """
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
         where the likelihood of keeping a point is dependent on the exponent of the difference
@@ -153,9 +165,10 @@ class PlotResults:
         np.random.seed(16)  # Set for reproducible output - will always retain same points
         lowest_chi = min(chi_squared)
 
-        points_to_keep = np.random.random(size=chi_squared.shape) < \
-                         np.exp((lowest_chi - chi_squared)/(lowest_chi/self.MH_norm))
-        reduced_chi=chi_squared[points_to_keep]
+        points_to_keep = np.random.random(size=chi_squared.shape) < np.exp(
+            (lowest_chi - chi_squared) / (lowest_chi / self.MH_norm),
+        )
+        reduced_chi = chi_squared[points_to_keep]
         reduced_coords = np.array(coords)[points_to_keep]
 
         return reduced_chi, reduced_coords
@@ -176,12 +189,13 @@ class PlotResults:
         """
 
         try:
-            _, _, y_random, coords = \
-            self._expected_minimum_random_sampling()
+            _, _, y_random, coords = self._expected_minimum_random_sampling()
         except IndexError:
-            msg = (f"\n \n Your data file, {os.path.abspath(f'{self.filename}')},"
-                   " appears not to have any points in, please check you have"
-                   " run the refinement and it saved correctly. \n")
+            msg = (
+                f"\n \n Your data file, {os.path.abspath(f'{self.filename}')},"
+                " appears not to have any points in, please check you have"
+                " run the refinement and it saved correctly. \n"
+            )
             print(msg)
             return None
 
@@ -189,10 +203,10 @@ class PlotResults:
 
         data = np.empty(shape=np.array(reduced_coordinate_list).shape)
         for i in range(np.array(reduced_coordinate_list).shape[1]):
-            data[:,i] = np.array(reduced_coordinate_list)[:,i]
+            data[:, i] = np.array(reduced_coordinate_list)[:, i]
 
         labels = [str(name) for name in self.parameter_names]
-        cornerplot = corner.corner(data, labels = labels, quantiles = [0.34, 0.5, 0.68])
+        cornerplot = corner.corner(data, labels=labels, quantiles=[0.34, 0.5, 0.68])
 
         mean, std = np.mean(data, axis=0), np.std(data, axis=0)
 
@@ -231,34 +245,39 @@ class PlaintextDataPrinter(DataPrinter):
     """Plaintext data printer."""
 
     def print_data(self, history) -> None:
-        with pd.option_context('display.max_colwidth', 12,
-                               'display.precision', 5,
-                               'display.float_format', '{:.4g}'.format):
+        with pd.option_context(
+            "display.max_colwidth",
+            12,
+            "display.precision",
+            5,
+            "display.float_format",
+            "{:.4g}".format,
+        ):
             n_step = history.iloc[-1].name
-            output = history.loc[[n_step]].to_string(
-                col_space=12, index=False, header=False).split('\n')
+            output = (
+                history.loc[[n_step]].to_string(col_space=12, index=False, header=False).split("\n")
+            )
             data = f"{n_step:4d}{''.join(output)}"
             print(data)
 
     def print_header(self, history) -> None:
         def format_column(column):
-            column = column if len(column) < 13 else column[:9] + '...'
-            return ' ' * (12 - len(column)) + column
+            column = column if len(column) < 13 else column[:9] + "..."
+            return " " * (12 - len(column)) + column
 
-        columns = ' '.join([format_column(col) for col
-                            in history.columns])
-        header = 'Step' + columns
+        columns = " ".join([format_column(col) for col in history.columns])
+        header = "Step" + columns
         print(header)
 
 
 class IPythonDataPrinter(DataPrinter):
     """Prettier IPython data printer, for Jupyter Notebooks, etc."""
+
     def __init__(self):
         self.display = IPython.display.DisplayHandle()
 
     def print_data(self, history) -> None:
-        history_table = pd.DataFrame(history,
-                                     columns=history.columns)
+        history_table = pd.DataFrame(history, columns=history.columns)
         history_table.index.name = "Step"
         self.display.update(history_table)
 
@@ -268,6 +287,6 @@ class IPythonDataPrinter(DataPrinter):
 
 
 data_printers = {
-    'plaintext': PlaintextDataPrinter,
-    'ipython': IPythonDataPrinter,
+    "plaintext": PlaintextDataPrinter,
+    "ipython": IPythonDataPrinter,
 }

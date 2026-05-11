@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Factory class for generating minimizers"""
+
 from pathlib import Path
 
 from MDMC.common.factory import ModuleFactory
@@ -29,9 +30,11 @@ class MinimizerFactory(ModuleFactory[Minimizer]):
     the minimizers folder can be created with a string of the class name, as
     long as it is a subclass of ``Minimizer``.
     """
+
     registry: dict[str, Minimizer] = {}
     curr_path = Path(__file__).parent
     curr_pack = __package__
     exclude = (curr_path / "__init__.py", curr_path / "minimizer_factory.py")
+
 
 MinimizerFactory.scan()

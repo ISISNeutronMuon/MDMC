@@ -41,9 +41,8 @@ from MDMC.MD.interactions import BondedInteraction, Coulombic
 LOGGER = logging.getLogger(__name__)
 
 
-@repr_decorator('interaction_dictionary')
+@repr_decorator("interaction_dictionary")
 class ForceField(ABC):
-
     """
     Abstract class defining a force field
 
@@ -96,17 +95,16 @@ class ForceField(ABC):
 
         elements = interaction.element_tuple()
         try:
-            interaction.function = self.interaction_dictionary[
-                (type(interaction), elements)]
+            interaction.function = self.interaction_dictionary[(type(interaction), elements)]
             interaction.function.set_parameters_interactions(interaction)
         except KeyError as error:
-            raise KeyError("This force field does not have defined interactions"
-                           " for these element types") from error
+            raise KeyError(
+                "This force field does not have defined interactions for these element types",
+            ) from error
 
 
-@repr_decorator('interaction_dictionary', 'n_body')
+@repr_decorator("interaction_dictionary", "n_body")
 class WaterModel(ForceField):
-
     """
     Abstract class for force fields that describe a water model
     """
@@ -129,9 +127,8 @@ class WaterModel(ForceField):
         raise NotImplementedError
 
 
-@repr_decorator('file_name')
+@repr_decorator("file_name")
 class FileForceField(ForceField):
-
     """
     Abstract class for force fields that are read from files
     """
@@ -140,28 +137,31 @@ class FileForceField(ForceField):
 
         self.data = {}
         self._interaction_dictionary = None
-        with open(self.absolute_path, encoding='UTF-8') as file:
+        with open(self.absolute_path, encoding="UTF-8") as file:
             n_datatypes = self._parse_header(file.readline(), int)
-            self.inter_functions = dict(self._parse_header(file.readline(),
-                                                           str))
+            self.inter_functions = dict(self._parse_header(file.readline(), str))
             line = file.readline()
-            while 'Atoms' not in line:
+            while "Atoms" not in line:
                 line = file.readline()
             for name, num in n_datatypes:
                 # +1 rows to account for header
-                datatype = pd.read_csv(file, nrows=num + 1, engine='python',
-                                       sep='\t', skiprows=(1 if name != 'atoms'
-                                                           else 0), dtype='str')
+                datatype = pd.read_csv(
+                    file,
+                    nrows=num + 1,
+                    engine="python",
+                    sep="\t",
+                    skiprows=(1 if name != "atoms" else 0),
+                    dtype="str",
+                )
                 # Convert columns to correct types
                 for col_name in datatype:
                     datatype[col_name] = self._set_col_type(datatype[col_name])
                 self.data[name] = datatype
 
-        self.atom_name_group = dict(zip(zip(self.atoms.name,
-                                            self.atoms.element),
-                                        self.atoms.atom_group))
-        self.atom_type_name = dict(zip(self.atoms.atom_type,
-                                       self.atoms.name))
+        self.atom_name_group = dict(
+            zip(zip(self.atoms.name, self.atoms.element), self.atoms.atom_group),
+        )
+        self.atom_type_name = dict(zip(self.atoms.atom_type, self.atoms.name))
 
     @property
     def absolute_path(self):
@@ -179,9 +179,7 @@ class FileForceField(ForceField):
         if os.path.isfile(self.file_name):
             return self.file_name
         # Or it is assumed that the path is the force field data directory
-        return (os.path.dirname(os.path.realpath(__file__))
-                + '/data/'
-                + self.file_name)
+        return os.path.dirname(os.path.realpath(__file__)) + "/data/" + self.file_name
 
     @property
     @abstractmethod
@@ -208,7 +206,7 @@ class FileForceField(ForceField):
             mass, charge, and name
         """
 
-        return self.data['atoms']
+        return self.data["atoms"]
 
     @property
     def bonds(self):
@@ -222,7 +220,7 @@ class FileForceField(ForceField):
             the bonds
         """
 
-        return self.data['bonds']
+        return self.data["bonds"]
 
     @property
     def bond_angles(self):
@@ -236,7 +234,7 @@ class FileForceField(ForceField):
             parameters of the bond angle
         """
 
-        return self.data['bondangles']
+        return self.data["bondangles"]
 
     @property
     def propers(self):
@@ -250,7 +248,7 @@ class FileForceField(ForceField):
             parameters of the proper dihedral
         """
 
-        return self.data['propers']
+        return self.data["propers"]
 
     @property
     def impropers(self):
@@ -264,7 +262,7 @@ class FileForceField(ForceField):
             parameters of the improper dihedral
         """
 
-        return self.data['impropers']
+        return self.data["impropers"]
 
     @property
     def dispersions(self):
@@ -278,7 +276,7 @@ class FileForceField(ForceField):
             the parameters of the dispersion interaction
         """
 
-        return self.data['dispersions']
+        return self.data["dispersions"]
 
     @property
     def interaction_dictionary(self):
@@ -307,7 +305,7 @@ class FileForceField(ForceField):
             element specified by ``element``
         """
 
-        return filter_dataframe([element], self.atoms, column_names=['element'])
+        return filter_dataframe([element], self.atoms, column_names=["element"])
 
     def set_atom_mass(self, atom):
         """
@@ -320,9 +318,11 @@ class FileForceField(ForceField):
             The ``Atom`` for which the mass will be set
         """
 
-        ff_atom = filter_ordered_dataframe([atom.name, atom.element.symbol],
-                                           self.atoms,
-                                           column_names=['name', 'element'])
+        ff_atom = filter_ordered_dataframe(
+            [atom.name, atom.element.symbol],
+            self.atoms,
+            column_names=["name", "element"],
+        )
         atom.mass = ff_atom.mass
 
     def _parameterize_interaction(self, interaction):
@@ -359,12 +359,13 @@ class FileForceField(ForceField):
                 self._convert_atom_type_name(atom)
                 # Raise an error if the name/element combination can't be found
                 try:
-                    tuple_groups.append(self.atom_name_group[(atom.name,
-                                                              atom.element.symbol)])
+                    tuple_groups.append(self.atom_name_group[(atom.name, atom.element.symbol)])
                 except KeyError as error:
-                    raise KeyError(f'Unable to find atom of element "{atom.element.symbol}" '
-                                   f'recorded with the name "{atom.name}" '
-                                   'in the specified force field file.') from error
+                    raise KeyError(
+                        f'Unable to find atom of element "{atom.element.symbol}" '
+                        f'recorded with the name "{atom.name}" '
+                        "in the specified force field file.",
+                    ) from error
 
             groups.add(tuple(tuple_groups))
 
@@ -376,63 +377,72 @@ class FileForceField(ForceField):
         # same regardless of the different atom groups, however this is not
         # implemented.
         if len(groups) != 1:
-            msg = (f'The atom groups of this interaction are not consistent {groups}.'
-                   ' Atom tuples should have the same groups in the same'
-                   ' order.')
-            LOGGER.error('%s: %s',
-                         self.__class__,
-                         msg)
+            msg = (
+                f"The atom groups of this interaction are not consistent {groups}."
+                " Atom tuples should have the same groups in the same"
+                " order."
+            )
+            LOGGER.error("%s: %s", self.__class__, msg)
             raise ValueError(msg)
 
         groups = groups.pop()
         bonded_type = str(type(bonded).__name__)
-        if bonded_type == 'DihedralAngle':
-            bonded_type = 'improper' if bonded.improper else 'proper'
+        if bonded_type == "DihedralAngle":
+            bonded_type = "improper" if bonded.improper else "proper"
         function_type = self._get_interaction_function(bonded_type)
 
-        parameter_df = getattr(self, sub('(?<!^)(?=[A-Z])',
-                                         '_',
-                                         bonded_type).lower() + 's')
+        parameter_df = getattr(self, sub("(?<!^)(?=[A-Z])", "_", bonded_type).lower() + "s")
 
         # Filter for both the specified order of groups, and the reverse
         # This is valid for all bonded types except improper dihedrals, which
         # for which only the first atom occupies a unique position (the center);
         # the other atoms can be in any permutation
         matches = []
-        if bonded_type != 'improper':
+        if bonded_type != "improper":
             for ordered_groups in [groups, tuple(reversed(groups))]:
-                regex = 'atom_group?'
-                matches.append(filter_ordered_dataframe(ordered_groups,
-                                                        parameter_df,
-                                                        column_regex=regex,
-                                                        wildcard=0))
+                regex = "atom_group?"
+                matches.append(
+                    filter_ordered_dataframe(
+                        ordered_groups,
+                        parameter_df,
+                        column_regex=regex,
+                        wildcard=0,
+                    ),
+                )
         else:
-            col_names = ['atom_group1']
-            cen_atom_match = filter_ordered_dataframe([groups[0]],
-                                                      parameter_df,
-                                                      column_names=col_names,
-                                                      wildcard=0)
+            col_names = ["atom_group1"]
+            cen_atom_match = filter_ordered_dataframe(
+                [groups[0]],
+                parameter_df,
+                column_names=col_names,
+                wildcard=0,
+            )
             for permuted_groups in list(permutations(groups[1:])):
                 # Only filter using atom_group2, atom_group3, atom_group4
-                regex = '^atom_group[2-4]$'
-                matches.append(filter_ordered_dataframe(permuted_groups,
-                                                        cen_atom_match,
-                                                        column_regex=regex,
-                                                        wildcard=0))
+                regex = "^atom_group[2-4]$"
+                matches.append(
+                    filter_ordered_dataframe(
+                        permuted_groups,
+                        cen_atom_match,
+                        column_regex=regex,
+                        wildcard=0,
+                    ),
+                )
         # Duplicate dropping requied for groups == tuple(reversed(groups))
         matches = pd.concat(matches).drop_duplicates()
         # If there is more than one row which matches the groups (because of
         # wildcards) then pick row with fewest wildcards
         if len(matches) > 1:
-            matching_group = matches.loc[[(matches.filter(regex='atom_group?')
-                                           == 0).sum(axis='columns').idxmin()]]
+            matching_group = matches.loc[
+                [(matches.filter(regex="atom_group?") == 0).sum(axis="columns").idxmin()]
+            ]
         elif len(matches) == 1:
             matching_group = matches
         else:
             # If there are no matches in the file, then raise an error
-            msg = 'Unable to find bond information for specified atoms: '
+            msg = "Unable to find bond information for specified atoms: "
             for i, atom_type in enumerate(groups):
-                msg += f'atom_group{i} - {atom_type} ({self.atom_type_name[atom_type]}), '
+                msg += f"atom_group{i} - {atom_type} ({self.atom_type_name[atom_type]}), "
             raise ValueError(msg[:-2])
 
         # Get the parameter names for the InteractionFunction. This means that
@@ -441,19 +451,17 @@ class FileForceField(ForceField):
         # parameter names (e.g. equilibrium_state and potential_strength must
         # exist in self.bonds if it is a HarmonicPotential, but can be in any
         # order).
-        parameter_names = self._get_parameter_names(function_type,
-                                                    [name for name
-                                                     in matching_group if
-                                                     'atom_group' not in name])
+        parameter_names = self._get_parameter_names(
+            function_type,
+            [name for name in matching_group if "atom_group" not in name],
+        )
 
         settings = {}
         if function_type == interaction_functions.HarmonicPotential:
-            settings['interaction_type'] = bonded_type
+            settings["interaction_type"] = bonded_type
         # As parameter_names is correctly sorted
-        parameters = [getattr(matching_group, name).values[0] for name
-                      in parameter_names]
-        self._set_interaction_function(bonded, function_type, parameters,
-                                       settings)
+        parameters = [getattr(matching_group, name).values[0] for name in parameter_names]
+        self._set_interaction_function(bonded, function_type, parameters, settings)
 
     def _parametrize_coulombic(self, coulombic):
         """
@@ -467,8 +475,10 @@ class FileForceField(ForceField):
 
         # Check we have atoms to apply interaction to
         if len(coulombic.atoms) == 0:
-            raise ValueError(f'Unable to find any atoms of types {coulombic.atom_types} '
-                             'in the Universe to apply the Coulombic interaction to')
+            raise ValueError(
+                f"Unable to find any atoms of types {coulombic.atom_types} "
+                "in the Universe to apply the Coulombic interaction to",
+            )
 
         # Different atom names could be defined within the same coulombic
         # Both atom name and element are required to uniquely identify the atom
@@ -477,26 +487,25 @@ class FileForceField(ForceField):
             self._convert_atom_type_name(atom)
             atom_names_elements.add((atom.name, atom.element.symbol))
 
-        cols = ['name', 'element']
-        matching_atoms = pd.concat([filter_ordered_dataframe(name_element,
-                                                             self.atoms,
-                                                             column_names=cols)
-                                    for name_element in atom_names_elements])
+        cols = ["name", "element"]
+        matching_atoms = pd.concat(
+            [
+                filter_ordered_dataframe(name_element, self.atoms, column_names=cols)
+                for name_element in atom_names_elements
+            ],
+        )
         # Check that charges for all atom names are the same
         unique_charges = matching_atoms.charge.unique()
-        self._check_nonbonded_parameters(unique_charges, ['charge'],
-                                         matching_atoms)
+        self._check_nonbonded_parameters(unique_charges, ["charge"], matching_atoms)
         if len(unique_charges) != 1:
             # If not, show the corresponding atom rows in the error message
-            msg = ('All atoms of the Coulombic interaction must have the same'
-                   f' OPLS charge ({matching_atoms})')
-            LOGGER.error('%s %s',
-                         self.__class__,
-                         msg)
+            msg = (
+                "All atoms of the Coulombic interaction must have the same"
+                f" OPLS charge ({matching_atoms})"
+            )
+            LOGGER.error("%s %s", self.__class__, msg)
             raise ValueError(msg)
-        self._set_interaction_function(coulombic,
-                                       interaction_functions.Coulomb,
-                                       unique_charges)
+        self._set_interaction_function(coulombic, interaction_functions.Coulomb, unique_charges)
 
     def _parametrize_dispersion(self, dispersion):
         """
@@ -525,22 +534,23 @@ class FileForceField(ForceField):
             for i, atom_type_pair in enumerate(atom_pairs):
                 if len(atom_type_pair) == 0:
                     existing_types = []
-                    for (key, value) in dispersion.universe.atom_types.items():
+                    for key, value in dispersion.universe.atom_types.items():
                         if len(value) > 0:
                             existing_types.append(key)
-                    raise ValueError(f'No atoms of type "{dispersion.atom_types[0][i]}" '
-                                     'found, the Universe contains only the types '
-                                     f'{existing_types}')
+                    raise ValueError(
+                        f'No atoms of type "{dispersion.atom_types[0][i]}" '
+                        "found, the Universe contains only the types "
+                        f"{existing_types}",
+                    )
 
                 atom_pair.append(atom_type_pair[0])
 
             if len(set(atom_pair)) != 1:
-                msg = ('Currently only force fields which only use like-like'
-                       ' Dispersion terms are implemented')
-                LOGGER.error('%s: {atom_pair: %s}. %s',
-                             self.__class__,
-                             atom_pair,
-                             msg)
+                msg = (
+                    "Currently only force fields which only use like-like"
+                    " Dispersion terms are implemented"
+                )
+                LOGGER.error("%s: {atom_pair: %s}. %s", self.__class__, atom_pair, msg)
                 raise ValueError(msg)
 
             # As only like-like, just consider first index of atom_pairs
@@ -549,27 +559,26 @@ class FileForceField(ForceField):
             # As all atoms within atom_pairs should be the same, only consider
             # single atom when determining ff_atom_type
             # ff_atom_type is different to MDMC atom_type
-            atom_name_element = (atom_pairs[1][0].name,
-                                 atom_pairs[1][0].element.symbol)
-            cols = ['name', 'element']
-            ff_atom_type = filter_ordered_dataframe(atom_name_element,
-                                                    self.atoms,
-                                                    column_names=cols).atom_type
-            matching_disps.append(filter_dataframe(list(ff_atom_type),
-                                                   self.dispersions,
-                                                   column_names=['atom_type']))
+            atom_name_element = (atom_pairs[1][0].name, atom_pairs[1][0].element.symbol)
+            cols = ["name", "element"]
+            ff_atom_type = filter_ordered_dataframe(
+                atom_name_element,
+                self.atoms,
+                column_names=cols,
+            ).atom_type
+            matching_disps.append(
+                filter_dataframe(list(ff_atom_type), self.dispersions, column_names=["atom_type"]),
+            )
         matching_disps = pd.concat(matching_disps)
 
-        function_type = self._get_interaction_function('dispersion')
+        function_type = self._get_interaction_function("dispersion")
         parameter_names = self._get_parameter_names(function_type)
 
-        unique_parameters = list(chain.from_iterable([matching_disps[n].unique()
-                                                      for n in parameter_names]),
-                                 )
-        self._check_nonbonded_parameters(unique_parameters, parameter_names,
-                                         matching_disps)
-        self._set_interaction_function(dispersion, function_type,
-                                       unique_parameters)
+        unique_parameters = list(
+            chain.from_iterable([matching_disps[n].unique() for n in parameter_names]),
+        )
+        self._check_nonbonded_parameters(unique_parameters, parameter_names, matching_disps)
+        self._set_interaction_function(dispersion, function_type, unique_parameters)
 
     def _get_interaction_function(self, interaction_type):
         """
@@ -621,15 +630,13 @@ class FileForceField(ForceField):
             atom.name = self.atom_type_name[int(atom.name)]
         except (KeyError, ValueError) as err:
             # Check if atom.name is already a name in the atoms DataFrame
-            if filter_dataframe([atom.name], self.atoms,
-                                column_names=['name']).empty:
-                msg = ('All atom names must be an OPLS atom type or an OPLS'
-                       f' atom name. {atom.name} is not an OPLS atom type of atom'
-                       ' name.')
-                LOGGER.error('%s %s',
-                             self.__class__,
-                             msg,
-                             exc_info=1)
+            if filter_dataframe([atom.name], self.atoms, column_names=["name"]).empty:
+                msg = (
+                    "All atom names must be an OPLS atom type or an OPLS"
+                    f" atom name. {atom.name} is not an OPLS atom type of atom"
+                    " name."
+                )
+                LOGGER.error("%s %s", self.__class__, msg, exc_info=1)
                 raise ValueError(msg) from err
 
     @staticmethod
@@ -669,7 +676,7 @@ class FileForceField(ForceField):
                 var_positional = True
             else:
                 name = function_parameters.name
-                if name not in ['self', 'settings']:
+                if name not in ["self", "settings"]:
                     parameter_names.append(name)
 
         if var_positional:
@@ -678,21 +685,21 @@ class FileForceField(ForceField):
             # signature agree with the order of the parameter names in the file.
             # If this is the case, assume file parameter names are correctly
             # ordered and use these, otherwise raise a ValueError
-            if any(parameter_names[i] != file_parameter_names[i] for i
-                    in range(len(parameter_names))):
-                msg = (f'The force field data file has incorrectly ordered {parameter_names}'
-                       ' parameters')
-                LOGGER.error('FileForceField: %s',
-                             msg)
+            if any(
+                parameter_names[i] != file_parameter_names[i] for i in range(len(parameter_names))
+            ):
+                msg = (
+                    f"The force field data file has incorrectly ordered {parameter_names}"
+                    " parameters"
+                )
+                LOGGER.error("FileForceField: %s", msg)
                 raise ValueError(msg)
             parameter_names = file_parameter_names
 
         return parameter_names
 
     @staticmethod
-    def _check_nonbonded_parameters(function_parameters,
-                                    function_parameter_names,
-                                    matching_inters):
+    def _check_nonbonded_parameters(function_parameters, function_parameter_names, matching_inters):
         """
         Checks that the parameters for an ``InteractionFunction`` for a
         ``NonBondedInteraction`` are valid
@@ -717,15 +724,20 @@ class FileForceField(ForceField):
         """
 
         if len(function_parameters) != len(function_parameter_names):
-            msg = ('All atoms of the interaction must have the same OPLS'
-                   f' parameters ({matching_inters})')
-            LOGGER.error('FileForceField: %s',
-                         msg)
+            msg = (
+                "All atoms of the interaction must have the same OPLS"
+                f" parameters ({matching_inters})"
+            )
+            LOGGER.error("FileForceField: %s", msg)
             raise ValueError(msg)
 
     @staticmethod
-    def _set_interaction_function(interaction, function_type,
-                                  function_parameters, function_settings=None):
+    def _set_interaction_function(
+        interaction,
+        function_type,
+        function_parameters,
+        function_settings=None,
+    ):
         """
         Initialises an ``InteractionFunction`` with specified parameters and
         settings and sets it for an ``Interaction``
@@ -746,8 +758,7 @@ class FileForceField(ForceField):
         """
 
         function_settings = function_settings if function_settings else {}
-        interaction.function = function_type(*function_parameters,
-                                             **function_settings)
+        interaction.function = function_type(*function_parameters, **function_settings)
         interaction.function.set_parameters_interactions(interaction)
 
     @staticmethod
@@ -772,8 +783,10 @@ class FileForceField(ForceField):
         """
 
         # Strip newline formatting
-        return [(name.strip('\n').lower(), dtype(parameter.strip('\n')))
-                for name, parameter in [s.split('=') for s in header.split(' ')]]
+        return [
+            (name.strip("\n").lower(), dtype(parameter.strip("\n")))
+            for name, parameter in [s.split("=") for s in header.split(" ")]
+        ]
 
     @staticmethod
     def _set_col_type(column):
@@ -787,7 +800,7 @@ class FileForceField(ForceField):
             The column for which the type will be converted
         """
 
-        if any(column.astype(str).str.contains(escape('.'))):
+        if any(column.astype(str).str.contains(escape("."))):
             try:
                 return column.astype(float)
             except ValueError:

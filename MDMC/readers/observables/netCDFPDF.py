@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A reader for netcdf PDF data"""
+
 import re
 from typing import Any
 
@@ -41,7 +42,7 @@ class netCDFPDF(PDFReader):
         Opens the file for parsing
         """
 
-        self.file = Dataset(self.file_name, 'r', encoding="UTF-8")
+        self.file = Dataset(self.file_name, "r", encoding="UTF-8")
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the file after parsing"""
@@ -53,11 +54,11 @@ class netCDFPDF(PDFReader):
         Parse into PDF format
         """
         # Scale units as nMOLDYN uses nm, rather than Ang
-        self.r = np.array(self.file.variables['r'][:]) * 10.
-        self.PDF = np.array(self.file.variables['pdf-total'][:])
+        self.r = np.array(self.file.variables["r"][:]) * 10.0
+        self.PDF = np.array(self.file.variables["pdf-total"][:])
         self.extract_partial_pdf()
         # No errors detailed in nMOLDYN netCDF PDF file - replacing with zeroes
-        self.PDF_err = np.zeros(len(self.file.variables['r']))
+        self.PDF_err = np.zeros(len(self.file.variables["r"]))
 
     def extract_partial_pdf(self) -> None:
         """

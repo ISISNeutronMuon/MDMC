@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A reader for reading in the PDB configuration of whole packmol systems"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -25,8 +26,10 @@ from MDMC.readers.configurations.conf_reader import ConfigurationReader
 if TYPE_CHECKING:
     from MDMC.MD.structures import Structure
 
+
 class PackmolPDBReader(ConfigurationReader):
     """A class to read in packmol PDB output files"""
+
     extension = "NONE"
 
     def __init__(self, file_name: str):
@@ -56,15 +59,17 @@ class PackmolPDBReader(ConfigurationReader):
         chains_dict: dict[str, dict[str, list[Atom]]] = {}
 
         for line in self.file:
-            #chars 0-6 identify what the line is describing
+            # chars 0-6 identify what the line is describing
             record_name = line[0:6]
             if record_name in ("ATOM  ", "HETATM"):
                 record = self._parse_atom_record(line)
-                chain_id = record['chain_id']
-                atom_molecule_id = record['molecule_id']
-                current_atom_obj = Atom(record['element_symbol'].capitalize(),
-                                        position=record['atom_position'],
-                                        name=record['name'])
+                chain_id = record["chain_id"]
+                atom_molecule_id = record["molecule_id"]
+                current_atom_obj = Atom(
+                    record["element_symbol"].capitalize(),
+                    position=record["atom_position"],
+                    name=record["name"],
+                )
 
                 if chain_id not in chains_dict:
                     chains_dict[chain_id] = {}
@@ -83,7 +88,6 @@ class PackmolPDBReader(ConfigurationReader):
                 else:
                     self._structures.append(Molecule(atoms=atom_list))
 
-
     def _parse_atom_record(self, line):
         """
         A function to get the necessary information out of an `ATOM  ` or `HETATM` record
@@ -92,13 +96,11 @@ class PackmolPDBReader(ConfigurationReader):
         https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
         """
         record = {
-            'name': line[12:16].split()[-1],
-            'chain_id': line[21],
-            'molecule_id': int(line[22:26]),
-            'atom_position': tuple(float(pos) for pos in [line[30:38],
-                                                          line[38:46],
-                                                          line[46:54]]),
-            'element_symbol': line[76:78].split()[-1],
+            "name": line[12:16].split()[-1],
+            "chain_id": line[21],
+            "molecule_id": int(line[22:26]),
+            "atom_position": tuple(float(pos) for pos in [line[30:38], line[38:46], line[46:54]]),
+            "element_symbol": line[76:78].split()[-1],
         }
         return record
 

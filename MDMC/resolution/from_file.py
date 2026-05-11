@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A Resolution subclass for vanadium run resolutions from file."""
+
 from os import getcwd
 from os.path import join
 
@@ -31,10 +32,12 @@ class FileResolution(Resolution):
 
     def __init__(self, file_name: str, file_type: str, file_reader: str, dt: float):
         self.file_name = file_name
-        self.resolution_function = _read_resolution_from_file(file_type,
-                                                              file_reader,
-                                                              file_name,
-                                                              dt)['SQw']
+        self.resolution_function = _read_resolution_from_file(
+            file_type,
+            file_reader,
+            file_name,
+            dt,
+        )["SQw"]
 
     def apply(self, FQt, t, Q):
         N_Q, N_T = np.shape(FQt)
@@ -75,7 +78,7 @@ class FileResolution(Resolution):
         Represent a ``FileResolution`` object as the dataset used to create it.
         """
 
-        return "Resolution" + str({'file': self.file_name})
+        return "Resolution" + str({"file": self.file_name})
 
 
 def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str, dt: float) -> dict:
@@ -114,6 +117,5 @@ def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str,
         resolution_obs.read_from_file(reader=file_reader, file_name=file_name)
     # if file not found, check if it is in pwd (i.e. user put in filename rather than path)
     except FileNotFoundError:
-        resolution_obs.read_from_file(
-            reader=file_reader, file_name=join(getcwd(), file_name))
+        resolution_obs.read_from_file(reader=file_reader, file_name=join(getcwd(), file_name))
     return resolution_obs.calculate_resolution_functions(dt)

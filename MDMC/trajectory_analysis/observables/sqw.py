@@ -121,7 +121,7 @@ class SQwMixins:
         return None
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** -1)
+    @unit_decorator_getter(unit=units.LENGTH**-1)
     def Q(self) -> npt.NDArray[np.floating] | None:
         """
         Get or set the momentum transfers.
@@ -132,17 +132,16 @@ class SQwMixins:
             1D array of Q `float` (in ``Ang^-1``).
         """
         try:
-            return self.independent_variables['Q']
+            return self.independent_variables["Q"]
         except KeyError:
             return None
 
     @Q.setter
     def Q(self, value: np.ndarray) -> None:
-        self.independent_variables['Q'] = value
+        self.independent_variables["Q"] = value
 
 
 class AbstractSQw(SQwMixins, Observable):
-
     """
     An abstract class for total, coherent and incoherent dynamic structure factors.
 
@@ -237,13 +236,13 @@ class AbstractSQw(SQwMixins, Observable):
 
         if self.independent_variables:
             try:
-                return self.independent_variables['E']
+                return self.independent_variables["E"]
             except KeyError:
                 pass
         return None
 
     @property
-    @unit_decorator_getter(unit=units.Unit('ps') ** -1)
+    @unit_decorator_getter(unit=units.Unit("ps") ** -1)
     def w(self) -> np.ndarray:
         """
         Get the angular frequencies.
@@ -269,7 +268,7 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         try:
-            return self.dependent_variables['SQw']
+            return self.dependent_variables["SQw"]
         except KeyError:
             return None
 
@@ -286,7 +285,7 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         try:
-            return self.errors['SQw']
+            return self.errors["SQw"]
         except KeyError:
             return None
 
@@ -338,18 +337,15 @@ class AbstractSQw(SQwMixins, Observable):
         if time_step is not None:
             # Changing the time and traj step to fit the required dt value
             # by finding the highest traj_step that can fit into the dt_required
-            traj_step = int(np.round(dt_required/time_step))
+            traj_step = int(np.round(dt_required / time_step))
             if traj_step == 0:
                 traj_step += 1
-            time_step = dt_required/traj_step
+            time_step = dt_required / traj_step
 
             return True, traj_step, time_step, dt_required
         return False, None, None, dt_required
 
-    def calculate_from_MD(self,
-                          MD_input: CompactTrajectory,
-                          verbose: int = 0,
-                          **settings: Any):
+    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0, **settings: Any):
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``CompactTrajectory``.
 
@@ -423,13 +419,13 @@ class AbstractSQw(SQwMixins, Observable):
             possible (with overlap allowed).
         """
 
-        self._origin = 'MD'
+        self._origin = "MD"
         SQw_list = []
-        use_average = settings.get('use_average', True)
-        cont_slicing = settings.get('cont_slicing', False)
+        use_average = settings.get("use_average", True)
+        cont_slicing = settings.get("cont_slicing", False)
 
         try:
-            override_dimensions = settings['dimensions']
+            override_dimensions = settings["dimensions"]
         except KeyError:
             pass
         else:
@@ -438,15 +434,14 @@ class AbstractSQw(SQwMixins, Observable):
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
             resolution_factory = ResolutionFactory()
-            if 'energy_resolution' in settings:
-                self.resolution = resolution_factory.create_instance(
-                    settings['energy_resolution'])
+            if "energy_resolution" in settings:
+                self.resolution = resolution_factory.create_instance(settings["energy_resolution"])
             else:
                 # if no resolution supplied, give the object null resolution
                 self.resolution = resolution_factory.create_instance(None)
 
         # Create independent_variables dictionary if it doesn't exist
-        if not hasattr(self, 'independent_variables'):
+        if not hasattr(self, "independent_variables"):
             self.independent_variables = {}
 
         # Extract information that should be constant throughout the trajectory and hence the
@@ -454,45 +449,52 @@ class AbstractSQw(SQwMixins, Observable):
         t = MD_input.times - MD_input.times[0]
         dt = t[1] - t[0]
         if self.maximum_frames():
-            t = t[0:self.maximum_frames()]
+            t = t[0 : self.maximum_frames()]
 
         if MD_input.is_fixedbox:
             try:
                 self.universe_dimensions = MD_input.dimensions
             except AttributeError:
                 try:
-                    self.universe_dimensions = np.array(settings['dimensions'])
+                    self.universe_dimensions = np.array(settings["dimensions"])
                 except KeyError as error:
-                    raise AttributeError('Either trajectory requires a dimensions '
-                                         'attribute or dimensions must be passed '
-                                         'when calling calculate_from_MD') from error
+                    raise AttributeError(
+                        "Either trajectory requires a dimensions "
+                        "attribute or dimensions must be passed "
+                        "when calling calculate_from_MD",
+                    ) from error
         else:  # If the dimensions of the simulation box are not fixed, we use the first value
             try:
                 self.universe_dimensions = MD_input.changing_dimensions[0]
             except AttributeError:
                 try:
-                    self.universe_dimensions = np.array(settings['dimensions'])
+                    self.universe_dimensions = np.array(settings["dimensions"])
                 except KeyError as error:
-                    raise AttributeError('Either trajectory requires a dimensions '
-                                         'attribute or dimensions must be passed '
-                                         'when calling calculate_from_MD') from error
+                    raise AttributeError(
+                        "Either trajectory requires a dimensions "
+                        "attribute or dimensions must be passed "
+                        "when calling calculate_from_MD",
+                    ) from error
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
             self.validate_energy(dt)
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
+            self.independent_variables["E"] = self.calculate_E(len(t) - 1, dt)
         else:
-            self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt)}
+            self.independent_variables = {"E": self.calculate_E(len(t) - 1, dt)}
         # Overwrite independent variable 'Q' if it already exists
         with suppress(KeyError):
-            self.independent_variables['Q'] = np.array(settings['Q_values'])
+            self.independent_variables["Q"] = np.array(settings["Q_values"])
 
         # Slice trajectory up if possible and requested by user:
         if self.maximum_frames() and use_average:
-            trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
-                                            cont_slicing=cont_slicing)
+            trajectories = slice_trajectory(
+                trj=MD_input,
+                subtrj_len=self.maximum_frames(),
+                cont_slicing=cont_slicing,
+            )
             trj_sliced = True
         else:
             trajectories = [MD_input]
@@ -506,21 +508,28 @@ class AbstractSQw(SQwMixins, Observable):
             # Assert that the times and dimensions are consistent with original trajectory
             if trj_sliced:
                 try:
-                    assert_allclose(self.trajectory.times -
-                                    self.trajectory.times[0], t, rtol=1e-7, atol=1e-3)
+                    assert_allclose(
+                        self.trajectory.times - self.trajectory.times[0],
+                        t,
+                        rtol=1e-7,
+                        atol=1e-3,
+                    )
                 except AssertionError as error:
-                    msg = ('The `times` of the current `CompactTrajectory` were not '
-                           'consistent with the first `CompactTrajectory` passed')
+                    msg = (
+                        "The `times` of the current `CompactTrajectory` were not "
+                        "consistent with the first `CompactTrajectory` passed"
+                    )
                     raise AssertionError(msg) from error
             try:
-                assert_allclose(self.universe_dimensions,
-                                self.trajectory.dimensions)
+                assert_allclose(self.universe_dimensions, self.trajectory.dimensions)
             except AttributeError:
                 # May not have dimensions set, in which case pass
                 pass
             except AssertionError as error:
-                msg = ('The `dimensions` of the current `CompactTrajectory` were not '
-                       'consistent with the first `CompactTrajectory` passed')
+                msg = (
+                    "The `dimensions` of the current `CompactTrajectory` were not "
+                    "consistent with the first `CompactTrajectory` passed"
+                )
                 raise AssertionError(msg) from error
 
             fqt_type = self._get_fqt_type()
@@ -543,8 +552,8 @@ class AbstractSQw(SQwMixins, Observable):
         SQw_output = [np.mean(SQw_list, axis=0)]
         errors_output = [np.std(SQw_list, axis=0)]
 
-        self._dependent_variables = {'SQw': SQw_output}
-        self._errors = {'SQw': errors_output}
+        self._dependent_variables = {"SQw": SQw_output}
+        self._errors = {"SQw": errors_output}
 
     def _get_fqt_type(self) -> str:
         """
@@ -555,9 +564,7 @@ class AbstractSQw(SQwMixins, Observable):
         str
             FQt associated with SQw.
         """
-        fqt_types = {'SQw': 'FQt',
-                     'SQwCoherent': 'FQt_coh',
-                     'SQwIncoherent': 'FQt_incoh'}
+        fqt_types = {"SQw": "FQt", "SQwCoherent": "FQt_coh", "SQwIncoherent": "FQt_incoh"}
         return fqt_types[self.__class__.__name__]
 
     @staticmethod
@@ -598,7 +605,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         # h is in units of eV s whereas system units are meV fs, so apply a
         # factor of 1e3 * 1e15 to convert it
-        return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
+        return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[: int(nE)]
 
     def calculate_dt(self) -> float:
         r"""
@@ -677,7 +684,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         # Remove any momentum values with infinite error, and the corresponding values from SQw
         error = self.SQw_err
-        masking = np.where(np.any(error == float('inf'), axis=-1))
+        masking = np.where(np.any(error == float("inf"), axis=-1))
         SQw_cropped = np.delete(self.SQw[0], masking, axis=0)
         Q_cropped = np.delete(self.Q, masking)
 
@@ -704,13 +711,12 @@ class AbstractSQw(SQwMixins, Observable):
         max_energy_separation = np.amax(np.diff(E_sorted))
         t_max = h * 1e18 / (2 * max_energy_separation)
         N_T = int(t_max / dt)
-        t_array = np.linspace(- dt * N_T, dt * N_T, N_T)
-        SQw_ift = np.zeros((len(SQw_sorted), N_T), dtype='complex')
+        t_array = np.linspace(-dt * N_T, dt * N_T, N_T)
+        SQw_ift = np.zeros((len(SQw_sorted), N_T), dtype="complex")
 
         # In general we do not have equal energy spacing, multiply the exponential factor by this
         # before transposing and dotting to sum over the energy domain
-        exp = np.exp(1j * np.outer(t_array, E_sorted) /
-                     (h_bar * 1e18)) * widths
+        exp = np.exp(1j * np.outer(t_array, E_sorted) / (h_bar * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 
         # Because Observable.dependent_variables_structure gives the order in which the
@@ -748,7 +754,7 @@ class AbstractSQw(SQwMixins, Observable):
             imag = RectBivariateSpline(t_array, Q_cropped, np.imag(SQw_ift).T)
             return (real(t, Q) + 1j * imag(t, Q)).T
 
-        return {'SQw': data_interpol}
+        return {"SQw": data_interpol}
 
     @property
     def dependent_variables_structure(self) -> dict[str, list]:
@@ -771,7 +777,7 @@ class AbstractSQw(SQwMixins, Observable):
         It also means that:
         np.shape(self.SQw)=(np.size(self.Q), np.size(self.E)).
         """
-        return {'SQw': ['Q', 'E']}
+        return {"SQw": ["Q", "E"]}
 
     @property
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
@@ -791,14 +797,14 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         if self.use_FFT:
-            e_requirements = {'uniform': True, 'zeroed': True}
+            e_requirements = {"uniform": True, "zeroed": True}
         else:
-            e_requirements = {'uniform': False, 'zeroed': False}
+            e_requirements = {"uniform": False, "zeroed": False}
 
-        return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
+        return {"E": e_requirements, "Q": {"uniform": True, "zeroed": False}}
 
 
-@ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
+@ObservableFactory.register(("DynamicStructureFactor", "SQw"))
 class SQw(AbstractSQw):
     """
     A class for the total dynamic structure factor.
@@ -808,20 +814,16 @@ class SQw(AbstractSQw):
     """
 
 
-@ObservableFactory.register(('CoherentDynamicStructureFactor',
-                             'SQwCoherent',
-                             'SQwCoh',
-                             'SQw_coh'))
+@ObservableFactory.register(("CoherentDynamicStructureFactor", "SQwCoherent", "SQwCoh", "SQw_coh"))
 class SQwCoherent(AbstractSQw):
     """
     A class for the coherent dynamic structure factor.
     """
 
 
-@ObservableFactory.register(('IncoherentDynamicStructureFactor',
-                             'SQwIncoherent'
-                             'SQwIncoh',
-                             'SQw_incoh'))
+@ObservableFactory.register(
+    ("IncoherentDynamicStructureFactor", "SQwIncoherentSQwIncoh", "SQw_incoh"),
+)
 class SQwIncoherent(AbstractSQw):
     """
     A class for the incoherent dynamic structure factor.

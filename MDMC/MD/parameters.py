@@ -22,6 +22,7 @@ it is fixed, has constraints or is tied.
 Parameters inherits from lists and implements a number of methods for filterting
 a sequence of Parameter objects.
 """
+
 from __future__ import annotations
 
 import ast
@@ -42,8 +43,17 @@ if TYPE_CHECKING:
     from MDMC.MD.interactions import Interaction
 
 
-@repr_decorator('ID', 'type', 'value', 'unit', 'fixed', 'constraints',
-                'interactions_name', 'functions_name', 'tied')
+@repr_decorator(
+    "ID",
+    "type",
+    "value",
+    "unit",
+    "fixed",
+    "constraints",
+    "interactions_name",
+    "functions_name",
+    "tied",
+)
 class Parameter:
     """
     A force field parameter which can be fixed or constrained within limits
@@ -75,7 +85,7 @@ class Parameter:
         self.ID = self._generate_ID()
         self.name = name + f" (#{self.ID})"
         self.type = name
-        self.unit = settings.get('unit', getattr(value, 'unit', None))
+        self.unit = settings.get("unit", getattr(value, "unit", None))
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
@@ -116,7 +126,7 @@ class Parameter:
     @unit_decorator(unit=None)
     def value(self, value: float) -> None:
 
-        if hasattr(self, 'fixed') and self.fixed:
+        if hasattr(self, "fixed") and self.fixed:
             warnings.warn("Unable to change fixed parameter")
         elif self.tied:
             warnings.warn("Unable to change tied parameter")
@@ -153,7 +163,7 @@ class Parameter:
         if constraints is not None:
             if constraints[0] > constraints[1]:
                 raise ValueError("Constaints must be (lower, upper)")
-            if hasattr(self, 'value'):
+            if hasattr(self, "value"):
                 self.validate_value(self.value, constraints)
         self._constraints = constraints
 
@@ -187,11 +197,13 @@ class Parameter:
         # stored
         if self.interactions_name:
             if interaction.name != self.interactions_name:
-                raise ValueError('Added interaction name is not consistent with'
-                                 ' existing interaction names')
+                raise ValueError(
+                    "Added interaction name is not consistent with existing interaction names",
+                )
             if interaction.function_name != self.functions_name:
-                raise ValueError('Added function name is not consistent with'
-                                 ' existing function names')
+                raise ValueError(
+                    "Added function name is not consistent with existing function names",
+                )
         else:
             self.interactions_name = interaction.name
             self.functions_name = interaction.function_name
@@ -215,7 +227,7 @@ class Parameter:
 
         if self._tie is None:
             return None
-        return eval(compile(self._tie, '', 'eval'))
+        return eval(compile(self._tie, "", "eval"))
 
     @property
     def tied(self) -> bool:
@@ -229,7 +241,7 @@ class Parameter:
             `False`
         """
 
-        return bool(hasattr(self, 'tie') and self.tie is not None)
+        return bool(hasattr(self, "tie") and self.tie is not None)
 
     def set_tie(self, parameter: Parameter, expr: str) -> None:
         """
@@ -251,8 +263,7 @@ class Parameter:
         """
 
         self._tie_parameter = weakref.ref(parameter)
-        self._tie = ast.parse(
-            'self._tie_parameter().value' + expr, mode='eval')
+        self._tie = ast.parse("self._tie_parameter().value" + expr, mode="eval")
 
     @classmethod
     def _generate_ID(cls) -> int:
@@ -261,11 +272,17 @@ class Parameter:
 
     def __str__(self) -> str:
 
-        condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
-                     'Constrained ' if self.constraints is not None else '')
-        function = self.functions_name + ' ' if self.functions_name else ''
-        return '{0}{_value} {1}{name}'.format(condition, function,
-                                              **self.__dict__)
+        condition = (
+            "Fixed "
+            if self.fixed
+            else "Tied "
+            if self.tied
+            else "Constrained "
+            if self.constraints is not None
+            else ""
+        )
+        function = self.functions_name + " " if self.functions_name else ""
+        return "{0}{_value} {1}{name}".format(condition, function, **self.__dict__)
 
     def __getitem__(self, key):
 
@@ -295,8 +312,10 @@ class Parameter:
         """
 
         if value < constraints[0] or value > constraints[1]:
-            raise ValueError(f"Value must be within constraints, \
-                            value is: {value}, constraints are: {constraints}")
+            raise ValueError(
+                f"Value must be within constraints, \
+                            value is: {value}, constraints are: {constraints}",
+            )
 
     # comparison operator so parameters are always in the same order on refinement headings
     def __lt__(self, other):
@@ -333,8 +352,10 @@ class Parameters(dict):
 
     def __setitem__(self, key: str, value: Parameter) -> NoReturn:
         # disable this method to ensure parameter keys are always the parameter name
-        raise TypeError("Parameters should be added to using Parameters.append(parameter), "
-                        "with a parameter or list of parameters as your argument.")
+        raise TypeError(
+            "Parameters should be added to using Parameters.append(parameter), "
+            "with a parameter or list of parameters as your argument.",
+        )
 
     def __getitem__(self, key: str) -> list[Parameter] | Parameter:
         try:
@@ -346,16 +367,19 @@ class Parameters(dict):
             matching_parameters = list(filter(r.match, list(self.keys())))
             if matching_parameters:
                 if len(matching_parameters) > 1:
-                    warnings.warn("Calling a parameter name with no ID returns a "
-                                  "list of all parameters with that name; "
-                                  "this may create inconsistent behaviour!")
-                    #pylint: disable=super-with-arguments
+                    warnings.warn(
+                        "Calling a parameter name with no ID returns a "
+                        "list of all parameters with that name; "
+                        "this may create inconsistent behaviour!",
+                    )
+                    # pylint: disable=super-with-arguments
                     # for some reason when we run it without arguments,
                     # it complains in jupyter notebooks
                     # see http://thomas-cokelaer.info/blog/2011/09/382/
-                    return sorted([super(Parameters, self).__getitem__(p)
-                                   for p in matching_parameters],
-                                   key=lambda p: p.ID)
+                    return sorted(
+                        [super(Parameters, self).__getitem__(p) for p in matching_parameters],
+                        key=lambda p: p.ID,
+                    )
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
 
@@ -373,7 +397,6 @@ class Parameters(dict):
 
         for parameter in parameters:
             super().__setitem__(parameter.name, parameter)
-
 
     @property
     def as_array(self) -> np.ndarray:
@@ -443,12 +466,14 @@ class Parameters(dict):
             are compared with ``value`` using the ``comparison`` operator
         """
 
-        ops = {'>': operator.gt,
-               '<': operator.lt,
-               '>=': operator.ge,
-               '<=': operator.le,
-               '==': operator.eq,
-               '!=': operator.ne}
+        ops = {
+            ">": operator.gt,
+            "<": operator.lt,
+            ">=": operator.ge,
+            "<=": operator.le,
+            "==": operator.eq,
+            "!=": operator.ne,
+        }
 
         return self.filter(lambda p: ops[comparison](p.value, value))
 
@@ -519,10 +544,16 @@ class Parameters(dict):
                 else:
                     yield element
 
-        return self.filter(lambda p:
-                           value in [getattr(atom, attribute)
-                                     for interaction in p.interactions
-                                     for atom in flatten(interaction.atoms)])
+        return self.filter(
+            lambda p: (
+                value
+                in [
+                    getattr(atom, attribute)
+                    for interaction in p.interactions
+                    for atom in flatten(interaction.atoms)
+                ]
+            ),
+        )
 
     def filter_structure(self, structure_name: str) -> Parameters:
         """
@@ -610,5 +641,6 @@ class Parameters(dict):
         if isinstance(x, list) and all(isinstance(i, Parameter) for i in x):
             return x
 
-        raise TypeError("Input into a Parameters object must be either a Parameter "
-                        "or a list of Parameters.")
+        raise TypeError(
+            "Input into a Parameters object must be either a Parameter or a list of Parameters.",
+        )

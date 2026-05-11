@@ -28,10 +28,16 @@ from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorato
 from MDMC.MD import interactions, structures
 
 
-@repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
-                'n_molecules', 'bonded_interactions', 'nonbonded_interactions')
+@repr_decorator(
+    "description",
+    "box_dimensions",
+    "atom_types",
+    "molecule_name",
+    "n_molecules",
+    "bonded_interactions",
+    "nonbonded_interactions",
+)
 class SolventConfig(ABC):
-
     """
     Abstract class defining solvent configs
 
@@ -45,12 +51,10 @@ class SolventConfig(ABC):
 
     def __init__(self):
 
-        self._box_dimensions = deepcopy(
-            self._solvent_config_dict['box_dimensions'])
-        self._atom_types = deepcopy(self._solvent_config_dict['atom_types'])
-        self._nonbonded_interactions = \
-            deepcopy(self._solvent_config_dict['nonbonded_interactions'])
-        self._molecules = deepcopy(self._solvent_config_dict['molecules'])
+        self._box_dimensions = deepcopy(self._solvent_config_dict["box_dimensions"])
+        self._atom_types = deepcopy(self._solvent_config_dict["atom_types"])
+        self._nonbonded_interactions = deepcopy(self._solvent_config_dict["nonbonded_interactions"])
+        self._molecules = deepcopy(self._solvent_config_dict["molecules"])
 
     def __str__(self):
 
@@ -81,7 +85,7 @@ class SolventConfig(ABC):
             The description of the SolventConfig
         """
 
-        return self._solvent_config_dict['description']
+        return self._solvent_config_dict["description"]
 
     @property
     def box_dimensions(self):
@@ -103,7 +107,7 @@ class SolventConfig(ABC):
         self._box_dimensions = value
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** 3)
+    @unit_decorator_getter(unit=units.LENGTH**3)
     def volume(self):
         """
         Get the volume of the box in Ang^3
@@ -149,7 +153,7 @@ class SolventConfig(ABC):
             atom_name_pair is a str which is a key in self.molecules
         """
 
-        return self._solvent_config_dict['bonded_interactions']
+        return self._solvent_config_dict["bonded_interactions"]
 
     @property
     def nonbonded_interactions(self):
@@ -185,7 +189,7 @@ class SolventConfig(ABC):
             True if the bonded interactions are constrained
         """
 
-        return self._solvent_config_dict['constrained']
+        return self._solvent_config_dict["constrained"]
 
     @property
     def molecule_name(self):
@@ -198,7 +202,7 @@ class SolventConfig(ABC):
             The name of the solvent molecule
         """
 
-        return self._solvent_config_dict['molecule_name']
+        return self._solvent_config_dict["molecule_name"]
 
     @property
     def molecules(self):
@@ -250,7 +254,7 @@ class SolventConfig(ABC):
         return self.molec_from_dict(list(self.molecules.values())[0]).mass
 
     @property
-    @unit_decorator_getter(unit=units.MASS / (units.LENGTH ** 3))
+    @unit_decorator_getter(unit=units.MASS / (units.LENGTH**3))
     def density(self):
         """
         Get the density of the SolventConfig in
@@ -268,7 +272,7 @@ class SolventConfig(ABC):
         Resets the molecules dict to the original inbuilt dict
         """
 
-        self.molecules = deepcopy(self._solvent_config_dict['molecules'])
+        self.molecules = deepcopy(self._solvent_config_dict["molecules"])
 
     def offset_atom_types(self, offset):
         """
@@ -281,16 +285,14 @@ class SolventConfig(ABC):
             The amount by which the increment the atom_types
         """
 
-        self.atom_types = {name: (value + offset) for name, value
-                           in self.atom_types.items()}
+        self.atom_types = {name: (value + offset) for name, value in self.atom_types.items()}
         for nb_i in self._nonbonded_interactions:
-            if nb_i[0] == 'Coulombic':
+            if nb_i[0] == "Coulombic":
                 nb_i[1] += offset
             else:
                 nb_i[1] = [atom_type + offset for atom_type in nb_i[1]]
 
-    def molec_from_dict(self, mol_dict, bonded_interactions=None,
-                        universe=None):
+    def molec_from_dict(self, mol_dict, bonded_interactions=None, universe=None):
         """
         Creates a Molecule object from a dictionaries containing atoms and
         atom_types
@@ -315,18 +317,21 @@ class SolventConfig(ABC):
 
         atoms = {}
         for name, position in mol_dict.items():
-            elem = name.replace('1', '').replace('2', '')
-            atoms[name] = structures.Atom(elem,
-                                                position=position,
-                                                atom_type=self.atom_types[elem],
-                                                universe=universe)
+            elem = name.replace("1", "").replace("2", "")
+            atoms[name] = structures.Atom(
+                elem,
+                position=position,
+                atom_type=self.atom_types[elem],
+                universe=universe,
+            )
         for b_i in bonded_interactions or []:
             # Get the required atom objects based on the atom names specified
             # for each bonded interaction in bonded_interactions
             atom_name_tuples = b_i[1:]
-            atom_tuples = map(lambda atom_name_tuple: tuple(atoms[name] for name
-                                                            in atom_name_tuple),
-                              atom_name_tuples)
+            atom_tuples = map(
+                lambda atom_name_tuple: tuple(atoms[name] for name in atom_name_tuple),
+                atom_name_tuples,
+            )
             b_i[0].atoms += atom_tuples
 
         return structures.Molecule(atoms=list(atoms.values()))
@@ -358,29 +363,33 @@ class SolventConfig(ABC):
             # Initialises an object from the str specifying a BondedInteraction
             # at the start of each list in bonded_interactions. The rest of each
             # list (i.e. the atom names) are left unchanged.
-            bonded_interactions = list(map(lambda b_i:
-                                           [getattr(interactions,
-                                                    el)(constrained=con)
-                                            if not n else el
-                                            for n, el in enumerate(b_i)],
-                                           self.bonded_interactions))
+            bonded_interactions = list(
+                map(
+                    lambda b_i: [
+                        getattr(interactions, el)(constrained=con) if not n else el
+                        for n, el in enumerate(b_i)
+                    ],
+                    self.bonded_interactions,
+                ),
+            )
         else:
             bonded_interactions = []
 
         molecules = []
         for mol_dict in coords.values():
-            mol = self.molec_from_dict(mol_dict,
-                                       bonded_interactions=bonded_interactions,
-                                       universe=universe)
+            mol = self.molec_from_dict(
+                mol_dict,
+                bonded_interactions=bonded_interactions,
+                universe=universe,
+            )
             molecules.append(mol)
 
         if self.nonbonded_interactions:
             for nb_i in self.nonbonded_interactions:
                 # Different __init__ for Coulombic than other
                 # NonBondedInteractions
-                if nb_i[0] == 'Coulombic':
-                    _dummy = interactions.Coulombic(
-                        universe=universe, atom_types=nb_i[1])
+                if nb_i[0] == "Coulombic":
+                    _dummy = interactions.Coulombic(universe=universe, atom_types=nb_i[1])
                 else:
                     _dummy = getattr(interactions, nb_i[0])(universe, *nb_i[1:])
         return molecules

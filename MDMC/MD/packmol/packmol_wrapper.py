@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A module that integrates packmol into MDMC"""
+
 import os
 import re
 import shutil
@@ -53,7 +54,7 @@ class PackmolFiller:
         return self._filled_universe
 
     @property
-    def setup_data (self) -> PackmolSetup:
+    def setup_data(self) -> PackmolSetup:
         """
         The Packmol setup data for this run.
 
@@ -230,10 +231,12 @@ class PackmolFiller:
                     # get list of atom positions
                     output_molecule_pos_data = [atom.position for atom in current_structure]
                     # copy whole molecule
-                    copied_molecule = reference_structure.copy((0., 0., 0.))
+                    copied_molecule = reference_structure.copy((0.0, 0.0, 0.0))
                     # adjust individual atom positions
-                    for copied_atom, new_pos in zip(copied_molecule.atoms,
-                                                    output_molecule_pos_data):
+                    for copied_atom, new_pos in zip(
+                        copied_molecule.atoms,
+                        output_molecule_pos_data,
+                    ):
                         copied_atom.position = new_pos
 
                     # Recalculate centre of mass & add everything to universe
@@ -247,8 +250,8 @@ class PackmolFiller:
 
         return universe
 
-    #TODO possibly move this to common or utils?
-    def _call_external_program(self, command_list: list[str], work_dir: str=None) -> None:
+    # TODO possibly move this to common or utils?
+    def _call_external_program(self, command_list: list[str], work_dir: str = None) -> None:
         """
         A function to call an external program in a specific working directory - defaults to
         current working directory as a failsafe

@@ -45,21 +45,23 @@ def _get_water_models():
     """
 
     force_fields_dir = dirname(force_fields.__file__)
-    modules = [import_module('.' + basename(f)[:-3], force_fields.__name__)
-               for f in glob(join(force_fields_dir, "*.py"))
-               if isfile(f) and not f.startswith('_')]
+    modules = [
+        import_module("." + basename(f)[:-3], force_fields.__name__)
+        for f in glob(join(force_fields_dir, "*.py"))
+        if isfile(f) and not f.startswith("_")
+    ]
 
     w_models = []
     for module in modules:
         # try/except for modules which have no subclasses of SolventConfig and
         # so return an empty list
         with suppress(IndexError):
-            w_models.append(getmembers(module,
-                                       lambda m: (isclass(m)
-                                                  and not isabstract(m)
-                                                  and issubclass(m,
-                                                                 WaterModel)
-                                                  ))[0][1])
+            w_models.append(
+                getmembers(
+                    module,
+                    lambda m: isclass(m) and not isabstract(m) and issubclass(m, WaterModel),
+                )[0][1],
+            )
 
     return w_models
 
@@ -105,9 +107,11 @@ def _get_solvent_configs():
     """
 
     # Import all modules in same directory, except this one
-    modules = [import_module('.' + basename(f)[:-3], __package__) for f
-               in glob(join(dirname(__file__), "*.py"))
-               if isfile(f) and not f.startswith('_') and f != __file__]
+    modules = [
+        import_module("." + basename(f)[:-3], __package__)
+        for f in glob(join(dirname(__file__), "*.py"))
+        if isfile(f) and not f.startswith("_") and f != __file__
+    ]
     # Get members of all modules if they are solvent_configs (i.e. they are
     # subclasses of SolventConfig)
     s_configs = []
@@ -115,12 +119,12 @@ def _get_solvent_configs():
         # try/except for modules which have no subclasses of SolventConfig and
         # so return an empty list
         with suppress(IndexError):
-            s_configs.append(getmembers(module,
-                                        lambda m: (isclass(m)
-                                                   and not isabstract(m)
-                                                   and issubclass(m,
-                                                                  SolventConfig)
-                                                   ))[0][1])
+            s_configs.append(
+                getmembers(
+                    module,
+                    lambda m: isclass(m) and not isabstract(m) and issubclass(m, SolventConfig),
+                )[0][1],
+            )
     return {s_config.__name__: s_config for s_config in s_configs}
 
 
@@ -140,13 +144,15 @@ def get_solvent_config(name):
         name
     """
 
-    s_config = SOLVENT_CONFIGS.get(name+'Config', None)
+    s_config = SOLVENT_CONFIGS.get(name + "Config", None)
     if s_config is None:
         try:
             s_config = WATER_MODELS[name]
         except KeyError as error:
-            raise ValueError(f"{name} is not an inbuilt solvent. The inbuilt"
-                             f" solvents are: {get_solvent_names()}") from error
+            raise ValueError(
+                f"{name} is not an inbuilt solvent. "
+                f"The inbuilt solvents are: {get_solvent_names()}",
+            ) from error
 
     return s_config()
 
@@ -162,9 +168,12 @@ def get_solvent_names():
         A `list` of `str` with the names of the inbuilt solvents
     """
 
-    return list(set(list(WATER_MODELS.keys())
-                    + [name.replace('Config', '') for name
-                       in _get_solvent_configs()]))
+    return list(
+        set(
+            list(WATER_MODELS.keys())
+            + [name.replace("Config", "") for name in _get_solvent_configs()],
+        ),
+    )
 
 
 SOLVENT_CONFIGS = _get_solvent_configs()

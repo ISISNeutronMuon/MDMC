@@ -17,6 +17,7 @@
 """
 Export structures via ASE.
 """
+
 from typing import Any
 
 import ase.io
@@ -30,6 +31,7 @@ class ASEExporter(Exporter):
     """
     Use ASE to export to any format supported by ASE.
     """
+
     # pylint: disable=too-few-public-methods
     def write(self, obj: Structure, **settings: Any) -> None:
         """
@@ -44,7 +46,7 @@ class ASEExporter(Exporter):
             be inferred from the file name.
         """
 
-        file_format = settings.get('format')
+        file_format = settings.get("format")
 
         ase_atoms = MDMC_to_ASE(obj)
         ase.io.write(self.file, images=ase_atoms, format=file_format)

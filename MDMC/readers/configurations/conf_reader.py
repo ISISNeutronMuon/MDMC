@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """Module for observable reader abstract class"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -25,9 +26,9 @@ from MDMC.readers.reader import Reader
 if TYPE_CHECKING:
     from MDMC.MD.structures import Atom
 
-@repr_decorator('file', 'extension', 'atoms')
-class ConfigurationReader(Reader):
 
+@repr_decorator("file", "extension", "atoms")
+class ConfigurationReader(Reader):
     """
     Abstract class (as it does not implement ``Reader.parse``) that defines
     properties common to all readers for configurations

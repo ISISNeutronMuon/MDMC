@@ -25,9 +25,7 @@ from MDMC.MD import Structure, Universe
 from MDMC.MD.ase.convert import MDMC_to_ASE
 
 
-def view(obj: Structure | Universe,
-         viewer: str = 'X3D',
-         max_atoms: int = 2000) -> HTML | None:
+def view(obj: Structure | Universe, viewer: str = "X3D", max_atoms: int = 2000) -> HTML | None:
     """
     View an MDMC Structure or Universe.
 

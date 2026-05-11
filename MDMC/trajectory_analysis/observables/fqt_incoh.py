@@ -31,10 +31,9 @@ from MDMC.trajectory_analysis.observables.fqt import (
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
-@ObservableFactory.register(('IncoherentIntermediateScatteringFunction',
-                             'FQtIncoherent'
-                             'FQtIncoh',
-                             'FQt_incoh'))
+@ObservableFactory.register(
+    ("IncoherentIntermediateScatteringFunction", "FQtIncoherentFQtIncoh", "FQt_incoh"),
+)
 class FQtIncoherent(AbstractFQt):
     """
     Class for processing intermediate scattering function for incoherent dynamic structure factor.
@@ -44,13 +43,18 @@ class FQtIncoherent(AbstractFQt):
         """Calculate the neutron weighting for incoherent scattering."""
         elements_list = create_list_of_element_objects(self._trajectory.element_set)
 
-        element_weights = {str(element):  element.neutron.b_c_i**2\
-                           if element.neutron.b_c_i is not None \
-                           else calc_incoherent_scatt_length(str(element))**2 for element
-                           in elements_list}
-        self.weights = [element_weights[str(atom.element)] for atom
-                        in [self._trajectory.exportAtom(atom_number=x) for x
-                        in range(self._trajectory.n_atoms)]]
+        element_weights = {
+            str(element): element.neutron.b_c_i**2
+            if element.neutron.b_c_i is not None
+            else calc_incoherent_scatt_length(str(element)) ** 2
+            for element in elements_list
+        }
+        self.weights = [
+            element_weights[str(atom.element)]
+            for atom in [
+                self._trajectory.exportAtom(atom_number=x) for x in range(self._trajectory.n_atoms)
+            ]
+        ]
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> np.ndarray:
         # Inherit docstring of abstract method
@@ -64,10 +68,10 @@ class FQtIncoherent(AbstractFQt):
         configs = np.swapaxes(self._trajectory.position, 1, 2)
         configs = np.swapaxes(configs, 0, 2)
         rho_all = calculate_rho(configs, np.array(single_Q_vectors))
-        futures = core_batch(executor.submit(faster_autocorrelation,
-                                             rho.T,
-                                             weights=np.array(weight))
-                             for rho in rho_all)
+        futures = core_batch(
+            executor.submit(faster_autocorrelation, rho.T, weights=np.array(weight))
+            for rho in rho_all
+        )
 
         for future_batch in futures:
             results = [future.result() for future in future_batch]

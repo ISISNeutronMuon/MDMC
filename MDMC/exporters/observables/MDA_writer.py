@@ -17,6 +17,7 @@
 """
 A module for writing and saving a H5MD file.
 """
+
 import logging
 from pathlib import Path
 
@@ -27,11 +28,12 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 LOGGER = logging.getLogger(__name__)
 
+
 def guess_unit(axis_label: str) -> str:
     """Return the physical unit of a dataset based on its text label."""
     match axis_label:
         case "Q":
-            unit_string = units.SYSTEM["LENGTH"]**(-1)
+            unit_string = units.SYSTEM["LENGTH"] ** (-1)
         case "E":
             unit_string = units.SYSTEM["ENERGY_TRANSFER"]
         case "r":
@@ -39,7 +41,8 @@ def guess_unit(axis_label: str) -> str:
         case _:
             unit_string = "au"
             LOGGER.warning("MDA writer could not determine the unit of variable %s", axis_label)
-    return unit_string.replace(" ","")
+    return unit_string.replace(" ", "")
+
 
 def write_metadata(target: h5py.File, observable: Observable):
     string_dt = h5py.special_dtype(vlen=str)
@@ -52,17 +55,22 @@ def write_metadata(target: h5py.File, observable: Observable):
         dtype=string_dt,
     )
     inputs_group = meta_group.create_group("inputs")
-    inputs_group.create_dataset("output_files",
-                                (1,),
-                                data='["mdmc_output.mda", ["MDAFormat"], "no logs"]',
-                                dtype=string_dt)
+    inputs_group.create_dataset(
+        "output_files",
+        (1,),
+        data='["mdmc_output.mda", ["MDAFormat"], "no logs"]',
+        dtype=string_dt,
+    )
 
-def write_MDA(observable: Observable,
-              *,
-              filename: str,
-              file_loc: Path | str,
-              timestamp: str,
-              suffix: str = '.mda'):
+
+def write_MDA(
+    observable: Observable,
+    *,
+    filename: str,
+    file_loc: Path | str,
+    timestamp: str,
+    suffix: str = ".mda",
+):
     """Write the input observable to an MDANSE MDA file.
 
     Parameters
@@ -81,7 +89,7 @@ def write_MDA(observable: Observable,
     obs_name = observable.name
     target_path = Path(file_loc, f"{filename}{timestamp}_{obs_name}").with_suffix(suffix)
     target_path.parent.mkdir(parents=True, exist_ok=True)
-    with h5py.File(target_path, 'w') as target:
+    with h5py.File(target_path, "w") as target:
         result_group = target.create_group("mdmc_result")
         axes_group = result_group.create_group("axes")
         data_group = result_group.create_group(obs_name)
@@ -92,8 +100,9 @@ def write_MDA(observable: Observable,
             temp_ds.attrs["units"] = guess_unit(key)
         for key, data in observable.dependent_variables.items():
             main_ds = data_group.create_dataset(key, data=data[0])
-            main_ds.attrs["axis"] = "|".join(f"mdmc_result/axes/{x}"
-                                               for x in observable.independent_variables)
+            main_ds.attrs["axis"] = "|".join(
+                f"mdmc_result/axes/{x}" for x in observable.independent_variables
+            )
             main_ds.attrs["scaling_factor"] = 1.0
             main_ds.attrs["units"] = "au"
             main_ds.attrs["tags"] = "main"

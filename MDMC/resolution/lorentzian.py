@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """The Lorentzian resolution subclass"""
+
 import numpy as np
 
 from MDMC.common.resolution_functions import lorentzian
@@ -84,4 +85,4 @@ class LorentzianResolution(Resolution):
         Represent a ``LorentzianResolution`` object as the given FWHM energy resolution.
         """
 
-        return "Resolution" + str({'lorentzian': self.e_res})
+        return "Resolution" + str({"lorentzian": self.e_res})

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """The Resolution abstract base class."""
+
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -24,6 +25,7 @@ class Resolution(ABC):
     """
     An abstract base class for resolution functions.
     """
+
     # pylint: disable=too-few-public-methods
 
     @abstractmethod

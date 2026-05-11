@@ -16,6 +16,7 @@
 
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -31,10 +32,8 @@ if TYPE_CHECKING:
     from MDMC.control import Control
 
 
-@repr_decorator('FoM', 'FoM_old',
-                'parameters', 'parameters_old_values')
+@repr_decorator("FoM", "FoM_old", "parameters", "parameters_old_values")
 class Minimizer(ABC):
-
     """
     An abstract class with methods common to all minimizers
 
@@ -62,8 +61,12 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: Control, parameters: Parameters,
-                 previous_history: Path | str = None):
+    def __init__(
+        self,
+        control: Control,
+        parameters: Parameters,
+        previous_history: Path | str = None,
+    ):
 
         self.control = control
         self.previous_history = previous_history
@@ -83,18 +86,19 @@ class Minimizer(ABC):
             self.compatible = False
             self.enforcing_minimizer_compatibility(self.history_columns, self._history)
             self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
-            self.parameters_old_values = self.get_parameters_old_values(parameters,
-                                                                        self.column_names,
-                                                                        self._history)
+            self.parameters_old_values = self.get_parameters_old_values(
+                parameters,
+                self.column_names,
+                self._history,
+            )
             self._history.pop(-1)
         else:
             self._history = []
-            self.FoM_old = float('inf')
+            self.FoM_old = float("inf")
             self.parameters_old_values = None
             self.previous_steps = 0
 
         self._check_parameters(parameters)
-
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -183,11 +187,12 @@ class Minimizer(ABC):
 
         for parameter in parameters.values():
             if parameter.fixed is True:
-                raise ValueError(
-                    f'Parameter {parameter.name} is fixed, and so cannot be refined')
+                raise ValueError(f"Parameter {parameter.name} is fixed, and so cannot be refined")
             if parameter.tied is True:
-                raise ValueError(f'Parameter {parameter.name} is tied to the value of '
-                                 'another parameter and so cannot be refined')
+                raise ValueError(
+                    f"Parameter {parameter.name} is tied to the value of "
+                    "another parameter and so cannot be refined",
+                )
 
     def is_best_FoM(self) -> bool:
         """
@@ -266,7 +271,6 @@ class Minimizer(ABC):
         """
         raise NotImplementedError
 
-
     def load_history(self, history: Path) -> tuple:
         """Uses the `previous_history` variable to load a file of previous refinement steps.
         It then formats this into the column names and the actual parameter values. The loaded data
@@ -288,17 +292,20 @@ class Minimizer(ABC):
             list of columns names, and a list containing a list for each refinement step
              from the loaded history file."""
 
-        with open(history, 'r', encoding='utf-8') as file:
+        with open(history, "r", encoding="utf-8") as file:
             file_content = pd.read_csv(file)
-            file_content = file_content.drop(file_content.columns[0],axis=1)
+            file_content = file_content.drop(file_content.columns[0], axis=1)
             column_names = file_content.columns.tolist()
             file_content = file_content.values.tolist()
 
         return column_names, file_content
 
-
-    def _check_parameters_fit_with_history(self, parameters: Parameters,
-                                           column_names: list, history: Path):
+    def _check_parameters_fit_with_history(
+        self,
+        parameters: Parameters,
+        column_names: list,
+        history: Path,
+    ):
         """Checks that the parameters loaded in from the file of previous refinement steps are
          compatible with those already defined in the control object. If the parameters are the same
          but with different numbers (arbitrary), then this is changed to be consistent.
@@ -322,18 +329,21 @@ class Minimizer(ABC):
         if history is not None:
             # using a reduced length for 'column_names' because it includes 'FoM'
             # and we want parameters only.
-            if (len(column_names)-1) != len(parameters):
-                raise ValueError(f'A history of {len(history.columns) -2}'
-                                 ' is incompatible with the current setup.')
+            if (len(column_names) - 1) != len(parameters):
+                raise ValueError(
+                    f"A history of {len(history.columns) - 2}"
+                    " is incompatible with the current setup.",
+                )
 
             split_param_list = [parameter.split()[0] for parameter in parameters]
             split_column_list = [column.split()[0] for column in column_names[1:]]
             if split_param_list != split_column_list:
-                raise ValueError("The parameters in the minimizer history are not \
+                raise ValueError(
+                    "The parameters in the minimizer history are not \
                                       the same as those specified for refining in the current\
-                                      universe setup.")
-            self.column_names = ['FoM', *list(parameters)]
-
+                                      universe setup.",
+                )
+            self.column_names = ["FoM", *list(parameters)]
 
     def get_parameters_old_values(self, parameters: Parameters, column_names: list, history: list):
         """Retrieves the last set of parameters from a file containing data of previous
@@ -367,8 +377,10 @@ class Minimizer(ABC):
                 for param in parameters:
                     parameters[param].value = last_entry[column_names.index(param)]
             except Exception as err:
-                raise Exception('Issue retrieving most recent parameter values \
-                    from given results file.') from err
+                raise Exception(
+                    "Issue retrieving most recent parameter values \
+                    from given results file.",
+                ) from err
             return parameters
         return None
 
@@ -393,25 +405,21 @@ class Minimizer(ABC):
 
         """
         if history and self.compatible is False:
-            if (
-                    'Change state' in column_names and
-                    ('Accepted' not in history[0] or
-                     'Rejected' not in history[0])
+            if "Change state" in column_names and (
+                "Accepted" not in history[0] or "Rejected" not in history[0]
             ):
                 for row in history:
-                    pos = column_names.index('Change state')
-                    row.insert(pos,'Accepted')
+                    pos = column_names.index("Change state")
+                    row.insert(pos, "Accepted")
 
-            elif (
-                    'Change state' not in column_names and
-                    ('Accepted' in history[0] or
-                     'Rejected' in history[0])
+            elif "Change state" not in column_names and (
+                "Accepted" in history[0] or "Rejected" in history[0]
             ):
                 for row in history:
                     try:
-                        row.remove('Accepted')
+                        row.remove("Accepted")
                     except ValueError:
-                        row.remove('Rejected')
+                        row.remove("Rejected")
 
             self.compatible = True
         self._history = history

@@ -40,23 +40,24 @@ from pandas import Series
 # as it raises a false positive for components
 
 #: Version of CODATA constants to load.
-CODATA_VERSION = '2014'
+CODATA_VERSION = "2014"
 
 
 #: CODATA 2014 taken from ASE.units, originally from:
 #: http://arxiv.org/pdf/1507.07956.pdf.
 CODATA = {
-
-    '2014': {'_c': 299792458.,
-             '_mu0': 4.0e-7 * np.pi,
-             '_Grav': 6.67408e-11,
-             '_hplanck': 6.626070040e-34,
-             '_e': 1.6021766208e-19,
-             '_me': 9.10938356e-31,
-             '_mp': 1.672621898e-27,
-             '_Nav': 6.022140857e23,
-             '_k': 1.38064852e-23,
-             '_amu': 1.660539040e-27},
+    "2014": {
+        "_c": 299792458.0,
+        "_mu0": 4.0e-7 * np.pi,
+        "_Grav": 6.67408e-11,
+        "_hplanck": 6.626070040e-34,
+        "_e": 1.6021766208e-19,
+        "_me": 9.10938356e-31,
+        "_mp": 1.672621898e-27,
+        "_Nav": 6.022140857e23,
+        "_k": 1.38064852e-23,
+        "_amu": 1.660539040e-27,
+    },
 }
 
 
@@ -145,22 +146,22 @@ class Unit(str):
             return string
 
         # Remove square brackets and parentheses as these are not supported
-        unsupported_chars = ['[', ']', '(', ')']
+        unsupported_chars = ["[", "]", "(", ")"]
         for char in unsupported_chars:
-            string = string.replace(char, '')
+            string = string.replace(char, "")
 
         unit = super().__new__(cls, string)
         if not components:
             components = defaultdict(list)
             # String is compound if it contains either ' ', '/' or '^' (e.g.
             # 'Ang^2')
-            if any(x in string for x in [' ', '/', '^']):
+            if any(x in string for x in [" ", "/", "^"]):
                 num, denom = unit._parse_unit_string(string)
-                components['numerator'] = num
-                components['denominator'] = denom
+                components["numerator"] = num
+                components["denominator"] = denom
             else:
-                components['numerator'].append(unit)
-                components['denominator'] = []
+                components["numerator"].append(unit)
+                components["denominator"] = []
         unit.components = components
         return unit
 
@@ -185,10 +186,9 @@ class Unit(str):
         """
 
         try:
-            components = self._calculate_components(other, 'mul')
+            components = self._calculate_components(other, "mul")
         except AttributeError as error:
-            raise TypeError(
-                'A Unit can only be multipled by another Unit') from error
+            raise TypeError("A Unit can only be multipled by another Unit") from error
         return self.__class__(self._calculate_string(components), components)
 
     def __truediv__(self, other: Unit) -> Unit:
@@ -212,10 +212,9 @@ class Unit(str):
         """
 
         try:
-            components = self._calculate_components(other, 'div')
+            components = self._calculate_components(other, "div")
         except AttributeError as error:
-            raise TypeError(
-                'A Unit can only be divided by another Unit') from error
+            raise TypeError("A Unit can only be divided by another Unit") from error
         return self.__class__(self._calculate_string(components), components)
 
     def __pow__(self, exponent: Number) -> Unit:
@@ -237,10 +236,9 @@ class Unit(str):
             try:
                 exponent = float(exponent)
             except (TypeError, ValueError) as error:
-                raise TypeError('Only numeric types can be used as a power for'
-                                ' Units') from error
+                raise TypeError("Only numeric types can be used as a power for Units") from error
 
-        components = self._calculate_components(exponent, 'pow')
+        components = self._calculate_components(exponent, "pow")
         return self.__class__(self._calculate_string(components), components)
 
     @property
@@ -255,8 +253,7 @@ class Unit(str):
             element in the ``components`` ``numerator`` `list`).
         """
 
-        return (not self.components['denominator'] and
-                self.components['numerator'] == [self])
+        return not self.components["denominator"] and self.components["numerator"] == [self]
 
     @property
     def conversion_factor(self) -> float:
@@ -281,11 +278,11 @@ class Unit(str):
             If invalid unit provided.
         """
 
-        factor = 1.
+        factor = 1.0
         factors_dict = create_units(CODATA_VERSION)[0]
         components = self.components
-        numerator = components['numerator']
-        denominator = components['denominator']
+        numerator = components["numerator"]
+        denominator = components["denominator"]
 
         try:
             for unit in numerator:
@@ -301,8 +298,9 @@ class Unit(str):
                     factor /= factors_dict[str(unit)]
 
         except KeyError as error:
-            raise KeyError(f'Unknown unit {str(unit)} provided, cannot convert to system'
-                           ' units') from error
+            raise KeyError(
+                f"Unknown unit {str(unit)} provided, cannot convert to system units",
+            ) from error
 
         return factor
 
@@ -329,12 +327,16 @@ class Unit(str):
         try:
             return properties_dict[str(self)]
         except KeyError as error:
-            raise KeyError(f'Unknown unit {str(self)} provided, cannot determine the '
-                           'physical property it measures ') from error
+            raise KeyError(
+                f"Unknown unit {str(self)} provided, cannot determine the "
+                "physical property it measures ",
+            ) from error
 
-    def _calculate_components(self,
-                              other: Unit,
-                              op: Literal['mul', 'div', 'pow']) -> defaultdict[list]:
+    def _calculate_components(
+        self,
+        other: Unit,
+        op: Literal["mul", "div", "pow"],
+    ) -> defaultdict[list]:
         """
         Calculate the ``components`` for a new ``Unit`` generated from an operation.
 
@@ -364,23 +366,22 @@ class Unit(str):
         components = defaultdict(list)
         for k, lst in self.components.items():
             components[k] = [deepcopy(unit) for unit in lst]
-        if op == 'mul':
-            components['numerator'] += other.components['numerator']
-            components['denominator'] += other.components['denominator']
-        elif op == 'div':
-            components['numerator'] += other.components['denominator']
-            components['denominator'] += other.components['numerator']
-        elif op == 'pow':
+        if op == "mul":
+            components["numerator"] += other.components["numerator"]
+            components["denominator"] += other.components["denominator"]
+        elif op == "div":
+            components["numerator"] += other.components["denominator"]
+            components["denominator"] += other.components["numerator"]
+        elif op == "pow":
             # Ensure other is an integer
             other = int(other)
             if other >= 1:
-                components['numerator'] *= other
-                components['denominator'] *= other
+                components["numerator"] *= other
+                components["denominator"] *= other
             else:
-                numerator = components['numerator']
-                components['numerator'] = components['denominator'] * \
-                    abs(other)
-                components['denominator'] = numerator * abs(other)
+                numerator = components["numerator"]
+                components["numerator"] = components["denominator"] * abs(other)
+                components["denominator"] = numerator * abs(other)
 
         return components
 
@@ -426,19 +427,19 @@ class Unit(str):
                 if power == 1:
                     component_list.append(comp)
                 else:
-                    component_list.append(comp + ' ^ ' + str(power))
-            return ' '.join(component_list)
+                    component_list.append(comp + " ^ " + str(power))
+            return " ".join(component_list)
 
-        numerator = _calculate_expr_string(components['numerator'])
-        denominator = _calculate_expr_string(components['denominator'])
+        numerator = _calculate_expr_string(components["numerator"])
+        denominator = _calculate_expr_string(components["denominator"])
 
         # Different string styles for the three cases of just numerator, just
         # denominator, and both
-        if not components['numerator']:
-            return '1 / ' + denominator
-        if not components['denominator']:
+        if not components["numerator"]:
+            return "1 / " + denominator
+        if not components["denominator"]:
             return numerator
-        return numerator + ' / ' + denominator
+        return numerator + " / " + denominator
 
     @staticmethod
     def _parse_unit_string(unit_string: str) -> tuple[list[Unit], list[Unit]]:
@@ -490,13 +491,13 @@ class Unit(str):
                 [Unit('Ang'), Unit('Ang'), Unit('mol)'], [Unit('kJ'), Unit('kJ')]
             """
 
-            if '^' in string:
+            if "^" in string:
                 # Joining with ' ' before stripping out spaces means that
                 # 'Ang ^ 2' and 'Ang^2' are equivalent
-                string = ' '.join(string.split('^'))
-            splt_space = string.split(' ')
+                string = " ".join(string.split("^"))
+            splt_space = string.split(" ")
             # Strip out spaces
-            strip = list(filter(lambda x: x != '', splt_space))
+            strip = list(filter(lambda x: x != "", splt_space))
             parsed = [Unit(strip[0])]
             inverse_parsed = []
             # For all elements apart from the first, determine if element is an
@@ -516,15 +517,15 @@ class Unit(str):
                             parsed.append(parsed[-1])
                     else:
                         base = parsed.pop()
-                        for _ in range(- exponent):
+                        for _ in range(-exponent):
                             inverse_parsed.append(base)
                 except ValueError:
                     parsed.append(Unit(element))
             return parsed, inverse_parsed
 
         # Start by splitting the compound unit into a numerator and denominator
-        if '/' in unit_string:
-            num_string, denom_string = unit_string.split('/')
+        if "/" in unit_string:
+            num_string, denom_string = unit_string.split("/")
             denom, inverse_denom = parse_powers(denom_string)
         else:
             num_string = unit_string
@@ -538,17 +539,17 @@ class Unit(str):
 
 # Define the unit system used in MDMC
 SYSTEM = {
-    'LENGTH': Unit('Ang'),
-    'TIME': Unit('fs'),
-    'MASS': Unit('amu'),
-    'CHARGE': Unit('e'),
-    'ANGLE': Unit('deg'),
-    'TEMPERATURE': Unit('K'),
-    'ENERGY': Unit('kJ') / Unit('mol'),
-    'FORCE': Unit('kJ') / (Unit('Ang') * Unit('mol')),
-    'PRESSURE': Unit('Pa'),
-    'ENERGY_TRANSFER': Unit('meV'),
-    'ARBITRARY': Unit('arb'),
+    "LENGTH": Unit("Ang"),
+    "TIME": Unit("fs"),
+    "MASS": Unit("amu"),
+    "CHARGE": Unit("e"),
+    "ANGLE": Unit("deg"),
+    "TEMPERATURE": Unit("K"),
+    "ENERGY": Unit("kJ") / Unit("mol"),
+    "FORCE": Unit("kJ") / (Unit("Ang") * Unit("mol")),
+    "PRESSURE": Unit("Pa"),
+    "ENERGY_TRANSFER": Unit("meV"),
+    "ARBITRARY": Unit("arb"),
 }
 
 
@@ -577,82 +578,82 @@ def create_units(codata_version: str) -> dict[Unit, float]:
 
     # Length
     # 1 m = 1e10 Ang
-    units['m'] = units['Ang'] * 1e10
-    unit_properties['m'] = 'LENGTH'
+    units["m"] = units["Ang"] * 1e10
+    unit_properties["m"] = "LENGTH"
     # 1 cm = 1e8 Ang
-    units['cm'] = units['Ang'] * 1e8
-    unit_properties['cm'] = 'LENGTH'
+    units["cm"] = units["Ang"] * 1e8
+    unit_properties["cm"] = "LENGTH"
     # 1 nm = 1e1 Ang
-    units['nm'] = units['Ang'] * 1e1
-    unit_properties['nm'] = 'LENGTH'
+    units["nm"] = units["Ang"] * 1e1
+    unit_properties["nm"] = "LENGTH"
     # 1 AA = 1 Ang
-    units['AA'] = units['Ang']
-    unit_properties['AA'] = 'LENGTH'
+    units["AA"] = units["Ang"]
+    unit_properties["AA"] = "LENGTH"
 
     # Area
     # 1 barn = 1e-28 m^2 = 1e-8 Ang^2
-    units['barn'] = units['Ang'] * units['Ang'] * 1e8
+    units["barn"] = units["Ang"] * units["Ang"] * 1e8
 
     # Time
     # 1 s = 1e15 fs
-    units['s'] = units['fs'] * 1e15
-    unit_properties['s'] = 'TIME'
+    units["s"] = units["fs"] * 1e15
+    unit_properties["s"] = "TIME"
     # 1 ns = 1e6 fs
-    units['ns'] = units['fs'] * 1e6
-    unit_properties['ns'] = 'TIME'
+    units["ns"] = units["fs"] * 1e6
+    unit_properties["ns"] = "TIME"
     # 1 ps = 1e3 fs
-    units['ps'] = units['fs'] * 1e3
-    unit_properties['ps'] = 'TIME'
+    units["ps"] = units["fs"] * 1e3
+    unit_properties["ps"] = "TIME"
 
     # Mass
     # 1 kg = (1000 * N_av) amu = (1/u) amu
-    units['kg'] = units['amu'] / codata['_amu']
-    unit_properties['kg'] = 'MASS'
+    units["kg"] = units["amu"] / codata["_amu"]
+    unit_properties["kg"] = "MASS"
     # 1 g = N_av amu = (1/1000u) amu = (1/1000) kg
-    units['g'] = units['kg'] / 1000.
-    unit_properties['g'] = 'MASS'
+    units["g"] = units["kg"] / 1000.0
+    unit_properties["g"] = "MASS"
     # 1 g mol^-1 = 1 amu by definition
-    units['g / mol'] = units['amu']
-    unit_properties['g / mol'] = 'MASS'
+    units["g / mol"] = units["amu"]
+    unit_properties["g / mol"] = "MASS"
 
     # Energy
     # 1 kcal mol^-1 = 4.184 kJ mol^-1
-    units['kcal / mol'] = units['kJ / mol'] * 4.184
-    unit_properties['kcal / mol'] = 'ENERGY'
+    units["kcal / mol"] = units["kJ / mol"] * 4.184
+    unit_properties["kcal / mol"] = "ENERGY"
     # 1 kJ = 1 kJ mol^-1 * Nav
-    units['kJ'] = units['kJ / mol'] * codata['_Nav']
-    unit_properties['kJ'] = 'ENERGY'
+    units["kJ"] = units["kJ / mol"] * codata["_Nav"]
+    unit_properties["kJ"] = "ENERGY"
     # 1 J = (1/1000) kJ
-    units['J'] = units['kJ'] / 1000.
-    unit_properties['J'] = 'ENERGY'
+    units["J"] = units["kJ"] / 1000.0
+    unit_properties["J"] = "ENERGY"
     # 1 kcal = 4.184 kJ
-    units['kcal'] = units['kJ'] * 4.184
-    unit_properties['kcal'] = 'ENERGY'
+    units["kcal"] = units["kJ"] * 4.184
+    unit_properties["kcal"] = "ENERGY"
 
     # Energy transfer
-    units['ueV'] = units['meV'] * 1000.
-    unit_properties['ueV'] = 'ENERGY_TRANSFER'
+    units["ueV"] = units["meV"] * 1000.0
+    unit_properties["ueV"] = "ENERGY_TRANSFER"
 
     # Force
     # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
-    units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
-    unit_properties['kcal / Ang mol'] = 'FORCE'
+    units["kcal / Ang mol"] = units["kJ / Ang mol"] * 4.184
+    unit_properties["kcal / Ang mol"] = "FORCE"
 
     # Pressure
     # 1 atm = 101325 Pa
-    units['atm'] = units['Pa'] * 101325.
-    unit_properties['atm'] = 'PRESSURE'
+    units["atm"] = units["Pa"] * 101325.0
+    unit_properties["atm"] = "PRESSURE"
     # 1 bar = 1e5 Pa
-    units['bar'] = units['Pa'] * 1e5
-    unit_properties['bar'] = 'PRESSURE'
+    units["bar"] = units["Pa"] * 1e5
+    unit_properties["bar"] = "PRESSURE"
 
     # Angle
     # 1 rad = (180 / pi) deg
-    units['rad'] = units['deg'] * (180. / np.pi)
-    unit_properties['rad'] = 'ANGLE'
+    units["rad"] = units["deg"] * (180.0 / np.pi)
+    unit_properties["rad"] = "ANGLE"
 
     # Amount
-    units['mol'] = codata['_Nav']
+    units["mol"] = codata["_Nav"]
 
     return units, unit_properties
 
@@ -711,7 +712,7 @@ class UnitFloat(float):
     def unit(self, value: float) -> None:
 
         if not (isinstance(value, str) or value is None):
-            raise TypeError('unit must be a string')
+            raise TypeError("unit must be a string")
         self._unit = Unit(value)
 
     def __deepcopy__(self, memo: dict):
@@ -747,7 +748,7 @@ class UnitFloat(float):
 
     def __repr__(self):
 
-        return repr(self.real) + ' ' + self.unit
+        return repr(self.real) + " " + self.unit
 
     def __str__(self):
 
@@ -755,7 +756,6 @@ class UnitFloat(float):
 
 
 class UnitNDArray(np.ndarray):
-
     """
     Subclasses :any:`ndarray` so that it contains a ``unit`` attribute.
 
@@ -779,14 +779,13 @@ class UnitNDArray(np.ndarray):
         Either ``C`` for row-major or ``F`` for column-major. Default is ``C``.
     """
 
-    def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0,
-                strides=None, order=None):
+    def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0, strides=None, order=None):
         obj = super().__new__(cls, shape, dtype, buffer, offset, strides, order)
         obj.unit = unit
         return obj
 
     def __array_finalize__(self, obj):
-        self.unit = getattr(obj, 'unit', None)
+        self.unit = getattr(obj, "unit", None)
 
     @property
     def unit(self) -> None:
@@ -807,18 +806,18 @@ class UnitNDArray(np.ndarray):
     def unit(self, value: float):
 
         if not (isinstance(value, str) or value is None):
-            raise TypeError('unit must be a string')
+            raise TypeError("unit must be a string")
         self._unit = Unit(value)
 
     def __repr__(self):
         try:
-            return super().__repr__() + ' ' + self.unit
+            return super().__repr__() + " " + self.unit
         except TypeError:
             return super().__repr__()
 
     def __str__(self):
         try:
-            return super().__str__() + ' ' + self.unit
+            return super().__str__() + " " + self.unit
         except TypeError:
             return super().__str__()
 
@@ -854,7 +853,7 @@ def unit_array(obj, unit: Unit | str, dtype=None) -> UnitNDArray:
         return None
 
     if not isinstance(unit, str):
-        raise TypeError(f'unit must be a string, but was {unit}')
+        raise TypeError(f"unit must be a string, but was {unit}")
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):

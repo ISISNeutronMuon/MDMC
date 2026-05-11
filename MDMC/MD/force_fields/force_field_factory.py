@@ -30,9 +30,11 @@ class ForceFieldFactory(ModuleFactory[ForceField]):
     a string of the class name, as long as it is a subclass of
     ``ForceField``.
     """
+
     registry: dict[str, ForceField] = {}
     curr_path = Path(__file__).parent
     curr_pack = __package__
     exclude = (curr_path / "__init__.py", curr_path / "force_field_factory.py")
+
 
 ForceFieldFactory.scan()

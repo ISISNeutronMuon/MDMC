@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A subpackage for reading files containing atomic configurations"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -27,6 +28,7 @@ from .pdb import ProteinDataBankReader
 
 if TYPE_CHECKING:
     from MDMC.MD.structures import Atom
+
 
 def read(file: str, docstring: bool = False, **settings: Any) -> list[Atom] | None:
     """
@@ -67,7 +69,7 @@ def read(file: str, docstring: bool = False, **settings: Any) -> list[Atom] | No
         read('example.cif', help=True)
     """
 
-    extension = file.split('.')[-1]
+    extension = file.split(".")[-1]
     reader: conf_reader.ConfigurationReader
 
     reader = conf_reader_factory.ConfigurationReaderFactory.create_reader_from_ext(extension, file)
@@ -86,6 +88,7 @@ def read(file: str, docstring: bool = False, **settings: Any) -> list[Atom] | No
             setattr(atom, setting, value)
 
     return atoms
+
 
 __all__ = [
     "ASEReader",

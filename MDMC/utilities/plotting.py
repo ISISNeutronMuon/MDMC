@@ -34,14 +34,15 @@ try:
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
 except ModuleNotFoundError as error:
-    raise ModuleNotFoundError('MDMC plotting utilities require matplotlib to be'
-                              ' installed.') from error
+    raise ModuleNotFoundError(
+        "MDMC plotting utilities require matplotlib to be installed.",
+    ) from error
 
 
 # Defaults for text and plot output sizes
 
 #: Default VBox height.
-VBOX_HEIGHT = '73%'
+VBOX_HEIGHT = "73%"
 #: Default number of text lines.
 N_TEXT_LINES = 5
 #: Default plot height.
@@ -136,12 +137,11 @@ def plot_progress(inst: Control, ynames: str) -> Control:
         from IPython import display
         from ipywidgets import Output, VBox
     except ModuleNotFoundError as err:
-        warnings.warn(
-            f'plot_progress requires {err.name}. No plots will be displayed.')
+        warnings.warn(f"plot_progress requires {err.name}. No plots will be displayed.")
         return inst
 
     # This font size and linewidth were suitable for OSX dev environment
-    plt.rcParams.update({'font.size': 22, 'axes.linewidth': 5})
+    plt.rcParams.update({"font.size": 22, "axes.linewidth": 5})
 
     # copies of the original instance methods are kept so that they can be
     # called within the replacement methods
@@ -157,16 +157,14 @@ def plot_progress(inst: Control, ynames: str) -> Control:
     # Create a VBox for the text consisting of N empty outputs. These are then
     # dynamically replaced by lines containing text output with each step.
     # height layout setting is used to reduce padding between lines of text.
-    inst._vbox = VBox([Output()] * N_TEXT_LINES,
-                      layout={'height': VBOX_HEIGHT})
+    inst._vbox = VBox([Output()] * N_TEXT_LINES, layout={"height": VBOX_HEIGHT})
 
     # Basic validation of user input
     if not inst._ynames:
-        raise ValueError('ynames must contain at least one str')
+        raise ValueError("ynames must contain at least one str")
     for yname in inst._ynames:
         if yname not in inst.minimizer.history:
-            raise ValueError(
-                f'{yname} is not a variable in the minimizer history')
+            raise ValueError(f"{yname} is not a variable in the minimizer history")
 
     # Redefined refine so that figure plotting is set, and the vbox containing
     # the text is displayed after the header
@@ -176,9 +174,8 @@ def plot_progress(inst: Control, ynames: str) -> Control:
         for yname, ax in zip(self._ynames, inst.axes):
             ax.set_ylabel(yname)
             if ax is inst.axes[-1]:
-                ax.set_xlabel('Steps')
-                ax.xaxis.set_major_locator(MaxNLocator(integer=True,
-                                                       min_n_ticks=1))
+                ax.set_xlabel("Steps")
+                ax.xaxis.set_major_locator(MaxNLocator(integer=True, min_n_ticks=1))
             else:
                 ax.set_xticklabels([])
         # This fudge to change the dpi and resize the canvas is required because
@@ -190,8 +187,7 @@ def plot_progress(inst: Control, ynames: str) -> Control:
         # This try/except allows IPython/Jupyter console to run without error
         # (although it does not live plot)
         with suppress(AttributeError):
-            self.figure.canvas.handle_resize({'width': CNVS_WIDTH,
-                                              'height': height})
+            self.figure.canvas.handle_resize({"width": CNVS_WIDTH, "height": height})
         self.figure.canvas.draw()
         orig_print_header()
         display.display(self._vbox)
@@ -209,7 +205,7 @@ def plot_progress(inst: Control, ynames: str) -> Control:
         text_output = Output()
         with text_output:
             orig_print_data()
-        self._vbox.children = self._vbox.children[1:] + (text_output, )
+        self._vbox.children = self._vbox.children[1:] + (text_output,)
 
     # Used to change inst._print_header to pass through as header printing is
     # handled in substitute refine instead
@@ -220,15 +216,25 @@ def plot_progress(inst: Control, ynames: str) -> Control:
     def plot_history(self):
         history = self.minimizer.history
         for yname, ax in zip(self._ynames, self.axes):
-            acp_rows = filter_dataframe(['Accepted'], history,
-                                        column_names=['Change state'])
-            rej_rows = filter_dataframe(['Rejected'], history,
-                                        column_names=['Change state'])
-            ax.plot(acp_rows.index.astype(int), acp_rows[yname], linestyle='',
-                    marker='o', color='tab:blue', markersize=12)
-            ax.plot(rej_rows.index.astype(int), rej_rows[yname], linestyle='',
-                    marker='x', color='tab:red', markersize=12,
-                    markeredgewidth=5)
+            acp_rows = filter_dataframe(["Accepted"], history, column_names=["Change state"])
+            rej_rows = filter_dataframe(["Rejected"], history, column_names=["Change state"])
+            ax.plot(
+                acp_rows.index.astype(int),
+                acp_rows[yname],
+                linestyle="",
+                marker="o",
+                color="tab:blue",
+                markersize=12,
+            )
+            ax.plot(
+                rej_rows.index.astype(int),
+                rej_rows[yname],
+                linestyle="",
+                marker="x",
+                color="tab:red",
+                markersize=12,
+                markeredgewidth=5,
+            )
         self.figure.canvas.draw()
 
     # Set new methods for inst (MethodType required because they are bound)

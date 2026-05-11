@@ -15,13 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """The class for R Squared figure of merit calculation with no errors"""
+
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
 
 class RSquared_noneerror(FigureOfMerit):
-
     r"""
     Calculates the weighted sum of the Figure of Merits for a number of datasets:
 
@@ -85,11 +85,10 @@ class RSquared_noneerror(FigureOfMerit):
         """
 
         if obs_pair.auto_scale:
-            exp_values = np.array(
-                *obs_pair.exp_obs.dependent_variables.values())
+            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
             A = np.sum(MD_values * exp_values)
-            B = np.sum(exp_values ** 2)
+            B = np.sum(exp_values**2)
             obs_pair.rescale_factor = A / B
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)

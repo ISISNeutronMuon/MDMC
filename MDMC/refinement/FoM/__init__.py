@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """A module for Figure of Merit calculation"""
+
 from . import ChiSquared_experror, FoM_abs, FoM_factory, RSquared_noneerror
 
 __all__ = [

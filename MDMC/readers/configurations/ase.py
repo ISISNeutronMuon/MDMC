@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """MDMC wrapper for the ASE reader."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -27,8 +28,10 @@ from MDMC.readers.configurations.conf_reader import ConfigurationReader
 if TYPE_CHECKING:
     from MDMC.MD import Atom
 
+
 class ASEReader(ConfigurationReader):
     """Reader that wraps around the ASE reader."""
+
     extension = "N/A"
 
     def __init__(self, file_name: str):

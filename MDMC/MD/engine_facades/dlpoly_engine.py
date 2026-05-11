@@ -20,6 +20,7 @@ This is a facade to the DL_POLY MD engine and
 the Python wrapper dlpoly-py that can interface with it.
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -56,17 +57,17 @@ LOGGER = logging.getLogger(__name__)
 
 # mapping from the MDMC class names to names within DLPOLY
 POTENTIAL_REF = {
-    'LennardJones': 'lj',
-    'HarmonicPotential': 'harm',
-    'Buckingham': 'buck',
-    'Coulomb': 'coul',
-    'Periodic': 'cos',
-    }
+    "LennardJones": "lj",
+    "HarmonicPotential": "harm",
+    "Buckingham": "buck",
+    "Coulomb": "coul",
+    "Periodic": "cos",
+}
 BOND_CLASS_REF = {
-    'Bond': 'bonds',
-    'BondAngle': 'angles',
-    'DihedralAngle': 'dihedrals',
-    }
+    "Bond": "bonds",
+    "BondAngle": "angles",
+    "DihedralAngle": "dihedrals",
+}
 
 
 # Disable pylint issues related to using 'dlpoly' as a name for the attribute
@@ -89,24 +90,39 @@ class DLPOLYAttribute:
         The ``dlpoly-py`` object owned by this class
     """
 
-    def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
-                 config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
-                 statis: str = None, output: str = None, dest_config: str = None,
-                 rdf: str = None, workdir: str = None):
+    def __init__(
+        self,
+        dlpoly: DLPoly = None,
+        control: dlpoly.control.Control = None,
+        config: dlpoly.config.Config = None,
+        field: dlpoly.field.Field = None,
+        statis: str = None,
+        output: str = None,
+        dest_config: str = None,
+        rdf: str = None,
+        workdir: str = None,
+    ):
 
         if dlpoly:
             self.dlpoly = dlpoly
         else:
-            self.dlpoly = DLPoly(control=control, config=config,
-                                 field=field, statis=statis,
-                                 output=output, dest_config=dest_config,
-                                 rdf=rdf, workdir=workdir)
+            self.dlpoly = DLPoly(
+                control=control,
+                config=config,
+                field=field,
+                statis=statis,
+                output=output,
+                dest_config=dest_config,
+                rdf=rdf,
+                workdir=workdir,
+            )
 
-        LOGGER.debug('%s: {dlpoly: %s}. dlpoly-py'
-                     ' instance %s.',
-                     self.__class__,
-                     self.dlpoly,
-                     'added to class' if dlpoly else 'created by class')
+        LOGGER.debug(
+            "%s: {dlpoly: %s}. dlpoly-py instance %s.",
+            self.__class__,
+            self.dlpoly,
+            "added to class" if dlpoly else "created by class",
+        )
 
     def read_settings(self, settings: Any) -> None:
         """
@@ -121,9 +137,8 @@ class DLPOLYAttribute:
         self.dlpoly.control = self.dlpoly.control + new_opt
 
 
-@repr_decorator('dlpoly', 'dlpoly_universe', 'dlpoly_simulation')
+@repr_decorator("dlpoly", "dlpoly_universe", "dlpoly_simulation")
 class DLPOLYEngine(DLPOLYAttribute, MDEngine):
-
     """
     Facade for DL_POLY
 
@@ -132,18 +147,35 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     # List of parameters handled explicitly during setup
     # This is for filtering which params are passed directly
     # to the DLP Control
-    HANDLED_PARAMS = {"temperature", "pressure", "ensemble",
-                      "timestep", "t_damp", "p_damp", "t_window",
-                      "t_fraction", "rescale_step", "thermostat",
-                      "barostat", "field"}
+    HANDLED_PARAMS = {
+        "temperature",
+        "pressure",
+        "ensemble",
+        "timestep",
+        "t_damp",
+        "p_damp",
+        "t_window",
+        "t_fraction",
+        "rescale_step",
+        "thermostat",
+        "barostat",
+        "field",
+    }
 
-    def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
-                 config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
-                 statis: str = None, output: str = None, dest_config: str = None,
-                 rdf: str = None, workdir: str = None):
+    def __init__(
+        self,
+        dlpoly: DLPoly = None,
+        control: dlpoly.control.Control = None,
+        config: dlpoly.config.Config = None,
+        field: dlpoly.field.Field = None,
+        statis: str = None,
+        output: str = None,
+        dest_config: str = None,
+        rdf: str = None,
+        workdir: str = None,
+    ):
 
-        super().__init__(dlpoly, control, config, field, statis, output,
-                         dest_config, rdf, workdir)
+        super().__init__(dlpoly, control, config, field, statis, output, dest_config, rdf, workdir)
 
         self.universe = None
         self.dlpoly_universe = None
@@ -152,7 +184,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @property
     def saved_config(self) -> dlpoly.config.Config:
-
         """
         Get the saved configuration of the atomic positions
 
@@ -166,7 +197,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @property
     def temperature(self) -> float:
-
         """
         Get or set the temperature of the simulation in ``K``
 
@@ -186,7 +216,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @property
     def pressure(self):
-
         """
         Get or set the pressure of the simulation in ``katm``
 
@@ -206,7 +235,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @property
     def ensemble(self) -> DLPOLYEnsemble:
-
         """
         Get or set the ensemble object which applies a ``thermostat`` and/or
         ``barostat`` to DL_POLY
@@ -225,7 +253,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @property
     def thermostat(self) -> str:
-
         """
         Get or set the `str` which specifies the thermostat
 
@@ -244,7 +271,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @property
     def barostat(self) -> str:
-
         """
         Get or set the `str` which specifies the barostat
 
@@ -262,7 +288,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.ensemble.barostat = value
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
-
         """
         Creates the simulation box, the atomic configuration, and the topology
         in DL_POLY
@@ -277,13 +302,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
 
         self.universe = universe
-        self.dlpoly_universe = DLPOLYUniverse(self.universe,
-                                              self.dlpoly,
-                                              **settings)
+        self.dlpoly_universe = DLPOLYUniverse(self.universe, self.dlpoly, **settings)
         self._saved_config = None
 
     def setup_simulation(self, **settings: Any) -> None:
-
         """
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
@@ -295,17 +317,24 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``MDEngine`` that is being used.
         """
 
-        self.dlpoly_simulation = DLPOLYSimulation(universe=self.universe,
-                                                  traj_step=self.traj_step,
-                                                  time_step=self.time_step,
-                                                  dlpoly=self.dlpoly,
-                                                  **settings)
+        self.dlpoly_simulation = DLPOLYSimulation(
+            universe=self.universe,
+            traj_step=self.traj_step,
+            time_step=self.time_step,
+            dlpoly=self.dlpoly,
+            **settings,
+        )
 
         self._pass_settings_to_control(settings, self.dlpoly_simulation.dlpoly.control)
 
-    def minimize(self, n_steps: int,
-                 minimize_every: int = 10, output_log: str = None,
-                 work_dir: str = None, **settings: Any) -> None:
+    def minimize(
+        self,
+        n_steps: int,
+        minimize_every: int = 10,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: Any,
+    ) -> None:
         """
         Minimizes the simulation energy
 
@@ -330,24 +359,28 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
-        etol = settings.get('etol', 1.e-3)
-        ftol = settings.get('ftol')
+        etol = settings.get("etol", 1.0e-3)
+        ftol = settings.get("ftol")
         min_freq = minimize_every
-        LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
-                    self.__class__, n_steps, ftol)
+        LOGGER.info("%s minimize: {n_steps: %s,  ftol: %s}", self.__class__, n_steps, ftol)
         if not ftol:  # Should handle ftol == 0 or undefined ftol
-            self.dlpoly.control['minimisation_criterion'] = 'energy'
-            self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
+            self.dlpoly.control["minimisation_criterion"] = "energy"
+            self.dlpoly.control["minimisation_tolerance"] = (etol, "internal_e")
         else:
-            self.dlpoly.control['minimisation_criterion'] = 'force'
-            self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
-        self.dlpoly.control['minimisation_frequency'] = (min_freq, 'steps')
-        self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
-                 **settings)
-        self.dlpoly.control['minimisation_criterion'] = 'off'
+            self.dlpoly.control["minimisation_criterion"] = "force"
+            self.dlpoly.control["minimisation_tolerance"] = (ftol, "e.V/Ang")
+        self.dlpoly.control["minimisation_frequency"] = (min_freq, "steps")
+        self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir, **settings)
+        self.dlpoly.control["minimisation_criterion"] = "off"
 
-    def run(self, n_steps: int, equilibration=False, output_log: str = None,
-            work_dir: str = None, **settings: Any) -> None:
+    def run(
+        self,
+        n_steps: int,
+        equilibration=False,
+        output_log: str = None,
+        work_dir: str = None,
+        **settings: Any,
+    ) -> None:
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
@@ -377,17 +410,19 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
 
         if equilibration:
-            self.dlpoly.control['time_equilibration'] = (n_steps, 'steps')
-            self.dlpoly.control['traj_calculate'] = settings.get('traj_calculate', 'Off')
+            self.dlpoly.control["time_equilibration"] = (n_steps, "steps")
+            self.dlpoly.control["traj_calculate"] = settings.get("traj_calculate", "Off")
         else:
-            self.dlpoly.control['time_equilibration'] = \
-                (settings.get('time_equilibration', 0), 'steps')
-            self.dlpoly.control['traj_calculate'] = 'On'
-            self.dlpoly.control['traj_start'] = (settings.get('traj_start', 0), 'steps')
-            self.dlpoly.control['traj_interval'] = (self.traj_step, 'steps')
-            self.dlpoly.control['traj_key'] = settings.get('traj_key', 'pos')
+            self.dlpoly.control["time_equilibration"] = (
+                settings.get("time_equilibration", 0),
+                "steps",
+            )
+            self.dlpoly.control["traj_calculate"] = "On"
+            self.dlpoly.control["traj_start"] = (settings.get("traj_start", 0), "steps")
+            self.dlpoly.control["traj_interval"] = (self.traj_step, "steps")
+            self.dlpoly.control["traj_key"] = settings.get("traj_key", "pos")
 
-        self.dlpoly.control['time_run'] = (n_steps, 'steps')
+        self.dlpoly.control["time_run"] = (n_steps, "steps")
         self.dlpoly.workdir = work_dir
 
         self._pass_settings_to_control(settings, self.dlpoly.control)
@@ -398,26 +433,34 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         output_log = Path(output_log).resolve()
 
         # pylint: disable=c-extension-no-member, too-many-lines
-        err_code = self.dlpoly.run(numProcs=settings.get('numprocs', 1),
-                                   outputFile=output_log,
-                                   mpi="mpirun --allow-run-as-root -n",
-                                   debug=True)
+        err_code = self.dlpoly.run(
+            numProcs=settings.get("numprocs", 1),
+            outputFile=output_log,
+            mpi="mpirun --allow-run-as-root -n",
+            debug=True,
+        )
 
         if err_code != 0:
-            raise MDEngineError(f"Non-zero exit code ({err_code}), DLPoly run failed, "
-                                f"see {output_log} for details")
+            raise MDEngineError(
+                f"Non-zero exit code ({err_code}), DLPoly run failed, see {output_log} for details",
+            )
 
         if not output_log.exists():
-            raise MDEngineError("No output, DLPoly run may have failed, "
-                                f"see {output_log} for details")
+            raise MDEngineError(
+                f"No output, DLPoly run may have failed, see {output_log} for details",
+            )
 
-        LOGGER.info("updating coordinates from %s",
-                    self.dlpoly.control['io_file_revcon'])
+        LOGGER.info("updating coordinates from %s", self.dlpoly.control["io_file_revcon"])
 
-        self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
+        self.dlpoly.load_config(self.dlpoly.control["io_file_revcon"])
 
-    def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: Any) -> CompactTrajectory:
+    def convert_trajectory(
+        self,
+        start: int = 0,
+        stop: int = None,
+        step: int = 1,
+        **settings: Any,
+    ) -> CompactTrajectory:
         """
         Parses the trajectory from the ``DL_POLY`` format into MDMC format.
 
@@ -470,7 +513,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         traj = CompactTrajectory()
         element_dictionary = {}  # this one will store chemical element symbols per ID
         # atom_ids = settings.get('atom_IDs')
-        with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
+        with open(self.dlpoly.control["io_file_history"], "r", encoding="ascii") as f:
             _ = f.readline()  # title
             level_of_detail, _, n_atoms, frames, *_ = read_line_as(f, int)  # imcon
 
@@ -481,10 +524,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
             take = range(start, end, step)
 
-            traj.preAllocate(n_steps=len(take), n_atoms=n_atoms,
-                             useVelocity=level_of_detail >= 1)
+            traj.preAllocate(n_steps=len(take), n_atoms=n_atoms, useVelocity=level_of_detail >= 1)
             traj_step = 0
-            dlpoly_time_unit = SYSTEM['TIME']
+            dlpoly_time_unit = SYSTEM["TIME"]
             time_conv = dlpoly_time_unit.conversion_factor
 
             for iframe in range(frames):
@@ -497,10 +539,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     dim3x3 = read_cell(f)
                     dim = np.diagonal(dim3x3).copy()
 
-                    tempdata = np.vstack([create_atom(f,
-                                                    level_of_detail,
-                                                    element_dict=element_dictionary)
-                                            for _ in range(n_atoms)])
+                    tempdata = np.vstack(
+                        [
+                            create_atom(f, level_of_detail, element_dict=element_dictionary)
+                            for _ in range(n_atoms)
+                        ],
+                    )
                     if level_of_detail:
                         traj.writeOneStep(traj_step, time, tempdata[:, 0:3], tempdata[:, 3:6])
                     else:
@@ -509,8 +553,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     for ind in range(len(tempdata)):
                         mass_dictionary[int(tempdata[ind, -1])] = tempdata[ind, -3]
                     traj.setCharge(tempdata[:, -2])
-                    traj.validateTypes(np.array([element_dictionary[int(x)]
-                                                 for x in tempdata[:, -1]]))
+                    traj.validateTypes(
+                        np.array([element_dictionary[int(x)] for x in tempdata[:, -1]]),
+                    )
                     traj.labelAtoms(element_dictionary, mass_dictionary)
                     traj.setDimensions(dim, step_num=traj_step)
                     traj_step += 1
@@ -524,7 +569,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         return traj
 
     def update_parameters(self) -> None:
-
         """
         Updates the ``MDEngine`` force field ``Parameter`` objects
         from the ``Universe``
@@ -536,14 +580,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         return NotImplementedError
 
     def save_config(self) -> None:
-
         """
         Sets ``self.saved_config`` to the current configuration
         """
-        self._saved_config = Config(self.dlpoly.control['io_file_revcon'])
+        self._saved_config = Config(self.dlpoly.control["io_file_revcon"])
 
     def reset_config(self) -> None:
-
         """
         Resets the configuration of the simulation to that in ``saved_config``
         """
@@ -556,8 +598,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         raise NotImplementedError("DLPolyEngine does not support eval")
 
-    def _pass_settings_to_control(self, settings: Any,
-                                  control: dlpoly.control.Control) -> None:
+    def _pass_settings_to_control(self, settings: Any, control: dlpoly.control.Control) -> None:
         """Pass excess settings through to dlpoly control object.
 
         Parameters
@@ -572,9 +613,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             control[key] = settings[key]
 
 
-@repr_decorator('universe')
+@repr_decorator("universe")
 class DLPOLYUniverse(DLPOLYAttribute):
-
     """
     A class with what would be the equivalent in DL_Poly
     to the MDMC universe (i.e.the configuration and topology)
@@ -618,17 +658,19 @@ class DLPOLYUniverse(DLPOLYAttribute):
         Updates the DL_POLY force field parameters from the MDMC universe
         """
 
-        (self.bonds, self.angles, self.dihedrals,
-         self.disps, self.couls, _) = partition_interactions(
-            set(self.universe.interactions),
-            ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
-            unpartitioned=True,
-            lst=True)
+        (self.bonds, self.angles, self.dihedrals, self.disps, self.couls, _) = (
+            partition_interactions(
+                set(self.universe.interactions),
+                ["Bond", "BondAngle", "DihedralAngle", "Dispersion", "Coulombic"],
+                unpartitioned=True,
+                lst=True,
+            )
+        )
 
         self._update_charges()
         self._update_bonded_interactions()
         self._update_dispersions()
-        self.dlpoly.field.write(self.dlpoly.control['io_file_field'])
+        self.dlpoly.field.write(self.dlpoly.control["io_file_field"])
 
     def _define_simulation_details(self, **settings: Any) -> None:
         """
@@ -652,27 +694,26 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
 
         self.dlpoly.control = DLPControl()
-        self.dlpoly.control['title'] = settings.get('title', 'my simulation title')
-        self.dlpoly.control['time_job'] = (settings.get('time_job', 100000.0), 's')
-        self.dlpoly.control['time_close'] = (settings.get('time_close', 10.0), 's')
-        self.dlpoly.control['data_dump_frequency'] = \
-            (settings.get('data_dump_frequency', 5000), 'steps')
-        self.dlpoly.control['stats_frequency'] = \
-            (settings.get('stats_frequency', 100), 'steps')
-        self.dlpoly.control['print_frequency'] = \
-            (settings.get('print_frequency', 100), 'steps')
-        self.dlpoly.control['stack_size'] = (settings.get('stack_size', 100), 'steps')
-        self.dlpoly.control['padding'] = (settings.get('padding', 0.5), 'Ang')
-        self.dlpoly.control['vdw_method'] = settings.get('vdw_method', 'direct')
+        self.dlpoly.control["title"] = settings.get("title", "my simulation title")
+        self.dlpoly.control["time_job"] = (settings.get("time_job", 100000.0), "s")
+        self.dlpoly.control["time_close"] = (settings.get("time_close", 10.0), "s")
+        self.dlpoly.control["data_dump_frequency"] = (
+            settings.get("data_dump_frequency", 5000),
+            "steps",
+        )
+        self.dlpoly.control["stats_frequency"] = (settings.get("stats_frequency", 100), "steps")
+        self.dlpoly.control["print_frequency"] = (settings.get("print_frequency", 100), "steps")
+        self.dlpoly.control["stack_size"] = (settings.get("stack_size", 100), "steps")
+        self.dlpoly.control["padding"] = (settings.get("padding", 0.5), "Ang")
+        self.dlpoly.control["vdw_method"] = settings.get("vdw_method", "direct")
 
         if self.universe.electrostatic_solver:
-            self.dlpoly.control['coul_method'] = settings.get('coul_method', 'spme')
-            self.dlpoly.control['ewald_precision'] = self.universe.electrostatic_solver.accuracy
+            self.dlpoly.control["coul_method"] = settings.get("coul_method", "spme")
+            self.dlpoly.control["ewald_precision"] = self.universe.electrostatic_solver.accuracy
         else:
-            self.dlpoly.control['coul_method'] = settings.get('coul_method', 'off')
+            self.dlpoly.control["coul_method"] = settings.get("coul_method", "off")
 
     def _build_config(self, universe: Universe, **settings) -> None:
-
         """
         Adds atoms to DL_POLY
 
@@ -689,14 +730,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
         atoms = Atoms(cell=universe.dimensions, pbc=True)
         for atom in universe.atoms:
             atoms.append(Atom(atom.name, atom.position))
-        config_filename = settings.get('config', 'test.config')
-        write(config_filename, atoms, format='dlp4')
+        config_filename = settings.get("config", "test.config")
+        write(config_filename, atoms, format="dlp4")
         self.dlpoly.load_config(config_filename)
-        LOGGER.info('%s configuration written in %s',
-                    self.__class__, config_filename)
+        LOGGER.info("%s configuration written in %s", self.__class__, config_filename)
 
     def _add_topology(self, universe: Universe, **settings: Any) -> None:
-
         """
         Add the bonded and nonbonded interactions to DL_POLY
 
@@ -715,13 +754,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
             implemented in the DL_POLY facade
         """
 
-        LOGGER.info('%s Add topology to DL_POLY',
-                    self.__class__)
+        LOGGER.info("%s Add topology to DL_POLY", self.__class__)
 
         self.dlpoly.field = self._create_field(universe)
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
-        self.dlpoly.control['cutoff'] = (mx, 'Ang')
+        self.dlpoly.control["cutoff"] = (mx, "Ang")
 
     def _create_field(self, universe: Universe, **settings: Any) -> Field:
         """
@@ -743,27 +781,29 @@ class DLPOLYUniverse(DLPOLYAttribute):
             implemented in the DL_POLY facade
         """
 
-        (self.bonds, self.angles, self.dihedrals,
-         self.disps, self.couls, others) = partition_interactions(
-            set(universe.interactions),
-            ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
-            unpartitioned=True,
-            lst=True)
+        (self.bonds, self.angles, self.dihedrals, self.disps, self.couls, others) = (
+            partition_interactions(
+                set(universe.interactions),
+                ["Bond", "BondAngle", "DihedralAngle", "Dispersion", "Coulombic"],
+                unpartitioned=True,
+                lst=True,
+            )
+        )
 
         if others:
-            raise NotImplementedError('This interaction type has not been'
-                                      ' implemented in the DL_POLY facade')
+            raise NotImplementedError(
+                "This interaction type has not been implemented in the DL_POLY facade",
+            )
 
         out = Field()
-        out.header = settings.get('header', 'MDMC Generated Field File')
-        out.units = settings.get('units', 'kJ')
+        out.header = settings.get("header", "MDMC Generated Field File")
+        out.units = settings.get("units", "kJ")
 
         spec = universe.element_lookup
         mols = {}
 
         for structure in universe.top_level_structure_list:
             if structure.name not in mols:
-
                 if isinstance(structure, MAtom):
                     new_molecule = self._from_atom(universe, structure)
                     mols[new_molecule.name] = new_molecule
@@ -773,22 +813,25 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     mols[new_molecule.name] = new_molecule
 
                 else:
-                    raise TypeError(f'Unknown species type: {type(structure).__name__}')
+                    raise TypeError(f"Unknown species type: {type(structure).__name__}")
             out.add_molecule(mols[structure.name])
 
         for disp in self.disps:
             curr_atom = [spec[atm] for parm in disp.atom_types for atm in parm]
-            pot = Potential('vdw', [*curr_atom,
-                                    POTENTIAL_REF[disp.function.name],
-                                    *map(lambda x: str(x.value.real), disp.parameters.values()),
-                                    ])
+            pot = Potential(
+                "vdw",
+                [
+                    *curr_atom,
+                    POTENTIAL_REF[disp.function.name],
+                    *map(lambda x: str(x.value.real), disp.parameters.values()),
+                ],
+            )
             out.add_potential(curr_atom, pot)
 
         return out
 
     @staticmethod
     def _from_atom(universe: Universe, structure: MAtom) -> Molecule:
-
         """
         Construct DLPoly molecule from MDMC Atom
 
@@ -804,15 +847,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
         new_molecule.name = structure.name
         species = structure.name
         MDMC_spec = universe.element_dict[species]
-        new_spec = Species(species, 0,
-                           charge=MDMC_spec.charge, mass=MDMC_spec.mass)
+        new_spec = Species(species, 0, charge=MDMC_spec.charge, mass=MDMC_spec.mass)
         new_molecule.n_atoms = 1
         new_molecule.species = {1: new_spec}
         return new_molecule
 
     @staticmethod
     def _from_molecule(universe: Universe, structure: MMolecule) -> Molecule:
-
         """
         Construct DLPoly molecule from MDMC molecule
 
@@ -837,8 +878,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         mapping = {}
         for ind, atm in enumerate(structure.atoms, 1):
             MDMC_spec = universe.element_dict[atm.element]
-            new_species = Species(atm.element, ind,
-                                  MDMC_spec.charge, MDMC_spec.mass)
+            new_species = Species(atm.element, ind, MDMC_spec.charge, MDMC_spec.mass)
             new_molecule.species[ind] = new_species
             new_molecule.n_atoms += 1
             mapping[atm.ID] = ind
@@ -847,26 +887,32 @@ class DLPOLYUniverse(DLPOLYAttribute):
             current_atom = [mapping[atm.ID] for atm in atms]
             if bond.constrained:
                 if not isinstance(bond, MBond):
-                    raise NotImplementedError(f'{type(bond).__name__} constraints '
-                                              'not supported in DLPOLY')
+                    raise NotImplementedError(
+                        f"{type(bond).__name__} constraints not supported in DLPOLY",
+                    )
 
-                pot = Bond('constraints',
-                           ['',
-                            *map(str, current_atom),
-                            str(list(bond.parameters.values())[0].value.real),
-                            ])
+                pot = Bond(
+                    "constraints",
+                    [
+                        "",
+                        *map(str, current_atom),
+                        str(list(bond.parameters.values())[0].value.real),
+                    ],
+                )
             else:
-                pot = Bond(BOND_CLASS_REF[type(bond).__name__],
-                           [POTENTIAL_REF[bond.function.name],
-                            *map(str, current_atom),
-                            *map(lambda x: str(x.value.real), bond.parameters.values()),
-                            ])
+                pot = Bond(
+                    BOND_CLASS_REF[type(bond).__name__],
+                    [
+                        POTENTIAL_REF[bond.function.name],
+                        *map(str, current_atom),
+                        *map(lambda x: str(x.value.real), bond.parameters.values()),
+                    ],
+                )
             new_molecule.add_potential(current_atom, pot)
 
         return new_molecule
 
     def _update_charges(self) -> None:
-
         """
         Updates the ``charges`` in DL_POLY
 
@@ -882,7 +928,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             curr_atom.charge = atom.charge
 
     def _update_dispersions(self) -> None:
-
         """
         Updates ``Dispersion`` interactions in DL_POLY
         """
@@ -890,15 +935,11 @@ class DLPOLYUniverse(DLPOLYAttribute):
         spec = self.universe.element_lookup
 
         for disp in self.disps:
-            current_atom = [spec[atm]
-                            for parm in disp.atom_types
-                            for atm in parm]
-            current_pot = next(self.dlpoly.field.get_pot(species=current_atom,
-                                                         pot_type='lj'))
+            current_atom = [spec[atm] for parm in disp.atom_types for atm in parm]
+            current_pot = next(self.dlpoly.field.get_pot(species=current_atom, pot_type="lj"))
             current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters.values())]
 
     def _update_bonded_interactions(self) -> None:
-
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
@@ -906,8 +947,10 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         mols = self.dlpoly.field.molecules
 
-        for structure in filter(lambda x: isinstance(x, MMolecule),
-                                self.universe.top_level_structure_list):
+        for structure in filter(
+            lambda x: isinstance(x, MMolecule),
+            self.universe.top_level_structure_list,
+        ):
             mapping = {atm.ID: str(ind) for ind, atm in enumerate(structure.atoms, 1)}
             mol = mols[structure.name]
 
@@ -918,9 +961,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     pot.params = str(list(bond.parameters.values())[0].value.real)
 
                 else:
-                    pot = next(mol.get_pot(species=current_atom,
-                                           potClass=BOND_CLASS_REF[type(bond).__name__],
-                                           potType=POTENTIAL_REF[bond.function.name]))
+                    pot = next(
+                        mol.get_pot(
+                            species=current_atom,
+                            potClass=BOND_CLASS_REF[type(bond).__name__],
+                            potType=POTENTIAL_REF[bond.function.name],
+                        ),
+                    )
                     pot.params = [*map(lambda x: str(x.value.real), bond.parameters.values())]
 
     def apply_constraints(self) -> None:
@@ -936,9 +983,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.config = config
 
 
-@repr_decorator('universe', 'time_step', 'traj_step', 'ensemble')
+@repr_decorator("universe", "time_step", "traj_step", "ensemble")
 class DLPOLYSimulation(DLPOLYAttribute):
-
     """
     The attributes and methods related running a simulation in DL_POLY using a
     ``DLPOLYUniverse`` object
@@ -977,20 +1023,25 @@ class DLPOLYSimulation(DLPOLYAttribute):
     temperature: float, temperatjre of the stimulation
     """
 
-    def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., dlpoly=None, **settings: Any):
+    def __init__(
+        self,
+        universe: Universe,
+        traj_step: int,
+        time_step: float = 1.0,
+        dlpoly=None,
+        **settings: Any,
+    ):
 
         super().__init__(dlpoly=dlpoly)
 
         self.universe = universe
         self.ensemble = DLPOLYEnsemble(self.dlpoly, **settings)
-        self.temperature = settings.get('temperature')
+        self.temperature = settings.get("temperature")
         self.traj_step = traj_step
         self.time_step = time_step
 
     @property
     def time_step(self) -> float:
-
         """
         Get or set the simulation time step in ``fs``
 
@@ -1007,12 +1058,10 @@ class DLPOLYSimulation(DLPOLYAttribute):
     def time_step(self, value) -> None:
 
         self._time_step = value
-        self.dlpoly.control['timestep'] = (
-                convert_unit(self._time_step), str(SYSTEM['TIME']))
+        self.dlpoly.control["timestep"] = (convert_unit(self._time_step), str(SYSTEM["TIME"]))
 
     @property
     def temperature(self) -> float:
-
         """
         Get or set the temperature of the simulation in ``K``
 
@@ -1032,7 +1081,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
 
     @property
     def pressure(self) -> float:
-
         """
         Get or set the pressure of the simulation in ``katm``
 
@@ -1052,7 +1100,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
 
     @property
     def thermostat(self) -> str:
-
         """
         Get or set the string which specifies the thermostat
 
@@ -1071,7 +1118,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
 
     @property
     def barostat(self) -> str:
-
         """
         Get or set the string which specifies the barostat
 
@@ -1089,9 +1135,8 @@ class DLPOLYSimulation(DLPOLYAttribute):
         self.ensemble.barostat = value
 
 
-@repr_decorator('temperature', 'pressure', 'thermostat', 'barostat')
+@repr_decorator("temperature", "pressure", "thermostat", "barostat")
 class DLPOLYEnsemble(DLPOLYAttribute):
-
     """
     A thermodynamic ensemble determined by
     applying a thermostat and/or barostat
@@ -1126,30 +1171,35 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         applies to rescale thermostats.
     """
 
-    def __init__(self, dlpoly: DLPoly, temperature: str = None,
-                 pressure: float = None, thermostat: str = None,
-                 barostat: str = None, **settings: Any):
+    def __init__(
+        self,
+        dlpoly: DLPoly,
+        temperature: str = None,
+        pressure: float = None,
+        thermostat: str = None,
+        barostat: str = None,
+        **settings: Any,
+    ):
 
         # Requires a ``dlpoly-py`` object as thermostats
         # cannot be applied before configuration is defined
         super().__init__(dlpoly)
         self.temperature = temperature
         self.pressure = pressure
-        self.dlpoly.control['ensemble'] = settings.get('ensemble', 'nve')
+        self.dlpoly.control["ensemble"] = settings.get("ensemble", "nve")
 
-        self.time_step = settings.get('time_step')
-        self.t_damp = settings.get('t_damp')
-        self.p_damp = settings.get('p_damp')
-        self.t_window = settings.get('t_window')
-        self.t_fraction = settings.get('t_fraction')
-        self.rescale_step = settings.get('rescale_step')
+        self.time_step = settings.get("time_step")
+        self.t_damp = settings.get("t_damp")
+        self.p_damp = settings.get("p_damp")
+        self.t_window = settings.get("t_window")
+        self.t_fraction = settings.get("t_fraction")
+        self.rescale_step = settings.get("rescale_step")
 
         self.thermostat = thermostat
         self.barostat = barostat
 
     @property
     def temperature(self) -> float:
-
         """
         Get or set the temperature of the simulation in ``K``
         """
@@ -1163,12 +1213,10 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         self._temperature = value
         # Set the temperature in the DL_POLY wrapper
         if value is not None:
-            self.dlpoly.control['temperature'] = (
-                convert_unit(self._temperature), 'K')
+            self.dlpoly.control["temperature"] = (convert_unit(self._temperature), "K")
 
     @property
     def pressure(self) -> float:
-
         """
         Get or set the pressure of the simulation in ``katm``
         """
@@ -1183,7 +1231,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
     @property
     def thermostat(self) -> str:
-
         """
         Get or set the `str` which specifies the thermostat
 
@@ -1199,14 +1246,12 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def thermostat(self, value: str) -> None:
 
         if value and not self.temperature:
-            raise AttributeError('all ensembles with a thermostat must have a'
-                                 ' temperature')
+            raise AttributeError("all ensembles with a thermostat must have a temperature")
         self._thermostat = value
         # Set the thermostat and barostat in DL_POLY wrapper
 
     @property
     def barostat(self) -> str:
-
         """
         Get or set the `str` which specifies the barostat
 
@@ -1220,8 +1265,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def barostat(self, value: str) -> None:
 
         if value and not self.pressure:
-            raise AttributeError('all ensembles with a barostat must have a'
-                                 ' pressure')
+            raise AttributeError("all ensembles with a barostat must have a pressure")
 
         self._barostat = value
         # Set the thermostat and barostat in DL_POLY wrapper
@@ -1229,24 +1273,22 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
 # Define the unit system used in DL_POLY
 SYSTEM = {
-    'LENGTH': units.Unit('Ang'),
-    'TIME': units.Unit('ps'),
-    'MASS': units.Unit('amu'),
-    'CHARGE': units.Unit('e'),
-    'ANGLE': units.Unit('deg'),
-    'TEMPERATURE': units.Unit('K'),
-    'ENERGY': units.Unit('kcal') / units.Unit('mol'),
-    'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('katm'),
+    "LENGTH": units.Unit("Ang"),
+    "TIME": units.Unit("ps"),
+    "MASS": units.Unit("amu"),
+    "CHARGE": units.Unit("e"),
+    "ANGLE": units.Unit("deg"),
+    "TEMPERATURE": units.Unit("K"),
+    "ENERGY": units.Unit("kcal") / units.Unit("mol"),
+    "FORCE": units.Unit("kcal") / (units.Unit("Ang") * units.Unit("mol")),
+    "PRESSURE": units.Unit("katm"),
 }
 
 
 # some extra utility methods. these might be obsolete or
 # importable from lammps_engine.py
 # (in which case they maybe should be refactored into a utility module)
-def convert_unit(value: np.ndarray | float,
-                 unit: Unit = None, to_dlpoly: bool = True):
-
+def convert_unit(value: np.ndarray | float, unit: Unit = None, to_dlpoly: bool = True):
     """
     Converts between MDMC units and DL_POLY real units
 
@@ -1271,7 +1313,6 @@ def convert_unit(value: np.ndarray | float,
     """
 
     def expand_components(unit: Unit, system: dict) -> tuple:
-
         """
         Expands out the ``components`` of a ``Unit``, so that the ``Unit`` is
         expressed purely in terms of ``base`` ``Unit`` objects. The only
@@ -1296,7 +1337,6 @@ def convert_unit(value: np.ndarray | float,
         """
 
         def is_sublist_of_list(sub: list, lst: list) -> bool:
-
             """
             Determines if all of the elements in a sublist are in a `list`,
             including ensuring that any duplicates in the sublist have at least
@@ -1319,7 +1359,6 @@ def convert_unit(value: np.ndarray | float,
             return all(sub.count(x) <= lst.count(x) for x in set(sub))
 
         def remove_components(remove_comps: list, comps: list) -> list:
-
             """
             Removes all elements of a `list` of ``components`` from another
             `list` of ``components``
@@ -1351,12 +1390,10 @@ def convert_unit(value: np.ndarray | float,
             num.append(unit)
         else:
             # tuple unpacking style below appends to num and denom lists
-            for comp in unit.components['numerator']:
-                num[len(num):], denom[len(denom):] = expand_components(comp,
-                                                                       system)
-            for comp in unit.components['denominator']:
-                denom[len(denom):], num[len(num):] = expand_components(comp,
-                                                                       system)
+            for comp in unit.components["numerator"]:
+                num[len(num) :], denom[len(denom) :] = expand_components(comp, system)
+            for comp in unit.components["denominator"]:
+                denom[len(denom) :], num[len(num) :] = expand_components(comp, system)
 
             # Substitute in units rather than separated out components if a unit
             # exists in the system of units.  This is because the conversion can
@@ -1367,21 +1404,25 @@ def convert_unit(value: np.ndarray | float,
                 # while is required for powers of sys_unit, as otherwise only
                 # a single power will be removed
                 while True:
-                    sys_unit_num = sys_unit.components['numerator']
-                    sys_unit_denom = sys_unit.components['denominator']
+                    sys_unit_num = sys_unit.components["numerator"]
+                    sys_unit_denom = sys_unit.components["denominator"]
                     # Determine if all of the components of unit are in the
                     # numerator and denominator lists. If so, remove them and
                     # replace with the unit in the numerator.
-                    if (is_sublist_of_list(sys_unit_num, num) and
-                            is_sublist_of_list(sys_unit_denom, denom)):
+                    if is_sublist_of_list(sys_unit_num, num) and is_sublist_of_list(
+                        sys_unit_denom,
+                        denom,
+                    ):
                         num = remove_components(sys_unit_num, num)
                         denom = remove_components(sys_unit_denom, denom)
                         num.append(sys_unit)
                     # Do the same for the inverse (i.e. unit's numberator
                     # components in the denominator list and vice versa). If so,
                     # remove them and replace with the unit in the denominator.
-                    elif (is_sublist_of_list(sys_unit_num, denom) and
-                          is_sublist_of_list(sys_unit_denom, num)):
+                    elif is_sublist_of_list(sys_unit_num, denom) and is_sublist_of_list(
+                        sys_unit_denom,
+                        num,
+                    ):
                         denom = remove_components(sys_unit_num, denom)
                         num = remove_components(sys_unit_denom, num)
                         denom.append(sys_unit)
@@ -1398,7 +1439,7 @@ def convert_unit(value: np.ndarray | float,
             unit = value.unit
         except AttributeError as err:
             if value is None:
-                raise ValueError('Cannot convert NoneType value') from err
+                raise ValueError("Cannot convert NoneType value") from err
             return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_dlpoly:
@@ -1407,23 +1448,28 @@ def convert_unit(value: np.ndarray | float,
         # rather than degrees (which is uses otherwise). Therefore if the unit
         # is in MDMC angular potential strength units (energy / angle^2), the
         # ANGLE entry in SYSTEM is replaced by radians.
-        if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
-            l_sys['ANGLE'] = units.Unit('rad')
+        if unit == units.SYSTEM["ENERGY"] / units.SYSTEM["ANGLE"] ** 2:
+            l_sys["ANGLE"] = units.Unit("rad")
 
         expanded_unit = expand_components(unit, units.SYSTEM)
         system_inv = {unit: prop for prop, unit in units.SYSTEM.items()}
         # Apply inversion to all components
-        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
-                                                        for comp in comp_list],
-                                     expanded_unit)
+        unit_nums, unit_denoms = map(
+            lambda comp_list: [l_sys[system_inv[comp]] for comp in comp_list],
+            expanded_unit,
+        )
 
         conv_nums, conv_denoms = [], []
         for component in unit_nums:
-            conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
-                expand_components(component, l_sys)
+            conv_nums[len(conv_nums) :], conv_denoms[len(conv_denoms) :] = expand_components(
+                component,
+                l_sys,
+            )
         for component in unit_denoms:
-            conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
-                expand_components(component, l_sys)
+            conv_denoms[len(conv_denoms) :], conv_nums[len(conv_nums) :] = expand_components(
+                component,
+                l_sys,
+            )
     else:
         conv_denoms, conv_nums = expand_components(unit, SYSTEM)
 

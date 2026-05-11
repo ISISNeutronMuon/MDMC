@@ -19,6 +19,7 @@
 ``Atom`` is the fundamental structural unit in terms of which all others must be
 defined.  All shared behaviour is included within the ``Structure`` base
 class."""
+
 from __future__ import annotations
 
 import logging
@@ -55,8 +56,7 @@ ThreeVec = npt.NDArray[np.floating]
 LOGGER = logging.getLogger(__name__)
 
 
-@repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
-                'atoms')
+@repr_decorator("name", "ID", "position", "velocity", "parent", "bounding_box", "atoms")
 class Structure(ABC):
     # pylint: disable=no-member
     # to avoid errors with MD and _structure_list
@@ -87,10 +87,7 @@ class Structure(ABC):
     # MD engines.  It may not be required or may only be required for atoms.
     _ID_generator = count(start=1, step=1)
 
-    def __init__(self,
-                 position: ThreeVec,
-                 velocity: ThreeVec,
-                 name: str):
+    def __init__(self, position: ThreeVec, velocity: ThreeVec, name: str):
 
         self.ID = self._generate_ID()
         self.position = position
@@ -99,11 +96,13 @@ class Structure(ABC):
         self.parent = self
         self._position_in_parent = None
 
-        LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
-                    self.__class__,
-                    self.ID,
-                    self.name,
-                    self.position)
+        LOGGER.info(
+            "%s created: {ID:%s, name:%s, position:%s}",
+            self.__class__,
+            self.ID,
+            self.name,
+            self.position,
+        )
 
     @property
     def position(self) -> ThreeVec:
@@ -154,8 +153,7 @@ class Structure(ABC):
             All atoms in the structure
         """
 
-        return [atom for structure in self._structure_list
-                for atom in structure.atoms]
+        return [atom for structure in self._structure_list for atom in structure.atoms]
 
     @property
     @abstractmethod
@@ -275,13 +273,11 @@ class Structure(ABC):
             Highest level ``Structure`` of which it is a member
         """
 
-        if issubclass(type(self.parent), Structure) \
-           and self.parent is not self:
+        if issubclass(type(self.parent), Structure) and self.parent is not self:
             return self.parent.top_level_structure
         return self
 
     def copy(self, position: ThreeVec) -> Structure:
-
         """
         Copies the structural unit and sets the ``position``
 
@@ -340,8 +336,7 @@ class Structure(ABC):
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
-    def valid_position(self,
-                       position: ThreeVec | None = None) -> bool:
+    def valid_position(self, position: ThreeVec | None = None) -> bool:
         """
         Checks if the specified ``position`` is within the bounds of the
         ``Structure.universe``, if it has one
@@ -374,11 +369,12 @@ class Structure(ABC):
             position = self.position
         try:
             # (0., 0., 0.) is defined as the origin for all universes
-            if (np.any(position < np.array([0., 0., 0])) or
-                    np.any(position > self.universe.dimensions)):
+            if np.any(position < np.array([0.0, 0.0, 0])) or np.any(
+                position > self.universe.dimensions,
+            ):
                 return False
-            if np.any(position == float('nan')):
-                raise ValueError(f'Position of {self} is undefined')
+            if np.any(position == float("nan")):
+                raise ValueError(f"Position of {self} is undefined")
             return True
         except AttributeError:
             # Not a member of a universe
@@ -416,17 +412,13 @@ class Structure(ABC):
         raise NotImplementedError
 
 
-@repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
-                'atoms')
+@repr_decorator("name", "ID", "formula", "position", "velocity", "bounding_box", "atoms")
 class CompositeStructure(Structure, AtomContainer):
     """
     Base class for structural units comprised of more than one ``Atom``
     """
 
-    def __init__(self,
-                 position: ThreeVec,
-                 velocity: ThreeVec,
-                 name: str):
+    def __init__(self, position: ThreeVec, velocity: ThreeVec, name: str):
 
         super().__init__(position, velocity, name)
         self.universe = None
@@ -452,11 +444,11 @@ class CompositeStructure(Structure, AtomContainer):
         unit = cls.__new__(cls)
         memo[id(self)] = unit
         for k, v in self.__dict__.items():
-            if k == 'ID':
+            if k == "ID":
                 setattr(unit, k, self._generate_ID())
-            elif k in ('_bonded_interaction_pairs', '_nonbonded_interactions'):
+            elif k in ("_bonded_interaction_pairs", "_nonbonded_interactions"):
                 pass
-            elif k == '_structure_list':
+            elif k == "_structure_list":
                 # Separate structures into atoms and composites
                 atoms, composites = [], []
                 for s in self._structure_list:
@@ -505,9 +497,10 @@ class CompositeStructure(Structure, AtomContainer):
             ``CompositeStructure``
         """
 
-        name = self.name + ' ' if self.name else ''
-        return (f"{name}{self.__class__.__name__}  "
-                f"formula: {self.formula}  position: {self.position}")
+        name = self.name + " " if self.name else ""
+        return (
+            f"{name}{self.__class__.__name__}  formula: {self.formula}  position: {self.position}"
+        )
 
     @property
     @abstractmethod
@@ -532,8 +525,7 @@ class CompositeStructure(Structure, AtomContainer):
             The chemical formula using the Hill system
         """
 
-        return get_reduced_chemical_formula([atom.element.symbol for atom
-                                             in self.atoms])
+        return get_reduced_chemical_formula([atom.element.symbol for atom in self.atoms])
 
     @property
     def universe(self) -> Universe | None:
@@ -635,7 +627,6 @@ class CompositeStructure(Structure, AtomContainer):
         return composite
 
     def _set_subunit_positions(self) -> None:
-
         """
         Sets the position of all subunits in the global frame in units of
         ``Ang``
@@ -653,11 +644,11 @@ class CompositeStructure(Structure, AtomContainer):
             units of ``Ang``
         """
 
-        mass = 0.
+        mass = 0.0
         weighted_positions = np.zeros(3)
         for atom in self.atoms:
             mass += atom.mass
-            weighted_positions += (atom.position * atom.mass)
+            weighted_positions += atom.position * atom.mass
         return weighted_positions / mass
 
     def _calc_subunit_position_in_CoM_frame(self) -> None:
@@ -671,7 +662,7 @@ class CompositeStructure(Structure, AtomContainer):
         CoM = self.calc_CoM()
         self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
-    def rotate(self, x: float = 0., y: float = 0., z: float = 0.) -> None:
+    def rotate(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
         """
         Rotates the ``CompositeStructure`` around its center of mass
 
@@ -691,14 +682,13 @@ class CompositeStructure(Structure, AtomContainer):
             0.
         """
 
-        rotation = Rotation.from_euler('xyz', [x, y, z], degrees=True)
+        rotation = Rotation.from_euler("xyz", [x, y, z], degrees=True)
         CoM = self.position
         for atom in self.atoms:
-            atom.position = (CoM
-                             + rotation.apply(self._CoM_frame_positions[atom]))
+            atom.position = CoM + rotation.apply(self._CoM_frame_positions[atom])
 
 
-@repr_decorator('name', 'ID', 'element', 'position', 'velocity')
+@repr_decorator("name", "ID", "element", "position", "velocity")
 class Atom(Structure):
     """
     A single atom
@@ -743,14 +733,18 @@ class Atom(Structure):
         The periodictable atomic element instance
     """
 
-    def __init__(self, element: str,
-                 position: ThreeVec = (0., 0., 0.),
-                 velocity: ThreeVec = (0., 0., 0.),
-                 charge: float | None = None, **settings: Any):
+    def __init__(
+        self,
+        element: str,
+        position: ThreeVec = (0.0, 0.0, 0.0),
+        velocity: ThreeVec = (0.0, 0.0, 0.0),
+        charge: float | None = None,
+        **settings: Any,
+    ):
 
         self.universe = None
 
-        super().__init__(position, velocity, name=settings.get('name', element))
+        super().__init__(position, velocity, name=settings.get("name", element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
 
@@ -768,12 +762,12 @@ class Atom(Structure):
             msg = "Please provide a valid element and/or isotope"
             raise ValueError(msg) from error
         try:
-            self.mass = settings['mass']
+            self.mass = settings["mass"]
         except KeyError:
             self.mass = self.element.mass
 
-        self._atom_type = settings.get('atom_type')
-        self.cutoff = settings.get('cutoff')
+        self._atom_type = settings.get("atom_type")
+        self.cutoff = settings.get("cutoff")
         self.charge = charge
 
     def __deepcopy__(self, memo: dict) -> Atom:
@@ -796,11 +790,11 @@ class Atom(Structure):
         memo[id(self)] = atom
         atom._bonded_interaction_pairs = []
         for k, v in self.__dict__.items():
-            if k == 'ID':
+            if k == "ID":
                 setattr(atom, k, self._generate_ID())
-            elif k == '_bonded_interaction_pairs':
+            elif k == "_bonded_interaction_pairs":
                 self.copy_interactions(atom, memo)
-            elif k == '_nonbonded_interactions':
+            elif k == "_nonbonded_interactions":
                 # All NonBondedInteractions use atom_types so as this will
                 # be the same for the new atom then these are automatically
                 # applied. The exception is Coulombic interactions initialized
@@ -831,10 +825,12 @@ class Atom(Structure):
             ``Atom``
         """
 
-        return (f'{self.element.symbol} atom, '
-                f'ID: {self.ID}, '
-                f'charge: {self.charge}, '
-                f'interactions: {", ".join(i.name for i in self.interactions)}')
+        return (
+            f"{self.element.symbol} atom, "
+            f"ID: {self.ID}, "
+            f"charge: {self.charge}, "
+            f"interactions: {', '.join(i.name for i in self.interactions)}"
+        )
 
     def __str__(self) -> str:
         """
@@ -844,8 +840,10 @@ class Atom(Structure):
             The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
-        return (f'{self.element.symbol} {self.__class__.__name__} '
-                f' charge: {self.charge}  position: {self.position}')
+        return (
+            f"{self.element.symbol} {self.__class__.__name__} "
+            f" charge: {self.charge}  position: {self.position}"
+        )
 
     @property
     def atoms(self) -> list[Atom]:
@@ -923,14 +921,14 @@ class Atom(Structure):
                     # Check that only one Coulombic interaction exists.
                     num_coul += 1
                     if num_coul > 1:
-                        raise ValueError('Atom should not have more than one'
-                                         ' Coulombic interaction')
+                        raise ValueError("Atom should not have more than one Coulombic interaction")
                     # Check that a charge parameter exists.
                     try:
-                        value = interaction.parameters['charge'].value
+                        value = interaction.parameters["charge"].value
                     except KeyError as error:
-                        raise ValueError('Coulombic interaction does not have a'
-                                            ' parameter "charge".') from error
+                        raise ValueError(
+                            'Coulombic interaction does not have a parameter "charge".',
+                        ) from error
             return value
         except AttributeError:
             return None
@@ -943,27 +941,29 @@ class Atom(Structure):
             if isinstance(inter, Coulombic):
                 if value is not None:
                     try:
-                        inter.parameters['charge'].value = value
+                        inter.parameters["charge"].value = value
                     except KeyError as error:
-                        raise ValueError('Coulombic interaction does not have'
-                                         ' a parameter "charge".') from error
+                        raise ValueError(
+                            'Coulombic interaction does not have a parameter "charge".',
+                        ) from error
                     except AttributeError:
                         # creates an interaction function if the Atom's
                         # Coulomb interaction doesn't have one
                         inter.function = Coulomb(value)
                     return
                 # else if the charge has value None
-                raise ValueError("Can't set charge to None when a"
-                                 " Coulombic interaction exists.")
+                raise ValueError("Can't set charge to None when a Coulombic interaction exists.")
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
         if value is not None:
             if self.cutoff is None:
-                warnings.warn("No cutoff was set for the Coulombic interaction of this atom."
-                              " The default cutoff of 10 Angstrom will be used. To set a cutoff,"
-                              " provide the argument cutoff=[value]"
-                              " when initialising the Atom object.")
-                self.cutoff = 10.
+                warnings.warn(
+                    "No cutoff was set for the Coulombic interaction of this atom."
+                    " The default cutoff of 10 Angstrom will be used. To set a cutoff,"
+                    " provide the argument cutoff=[value]"
+                    " when initialising the Atom object.",
+                )
+                self.cutoff = 10.0
             Coulombic(atoms=self, charge=value, cutoff=self.cutoff)
 
     @property
@@ -1006,7 +1006,7 @@ class Atom(Structure):
     def atom_type(self, value: int) -> None:
 
         if self._atom_type:
-            raise AttributeError('Can\'t change atom_type once it has been set')
+            raise AttributeError("Can't change atom_type once it has been set")
         self._atom_type = value
 
         # Update atom_types in Coulombic interactions
@@ -1125,7 +1125,7 @@ class Atom(Structure):
             # contain self
             if from_interaction:
                 if not interaction.atoms or self not in interaction.atoms[-1]:
-                    raise ValueError('incorrect atom_tuple passed to atom')
+                    raise ValueError("incorrect atom_tuple passed to atom")
             else:
                 interaction.add_atoms(self, from_structure=True)
             pair = (interaction, interaction.atoms[-1])
@@ -1163,7 +1163,7 @@ class Atom(Structure):
         # if/else required for deepcopy (where _bonded_interaction_pairs attribute
         # doesn't exist). try/except not valid due to order of operations in
         # add_atoms method.
-        if not hasattr(atom, '_bonded_interaction_pairs'):
+        if not hasattr(atom, "_bonded_interaction_pairs"):
             atom._bonded_interaction_pairs = []
         for inter, atoms in self.bonded_interaction_pairs:
             if id(inter) not in memo:
@@ -1177,16 +1177,23 @@ class Atom(Structure):
 
     def is_equivalent(self, structure: Structure) -> bool:
 
-        return isinstance(structure, type(self)) and \
-               all([structure.element.symbol == self.element.symbol,
-                    structure.mass == self.mass,
-                    structure.charge == self.charge,
-                    len(self.bonded_interactions) == len(structure.bonded_interactions),
-                    len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
-                    all(a.is_equivalent(b) for a, b in
-                        zip(self.bonded_interactions, structure.bonded_interactions)),
-                    all(a.is_equivalent(b) for a, b in
-                        zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
+        return isinstance(structure, type(self)) and all(
+            [
+                structure.element.symbol == self.element.symbol,
+                structure.mass == self.mass,
+                structure.charge == self.charge,
+                len(self.bonded_interactions) == len(structure.bonded_interactions),
+                len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
+                all(
+                    a.is_equivalent(b)
+                    for a, b in zip(self.bonded_interactions, structure.bonded_interactions)
+                ),
+                all(
+                    a.is_equivalent(b)
+                    for a, b in zip(self.nonbonded_interactions, structure.nonbonded_interactions)
+                ),
+            ],
+        )
 
 
 class Molecule(CompositeStructure):
@@ -1218,13 +1225,15 @@ class Molecule(CompositeStructure):
             prior to the ``Molecule``.
     """
 
-    def __init__(self,
-                 position: ThreeVec | None = None,
-                 velocity: ThreeVec = (0, 0, 0),
-                 name: str | None = None,
-                 **settings: Any):
+    def __init__(
+        self,
+        position: ThreeVec | None = None,
+        velocity: ThreeVec = (0, 0, 0),
+        name: str | None = None,
+        **settings: Any,
+    ):
 
-        self._structure_list = settings['atoms']
+        self._structure_list = settings["atoms"]
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
@@ -1265,8 +1274,7 @@ class Molecule(CompositeStructure):
             ``NonBondedInteraction`` objects acting on the ``Molecule``
         """
 
-        return [inter for atom in self.atoms
-                for inter in atom.nonbonded_interactions]
+        return [inter for atom in self.atoms for inter in atom.nonbonded_interactions]
 
     @property
     def bonded_interaction_pairs(self) -> list:
@@ -1296,9 +1304,12 @@ class Molecule(CompositeStructure):
         def get_bonded_interaction_pairs(atoms):
             # Preserve the order for consistent bonded_interaction_pairs
             used = set()
-            return [pair for atom in atoms for pair
-                    in atom.bonded_interaction_pairs if pair not in used
-                    and (used.add(pair) or True)]
+            return [
+                pair
+                for atom in atoms
+                for pair in atom.bonded_interaction_pairs
+                if pair not in used and (used.add(pair) or True)
+            ]
 
         # Cast to tuple required so that it is hashable for lru_cache
         return get_bonded_interaction_pairs(tuple(self.atoms))
@@ -1337,21 +1348,27 @@ class Molecule(CompositeStructure):
 
     def is_equivalent(self, structure: Structure) -> bool:
 
-        return isinstance(structure, type(self)) and \
-               all([structure.formula == self.formula,
+        return isinstance(structure, type(self)) and all(
+            [
+                structure.formula == self.formula,
                 structure.mass == self.mass,
                 structure.charge == self.charge,
                 len(self.bonded_interactions) == len(structure.bonded_interactions),
                 len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
-                all(a.is_equivalent(b) for a, b in
-                        zip(self.bonded_interactions, structure.bonded_interactions)),
-                all(a.is_equivalent(b) for a, b in
-                        zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
+                all(
+                    a.is_equivalent(b)
+                    for a, b in zip(self.bonded_interactions, structure.bonded_interactions)
+                ),
+                all(
+                    a.is_equivalent(b)
+                    for a, b in zip(self.nonbonded_interactions, structure.nonbonded_interactions)
+                ),
+            ],
+        )
 
 
-@repr_decorator('min', 'max', 'volume')
+@repr_decorator("min", "max", "volume")
 class BoundingBox:
-
     """
     A box with the minimum and maximum extents of the positions of a collection
     of atoms
@@ -1365,8 +1382,10 @@ class BoundingBox:
 
     def __init__(self, atoms: list[Atom]):
         if not atoms:
-            raise ValueError("Empty atoms passed; "
-                             "it must contain at least one atom to create a BoundingBox object.")
+            raise ValueError(
+                "Empty atoms passed; "
+                "it must contain at least one atom to create a BoundingBox object.",
+            )
 
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
@@ -1414,7 +1433,7 @@ class BoundingBox:
         self._max = value
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** 3)
+    @unit_decorator_getter(unit=units.LENGTH**3)
     def volume(self) -> float:
         """
         Get the volume of the bounding box, in units of ``Ang ^ 3``
@@ -1468,9 +1487,11 @@ def filter_atoms_element(atoms: list[Atom], element: str) -> list[Atom]:
     return list(filter(lambda a: a.element.symbol == element, atoms))
 
 
-def get_reduced_chemical_formula(symbols: list[str],
-                                 factor: int | None = None,
-                                 system: str = 'Hill') -> str:
+def get_reduced_chemical_formula(
+    symbols: list[str],
+    factor: int | None = None,
+    system: str = "Hill",
+) -> str:
     """
     Get the reduced chemical formula
 
@@ -1522,29 +1543,30 @@ def get_reduced_chemical_formula(symbols: list[str],
 
     n_symbols = len(symbols)
     if n_symbols % factor != 0:
-        raise ValueError(f'factor ({factor}) must be a factor of the number of'
-                         f' symbols {n_symbols}')
+        raise ValueError(f"factor ({factor}) must be a factor of the number of symbols {n_symbols}")
 
     n_reduced_atoms = n_symbols // factor
-    reduced_symbols = symbols[::n_symbols // n_reduced_atoms]
+    reduced_symbols = symbols[:: n_symbols // n_reduced_atoms]
 
     reduced_symbols_count = OrderedDict()
     # Use keys of OrderedDict to maintain order (and backwards compatibility)
     for symbol in reduced_symbols:
         number = reduced_symbols.count(symbol)
-        reduced_symbols_count[symbol] = str(number) if number != 1 else ''
+        reduced_symbols_count[symbol] = str(number) if number != 1 else ""
 
-    if system == 'Hill':
-        reduced_formula = ''
-        if 'C' in reduced_symbols_count:
-            reduced_formula = 'C' + reduced_symbols_count.pop('C')
+    if system == "Hill":
+        reduced_formula = ""
+        if "C" in reduced_symbols_count:
+            reduced_formula = "C" + reduced_symbols_count.pop("C")
             with suppress(KeyError):
-                reduced_formula += 'H' + reduced_symbols_count.pop('H')
+                reduced_formula += "H" + reduced_symbols_count.pop("H")
 
-        reduced_formula += ''.join(sorted([symbol + count for symbol, count
-                                           in reduced_symbols_count.items()]))
+        reduced_formula += "".join(
+            sorted([symbol + count for symbol, count in reduced_symbols_count.items()]),
+        )
     else:
-        reduced_formula = ''.join([symbol + count for symbol, count
-                                   in reduced_symbols_count.items()])
+        reduced_formula = "".join(
+            [symbol + count for symbol, count in reduced_symbols_count.items()],
+        )
 
     return reduced_formula

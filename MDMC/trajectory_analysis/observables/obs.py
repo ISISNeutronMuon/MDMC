@@ -26,7 +26,7 @@ from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
-@repr_decorator('origin', 'data')
+@repr_decorator("origin", "data")
 class Observable(ABC):
     """
     Abstract class that defines methods common to all observable data containers.
@@ -68,7 +68,7 @@ class Observable(ABC):
         self._name = name
 
     @property
-    def origin(self) -> Literal['experiment', 'MD']:
+    def origin(self) -> Literal["experiment", "MD"]:
         """
         Get or set the origin of the observable.
 
@@ -95,9 +95,11 @@ class Observable(ABC):
             The independent, dependent and error data.
         """
 
-        return {'independent': self.independent_variables,
-                'dependent': self.dependent_variables,
-                'errors': self.errors}
+        return {
+            "independent": self.independent_variables,
+            "dependent": self.dependent_variables,
+            "errors": self.errors,
+        }
 
     @property
     @abstractmethod
@@ -201,16 +203,19 @@ class Observable(ABC):
             The name of the file.
         """
 
-        self._origin = 'experiment'
+        self._origin = "experiment"
         self.reader = ObservableReaderFactory.create(reader, file_name)
         with self.reader:
             self.reader.parse()
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self,
-                          MD_input: CompactTrajectory | list[CompactTrajectory],
-                          verbose: int = 0, **parameters: Any) -> None:
+    def calculate_from_MD(
+        self,
+        MD_input: CompactTrajectory | list[CompactTrajectory],
+        verbose: int = 0,
+        **parameters: Any,
+    ) -> None:
         """
         Calculate the observable using input from an MD simulation.
 
