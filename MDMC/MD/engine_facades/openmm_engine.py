@@ -19,6 +19,7 @@
 import logging
 from typing import Any
 
+import networkx as nx
 import numpy as np
 import openmm as mm
 from openmm import unit
@@ -26,8 +27,10 @@ from openmm.app import Simulation, Topology
 
 from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
+from MDMC.MD.interaction_functions import DummyInteractionFunction
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
+from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
@@ -43,6 +46,13 @@ class OpenMMEngine(MDEngine):
         self.temperature = None
         self._saved_config = None
         self.MDMC_ID_to_idx = {}
+        self.bond_graph = nx.Graph()
+        self.nonbonded_scaling = [
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0],
+            [0.5, 0.5, 0.5],
+        ]
+        self.real_atom = []
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -66,10 +76,11 @@ class OpenMMEngine(MDEngine):
             A molecular dynamics ``Universe`` which will be setup in the
             ``OpenMMEngine``.
         **settings
-            Not used.
+            Some settings which are used to set up the openmm engine.
         """
         self.universe = universe
         self.openmm_system = mm.System()
+        self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)
 
         # set the unit cell, note that currently MDMC can only deal with
         # orthorhombic lattices
@@ -90,16 +101,37 @@ class OpenMMEngine(MDEngine):
             self.MDMC_ID_to_idx[atom.ID] = i
             self.openmm_system.addParticle(atom.mass * unit.amu)
 
+        for atom in self.universe.atoms:
+            if isinstance(atom, AverageSite3P):
+                i = self.MDMC_ID_to_idx[atom.ID]
+                j = self.MDMC_ID_to_idx[atom.particles[0].ID]
+                k = self.MDMC_ID_to_idx[atom.particles[1].ID]
+                m = self.MDMC_ID_to_idx[atom.particles[2].ID]
+                w_j = atom.weights[0]
+                w_k = atom.weights[1]
+                w_m = atom.weights[2]
+                self.openmm_system.setVirtualSite(
+                    i,
+                    mm.ThreeParticleAverageSite(j, k, m, w_j, w_k, w_m),
+                )
+                self.real_atom.append(False)
+            else:
+                self.real_atom.append(True)
+
         # set bond constraints
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         bond_dists = {}
         for mdmc_bond in mdmc_bonds:
-            if not mdmc_bond.constrained:
-                continue
-            equil_length = mdmc_bond.function.equilibrium_state.value
             for atm_i, atm_j in mdmc_bond.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
+                self.bond_graph.add_edge(i, j)
+                if (
+                    isinstance(mdmc_bond.function, DummyInteractionFunction)
+                    or not mdmc_bond.constrained
+                ):
+                    continue
+                equil_length = mdmc_bond.function.equilibrium_state.value
                 self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
                 bond_dists[(i, j)] = equil_length
                 bond_dists[(j, i)] = equil_length
@@ -109,7 +141,10 @@ class OpenMMEngine(MDEngine):
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if not mdmc_bondangle.constrained:
+            if (
+                isinstance(mdmc_bondangle.function, DummyInteractionFunction)
+                or not mdmc_bondangle.constrained
+            ):
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value
             for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
@@ -160,7 +195,7 @@ class OpenMMEngine(MDEngine):
         bond_force = mm.HarmonicBondForce()
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
-            if mdmc_bond.constrained:
+            if isinstance(mdmc_bond.function, DummyInteractionFunction) or mdmc_bond.constrained:
                 continue
             equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
             force_const = (
@@ -174,15 +209,16 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 bond_force.addBond(i, j, equil_length, 2 * force_const)
-                # remove nonbonded interaction when atoms are bonded
-                nonbonded.addException(i, j, 0.0, 1.0, 0.0)
 
         angle_force = mm.HarmonicAngleForce()
         mdmc_bondangles = [
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if mdmc_bondangle.constrained:
+            if (
+                isinstance(mdmc_bondangle.function, DummyInteractionFunction)
+                or mdmc_bondangle.constrained
+            ):
                 continue
             equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
             force_const = (
@@ -197,13 +233,23 @@ class OpenMMEngine(MDEngine):
                 # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
                 # in lammps and therefore MDMC it is without the 1/2
                 angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
-                # remove nonbonded interaction when atoms are connected
-                # by two bonds
-                nonbonded.addException(i, k, 0.0, 1.0, 0.0)
+
+        for i in range(self.universe.n_atoms):
+            for j, dist in nx.single_source_shortest_path_length(
+                self.bond_graph,
+                i,
+                cutoff=len(self.nonbonded_scaling),
+            ).items():
+                if j < i or dist == 0:
+                    continue
+                # scale nonbonded interaction when atoms are connected
+                # by a specific number of bonds away
+                nonbonded.addException(i, j, *self.nonbonded_scaling[dist - 1])
 
         self.openmm_system.addForce(nonbonded)
         self.openmm_system.addForce(bond_force)
         self.openmm_system.addForce(angle_force)
+        self.openmm_system.addForce(mm.CMMotionRemover())
 
     def clear_forces(self):
         """Clear the OpenMM force fields from the OpenMM system."""
@@ -219,33 +265,35 @@ class OpenMMEngine(MDEngine):
             Some settings which are used to set up the openmm
             simulation object.
         """
-        self.temperature = settings.get("temperature")
+        self.temperature = float(settings.get("temperature"))
+        time_step = float(self.time_step)
 
         compound_integrator = mm.CompoundIntegrator()
         lang_int_1 = mm.LangevinMiddleIntegrator(
-            self.temperature,
+            self.temperature * unit.kelvin,
             10.0 / unit.picoseconds,
-            self.time_step * unit.femtoseconds,
+            time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_1)
         lang_int_2 = mm.LangevinMiddleIntegrator(
-            self.temperature,
+            self.temperature * unit.kelvin,
             1.0 / unit.picoseconds,
-            self.time_step * unit.femtoseconds,
+            time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_2)
-        compound_integrator.addIntegrator(mm.VerletIntegrator(self.time_step * unit.femtoseconds))
+        compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
 
         self.openmm_simulation = Simulation(
             Topology(),
             self.openmm_system,
             compound_integrator,
-            mm.Platform.getPlatformByName(settings.get("openmm_platform")),
+            mm.Platform.getPlatformByName(settings.get("openmm_platform", "CPU")),
+            settings.get("openmm_properties", {}),
         )
 
         positions = np.array([atom.position for atom in self.universe.atoms]) * unit.angstrom
         self.openmm_simulation.context.setPositions(positions)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
+        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
@@ -286,7 +334,9 @@ class OpenMMEngine(MDEngine):
         if equilibration:
             try:
                 self.openmm_simulation.minimizeEnergy()
-                self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
+                self.openmm_simulation.context.setVelocitiesToTemperature(
+                    self.temperature * unit.kelvin,
+                )
                 self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
                 self.openmm_simulation.step(n_steps // 3)
                 self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
@@ -298,8 +348,13 @@ class OpenMMEngine(MDEngine):
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
         else:
             self.compact_trajectory = CompactTrajectory()
-            self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=len(self.universe.atoms))
-            reporter = CompactTrajectoryReporter(self.compact_trajectory, self.traj_step, n_steps)
+            self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
+            reporter = CompactTrajectoryReporter(
+                self.compact_trajectory,
+                self.traj_step,
+                n_steps,
+                np.array(self.real_atom),
+            )
             self.openmm_simulation.reporters.append(reporter)
             self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
             self.openmm_simulation.currentStep = 0
@@ -344,11 +399,12 @@ class OpenMMEngine(MDEngine):
         CompactTrajectory
             The ``CompactTrajectory`` from the most recent production simulation.
         """
-        self.compact_trajectory.validateTypes([atom.atom_type for atom in self.universe.atoms])
-        atom_elements = [atom.element for atom in self.universe.atoms]
-        atom_masses = [atom.mass for atom in self.universe.atoms]
+        real_atoms = [atom for atom in self.universe.atoms if not isinstance(atom, AverageSite3P)]
+        self.compact_trajectory.validateTypes([atom.atom_type for atom in real_atoms])
+        atom_elements = [atom.element for atom in real_atoms]
+        atom_masses = [atom.mass for atom in real_atoms]
         self.compact_trajectory.labelAtoms(atom_elements, atom_masses)
-        self.compact_trajectory.setCharge([atom.charge for atom in self.universe.atoms])
+        self.compact_trajectory.setCharge([atom.charge for atom in real_atoms])
         self.compact_trajectory.postProcess()
         return self.compact_trajectory
 
@@ -369,14 +425,20 @@ class OpenMMEngine(MDEngine):
     def reset_config(self) -> None:
         """Resets the atomic positions of the simulation to that in ``saved_config``."""
         self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature)
+        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
     def eval(self, variable: str) -> Any:
         raise NotImplementedError
 
 
 class CompactTrajectoryReporter:
-    def __init__(self, compact_trajectory: CompactTrajectory, report_interval: int, n_steps: int):
+    def __init__(
+        self,
+        compact_trajectory: CompactTrajectory,
+        report_interval: int,
+        n_steps: int,
+        real_atom: np.ndarray,
+    ):
         """Reporter which saves MD results into the MDMC compact
         trajectory.
 
@@ -388,10 +450,13 @@ class CompactTrajectoryReporter:
             The interval which the MD results will be saved.
         n_steps : int
             The total number of step of the simulation.
+        real_atom : np.ndarray
+            An array of bools, true if the atom is not a dummy atom.
         """
         self.compact_trajectory = compact_trajectory
         self.report_interval = report_interval
         self.n_steps = n_steps
+        self.real_atom = real_atom
 
     def report(self, simulation: Simulation, state: mm.State):
         """Save the simulation data into the MDMC compact trajectory.
@@ -420,7 +485,7 @@ class CompactTrajectoryReporter:
         self.compact_trajectory.writeOneStep(
             step_num=step // self.report_interval,
             time=time,
-            positions=np.array(positions),
+            positions=np.array(positions)[self.real_atom],
         )
         self.compact_trajectory.setDimensions(np.array([a, b, c]), step_num=step)
 

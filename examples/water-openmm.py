@@ -1,7 +1,7 @@
 import os
 
 from MDMC.MD import *
-from MDMC.MD.force_fields.TIP3P import TIP3PMol, add_tip3p_ff
+from MDMC.MD.force_fields.four_site_water import FourSiteWater, add_four_site_water_ff
 from MDMC.control import Control
 # Currently MDMC uses OMP_NUM_THREADS to control the number of processes
 # in the sqw calculation
@@ -13,8 +13,8 @@ os.environ["OMP_NUM_THREADS"] = "4"
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
 universe = Universe(dimensions=24.83602653)
-universe.fill(TIP3PMol(constrained=False), num_density=0.03356718472021752)
-add_tip3p_ff(universe, cutoff=10.0, ewald=1e-6)
+universe.fill(FourSiteWater(model_name="TIP4P-Ewald"), num_density=0.03356718472021752)
+add_four_site_water_ff(universe, cutoff=12.0, ewald=1e-4, model_name="TIP4P-Ewald")
 
 # MD Engine setup
 # NOTE: the temperatures of the measured data sets are:
@@ -26,7 +26,9 @@ simulation = Simulation(
     time_step=1.0,
     temperature=280,
     traj_step=10,
-    openmm_platform="OpenCL"
+    openmm_platform="OpenCL",
+    # default precision on CUDA and OpenCL is single
+    openmm_properties={"Precision": "mixed"},
 )
 
 simulation.run(n_steps=30000, equilibration=True)
@@ -47,10 +49,10 @@ QENS = [{
 
 # only refit the LJ parameters on oxygen
 for p in universe.parameters.as_array:
-    if p.parameter_name == 'tip3p_O_nonbonded_epsilon':
-        p.constraints = [0.4, 0.8]
-    elif p.parameter_name == 'tip3p_O_nonbonded_sigma':
-        p.constraints = [2.5, 3.5]
+    if p.parameter_name == 'TIP4P-Ewald-O-nonbonded_epsilon':
+        p.constraints = [0.5, 0.8]
+    elif p.parameter_name == 'TIP4P-Ewald-O-nonbonded_sigma':
+        p.constraints = [2.95, 3.35]
     else:
         p.fixed = True
 
@@ -64,7 +66,7 @@ control = Control(
     minimizer_type="CMAES",
     MD_steps=424620,
     energy_resolution=13.6,
-    FoM_options={'error': 'none'}
+    FoM_options={'error': 'none'},
 )
 
 # Run refinement

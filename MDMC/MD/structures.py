@@ -1196,6 +1196,55 @@ class Atom(Structure):
         )
 
 
+class DummyElement:
+    mass = 0.0
+    symbol = 'X'
+
+
+class AverageSite3P(Atom):
+    """A dummy atom whose position is based on a weight average of three
+    other atoms. This is used to define the position of point charge in,
+    for example, four site water models.
+
+    Parameters
+    ----------
+    particles : list[Atom]
+        The of atoms that the position of this dummy atom will be
+        derived from.
+    weights : list[float]
+        The weights which are used to determine this dummy atoms
+        position based on the inputted atoms positions in particles.
+    charge : float
+        The charge of the ``Atom`` in units of elementary charge (``e``). The
+        default is `None`, meaning that a ``Coulomb`` interaction is not applied
+        to the ``Atom``.
+    **settings
+        See Atom.
+    """
+    def __init__(
+            self,
+            particles: list[Atom],
+            weights : list[float],
+            charge: float | None = None,
+            **settings: Any,
+    ):
+        self.universe = None
+
+        Structure.__init__(self, (0., 0., 0.), (0., 0., 0.), name=settings.get('name', 'X'))
+        self._nonbonded_interactions = []
+        self._bonded_interaction_pairs = []
+
+        self.element = DummyElement()
+        self.mass = self.element.mass
+
+        self._atom_type = settings.get('atom_type')
+        self.cutoff = settings.get('cutoff')
+        self.charge = charge
+
+        self.particles = particles
+        self.weights = weights
+
+
 class Molecule(CompositeStructure):
     """
     Two or more bonded atoms

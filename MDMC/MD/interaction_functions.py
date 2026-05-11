@@ -151,6 +151,13 @@ class InteractionFunction:
             self.parameters[parameter].interactions = interaction
 
 
+@repr_decorator("parameters")
+class DummyInteractionFunction(InteractionFunction):
+
+    def __init__(self):
+        super().__init__(val_dict={})
+
+
 def inter_func_decorator(*parameter_units) -> Callable:
     """
     Decorates a method to add units to all positional and any relevant keyword

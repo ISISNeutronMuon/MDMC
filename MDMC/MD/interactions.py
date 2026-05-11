@@ -140,7 +140,6 @@ class Interaction(ABC):
         Parameters
             A ``Parameters`` object containing each ``Parameter``
         """
-
         return self.function.parameters
 
     @property
