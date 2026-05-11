@@ -10,16 +10,18 @@ difference is whether the LAMMPS simulation was run through MDMC.
 import numpy as np
 import pytest
 
+pytest.importorskip("MDMC.MD.engine_facades.lammps_engine")
+
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
 pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
-""" 
+"""
 STDEV_FAC is the number of standard deviations within which the calculated
 property must lie for it to be considered equivalent to the expected value
-i.e. it is the tolerance of the assertion on the property 
+i.e. it is the tolerance of the assertion on the property
 """
 STDEV_FAC = 4.
 N_MOLECULES = 216

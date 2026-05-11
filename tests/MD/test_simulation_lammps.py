@@ -17,13 +17,14 @@ from MDMC.MD.interaction_functions import (
     Periodic,
 )
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, DihedralAngle, Dispersion
-from MDMC.MD.simulation import (
+from MDMC.MD.kspace_solvers import (
     PPPM,
-    ConstraintAlgorithm,
     Ewald,
-    KSpaceSolver,
-    Rattle,
-    Shake,
+    KSpaceSolver
+)
+
+from MDMC.MD.constraints import ConstraintAlgorithm, Rattle, Shake
+from MDMC.MD.simulation import (
     Simulation,
     Universe,
 )
