@@ -53,6 +53,8 @@ for p in universe.parameters.as_array:
         p.constraints = [0.5, 0.8]
     elif p.parameter_name == 'TIP4P-Ewald-O-nonbonded_sigma':
         p.constraints = [2.95, 3.35]
+    elif p.parameter_name == 'TIP4P-Ewald-HOH-harmonicangle_equilibrium_state':
+        p.constraints = [80, 120]
     else:
         p.fixed = True
 
@@ -67,6 +69,11 @@ control = Control(
     MD_steps=424620,
     energy_resolution=13.6,
     FoM_options={'error': 'none'},
+    file_dump_frequency="every",
+    file_dump_extent="both",
+    file_dump_loc=".",
+    file_dump_timestamped=False,
+    file_dump_prefix="mdmc_water_tip4p",
 )
 
 # Run refinement
