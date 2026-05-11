@@ -50,14 +50,12 @@ class SolventConfig(ABC):
     """
 
     def __init__(self):
-
         self._box_dimensions = deepcopy(self._solvent_config_dict["box_dimensions"])
         self._atom_types = deepcopy(self._solvent_config_dict["atom_types"])
         self._nonbonded_interactions = deepcopy(self._solvent_config_dict["nonbonded_interactions"])
         self._molecules = deepcopy(self._solvent_config_dict["molecules"])
 
     def __str__(self):
-
         return self.description
 
     @property
@@ -103,7 +101,6 @@ class SolventConfig(ABC):
     @box_dimensions.setter
     @unit_decorator(unit=units.LENGTH)
     def box_dimensions(self, value):
-
         self._box_dimensions = value
 
     @property
@@ -136,7 +133,6 @@ class SolventConfig(ABC):
 
     @atom_types.setter
     def atom_types(self, value):
-
         self._atom_types = value
 
     @property
@@ -174,7 +170,6 @@ class SolventConfig(ABC):
 
     @nonbonded_interactions.setter
     def nonbonded_interactions(self, value):
-
         self._nonbonded_interactions = value
 
     @property
@@ -223,7 +218,6 @@ class SolventConfig(ABC):
 
     @molecules.setter
     def molecules(self, value):
-
         self._molecules = value
 
     @property

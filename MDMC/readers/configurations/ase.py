@@ -35,7 +35,6 @@ class ASEReader(ConfigurationReader):
     extension = "N/A"
 
     def __init__(self, file_name: str):
-
         super().__init__(file_name)
         self._atoms: list[Atom] = []
 

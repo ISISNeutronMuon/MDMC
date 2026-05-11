@@ -240,7 +240,6 @@ class SQwReader(ObservableReader, ABC):
     @Q.setter
     @unit_decorator(unit=units.LENGTH**-1)
     def Q(self, value: float) -> None:
-
         self._Q = value
 
 
@@ -303,7 +302,6 @@ class PDFReader(ObservableReader, ABC):
     @r.setter
     @unit_decorator(unit=units.Unit("Ang"))
     def r(self, value) -> None:
-
         self._r = value
 
     @property

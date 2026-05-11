@@ -19,8 +19,8 @@
 import getpass
 import logging
 import statistics
+from collections.abc import Iterable
 from contextlib import suppress
-from copy import deepcopy
 from datetime import datetime
 from enum import Enum, Flag, auto
 from pathlib import Path
@@ -44,7 +44,7 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.observables.mdanse_observable import MDANSEObservable
 
 
 class DumpFreq(Enum):
@@ -66,8 +66,13 @@ class DumpExtent(Flag):
     """
 
     TRAJ = auto()  # Only the trajectory file
-    OBS = auto()  # Only the observables
-    BOTH = TRAJ | OBS  # Both the trajectory and observables
+    EXP = auto()  # Only the experimental observable
+    RAW_MD = auto()  # Only the raw (un-interpolated) MD observable
+    MD = auto()  # Only the interpolated MD observable
+    FOM = auto()  # Only the FoM contribution per point
+    BOTH = TRAJ | MD  # Both the trajectory and observables
+    ALL_OBS = EXP | RAW_MD | MD | FOM
+    ALL = TRAJ | EXP | RAW_MD | MD | FOM
 
 
 class ObsFormat(Flag):
@@ -147,15 +152,6 @@ class Control:
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
-          - ``auto_scale`` (`bool`, optional, defaults to `False`) set the
-            ``rescale_factor`` automatically to minimise the FoM, if both
-            ``rescale_factor`` and ``auto_scale`` are provided then a warning
-            is printed and ``auto_scale`` takes precedence
-          - ``use_FFT`` (`bool`, optional, defaults to `True`) whether to use
-            Fast Fourier Transforms in the calculation of dependent variables.
-            FFT speeds up calculation but places restrictions on spacing in the
-            independent variable domain(s). This option may not be supported
-            for all ``Observable``s
         Note that the default (and preferred) behaviour of the scaling settings requires that the
         dataset provided has been properly scaled and normalised for the refinement process.
         Arbitrary or automatic rescaling should be undertaken with care, as it does not take into
@@ -260,8 +256,8 @@ class Control:
           'type':'FQt',
           'reader':'GENERIC_READER',
           'weight':0.5,
-          'resolution':{'gaussian':2.35}
-          'auto_scale':True}]
+          'resolution':{'gaussian':2.35}}
+          ]
 
     Attributes
     ----------
@@ -300,9 +296,10 @@ class Control:
         file_dump_loc: Path = Path("."),
         file_dump_timestamped: bool = False,
         file_dump_prefix: str = "trajectory",
+        observable_pairs: Iterable[ObservablePair] = [],
         **settings: Any,
     ):
-
+        self.recreated_independent_vars = {}
         self.previous_history = previous_history
         self.step_timings: list = []
         self.simulation = simulation
@@ -364,63 +361,10 @@ class Control:
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
-        self.observable_pairs = []
+        self.observable_pairs = observable_pairs
         minimum_MD_steps = 0
-        for dset in exp_datasets:
-            use_FFT = dset.get("use_FFT", True)
-
-            # keep the keys in the _dset_input_check function
-            # consistent with the ones retrieved from dset
-            self._input_check(dset, inputs=["type", "reader", "file_name"])
-            exp_observable = self._read_observable_from_file(
-                dset["type"],
-                dset["reader"],
-                dset["file_name"],
-                use_FFT,
-            )
-
-            if exp_observable.uniformity_requirements:
-                exp_observable = self._make_data_uniform(exp_observable)
-
-            if "filter" in dset:  # Data below threshold should be zeroed.
-                self._threshold_filter(
-                    exp_observable,
-                    abs_threshold=dset["filter"].get("abs", 0.0),
-                    rel_threshold=dset["filter"].get("rel", 0.0),
-                    magnitude=dset["filter"].get("use_magnitude", False),
-                    warn_threshold=dset["filter"].get("warn_threshold", 0.1),
-                )
-
-            MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
-
-            self._validate_energy(MD_observable)
-
-            auto_scale = dset.get("auto_scale", False)
-            rescale_factor = dset.get("rescale_factor")
-            if auto_scale and rescale_factor and self.verbose != -1:
-                print(
-                    "Both `rescale_factor` and `auto_scale` set for file {};"
-                    " scaling will be automated to minimise FoM"
-                    "".format(dset["file_name"]),
-                )
-                rescale_factor = 1.0
-            elif not rescale_factor:
-                rescale_factor = 1.0
-
-            observable_pair = ObservablePair(
-                exp_observable,
-                MD_observable,
-                dset["weight"],
-                rescale_factor=rescale_factor,
-                auto_scale=auto_scale,
-            )
-            self.observable_pairs.append(observable_pair)
-            self.recreated_independent_vars = {}
-            self.production_time_step = self.simulation.time_step
-
-            # Take the largest minimum number of MD_steps needed by any dataset
-            min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
-            minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
+        if observable_pairs:
+            logging.info("Using pre-defined observable pairs")
 
         if FoM_options is None or FoM_options.get("error") is None:
             FoM_error = "exp"
@@ -816,8 +760,7 @@ class Control:
             ):
                 if DumpExtent.TRAJ in self.file_dump_extent:
                     self.dump_h5md(trj)
-                if DumpExtent.OBS in self.file_dump_extent:
-                    self.dump_observables(ObsFormat.MDA)
+                self.dump_observables(ObsFormat.MDA, self.file_dump_extent)
         else:
             # assuming params are bad so use max FoM available
             fom = self.max_FoM
@@ -843,7 +786,7 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
-    def dump_h5md(self, trj: CompactTrajectory):
+    def dump_h5md(self, trj: CompactTrajectory, optional_suffix: str = "") -> Path:
         """
         Dump the trajectory as an H5MD file.
 
@@ -858,16 +801,18 @@ class Control:
         or the file name must be different for each trajectory,
         as if not the file will be continually overwritten.
         """
-        H5MD_build.write_H5MD(
+        return H5MD_build.write_H5MD(
             trj,
-            filename=self.file_dump_prefix,
+            filename=f"{self.file_dump_prefix}_{optional_suffix}"
+            if optional_suffix
+            else self.file_dump_prefix,
             file_loc=self.file_dump_loc,
             timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
             creator_name=self.h5md_creator,
             creator_email=self.h5md_email,
         )
 
-    def dump_observables(self, data_format: ObsFormat):
+    def dump_observables(self, data_format: ObsFormat, dump_extent: DumpExtent):
         """
         Dump the observables.
 
@@ -878,12 +823,39 @@ class Control:
         """
         if ObsFormat.MDA in data_format:
             for obs_pair in self.observable_pairs:
-                write_MDA(
-                    obs_pair.MD_obs,
-                    filename=self.file_dump_prefix,
-                    file_loc=self.file_dump_loc,
-                    timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
-                )
+                if DumpExtent.RAW_MD in dump_extent:
+                    write_MDA(
+                        obs_pair.MD_obs,
+                        filename=self.file_dump_prefix,
+                        file_loc=self.file_dump_loc,
+                        timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+                    )
+                if DumpExtent.EXP in dump_extent:
+                    write_MDA(
+                        obs_pair.exp_obs,
+                        filename=f"{self.file_dump_prefix}_exp",
+                        file_loc=self.file_dump_loc,
+                        timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+                    )
+                if DumpExtent.MD in dump_extent and obs_pair.matching_obs is not None:
+                    write_MDA(
+                        obs_pair.matching_obs,
+                        filename=f"{self.file_dump_prefix}_matched",
+                        file_loc=self.file_dump_loc,
+                        timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+                    )
+                if (
+                    DumpExtent.FOM in dump_extent
+                    and hasattr(obs_pair, "fom_contribution")
+                    and obs_pair.fom_contribution is not None
+                ):
+                    write_MDA(
+                        obs_pair.exp_obs,
+                        filename=f"{self.file_dump_prefix}_FoM_contributions",
+                        file_loc=self.file_dump_loc,
+                        timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+                        override_data=obs_pair.fom_contribution,
+                    )
 
     def plot_results(
         self,
@@ -945,7 +917,7 @@ class Control:
         """
         Run a molecular dynamics simulation
         """
-
+        print(f"Running MD for {self.MD_steps} steps")
         self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self) -> None:
@@ -954,65 +926,6 @@ class Control:
         """
 
         self.simulation.engine.update_parameters()
-
-    @staticmethod
-    def _read_observable_from_file(
-        obstype: str,
-        reader: str,
-        file_name: str,
-        use_FFT: bool = True,
-    ) -> Observable:
-        """
-        Creates an Observable of the specified type and reads in data from file
-
-        Parameters
-        ----------
-        obstype : str
-            The ``type`` of the ``Observable``.
-        reader : str
-            The ``type`` of the ``Reader``.
-        file_name : str
-            The absolute or relative path and the file name.
-        use_FFT: bool, optional
-            Whether the Fast Fourier Transform should be used, default is True.
-
-        Returns
-        -------
-        Observable
-            An ``Observable`` of specified ``type``.
-        """
-
-        observable = ObservableFactory.create(obstype)
-        observable.read_from_file(reader=reader, file_name=file_name)
-        observable.use_FFT = use_FFT
-        return observable
-
-    @staticmethod
-    def _create_empty_observable(exp_observable: Observable, use_FFT: bool = True) -> Observable:
-        """
-        Creates a ``Observable`` without data but with independent variables
-        specified from another ``Observable``.  This is a placeholder in which
-        the ``Observable`` can be calculated from an MD trajectory.
-
-        Parameters
-        ----------
-        exp_observable : Observable
-            An ``Observable`` with defined independent variables.
-        use_FFT: bool, optional
-            boolean determining if the FFT should be used, default is True
-
-        Returns
-        -------
-        ``Observable``
-            An ``Observable`` with only independent variables and
-            ``origin == 'MD'``
-        """
-
-        observable = ObservableFactory.create(exp_observable.name)
-        observable.origin = "MD"
-        observable.independent_variables = deepcopy(exp_observable.independent_variables)
-        observable.use_FFT = use_FFT
-        return observable
 
     def _calculate_observables(
         self,
@@ -1038,9 +951,19 @@ class Control:
         verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
 
+        if any(isinstance(pair.MD_obs, MDANSEObservable) for pair in observable_pairs):
+            h5md_traj_path = self.dump_h5md(trj, optional_suffix="for_mdanse")
+        else:
+            h5md_traj_path = None
+
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
-            obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            obs_timings = pair.MD_obs.calculate_from_MD(
+                trj,
+                file_path=h5md_traj_path,
+                verbose=self.verbose,
+                **self.settings,
+            )
             if pair.MD_obs.name == "SQw":
                 self.recreated_independent_vars["SQw"] = pair.MD_obs.recreated_Q
             if self.verbose == 1 and obs_timings is not None:
@@ -1411,7 +1334,13 @@ class Control:
             obs = pair.exp_obs.name
             if obs in self.recreated_independent_vars:
                 exp_obs = self.observable_pairs[index].exp_obs
-                md_obs = self.observable_pairs[index].MD_obs
+                if (
+                    hasattr(self.observable_pairs[index], "matching_obs")
+                    and self.observable_pairs[index].matching_obs is not None
+                ):
+                    md_obs = self.observable_pairs[index].matching_obs
+                else:
+                    md_obs = self.observable_pairs[index].MD_obs
 
                 recreated_independent_vars = self.recreated_independent_vars[obs]
                 if len(exp_obs.dependent_variables[obs][0]) != len(
@@ -1519,13 +1448,16 @@ class Control:
             value of maximum FoM
 
         """
-
         # pylint: disable=protected-access
         # the purpose of method is to create this empty observable so accessing is necessary
-        self.observable_pairs[0].MD_obs._dependent_variables = {}
-        self.observable_pairs[0].MD_obs._dependent_variables["SQw"] = 1e-9
+        for obs_pair in self.observable_pairs:
+            obs_pair.MD_obs._dependent_variables = {}
+            for key, value in obs_pair.exp_obs.dependent_variables.items():
+                obs_pair.MD_obs._dependent_variables[key] = np.zeros_like(value)
 
         max_FoM = self.FoM_calculator.calculate()
-        self.observable_pairs[0].MD_obs._dependent_variables = None
+
+        for obs_pair in self.observable_pairs:
+            obs_pair.MD_obs._dependent_variables = None
 
         return max_FoM

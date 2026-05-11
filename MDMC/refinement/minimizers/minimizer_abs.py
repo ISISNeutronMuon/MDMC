@@ -67,7 +67,6 @@ class Minimizer(ABC):
         parameters: Parameters,
         previous_history: Path | str = None,
     ):
-
         self.control = control
         self.previous_history = previous_history
         self.FoM = None

@@ -60,7 +60,6 @@ class InteractionFunction:
     """
 
     def __init__(self, val_dict: dict):
-
         # locals which are excluded from Parameter creation
         excluded = ["self", "settings", "__class__"]
         parameters = Parameters()
@@ -73,14 +72,12 @@ class InteractionFunction:
         self.parameters = parameters
 
     def __str__(self) -> str:
-
         parameters = " ".join(
             [p.name + ": " + str(p.value) + "," for p in self.parameters.values()],
         ).strip(",")
         return f"{self.__class__.__name__} {parameters}"
 
     def __eq__(self, other):
-
         return id(self) == id(other) or all(
             [
                 (type(self) is type(other)),
@@ -107,7 +104,6 @@ class InteractionFunction:
 
     @parameters.setter
     def parameters(self, value: Parameters):
-
         self._parameters = value
 
     @property
@@ -277,7 +273,6 @@ class Buckingham(InteractionFunction):
         ("C", units.LENGTH**6 * units.ENERGY),
     )
     def __init__(self, A: float, B: float, C: float):
-
         super().__init__(locals())
 
 
@@ -318,7 +313,6 @@ class Coulomb(InteractionFunction):
 
     @inter_func_decorator(("charge", units.CHARGE))
     def __init__(self, charge: float):
-
         super().__init__(locals())
 
 
@@ -387,7 +381,6 @@ class HarmonicPotential(InteractionFunction):
     """
 
     def __new__(cls, equilibrium_state: float, potential_strength: float, **settings: Any):
-
         # interaction_type is a required keyword, but has to be passed through
         # settings so that it can be correctly passed in inter_func_decorator
         try:
@@ -425,7 +418,6 @@ class HarmonicPotential(InteractionFunction):
         return h_pot
 
     def __init__(self, equilibrium_state, potential_strength, **settings):
-
         super().__init__(locals())
 
     # Declare a class method equal to the __init__ method
@@ -485,7 +477,6 @@ class Periodic(InteractionFunction):
     """
 
     def __init__(self, K1: float, n1: float, d1: float, *parameters: float):
-
         # Check that total number of parameters is divisible by 3
         # Check that all n values are non-negative ints
         val_dict = {}
@@ -549,7 +540,6 @@ class LennardJones(InteractionFunction):
 
     @inter_func_decorator(("epsilon", units.ENERGY), ("sigma", units.LENGTH))
     def __init__(self, epsilon: float, sigma: float, **settings: Any):
-
         super().__init__({"epsilon": epsilon, "sigma": sigma})
         self.cutoff = settings.get("cutoff")
         self.solver = settings.get("long_range_solver")

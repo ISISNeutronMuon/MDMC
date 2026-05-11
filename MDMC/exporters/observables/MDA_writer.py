@@ -19,9 +19,11 @@ A module for writing and saving a H5MD file.
 """
 
 import logging
+from collections.abc import Sequence
 from pathlib import Path
 
 import h5py
+import numpy as np
 
 from MDMC.common import units
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -70,6 +72,7 @@ def write_MDA(
     file_loc: Path | str,
     timestamp: str,
     suffix: str = ".mda",
+    override_data: Sequence[float] | None = None,
 ):
     """Write the input observable to an MDANSE MDA file.
 
@@ -97,9 +100,12 @@ def write_MDA(
             temp_ds = axes_group.create_dataset(key, data=data)
             temp_ds.attrs["axis"] = "index"
             temp_ds.attrs["scaling_factor"] = 1.0
-            temp_ds.attrs["units"] = guess_unit(key)
+            temp_ds.attrs["units"] = guess_unit(key).replace("Ang", "ang")
         for key, data in observable.dependent_variables.items():
-            main_ds = data_group.create_dataset(key, data=data[0])
+            main_ds = data_group.create_dataset(
+                key,
+                data=np.squeeze(data) if override_data is None else np.squeeze(override_data),
+            )
             main_ds.attrs["axis"] = "|".join(
                 f"mdmc_result/axes/{x}" for x in observable.independent_variables
             )

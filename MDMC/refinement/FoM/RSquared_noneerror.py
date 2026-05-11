@@ -83,14 +83,21 @@ class RSquared_noneerror(FigureOfMerit):
         float
             The FoM for the obs_pair
         """
+        norm_factor = self.data_norm_factor(obs_pair=obs_pair)
+        MD_values = obs_pair.interpolate_MD_onto_exp()
+        exp_values = np.squeeze(np.array(obs_pair.exp_y))
+        obs_pair.fom_contribution = (MD_values - exp_values) ** 2
+        value_unreduced = np.nansum((MD_values - exp_values) ** 2)
+        print(f"RSquared_noneerror.calculate_single_FoM: norm_factor: {norm_factor}")
+        print(f"RSquared_noneerror.calculate_single_FoM: value_unreduced: {value_unreduced}")
 
         if obs_pair.auto_scale:
-            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
-            MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            A = np.sum(MD_values * exp_values)
-            B = np.sum(exp_values**2)
-            obs_pair.rescale_factor = A / B
+            A = np.nansum(MD_values * exp_values)
+            B = np.nansum(exp_values**2)
+            print(f"RSquared_noneerror.calculate_single_FoM: A: {A}")
+            print(f"RSquared_noneerror.calculate_single_FoM: B: {B}")
+            rescale_factor = A / B
+            print(f"Rescale factor: {rescale_factor}")
+            value_unreduced = np.nansum((MD_values / rescale_factor - exp_values) ** 2)
 
-        norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
         return obs_pair.weight * value_unreduced / norm_factor

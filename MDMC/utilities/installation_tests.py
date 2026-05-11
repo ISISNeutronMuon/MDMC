@@ -153,7 +153,6 @@ class InstlTestCore(InstlTestBase):
     """
 
     def run(self) -> None:
-
         import MDMC
 
         fs_objects = glob(join(dirname(MDMC.__file__), "*"))
@@ -209,7 +208,6 @@ class InstlTestLAMMPS(InstlTestBase):
     )
 
     def run(self) -> None:
-
         try:
             from lammps import PyLammps
         except ImportError:
@@ -290,7 +288,6 @@ class InstlTestX11Forwarding(InstlTestBase):
     )
 
     def run(self) -> None:
-
         try:
             from tkinter import TclError, Tk
         except ImportError:
@@ -334,7 +331,6 @@ class InstlTestDynamicPlottingDependencies(InstlTestBase):
     LOG_ERROR_MSG = "Due to this, dynamic plotting of the refinement will not be possible."
 
     def run(self) -> None:
-
         try:
             import ipywidgets  # noqa: F401
             import jupyter  # noqa: F401

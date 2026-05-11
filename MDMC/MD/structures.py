@@ -88,7 +88,6 @@ class Structure(ABC):
     _ID_generator = count(start=1, step=1)
 
     def __init__(self, position: ThreeVec, velocity: ThreeVec, name: str):
-
         self.ID = self._generate_ID()
         self.position = position
         self.velocity = velocity
@@ -120,7 +119,6 @@ class Structure(ABC):
     @position.setter
     @unit_decorator(unit=units.LENGTH)
     def position(self, position: ThreeVec) -> None:
-
         self._position = position
 
     @property
@@ -138,7 +136,6 @@ class Structure(ABC):
     @velocity.setter
     @unit_decorator(unit=units.LENGTH / units.TIME)
     def velocity(self, velocity: ThreeVec) -> None:
-
         self._velocity = velocity
 
     @property
@@ -419,7 +416,6 @@ class CompositeStructure(Structure, AtomContainer):
     """
 
     def __init__(self, position: ThreeVec, velocity: ThreeVec, name: str):
-
         super().__init__(position, velocity, name)
         self.universe = None
 
@@ -505,13 +501,11 @@ class CompositeStructure(Structure, AtomContainer):
     @property
     @abstractmethod
     def nonbonded_interactions(self) -> list[Interaction]:
-
         raise NotImplementedError
 
     @property
     @abstractmethod
     def bonded_interaction_pairs(self) -> list[Interaction]:
-
         raise NotImplementedError
 
     @property
@@ -547,7 +541,6 @@ class CompositeStructure(Structure, AtomContainer):
 
     @universe.setter
     def universe(self, value: Universe) -> None:
-
         try:
             self._universe = weakref.ref(value)
         except TypeError:
@@ -575,7 +568,6 @@ class CompositeStructure(Structure, AtomContainer):
 
     @structure_list.setter
     def structure_list(self, value: list[Structure]) -> None:
-
         self._structure_list = value
 
     def copy(self, position, rotation=None) -> CompositeStructure:
@@ -741,7 +733,6 @@ class Atom(Structure):
         charge: float | None = None,
         **settings: Any,
     ):
-
         self.universe = None
 
         super().__init__(position, velocity, name=settings.get("name", element))
@@ -876,7 +867,6 @@ class Atom(Structure):
 
     @universe.setter
     def universe(self, value: Universe) -> None:
-
         try:
             self._universe = weakref.ref(value)
 
@@ -936,7 +926,6 @@ class Atom(Structure):
     @charge.setter
     @unit_decorator(unit=units.CHARGE)
     def charge(self, value: float) -> None:
-
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
                 if value is not None:
@@ -981,7 +970,6 @@ class Atom(Structure):
     @mass.setter
     @unit_decorator(unit=units.MASS)
     def mass(self, mass: float) -> None:
-
         self._mass = mass
 
     @property
@@ -1004,7 +992,6 @@ class Atom(Structure):
 
     @atom_type.setter
     def atom_type(self, value: int) -> None:
-
         if self._atom_type:
             raise AttributeError("Can't change atom_type once it has been set")
         self._atom_type = value
@@ -1176,7 +1163,6 @@ class Atom(Structure):
                 memo[id(inter)] = inter
 
     def is_equivalent(self, structure: Structure) -> bool:
-
         return isinstance(structure, type(self)) and all(
             [
                 structure.element.symbol == self.element.symbol,
@@ -1282,7 +1268,6 @@ class Molecule(CompositeStructure):
         name: str | None = None,
         **settings: Any,
     ):
-
         self._structure_list = settings["atoms"]
         for structure in self._structure_list:
             structure.parent = self
@@ -1309,7 +1294,6 @@ class Molecule(CompositeStructure):
     @position.setter
     @unit_decorator(unit=units.LENGTH)
     def position(self, position: ThreeVec) -> None:
-
         self._position = position
         self._set_subunit_positions()
 
@@ -1397,7 +1381,6 @@ class Molecule(CompositeStructure):
         return sum(atom.charge for atom in self.atoms if atom.charge is not None)
 
     def is_equivalent(self, structure: Structure) -> bool:
-
         return isinstance(structure, type(self)) and all(
             [
                 structure.formula == self.formula,
@@ -1460,7 +1443,6 @@ class BoundingBox:
     @min.setter
     @unit_decorator(unit=units.LENGTH)
     def min(self, value: np.ndarray) -> None:
-
         self._min = value
 
     @property
@@ -1479,7 +1461,6 @@ class BoundingBox:
     @max.setter
     @unit_decorator(unit=units.LENGTH)
     def max(self, value: np.ndarray) -> None:
-
         self._max = value
 
     @property

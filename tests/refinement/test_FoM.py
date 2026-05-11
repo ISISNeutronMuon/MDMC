@@ -284,14 +284,14 @@ def test_difference_calculation(SQw_dict):
     from_MD._dependent_variables['dep'] = 2 * SQw_dict['dep']
 
     pair = ObservablePair(from_exp, from_MD, weight=1.)
-    assert np.all(pair.calculate_difference() == -SQw_dict['dep'])
+    assert np.all(pair.interpolate_MD_onto_exp() == -SQw_dict['dep'])
 
     pair.exp_obs._dependent_variables['dep'] = 4 * SQw_dict['dep']
-    assert np.all(pair.calculate_difference() == 2 * SQw_dict['dep'])
+    assert np.all(pair.interpolate_MD_onto_exp() == 2 * SQw_dict['dep'])
 
     rescaled_pair = ObservablePair(from_exp, from_MD, weight=1.,
                                        rescale_factor=0.75)
-    assert np.all(rescaled_pair.calculate_difference() == SQw_dict['dep'])
+    assert np.all(rescaled_pair.interpolate_MD_onto_exp() == SQw_dict['dep'])
 
 
 def test_error_calculation(SQw_dict):
@@ -532,7 +532,7 @@ def test_zero_error_RSquaredNoError(pairs):
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
 
     calculator = FoMFactory.create('none',pairs)
-    expected_FoM = np.sum(pair.calculate_difference() ** 2)/21  # 21 points
+    expected_FoM = np.sum(pair.interpolate_MD_onto_exp() ** 2)/21  # 21 points
     normal_FoM = calculator.calculate()
 
     assert np.isclose(normal_FoM, expected_FoM)

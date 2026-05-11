@@ -32,12 +32,10 @@ class SPCConfig(SolventConfig):
     """
 
     def __str__(self):
-
         return "SPC"
 
     @property
     def _solvent_config_dict(self):
-
         return SPC216
 
 
