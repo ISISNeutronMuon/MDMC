@@ -173,7 +173,7 @@ class Unit(str):
         except AttributeError as error:
             raise TypeError(
                 'A Unit can only be multipled by another Unit') from error
-        return self.__class__(self._calculate_string(components), components)
+        return type(self)(self._calculate_string(components), components)
 
     def __truediv__(self, other: Unit) -> Unit:
         """
@@ -200,7 +200,7 @@ class Unit(str):
         except AttributeError as error:
             raise TypeError(
                 'A Unit can only be divided by another Unit') from error
-        return self.__class__(self._calculate_string(components), components)
+        return type(self)(self._calculate_string(components), components)
 
     def __pow__(self, exponent: Number) -> Unit:
         """
@@ -225,7 +225,7 @@ class Unit(str):
                                 ' Units') from error
 
         components = self._calculate_components(exponent, 'pow')
-        return self.__class__(self._calculate_string(components), components)
+        return type(self)(self._calculate_string(components), components)
 
     @property
     def base(self) -> bool:
@@ -722,7 +722,7 @@ class UnitFloat(float):
             Copied ``UnitFloat`` object.
         """
 
-        cls = self.__class__
+        cls = type(self)
         unit_float = cls.__new__(cls, self.real, self.unit)
         memo[id(self)] = unit_float
         for k, v in self.__dict__.items():

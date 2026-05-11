@@ -84,7 +84,7 @@ class Structure(ABC):
         self._position_in_parent = None
 
         LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
-                    self.__class__,
+                    type(self),
                     self.ID,
                     self.name,
                     self.position)
@@ -245,7 +245,7 @@ class Structure(ABC):
             The name of the class
         """
 
-        return self.__class__.__name__
+        return type(self).__name__
 
     @property
     def top_level_structure(self) -> Structure:
@@ -432,7 +432,7 @@ class CompositeStructure(Structure, AtomContainer):
         memo : dict
             The memoization `dict`
         """
-        cls = self.__class__
+        cls = type(self)
         unit = cls.__new__(cls)
         memo[id(self)] = unit
         for k, v in self.__dict__.items():
@@ -490,7 +490,7 @@ class CompositeStructure(Structure, AtomContainer):
         """
 
         name = self.name + ' ' if self.name else ''
-        return (f"{name}{self.__class__.__name__}  "
+        return (f"{name}{type(self).__name__}  "
                 f"formula: {self.formula}  position: {self.position}")
 
     @property
@@ -775,7 +775,7 @@ class Atom(Structure):
             The memoization `dict`
         """
 
-        cls = self.__class__
+        cls = type(self)
         atom = cls.__new__(cls)
         memo[id(self)] = atom
         atom._bonded_interaction_pairs = []
@@ -828,7 +828,7 @@ class Atom(Structure):
             The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
-        return (f'{self.element.symbol} {self.__class__.__name__} '
+        return (f'{self.element.symbol} {type(self).__name__} '
                 f' charge: {self.charge}  position: {self.position}')
 
     @property

@@ -445,7 +445,7 @@ class Control:
         data_array = [
             ["-"],
             [minimizer_type],
-            [self.FoM_calculator.__class__.__name__],
+            [self.type(FoM_calculator).__name__],
             [len(self.observable_pairs)],
             [len(self.fit_parameters)],
         ]
@@ -505,7 +505,7 @@ class Control:
 
         # plural adds "s" to end of "parameter" if there is more than one parameter
         plural = ("" if len(self.fit_parameters) == 1 else "s")
-        return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
+        return (f"{type(self).__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
     def refine(self, n_steps: int = None) -> None:

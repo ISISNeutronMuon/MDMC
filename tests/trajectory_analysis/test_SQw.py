@@ -92,7 +92,7 @@ def test_from_data(SQw_from_data):
     """
 
     assert SQw_from_data.origin == 'experiment'
-    assert SQw_from_data.reader.__class__.__name__ == "LAMPSQw"
+    assert type(SQw_from_data.reader).__name__ == "LAMPSQw"
 
     assert 'Q' in SQw_from_data.independent_variables and \
         'E' in SQw_from_data.independent_variables

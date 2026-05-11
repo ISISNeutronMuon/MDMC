@@ -88,7 +88,7 @@ class DLPOLYAttribute:
 
         LOGGER.debug('%s: {dlpoly: %s}. dlpoly-py'
                      ' instance %s.',
-                     self.__class__,
+                     type(self),
                      self.dlpoly,
                      'added to class' if dlpoly else 'created by class')
 
@@ -318,7 +318,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         ftol = settings.get('ftol')
         min_freq = minimize_every
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
-                    self.__class__, n_steps, ftol)
+                    type(self), n_steps, ftol)
         if not ftol:  # Should handle ftol == 0 or undefined ftol
             self.dlpoly.control['minimisation_criterion'] = 'energy'
             self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
@@ -677,7 +677,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         write(config_filename, atoms, format='dlp4')
         self.dlpoly.load_config(config_filename)
         LOGGER.info('%s configuration written in %s',
-                    self.__class__, config_filename)
+                    type(self), config_filename)
 
     def _add_topology(self, universe: Universe, **settings: Any) -> None:
 
@@ -700,7 +700,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
 
         LOGGER.info('%s Add topology to DL_POLY',
-                    self.__class__)
+                    type(self))
 
         self.dlpoly.field = self._create_field(universe)
 

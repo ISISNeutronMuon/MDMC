@@ -114,7 +114,7 @@ class Configuration(AtomCollection):
     def __eq__(self, other: Configuration) -> bool:
         if id(other) == id(self):
             return True
-        if isinstance(other, self.__class__):
+        if isinstance(other, type(self)):
             for k in self.__slots__:
                 if k == '_universe':
                     # As Configurations can have Universes as an attribute, and
@@ -286,7 +286,7 @@ class Configuration(AtomCollection):
 
         structure_list = self.structure_list + configuration.structure_list
 
-        return self.__class__(*structure_list)
+        return type(self)(*structure_list)
 
     def __sub__(self, configuration: Configuration) -> Configuration:
         """
@@ -443,4 +443,4 @@ class TemporalConfiguration(Configuration):
 
         structure_list = self.structure_list + configuration.structure_list
 
-        return self.__class__(time, *structure_list)
+        return type(self)(time, *structure_list)

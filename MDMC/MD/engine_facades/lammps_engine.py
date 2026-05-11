@@ -97,7 +97,7 @@ class PyLammpsAttribute:
 
         LOGGER.debug('%s: {lmp: %s, communicator: %s, atom_style: %s}. PyLammps'
                      ' instance %s.',
-                     self.__class__,
+                     type(self),
                      self.lmp,
                      None,
                      atom_style,
@@ -386,7 +386,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
             LOGGER.debug('%s Remove %s constraint from fixes: %s',
-                         self.__class__,
+                         type(self),
                          self.universe.constraint_algorithm,
                          self.fixes)
             self.lmp.unfix('constrain')
@@ -397,7 +397,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         maxeval = settings.get('maxeval', 10000)
         LOGGER.info('%s minimize: {n_steps: %s, minimize_every: %s, etol: %s, ftol: %s,'
                     ' maxiter: %s, maxeval: %s}',
-                    self.__class__,
+                    type(self),
                     n_steps,
                     minimize_every,
                     etol,
@@ -445,7 +445,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             # Custom trajectory output just saves the atom ID, type and
             # positions
             LOGGER.debug('%s set trajectory dump output to %s',
-                         self.__class__,
+                         type(self),
                          self.trajectory_file)
             self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
                           self.trajectory_file.name, 'id', 'type', 'x', 'y',
@@ -458,7 +458,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 self.thermostat = 'berendsen'
 
         LOGGER.info('%s run: {n_steps: %s, equilibration: %s}',
-                    self.__class__,
+                    type(self),
                     n_steps,
                     equilibration)
         try:
@@ -704,7 +704,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # The atoms attribute also is not iterable
         n_atoms = self.system_state.natoms
         LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
-                    self.__class__,
+                    type(self),
                     n_atoms)
         atoms = np.zeros([n_atoms, 5])
         tmp_mass = {}
@@ -915,7 +915,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                      ' n_dihedral_types: %s, n_improper_types: %s,'
                      ' max_bonds_per_atom: %s, max_angles_per_atom: %s,'
                      ' max_dihedrals_per_atom: %s, max_impropers_per_atom: %s}',
-                     self.__class__,
+                     type(self),
                      n_atom_types,
                      n_bond_types,
                      n_angle_types,
@@ -977,7 +977,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                      in sorted(self.atom_types.items())]
 
         LOGGER.info('%s Add atoms to LAMMPS',
-                    self.__class__)
+                    type(self))
         for type_ID, atom_type_group in self.atom_types.items():
             # The mass below has associated units, which causes a segfault when
             # it is passed to LAMMPS - cast to float to remove units
@@ -1080,7 +1080,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         LOGGER.info('%s Add topology to LAMMPS',
-                    self.__class__)
+                    type(self))
         # *_ is for pylint as it does not know about the output of partition_interactions
         bonds, angles, dihedrals, disps, couls, others, *_ = partition_interactions(
             set(universe.interactions),
@@ -1102,7 +1102,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         if pair_styles:
             LOGGER.debug('%s Add nonbonded pair styles to LAMMPS: {pair_styles:'
                          ' %s, pair_mods: %s, pair_coeff_cmds: %s}',
-                         self.__class__,
+                         type(self),
                          pair_styles,
                          pair_mods,
                          pair_coeff_cmds)
@@ -1116,7 +1116,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         if bonds:
             LOGGER.debug('%s Add bonds to LAMMPS',
-                         self.__class__)
+                         type(self))
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
             self.lmp.bond_style('hybrid', *{parse_bonded_styles(b) for b in list(bonds)})
@@ -1124,7 +1124,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         if angles:
             LOGGER.debug('%s Add angles to LAMMPS',
-                         self.__class__)
+                         type(self))
             # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             # pylint: disable=not-an-iterable
@@ -1134,7 +1134,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         if dihedrals:
             LOGGER.debug('%s Add dihedrals to LAMMPS',
-                         self.__class__)
+                         type(self))
             # Split dihedrals into proper and impropers
             impropers, propers = partition(dihedrals, lambda d: d.improper)
             self.impropers, self.propers = list(impropers), list(propers)
@@ -1516,7 +1516,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                         msg = ('Some but not all atom velocities set. Atoms with non-zero velocity'
                                ' will be re-scaled to match target temperature, atoms with zero '
                                'velocity will remain stationary.')
-                        LOGGER.info('%s %s', self.__class__, msg)
+                        LOGGER.info('%s %s', type(self), msg)
                         print(msg)
                     # If we have set velocities then "scale" the velocities we have to the correct
                     # temperature
@@ -2062,7 +2062,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
             if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
                         'p_berendsen', 'langevin', 'rescale']:
                 LOGGER.debug('%s Remove %s fix.',
-                             self.__class__,
+                             type(self),
                              name)
                 self.lmp.unfix(name)
 
@@ -2078,7 +2078,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
         LOGGER.debug('%s apply_ensemble_fixes before fixes applied:'
                      ' {fixes: %s}',
-                     self.__class__,
+                     type(self),
                      self.fixes)
 
         if not self.thermostat and not self.barostat:
@@ -2158,7 +2158,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
         LOGGER.debug('%s apply_ensemble_fixes after fixes applied:'
                      ' {fixes: %s}',
-                     self.__class__,
+                     type(self),
                      self.fixes)
 
 

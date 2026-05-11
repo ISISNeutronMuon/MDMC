@@ -22,7 +22,7 @@ class MDEngine(ABC):
                 ' minimizer: {minimizer},\n'
                 ' reset_config: {reset_config},\n'
                 ' fit_parameters: {fit_parameters},\n'
-                ' settings: {settings}}}>').format(self.__class__.__name__,
+                ' settings: {settings}}}>').format(type(self).__name__,
                                                    **self.__dict__)
 
     @property

@@ -77,7 +77,7 @@ class InstlTestBase(ABC):
         """
 
         LOGGER.info('%s %s installation test passed',
-                    self.__class__,
+                    type(self),
                     self.name)
 
     @abstractmethod
@@ -151,7 +151,7 @@ class InstlTestCore(InstlTestBase):
                     self._success = False
                     LOGGER.error('%s %s installation test failed because the'
                                  ' following package/module did not import: %s',
-                                 self.__class__,
+                                 type(self),
                                  self.name,
                                  fso_base,
                                  exc_info=True)
@@ -161,7 +161,7 @@ class InstlTestCore(InstlTestBase):
                     LOGGER.error('%s %s installation test failed because an'
                                  ' exception occured (other than an'
                                  ' ImportError) while MDMC was being imported.',
-                                 self.__class__,
+                                 type(self),
                                  self.name,
                                  exc_info=True)
                     raise Exception('An Exception (other than an ImportError)'
@@ -196,7 +196,7 @@ class InstlTestLAMMPS(InstlTestBase):
                          ' interface could not be imported, as lammps.py is not'
                          ' in the PYTHONPATH. Please see the LAMMPS'
                          ' documentation for how to rectify this. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)
@@ -205,7 +205,7 @@ class InstlTestLAMMPS(InstlTestBase):
             LOGGER.error('%s %s installation test failed because the following'
                          ' Exception was thrown while the LAMMPS Python'
                          ' interface was being imported: %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)
@@ -222,7 +222,7 @@ class InstlTestLAMMPS(InstlTestBase):
                          ' a shared library and the LAMMPS library is in the'
                          ' PYTHONPATH. Please see the LAMMPS documentation'
                          ' for further information. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)
@@ -231,7 +231,7 @@ class InstlTestLAMMPS(InstlTestBase):
             LOGGER.error('%s %s installation test failed because the following'
                          ' Exception was thrown while a PyLammps instance was'
                          ' being initialized. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)
@@ -266,7 +266,7 @@ class InstlTestX11Forwarding(InstlTestBase):
             self._success = False
             LOGGER.error('%s %s installation test failed because tkinter could'
                          ' not be imported. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)
@@ -280,7 +280,7 @@ class InstlTestX11Forwarding(InstlTestBase):
                          ' being run within Docker, please see the MDMC'
                          ' installation instructions for how to enable X11'
                          ' forwarding. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)
@@ -313,7 +313,7 @@ class InstlTestDynamicPlottingDependencies(InstlTestBase):
             LOGGER.error('%s %s installation test failed because %s could not'
                          ' be imported. Please install this library to use'
                          ' dynamic plotting. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          err.name,
                          self.LOG_ERROR_MSG,
@@ -323,7 +323,7 @@ class InstlTestDynamicPlottingDependencies(InstlTestBase):
             LOGGER.error('%s %s installation test failed because the following'
                          ' Exception was thrown when the required dependencies'
                          ' were being imported. %s',
-                         self.__class__,
+                         type(self),
                          self.name,
                          self.LOG_ERROR_MSG,
                          exc_info=True)

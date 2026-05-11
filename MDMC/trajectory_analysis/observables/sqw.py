@@ -542,7 +542,7 @@ class AbstractSQw(SQwMixins, Observable):
         fqt_types = {'SQw': 'FQt',
                      'SQwCoherent': 'FQt_coh',
                      'SQwIncoherent': 'FQt_incoh'}
-        return fqt_types[self.__class__.__name__]
+        return fqt_types[type(self).__name__]
 
     @staticmethod
     def calculate_E(nE: int, dt: float) -> np.ndarray:

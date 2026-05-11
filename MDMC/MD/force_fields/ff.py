@@ -364,7 +364,7 @@ class FileForceField(ForceField):
                    ' Atom tuples should have the same groups in the same'
                    ' order.')
             LOGGER.error('%s: %s',
-                         self.__class__,
+                         type(self),
                          msg)
             raise ValueError(msg)
 
@@ -475,7 +475,7 @@ class FileForceField(ForceField):
             msg = ('All atoms of the Coulombic interaction must have the same'
                    f' OPLS charge ({matching_atoms})')
             LOGGER.error('%s %s',
-                         self.__class__,
+                         type(self),
                          msg)
             raise ValueError(msg)
         self._set_interaction_function(coulombic,
@@ -522,7 +522,7 @@ class FileForceField(ForceField):
                 msg = ('Currently only force fields which only use like-like'
                        ' Dispersion terms are implemented')
                 LOGGER.error('%s: {atom_pair: %s}. %s',
-                             self.__class__,
+                             type(self),
                              atom_pair,
                              msg)
                 raise ValueError(msg)
@@ -611,7 +611,7 @@ class FileForceField(ForceField):
                        f' atom name. {atom.name} is not an OPLS atom type of atom'
                        ' name.')
                 LOGGER.error('%s %s',
-                             self.__class__,
+                             type(self),
                              msg,
                              exc_info=1)
                 raise ValueError(msg) from err

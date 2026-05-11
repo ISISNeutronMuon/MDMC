@@ -150,7 +150,7 @@ class Universe(AtomContainer):
                                    self.dispersive_solver):
             msg = 'No other solver may be passed if kspace_solver is passed.'
             LOGGER.error('%s has kspace_solver and %s. %s',
-                         self.__class__,
+                         type(self),
                          'electrostatic_solver' if self.electrostatic_solver
                          else 'dispersive_solver',
                          msg)
@@ -159,7 +159,7 @@ class Universe(AtomContainer):
         self.constraint_algorithm = settings.get('constraint_algorithm')
 
         LOGGER.info(r'%s created: {dimensions:%s}',
-                    self.__class__,
+                    type(self),
                     self.dimensions)
 
         if self.verbose:
@@ -182,7 +182,7 @@ class Universe(AtomContainer):
     def __eq__(self, other) -> bool:
         if id(other) == id(self):
             return True
-        if isinstance(other, self.__class__):
+        if isinstance(other, type(self)):
             for k, v in self.__dict__.items():
                 try:
                     iter(v)
@@ -223,7 +223,7 @@ class Universe(AtomContainer):
             if dimensions <= 0:
                 msg = 'Only positive values for the Universe dimensions are currently supported.'
                 LOGGER.error('%s: {dimensions: %s} %s',
-                             self.__class__,
+                             type(self),
                              dimensions,
                              msg)
                 raise ValueError(msg)
@@ -234,7 +234,7 @@ class Universe(AtomContainer):
                     msg = ('Only positive values for the Universe dimensions '
                            'are currently supported.')
                     LOGGER.error('%s: {dimensions: %s} %s',
-                                 self.__class__,
+                                 type(self),
                                  dimensions,
                                  msg)
                     raise ValueError(msg)
@@ -242,14 +242,14 @@ class Universe(AtomContainer):
             else:
                 msg = '3 dimensions must be specified'
                 LOGGER.error('%s: {dimensions: %s} %s',
-                             self.__class__,
+                             type(self),
                              dimensions,
                              msg)
                 raise ValueError(msg)
         else:
             msg = 'dimensions must be a float or 3 element list of floats.'
             LOGGER.error('%s: {dimensions: %s} %s',
-                         self.__class__,
+                         type(self),
                          dimensions,
                          msg)
             raise TypeError(msg)
@@ -722,7 +722,7 @@ class Universe(AtomContainer):
             msg = ('assignments cannot be made to atom_type_interactions keys'
                    'which already possess values.')
             LOGGER.error('%s: {key: %s, atom_type_interactions: %s} %s',
-                         self.__class__,
+                         type(self),
                          key,
                          self.atom_type_interactions,
                          msg)
@@ -811,7 +811,7 @@ class Universe(AtomContainer):
                    ' fill the universe with.')
             LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
                          ' %s',
-                         self.__class__,
+                         type(self),
                          num_density,
                          num_struc_units,
                          msg)
@@ -820,7 +820,7 @@ class Universe(AtomContainer):
             msg = ('The fill method takes either num_density or'
                    ' num_struc_units as a parameter.')
             LOGGER.error('%s %s',
-                         self.__class__,
+                         type(self),
                          msg)
             raise ValueError(msg)
 
@@ -885,7 +885,7 @@ class Universe(AtomContainer):
                 msg = ('add_dispersions parameter of add_force_field method'
                        'must be a list of Atoms or a bool.')
                 LOGGER.error('%s: {add_dispersions: %s}',
-                             self.__class__,
+                             type(self),
                              add_dispersions)
                 raise TypeError(msg)
             # Get unique atom types and add dispersions for each of these
@@ -1055,7 +1055,7 @@ class Universe(AtomContainer):
             msg = ('The universe has already been solvated. The density of a'
                    ' previously added solvent cannot be changed.')
             LOGGER.error('%s: {solvent_density: %s, density: %s}. %s',
-                         self.__class__,
+                         type(self),
                          self.solvent_density,
                          density, msg)
             raise ValueError(msg)
@@ -1200,7 +1200,7 @@ class KSpaceSolver:
             The name of the class
         """
 
-        return self.__class__.__name__
+        return type(self).__name__
 
 
 class Ewald(KSpaceSolver):
@@ -1233,7 +1233,7 @@ class PPPM(KSpaceSolver):
         Two KSpaceSolvers are equal if their __dict__ are equal
         """
 
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return False
         return all(v == getattr(other, k)
                    for k, v in self.__dict__.items())
@@ -1280,7 +1280,7 @@ class ConstraintAlgorithm:
             The name of the class
         """
 
-        return self.__class__.__name__
+        return type(self).__name__
 
     @property
     def max_iterations(self) -> int:

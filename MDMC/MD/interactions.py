@@ -88,7 +88,7 @@ class Interaction(ABC):
         """
 
         self.function = settings.get('function')
-        self.name = self.__class__.__name__
+        self.name = type(self).__name__
 
     def __deepcopy__(self, memo=None) -> NoReturn:
         """
@@ -257,7 +257,7 @@ class NonBondedInteraction(Interaction):
         self.cutoff = settings.get('cutoff')
         super().__init__(**settings)
         LOGGER.info('%s created: {function:%s, atom_types:%s}',
-                    self.__class__,
+                    type(self),
                     self.function,
                     self.atom_types)
 
@@ -285,7 +285,7 @@ class NonBondedInteraction(Interaction):
             ``NonBondedInteraction``
         """
 
-        return (f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  '
+        return (f'{type(self).__name__} interaction  atom_types: {self.atom_types}  '
                 f' cutoff: {self.cutoff}')
 
     @property
@@ -629,7 +629,7 @@ class Coulombic(NonBondedInteraction):
             self.function = Coulomb(charge)
             LOGGER.warning('%s: Coulombic interaction for the Atom object'
                            'initialized with the Coulomb interaction function.',
-                           self.__class__)
+                           type(self))
 
     def __len__(self) -> int:
         """
@@ -762,7 +762,7 @@ class BondedInteraction(Interaction):
         self.atoms = list(atom_tuples)
         super().__init__(**settings)
         LOGGER.info('%s created: {function:%s, atom IDs:%s}',
-                    self.__class__,
+                    type(self),
                     self.function,
                     [tuple(map(lambda a: a.ID, tpl)) for tpl in self.atoms])
 
@@ -796,7 +796,7 @@ class BondedInteraction(Interaction):
             The type, and number of atoms of the ``BondedInteraction``
         """
 
-        return f'{self.__class__.__name__} interaction applied to {len(self.atoms)} atom tuples'
+        return f'{type(self).__name__} interaction applied to {len(self.atoms)} atom tuples'
 
     def is_equivalent(self, other) -> bool:
 
@@ -816,7 +816,7 @@ class BondedInteraction(Interaction):
         """
 
         return (id(other) == id(self) or
-                (isinstance(other, self.__class__)
+                (isinstance(other, type(self))
                 and self.atom_types == other.atom_types
                 and self.function == other.function))
 
