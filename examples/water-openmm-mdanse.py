@@ -9,6 +9,7 @@ from MDMC.readers.observables.LAMPSQw import LAMPSQw
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.trajectory_analysis.observables.mdanse_observable import (
                  MDANSEObservable,
+                 create_mdanse_resolution,
                  get_default_mdanse_settings,
 )
 # Currently MDMC uses OMP_NUM_THREADS to control the number of processes
@@ -54,6 +55,7 @@ def run_everything():
                                     auto_scale=True)
 
     job_settings = md_observable.initial_parameters()
+    mdanse_resolution = create_mdanse_resolution(13.6,)
 
     new_settings = {
         "running_mode": ("multicore", 8),
@@ -63,7 +65,8 @@ def run_everything():
                     'n_samples': 500000,
                     'n_vectors': 120,
                     'seed': 0,
-                    'force_equal_weights': False})
+                    'force_equal_weights': False}),
+        "instrument_resolution": mdanse_resolution,
     }
     md_observable.set_parameters(new_settings)
 

@@ -19,7 +19,9 @@ from MDMC.readers.observables.xml_SQw import XML_SQw
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.trajectory_analysis.observables.mdanse_observable import (
                  MDANSEObservable,
+                 create_mdanse_resolution,
                  get_default_mdanse_settings,
+                 MDANSE_RESOLUTION_FUNCTIONS,
 )
 
 
@@ -68,6 +70,8 @@ def run_everything():
                     'cont_slicing': True}]
 
     start_params = get_default_mdanse_settings("SQw")
+    print(f"Available resolution functions: {MDANSE_RESOLUTION_FUNCTIONS}")
+    mdanse_resolution = create_mdanse_resolution(exp_datasets[0]['resolution'],)
 
     data_parser = XML_SQw('../doc/tutorials/data/Well_s_q_omega_Ar_data.xml')
 
@@ -92,6 +96,7 @@ def run_everything():
 
     new_settings = {
         "running_mode": ("multicore", 8),
+        "instrument_resolution": mdanse_resolution,
     }
     md_observable.set_parameters(new_settings)
 

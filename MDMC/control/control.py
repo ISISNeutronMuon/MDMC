@@ -43,8 +43,8 @@ from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
-from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.mdanse_observable import MDANSEObservable
+from MDMC.trajectory_analysis.observables.obs import Observable
 
 
 class DumpFreq(Enum):

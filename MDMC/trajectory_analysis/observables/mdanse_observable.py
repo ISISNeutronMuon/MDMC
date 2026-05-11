@@ -13,6 +13,7 @@ import h5py
 import numpy as np
 import numpy.typing as npt
 from MDANSE.Framework.Configurators.IConfigurator import IConfigurator
+from MDANSE.Framework.InstrumentResolutions.IInstrumentResolution import IInstrumentResolution
 from MDANSE.Framework.Jobs.IJob import IJob
 from MDANSE.Framework.Units import measure
 from MDANSE.IO.IOUtils import summarise_array
@@ -37,6 +38,8 @@ ENERGY_MDANSE_TO_MDMC = measure(1.0, iunit="rad/ps", equivalent=True).toval("meV
 Q_MDANSE_TO_MDMC = measure(1.0, iunit="1/nm").toval("1/ang")
 R_MDANSE_TO_MDMC = measure(1.0, iunit="nm").toval("ang")
 TIME_MDANSE_TO_MDMC = measure(1.0, iunit="ps").toval("fs")
+
+MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.indirect_subclasses()
 
 
 def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, **parameters):
@@ -63,6 +66,7 @@ def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, *
         file_object.close()
         job_instance = IJob.create(job_type)
         settings = get_default_mdanse_settings(job_type)
+        settings["instrument_resolution"] = ("ideal", {})
         settings["frames"] = [
             0,
             len(MD_input),
@@ -75,7 +79,6 @@ def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, *
             settings["q_vectors"][1]["shells"] = q_shells
             settings["q_vectors"][1]["width"] = q_shells[-1]
         settings["trajectory"] = file_path
-        settings["instrument_resolution"] = ("ideal", {})
         settings["output_files"] = [output_filename, ["MDAFormat"], "no logs"]
         job_instance.setup(settings)
         job_instance.run(settings, status=True)
@@ -120,6 +123,25 @@ def get_default_mdanse_settings(job_name: str) -> dict[str, Any]:
             temp_conf = IConfigurator.create(value[0], key)
             defaults[key] = temp_conf._default
     return defaults
+
+
+def create_mdanse_resolution(
+    ueV_resolution: float, resolution_function: str = "Gaussian", centre: float = 0.0
+):
+    if ueV_resolution is None or np.isclose(ueV_resolution, 0.0):
+        return ("Ideal", {})
+    ueV_to_radperps = measure(1.0, iunit="ueV", ounit="rad/ps", equivalent=True).toval()
+    width_mdanse = ueV_resolution * ueV_to_radperps
+    centre_mdanse = centre * ueV_to_radperps
+    temp_instance = IInstrumentResolution.create(resolution_function)
+    par_dict = {}
+    par_dict.update(temp_instance.settings)
+    for key in par_dict:
+        if "sigma" in key:
+            par_dict[key] = width_mdanse
+        elif "mu" in key:
+            par_dict[key] = centre_mdanse
+    return (resolution_function, par_dict)
 
 
 def create_mock_trajectory(time_step: float, n_steps: int, universe: Universe | None = None) -> str:
