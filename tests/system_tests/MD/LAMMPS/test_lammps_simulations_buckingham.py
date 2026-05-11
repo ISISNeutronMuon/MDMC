@@ -11,6 +11,8 @@ difference is whether the LAMMPS simulation was run through MDMC.
 import numpy as np
 import pytest
 
+pytest.importorskip("MDMC.MD.engine_facades.lammps_engine")
+
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
@@ -142,11 +144,11 @@ def universe():
     """
     The following Buckingham potential parameters were first derived from rearranging the equations
     and given parameters at: https://water.lsbu.ac.uk/water/water_models.html#af.
-    
+
     These were then manually adjusted "by eye" to graphically "fit" that of the Lennard-Jones
-    potential in the 3-12 angstrom range. (Hence the expected values should be similar to that 
+    potential in the 3-12 angstrom range. (Hence the expected values should be similar to that
     of Lennard-Jones, but not identical)
-    
+
     The values have been rounded to 2 d.p. for readability
     """
     buck = Buckingham(1194446.57, 3.67, 4914.96)
