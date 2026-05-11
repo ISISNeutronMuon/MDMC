@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: fetch  # grabs master to compare if Docker build files changed
         run: git fetch origin master
 
@@ -34,7 +34,7 @@ jobs:
         testset: ["not lammps and not dlpoly"]
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11.2'
           architecture: x64
@@ -59,23 +59,25 @@ jobs:
         continue-on-error: true
 
       - name: Upload code coverage report
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
   linting:
-    name: Ruff
+    name: Lint - ${{ matrix.type }}
     strategy:
       fail-fast: false
+      matrix:
+        type: ["check", "format --check"]
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: astral-sh/ruff-action@v3
         with:
           src: MDMC
-          args: check
+          args: ${{ matrix.type }}
           version: ${{ env.ruff_version }}
 
   lint_copyright:
@@ -85,7 +87,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: astral-sh/ruff-action@v3
         with:
           src: MDMC
@@ -98,9 +100,9 @@ jobs:
     needs: build
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11.2'
           architecture: x64
@@ -126,7 +128,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: apt get
       run: |
         sudo apt-get update
