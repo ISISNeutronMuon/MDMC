@@ -24,6 +24,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Physics",
   "Typing :: Typed"
   ]
+license = {file = "LICENSE"}
 
 [project.urls]
 Homepage = "https://mdmcproject.org/"
@@ -142,3 +143,6 @@ convention = "numpy"
 profile = "black"
 known-first-party = ["MDMC"]
 required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.flake8-copyright]
+author = "MDMC Developers"

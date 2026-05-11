@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
 
+env:
+  ruff_version: 0.15.5
+
 jobs:
   build:
     name: Build docker container
@@ -63,24 +66,31 @@ jobs:
 
   linting:
     name: Ruff
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: apt get
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
-        # we use cat and grep here to get the version-pinned pylint version from .dev_requirements.txt; thus we can version control pylint
-      - name: pip3 install
-        run: |
-          sudo pip3 install --upgrade pip
-          sudo pip3 install .[lint,DLPOLY,LAMMPS]
-      - name: ruff
-        run: |
-          ruff check MDMC
-          exit $?
+    strategy:
+      fail-fast: false
 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          src: MDMC
+          args: check
+          version: ${{ env.ruff_version }}
+
+  lint_copyright:
+    name: Copyright
+    strategy:
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          src: MDMC
+          args: check --preview --select CPY
+          version: ${{ env.ruff_version }}
 
   notebooks:
     name: Notebooks
