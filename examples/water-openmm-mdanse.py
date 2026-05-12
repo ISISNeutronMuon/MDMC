@@ -3,7 +3,7 @@ import os
 import sys
 
 from MDMC.MD import *
-from MDMC.MD.force_fields.TIP3P import TIP3PMol, add_tip3p_ff
+from MDMC.MD.force_fields.three_site_water import ThreeSiteWater, add_three_site_water_ff
 from MDMC.control import Control
 from MDMC.readers.observables.LAMPSQw import LAMPSQw
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
@@ -23,8 +23,8 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
 # 24.83602653 is 512 water molecules
 def run_everything():
     universe = Universe(dimensions=24.83602653)
-    universe.fill(TIP3PMol(constrained=False), num_density=0.03356718472021752)
-    add_tip3p_ff(universe, cutoff=10.0, ewald=1e-6)
+    universe.fill(ThreeSiteWater(model_name="TIP3P"), num_density=0.03356718472021752)
+    add_three_site_water_ff(universe, cutoff=10.0, ewald=1e-4, model_name="TIP3P")
 
     # Setup refinement
     QENS = [
