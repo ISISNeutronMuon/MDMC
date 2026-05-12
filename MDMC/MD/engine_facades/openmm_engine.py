@@ -201,8 +201,10 @@ class OpenMMEngine(MDEngine):
                 if mdmc_bondangle.constrained:
                     b = bond_dists[(i, j)]
                     c = bond_dists[(j, k)]
-                    a = np.sqrt(b ** 2 + c ** 2 - 2 * b * c * np.cos(
-                        np.deg2rad(equil_angle))) * unit.angstroms
+                    a = (
+                        np.sqrt(b**2 + c**2 - 2 * b * c * np.cos(np.deg2rad(equil_angle)))
+                        * unit.angstroms
+                    )
                     # openmm doesn't have angle constraints, we expect
                     # bond constraints to be already set if angle
                     # constraints are set so we assume that bond constraints
