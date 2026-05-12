@@ -153,7 +153,6 @@ class InteractionFunction:
 
 @repr_decorator("parameters")
 class DummyInteractionFunction(InteractionFunction):
-
     def __init__(self):
         super().__init__(val_dict={})
 
