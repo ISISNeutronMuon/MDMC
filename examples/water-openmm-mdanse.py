@@ -82,9 +82,9 @@ def run_everything():
 
     # only refit the LJ parameters on oxygen
     for p in universe.parameters.as_array:
-        if p.parameter_name == "tip3p_O_nonbonded_epsilon":
+        if p.parameter_name == "TIP3P-O-nonbonded_epsilon":
             p.constraints = [0.4, 0.8]
-        elif p.parameter_name == "tip3p_O_nonbonded_sigma":
+        elif p.parameter_name == "TIP3P-O-nonbonded_sigma":
             p.constraints = [2.5, 3.5]
         else:
             p.fixed = True
