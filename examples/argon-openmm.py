@@ -4,7 +4,9 @@ For info on syntax see the MDMC docs, including the jupyter notebook tutorials.
 A copy of the data fitting against is assumed to be located in
 ../doc/tutorials/data/Well_s_q_omega_Ar_data.xml
 """
+
 import os
+
 # Currently MDMC uses OMP_NUM_THREADS to control the number of processes
 # in the sqw calculation
 os.environ["OMP_NUM_THREADS"] = "4"
@@ -26,7 +28,7 @@ density = 0.0176
 # 30.7553 A will contain 512 Ar atoms
 # 38.4441 A will contain 1000 Ar atoms
 universe = Universe(dimensions=38.4441)
-Ar = Atom('Ar[36]', charge=0.)
+Ar = Atom("Ar[36]", charge=0.0)
 # Calculating number of Ar atoms needed to obtain density
 universe.fill(Ar, num_density=density)
 
@@ -37,7 +39,7 @@ NonBondedForce(
     Ar.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.0, epsilon=1.0, sigma=3.0)
+    function=NonBonded(charge=0.0, epsilon=1.0, sigma=3.0),
 )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
@@ -47,9 +49,9 @@ simulation = Simulation(
     universe,
     engine="openmm",
     time_step=10.18893,
-    temperature=120.,
+    temperature=120.0,
     traj_step=15,
-    openmm_platform="OpenCL"
+    openmm_platform="OpenCL",
 )
 
 # Energy Minimization and equilibration
@@ -59,45 +61,48 @@ simulation.run(n_steps=30000, equilibration=True)
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental
 # dataset
-exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
-                 'type':'SQw',
-                 'reader':'xml_SQw',
-                 'weight':1.,
-                 'resolution':None,
-                 'cont_slicing': True}]
+exp_datasets = [
+    {
+        "file_name": "../doc/tutorials/data/Well_s_q_omega_Ar_data.xml",
+        "type": "SQw",
+        "reader": "xml_SQw",
+        "weight": 1.0,
+        "resolution": None,
+        "cont_slicing": True,
+    }
+]
 
-data_parser = XML_SQw('../doc/tutorials/data/Well_s_q_omega_Ar_data.xml')
+data_parser = XML_SQw("../doc/tutorials/data/Well_s_q_omega_Ar_data.xml")
 
 exp_observable = SQw()
-exp_observable.read_from_file('xml_SQw', '../doc/tutorials/data/Well_s_q_omega_Ar_data.xml')
+exp_observable.read_from_file("xml_SQw", "../doc/tutorials/data/Well_s_q_omega_Ar_data.xml")
 md_observable = SQw()
-md_observable.origin = 'MD'
+md_observable.origin = "MD"
 for obs in {exp_observable, md_observable}:
     obs.name = "SQw"
-md_observable.independent_variables = copy.deepcopy(
-    exp_observable.independent_variables)
+md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
 
-observable_pair = ObservablePair(exp_obs=exp_observable,
-                                 MD_obs=md_observable,
-                                 weight=1.0,
-                                 rescale_factor=1.0,
-                                 auto_scale=True)
+observable_pair = ObservablePair(
+    exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
+)
 
 fit_parameters = universe.parameters
-fit_parameters['sigma'].constraints = [2.0, 4.0]
-fit_parameters['epsilon'].constraints = [0.5, 1.5]
+fit_parameters["sigma"].constraints = [2.0, 4.0]
+fit_parameters["epsilon"].constraints = [0.5, 1.5]
 
 # Specify how the refinement is going to be controlled
-control = Control(simulation=simulation,
-                  exp_datasets=exp_datasets,
-                  fit_parameters=fit_parameters,
-                  observable_pairs= [observable_pair],
-                  reset_config=True,
-                  file_dump_frequency="best",
-                  file_dump_extent="all",
-                  equilibration_steps=30000,
-                  MD_steps=16000,
-                  FoM_options={'error': 'none'})
+control = Control(
+    simulation=simulation,
+    exp_datasets=exp_datasets,
+    fit_parameters=fit_parameters,
+    observable_pairs=[observable_pair],
+    reset_config=True,
+    file_dump_frequency="best",
+    file_dump_extent="all",
+    equilibration_steps=30000,
+    MD_steps=16000,
+    FoM_options={"error": "none"},
+)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 control.refine(n_steps=1000)

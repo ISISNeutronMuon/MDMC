@@ -1,8 +1,12 @@
+import copy
 import os
 
 from MDMC.MD import *
 from MDMC.MD.force_fields.four_site_water import FourSiteWater, add_four_site_water_ff
 from MDMC.control import Control
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.trajectory_analysis.observables.sqw import SQw
+
 # Currently MDMC uses OMP_NUM_THREADS to control the number of processes
 # in the sqw calculation
 os.environ["OMP_NUM_THREADS"] = "4"
@@ -35,23 +39,36 @@ simulation.run(n_steps=30000, equilibration=True)
 
 
 # Setup refinement
-QENS = [{
-    'file_name':'../doc/tutorials/data/263K05Awat_LAMP',
-    'type':'SQw',
-    'reader':'LAMPSQw',
-    'weight':1.,
-    'auto_scale':True,
-    'use_FFT': True,
-    'resolution':{'file': '../doc/tutorials/data/262p7K0A5van_LAMP'},
-    'cont_slicing': True,
-}]
+QENS = [
+    {
+        "file_name": "../doc/tutorials/data/263K05Awat_LAMP",
+        "type": "SQw",
+        "reader": "LAMPSQw",
+        "weight": 1.0,
+        "auto_scale": True,
+        "use_FFT": True,
+        "resolution": {"file": "../doc/tutorials/data/262p7K0A5van_LAMP"},
+        "cont_slicing": True,
+    }
+]
 
+exp_observable = SQw()
+exp_observable.read_from_file("LAMPSQw", "../doc/tutorials/data/263K05Awat_LAMP")
+md_observable = SQw()
+md_observable.origin = "MD"
+for obs in {exp_observable, md_observable}:
+    obs.name = "SQw"
+md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
+
+observable_pair = ObservablePair(
+    exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
+)
 
 # only refit the LJ parameters on oxygen
 for p in universe.parameters.as_array:
-    if p.parameter_name == 'TIP4P-Ewald-O-nonbonded_epsilon':
+    if p.parameter_name == "TIP4P-Ewald-O-nonbonded_epsilon":
         p.constraints = [0.5, 0.8]
-    elif p.parameter_name == 'TIP4P-Ewald-O-nonbonded_sigma':
+    elif p.parameter_name == "TIP4P-Ewald-O-nonbonded_sigma":
         p.constraints = [2.95, 3.35]
     elif p.parameter_name == 'TIP4P-Ewald-HOH-harmonicangle_equilibrium_state':
         p.constraints = [80, 120]
@@ -63,12 +80,13 @@ control = Control(
     simulation=simulation,
     exp_datasets=QENS,
     fit_parameters=universe.parameters,
+    observable_pairs=[observable_pair],
     reset_config=True,
     equilibration_steps=30000,
     minimizer_type="CMAES",
     MD_steps=424620,
     energy_resolution=13.6,
-    FoM_options={'error': 'none'},
+    FoM_options={"error": "none"},
 )
 
 # Run refinement
