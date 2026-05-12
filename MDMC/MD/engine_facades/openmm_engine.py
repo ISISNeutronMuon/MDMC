@@ -100,6 +100,7 @@ class OpenMMEngine(MDEngine):
         for i, atom in enumerate(self.universe.atoms):
             self.MDMC_ID_to_idx[atom.ID] = i
             self.openmm_system.addParticle(atom.mass * unit.amu)
+            self.bond_graph.add_node(i)
 
         for atom in self.universe.atoms:
             if isinstance(atom, AverageSite3P):
