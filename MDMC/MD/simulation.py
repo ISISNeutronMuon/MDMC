@@ -23,11 +23,13 @@ from __future__ import annotations
 import logging
 import warnings
 from collections import defaultdict
+from collections.abc import Sequence
 from itertools import count, filterfalse, product
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
+from ase import Atoms
 from statsmodels.tsa.stattools import kpss
 from verbosemanager import VerboseManager
 
@@ -38,10 +40,12 @@ from MDMC.common.decorators import (
     unit_decorator,
     unit_decorator_getter,
 )
+from MDMC.MD.constraints import ConstraintAlgorithm, Shake
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.interactions import Coulombic, Dispersion
+from MDMC.MD.kspace_solvers import KSpaceSolver
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
 from MDMC.trajectory_analysis.trajectory import Configuration
@@ -54,9 +58,7 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {"DYNAMIC_FORCE_FIELD_LIST": ", ".join(ForceFieldFactory.available_names())}
-
-# pylint: disable=too-few-public-methods
-# as many classes here are small MD engine compatibility
+DEFAULT_CONSTRAINT = Shake(1e-4, 100)
 
 
 @repr_decorator(
@@ -82,20 +84,22 @@ class Universe(AtomContainer):
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
     structures : list, optional
         ``Structure`` objects contained in the ``Universe``. Default is None.
-    **settings
-        ``kspace_solver`` (`KSpaceSolver`)
-            The k-space solver to be used for both electrostatic and dispersive
-            interactions. If this is passed then no ``electrostatic_solver`` or
-            ``dispersive_solver`` may be passed.
-        ``electrostatic_solver`` (`KSpaceSolver`)
-            The k-space solver to be used for electrostatic interactions.
-        ``dispersive_solver`` (`KSpaceSolver`)
-            The k-space solver to be used for dispersive interactions.
-        ``constraint_algorithm`` (`ConstraintAlgorithm`)
-            The constraint algorithm which will be applied to constrained
-            ``BondedInteractions``.
-        ``verbose`` (`str`)
-            If the output of the class instantiation should be reported, default to True.
+
+    Other Parameters
+    ----------------
+    kspace_solver : KSpaceSolver
+        The k-space solver to be used for both electrostatic and dispersive
+        interactions. If this is passed then no ``electrostatic_solver`` or
+        ``dispersive_solver`` may be passed.
+    electrostatic_solver : KSpaceSolver
+        The k-space solver to be used for electrostatic interactions.
+    dispersive_solver : KSpaceSolver
+        The k-space solver to be used for dispersive interactions.
+    constraint_algorithm : ConstraintAlgorithm
+        The constraint algorithm which will be applied to constrained
+        ``BondedInteractions``.
+    verbose : bool
+        If the output of the class instantiation should be reported, default to True.
 
     Attributes
     ----------
@@ -142,7 +146,18 @@ class Universe(AtomContainer):
     nbis_by_atom_type_pairs
     """
 
-    def __init__(self, dimensions, force_field=None, structures=None, **settings):
+    def __init__(
+        self,
+        dimensions,
+        force_field: str | None = None,
+        structures=None,
+        *,
+        kspace_solver: KSpaceSolver | None = None,
+        electrostatic_solver: KSpaceSolver | None = None,
+        dispersive_solver: KSpaceSolver | None = None,
+        constraint_algorithm: ConstraintAlgorithm | None = None,
+        verbose: bool = True,
+    ):
 
         self.dimensions = dimensions
         self._parameters = None
@@ -160,24 +175,23 @@ class Universe(AtomContainer):
         else:
             self._force_fields = None
 
-        self.kspace_solver = settings.get("kspace_solver")
-        self.electrostatic_solver = settings.get("electrostatic_solver")
-        self.dispersive_solver = settings.get("dispersive_solver")
-
-        self.verbose = settings.get("verbose", True)
         # kspace_solver is mutually exclusive with the other two solver
         # attributes
-        if self.kspace_solver and (self.electrostatic_solver or self.dispersive_solver):
+        if kspace_solver and (electrostatic_solver or dispersive_solver):
             msg = "No other solver may be passed if kspace_solver is passed."
             LOGGER.error(
                 "%s has kspace_solver and %s. %s",
                 self.__class__,
-                "electrostatic_solver" if self.electrostatic_solver else "dispersive_solver",
+                "electrostatic_solver" if electrostatic_solver else "dispersive_solver",
                 msg,
             )
             raise ValueError(msg)
 
-        self.constraint_algorithm = settings.get("constraint_algorithm")
+        self.kspace_solver = kspace_solver
+        self.electrostatic_solver = electrostatic_solver
+        self.dispersive_solver = dispersive_solver
+        self.constraint_algorithm = constraint_algorithm
+        self.verbose = verbose
 
         LOGGER.info(r"%s created: {dimensions:%s}", self.__class__, self.dimensions)
 
@@ -869,7 +883,7 @@ class Universe(AtomContainer):
         self,
         force_field: str,
         *interactions: Interaction,
-        **settings: Any,
+        add_dispersions: list[Atoms] | bool = False,
     ) -> None:
         """
         Adds a force field to the specified ``interactions``.  If no
@@ -885,19 +899,20 @@ class Universe(AtomContainer):
             DYNAMIC_FORCE_FIELD_LIST
         *interactions
             ``Interaction`` objects to parameterize with the ``ForceField``
-        **settings
-            ``add_dispersions`` (`bool` or `list` of ``Atoms``)
-                If `True`, a ``Dispersion`` interaction will be added to all
-                atoms in the ``Universe``. If a list of ``Atom`` objects is
-                provided, the ``Dispersion`` will be added to these instead. Any
-                added ``Dispersion`` interactions (and any previously defined)
-                will then be parametrized by the ``ForceField``. The
-                ``Dispersion`` interactions added will only be like-like. By
-                default, no ``Dispersion`` interactions are added.
+
+        Other Parameters
+        ----------------
+        add_dispersions : `bool` or `list` of ``Atoms``
+            If `True`, a ``Dispersion`` interaction will be added to all
+            atoms in the ``Universe``. If a list of ``Atom`` objects is
+            provided, the ``Dispersion`` will be added to these instead. Any
+            added ``Dispersion`` interactions (and any previously defined)
+            will then be parametrized by the ``ForceField``. The
+            ``Dispersion`` interactions added will only be like-like. By
+            default, no ``Dispersion`` interactions are added.
         """
 
         self._force_fields = ForceFieldFactory.create(force_field)
-        add_dispersions = settings.get("add_dispersions", False)
 
         if add_dispersions:
             if isinstance(add_dispersions, list):
@@ -911,6 +926,7 @@ class Universe(AtomContainer):
                 )
                 LOGGER.error("%s: {add_dispersions: %s}", self.__class__, add_dispersions)
                 raise TypeError(msg)
+
             # Get unique atom types and add dispersions for each of these
             atom_types = {atom.atom_type for atom in atoms}
             dispersions = [Dispersion(self, (atom_type,) * 2) for atom_type in atom_types]
@@ -1030,7 +1046,7 @@ class Universe(AtomContainer):
         tolerance: float = 1.0,
         solvent: str = "SPCE",
         max_iterations: int = 100,
-        **settings: Any,
+        constraint_algorithm: ConstraintAlgorithm = DEFAULT_CONSTRAINT,
     ) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
@@ -1052,12 +1068,14 @@ class Universe(AtomContainer):
         max_iterations: int, optional
             The maximum number of times to try to solvate the universe to
             within the required density before stopping. Defaults to 100.
-        **settings
-            ``constraint_algorithm`` (`ConstraintAlgorithm`)
-                A ``ConstraintAlgorithm`` which is applied to the ``Universe``.
-                If an inbuilt ``Solvent`` is selected (e.g. 'SPCE') and
-                ``constraint_algorithm`` is not passed, the
-                ``ConstraintAlgorithm`` will default to ``Shake(1e-4, 100)``.
+
+        Other Parameters
+        ----------------
+        constraint_algorithm : ConstraintAlgorithm
+            A ``ConstraintAlgorithm`` which is applied to the ``Universe``.
+            If an inbuilt ``Solvent`` is selected (e.g. 'SPCE') and
+            ``constraint_algorithm`` is not passed, the
+            ``ConstraintAlgorithm`` will default to ``Shake(1e-4, 100)``.
 
         Raises
         ------
@@ -1180,7 +1198,7 @@ class Universe(AtomContainer):
             self.add_force_field(solvent, *set(bonded_interactions + nonbonded_interactions))
             # If BondedInteractions are constrained, apply a constrain algorithm
             if solvent_config.constrained:
-                self.constraint_algorithm = settings.get("constraint_algorithm", Shake(1e-4, 100))
+                self.constraint_algorithm = constraint_algorithm
 
             if self.verbose:
                 print(f"Force field created by solvent {solvent}")
@@ -1189,174 +1207,6 @@ class Universe(AtomContainer):
             pass
 
         self._solvent_density += len(mols) * solvent_mass / self.volume
-
-
-class KSpaceSolver:
-    """
-    Class describing the k-space solver that is applied to electrostatic and/or
-    dispersion interactions
-
-    Different ``MDEngine`` require different parameters to be specified for a
-    k-space solver to be used. These parameters are specified in settings.
-
-    Parameters
-    ----------
-    **settings
-        ``accuracy`` (`float`)
-            The relative RMS error in per-atom forces
-
-    Attributes
-    ----------
-    accuracy : float
-        The relative RMS error in per-atom forces
-    """
-
-    def __init__(self, **settings: Any):
-
-        self.accuracy = settings.get("accuracy")
-
-    @property
-    def name(self):
-        """
-        Get the name of the class
-
-        Returns
-        -------
-        str
-            The name of the class
-        """
-
-        return self.__class__.__name__
-
-
-class Ewald(KSpaceSolver):
-    """
-    Holds the parameters that are required for the Ewald solver to be applied to
-    both/either the electrostatic and/or dispersion interactions
-
-    Parameters
-    ----------
-    **settings
-        ``accuracy`` (`float`)
-            The relative RMS error in per-atom forces
-    """
-
-
-class PPPM(KSpaceSolver):
-    """
-    Holds the parameters that are required for the PPPM solver to be applied to
-    both/either the electrostatic and/or dispersion interactions
-
-    Parameters
-    ----------
-    **settings
-        ``accuracy`` (`float`)
-            The relative RMS error in per-atom forces
-    """
-
-    def __eq__(self, other) -> bool:
-        """
-        Two KSpaceSolvers are equal if their __dict__ are equal
-        """
-
-        if not isinstance(other, self.__class__):
-            return False
-        return all(v == getattr(other, k) for k, v in self.__dict__.items())
-
-    def __ne__(self, other) -> bool:
-
-        return not self.__eq__(other)
-
-
-class ConstraintAlgorithm:
-    """
-    Class describing the algorithm and parameters which are applied to
-    constrain ``BondedInteraction`` objects
-
-    Parameters
-    ----------
-    accuracy : float
-        The accuracy (tolerance) of the applied constraints
-    max_iterations : int
-        The maximum number of iterations that can be used when calculating the
-        additional force that is required to constrain the atoms to satisfy the
-        constraints on the bonded interactions
-
-    Attributes
-    ----------
-    accuracy : float
-        The accuracy (tolerance) of the applied constraints
-    """
-
-    def __init__(self, accuracy: float, max_iterations: int):
-
-        self.accuracy = accuracy
-        self.max_iterations = max_iterations
-
-    @property
-    def name(self) -> str:
-        """
-        Get the name of the class
-
-        Returns
-        -------
-        str
-            The name of the class
-        """
-
-        return self.__class__.__name__
-
-    @property
-    def max_iterations(self) -> int:
-        """
-        Get or set the maximum number of iterations that can be used when
-        calculating the additional force that is required to constrain the atoms
-        to satisfy the constraints on the bonded interactions
-
-        Returns
-        -------
-        int
-            The maximum number of iterations
-        """
-
-        return self._max_iterations
-
-    @max_iterations.setter
-    def max_iterations(self, value: int) -> None:
-
-        self._max_iterations = int(value)
-
-
-class Shake(ConstraintAlgorithm):
-    """
-    Holds the parameters which are required for the SHAKE algorithm to be
-    applied to the constrained interactions
-
-    Parameters
-    ----------
-    accuracy : float
-        The accuracy (tolerance) of the applied constraints
-    max_iterations : int
-        The maximum number of iterations that can be used when calculating the
-        additional force that is required to constrain the atoms to satisfy the
-        constraints on the bonded interactions
-    """
-
-
-class Rattle(ConstraintAlgorithm):
-    """
-    Holds the parameters which are required for the RATTLE algorithm to be
-    applied to the constrained interactions
-
-    Parameters
-    ----------
-    accuracy : float
-        The accuracy (tolerance) of the applied constraints
-    max_iterations : int
-        The maximum number of iterations that can be used when calculating the
-        additional force that is required to constrain the atoms to satisfy the
-        constraints on the bonded interactions
-    """
 
 
 @repr_decorator("universe", "engine", "settings")
@@ -1444,10 +1294,8 @@ class Simulation:
         self.setup_msg = f"Simulation created with {engine} engine"
         if self.settings:
             settings_strings = "".join(
-                [
-                    f"{key}: {value} {units.SYSTEM.get(key.upper(), '')} \n"
-                    for key, value in self.settings.items()
-                ],
+                f"{key}: {value} {units.SYSTEM.get(key.upper(), '')} \n"
+                for key, value in self.settings.items()
             )
             self.setup_msg += f" and settings:\n{str(settings_strings)}\n"
         if self.verbose:
@@ -1625,7 +1473,7 @@ class Simulation:
     # this is safe and has better readability
     def auto_equilibrate(
         self,
-        variables: list[str] = ("temp", "pe"),
+        variables: Sequence[str] = ("temp", "pe"),
         eq_step: int = 10,
         window_size: int = 100,
         tolerance: float = 0.01,

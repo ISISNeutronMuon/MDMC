@@ -3,18 +3,23 @@
 from collections import Counter
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 
-from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp_eng
-from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
-                                           HarmonicPotential, LennardJones,
-                                           Periodic)
-from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
-                                Ewald, PPPM, KSpaceSolver, Simulation)
-from MDMC.MD.structures import (Atom)
-from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
+from MDMC.common import units
+from MDMC.MD.constraints import Rattle, Shake
+from MDMC.MD.interaction_functions import (
+    Buckingham,
+    Coulomb,
+    HarmonicPotential,
+    LennardJones,
+    Periodic,
+)
+from MDMC.MD.interactions import Bond, BondAngle, Coulombic, DihedralAngle, Dispersion
+from MDMC.MD.kspace_solvers import PPPM, Ewald, KSpaceSolver
+from MDMC.MD.simulation import ConstraintAlgorithm, Simulation, Universe
+from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 pytestmark = [pytest.mark.lammps]
