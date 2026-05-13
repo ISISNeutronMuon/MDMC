@@ -1,0 +1,93 @@
+Bootstrap: docker
+From: python:3.12.4-slim-bookworm
+
+%environment
+    export NAME=World
+    export DEBIAN_FRONTEND=noninteractive
+    export LD_LIBRARY_PATH=/opt/MD/lammps/build/:$LD_LIBRARY_PATH
+    export PYTHONPATH=$PYTHONPATH:/opt/MD/lammps/build/
+    export PYTHONUNBUFFERED=1
+    export PATH=/opt/other/packmol/packmol-20.14.2:$PATH
+    export PYTHONPATH=$PYTHONPATH:/opt/other/packmol/packmol-20.14.2/
+
+%post
+    apt-get update && apt-get install --upgrade -y \
+        python3-pip \
+        python3-dev \
+        libhdf5-dev \
+        libnetcdf-dev \
+        bash \
+        git \
+        gfortran \
+        libopenmpi-dev \
+        libblas-dev \
+        liblapack-dev \
+        libfreetype6-dev \
+        libfftw3-dev \
+        cmake \
+        wget \
+        python3-tk
+
+    mkdir -p /opt/MD
+    touch /root/.bashrc
+
+    # Install Packmol
+    mkdir -p /opt/other/packmol
+    cd /opt/other/packmol
+    wget https://github.com/m3g/packmol/archive/refs/tags/v20.14.2.tar.gz
+    tar -xzvf v20.14.2.tar.gz
+    rm v20.14.2.tar.gz
+
+    cd packmol-20.14.2
+    ./configure
+    make
+
+    # Get LAMMPS
+    export LAMMPS_VERSION=2Aug2023
+    mkdir -p /opt/MD/lammps
+    cd /opt/MD/lammps
+    wget https://download.lammps.org/tars/lammps-${LAMMPS_VERSION}.tar.gz
+    tar xvzf lammps-${LAMMPS_VERSION}.tar.gz --strip-components=1
+    rm lammps-${LAMMPS_VERSION}.tar.gz
+
+    # Build LAMMPS
+    mkdir -p /opt/MD/lammps/build
+    cd /opt/MD/lammps/build
+
+    cmake -C ../cmake/presets/all_on.cmake \
+          -C ../cmake/presets/nolib.cmake \
+          -C ../cmake/presets/gcc.cmake \
+          -D BUILD_LIB=on \
+          -D BUILD_SHARED_LIBS=on \
+          -D BUILD_MPI=on \
+          -D BUILD_OMP=on \
+          -D LAMMPS_EXCEPTIONS=on \
+          -D DOWNLOAD_VORO=on \
+          -D PKG_OPENMP=on \
+          -D PKG_PYTHON=on \
+          -D PKG_VORONOI=on \
+          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/12/libgomp.so \
+          ../cmake
+
+    make
+    make install-python
+
+    # Install DLPOLY
+    mkdir -p /opt/MD/dlpoly
+    cd /opt/MD/dlpoly
+    git clone https://gitlab.com/ccp5/dl-poly.git
+
+    cmake -S dl-poly -B build-dlpoly \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DWITH_MPI=on \
+          -DCMAKE_INSTALL_PREFIX=/usr/
+
+    cd build-dlpoly
+    make install
+
+    # Aliases
+    echo 'alias python="python3"' > /root/.bash_aliases
+    echo 'alias pip="pip3"' >> /root/.bash_aliases
+
+%runscript
+    exec /bin/bash "$@"
