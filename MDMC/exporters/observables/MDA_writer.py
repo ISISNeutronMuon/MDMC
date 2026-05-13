@@ -73,6 +73,7 @@ def write_MDA(
     timestamp: str,
     suffix: str = ".mda",
     override_data: Sequence[float] | None = None,
+    rescale_factor: float = 1.0,
 ):
     """Write the input observable to an MDANSE MDA file.
 
@@ -109,7 +110,7 @@ def write_MDA(
             main_ds.attrs["axis"] = "|".join(
                 f"mdmc_result/axes/{x}" for x in observable.independent_variables
             )
-            main_ds.attrs["scaling_factor"] = 1.0
+            main_ds.attrs["scaling_factor"] = rescale_factor
             main_ds.attrs["units"] = "au"
             main_ds.attrs["tags"] = "main"
         write_metadata(target, observable)

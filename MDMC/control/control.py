@@ -600,7 +600,7 @@ class Control:
             if observable_pair.auto_scale:
                 dset = self.exp_datasets[i]
                 scaling_keys.append("  {}".format(dset["file_name"]))
-                scaling_values.append([observable_pair.rescale_factor])
+                scaling_values.append([observable_pair.last_rescale_factor])
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
@@ -843,6 +843,7 @@ class Control:
                         filename=f"{self.file_dump_prefix}_matched",
                         file_loc=self.file_dump_loc,
                         timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
+                        rescale_factor=1.0 / obs_pair.last_rescale_factor,
                     )
                 if (
                     DumpExtent.FOM in dump_extent

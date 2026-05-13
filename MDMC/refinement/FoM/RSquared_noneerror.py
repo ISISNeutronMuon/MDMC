@@ -98,6 +98,12 @@ class RSquared_noneerror(FigureOfMerit):
             print(f"RSquared_noneerror.calculate_single_FoM: B: {B}")
             rescale_factor = A / B
             print(f"Rescale factor: {rescale_factor}")
-            value_unreduced = np.nansum((MD_values / rescale_factor - exp_values) ** 2)
+            obs_pair.fom_contribution = (MD_values / rescale_factor - exp_values) ** 2
+            obs_pair.last_rescale_factor = rescale_factor
+        else:
+            obs_pair.fom_contribution = (MD_values / obs_pair.rescale_factor - exp_values) ** 2
+            obs_pair.last_rescale_factor = obs_pair.rescale_factor
+
+        value_unreduced = np.nansum(obs_pair.fom_contribution)
 
         return obs_pair.weight * value_unreduced / norm_factor

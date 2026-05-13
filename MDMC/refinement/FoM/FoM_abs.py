@@ -66,6 +66,7 @@ class ObservablePair:
         self.matching_obs = None
         self.weight = weight
         self.rescale_factor = rescale_factor
+        self.last_rescale_factor = 1.0
         self.auto_scale = auto_scale
         if isinstance(self.MD_obs, MDANSEObservable):
             self.matching_obs = MDANSEObservable(mdanse_job_type="SQw")
