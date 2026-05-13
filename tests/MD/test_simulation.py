@@ -16,7 +16,6 @@ from MDMC.common import units
 from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import LennardJones
-from MDMC.MD.simulation import Simulation
 from MDMC.MD.solvents.SPC_config import SPC216
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)

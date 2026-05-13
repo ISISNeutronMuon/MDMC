@@ -12,6 +12,8 @@ from MDMC.MD.simulation import Universe, Shake, PPPM, Simulation
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.MD.structures import (Atom, Molecule)
 
+lmp = pytest.importorskip("MDMC.MD.engine_facades.lammps_engine")
+
 pytestmark = pytest.mark.lammps
 
 NUMBER_OF_STEPS = 2000

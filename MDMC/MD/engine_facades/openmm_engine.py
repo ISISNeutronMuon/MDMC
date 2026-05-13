@@ -17,7 +17,8 @@
 """Facade for OpenMM MD engine."""
 
 import logging
-from typing import Any
+from collections.abc import Iterator
+from typing import Any, Literal
 
 import networkx as nx
 import numpy as np
@@ -25,7 +26,7 @@ import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
 
-from MDMC.MD import NonBonded
+from MDMC.MD import Bond, BondAngle, NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.interaction_functions import DummyInteractionFunction
 from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
@@ -34,16 +35,17 @@ from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
+OpenmmPlatforms = Literal["OpenCL", "CUDA", "HIP", "CPU", "Reference"]
 
 
 class OpenMMEngine(MDEngine):
     def __init__(self):
         super().__init__()
         self.universe = None
-        self.openmm_system = None
-        self.openmm_simulation = None
+        self._openmm_system = None
+        self._openmm_simulation = None
         self.compact_trajectory = None
-        self.temperature = None
+        self.current_temperature = None
         self._saved_config = None
         self.MDMC_ID_to_idx = {}
         self.bond_graph = nx.Graph()
@@ -64,8 +66,45 @@ class OpenMMEngine(MDEngine):
             The atomic positions.
         """
         if self._saved_config is None:
-            raise TypeError("OpenMMEngine has not been run.")
+            raise ValueError(f"{type(self).__name__} has not been run.")
         return self._saved_config
+
+    @property
+    def system(self) -> mm.System:
+        """OpenMM System configuration."""
+        if self._openmm_system is None:
+            raise ValueError("OpenMM system has not been initialised.")
+        return self._openmm_system
+
+    @property
+    def simulation(self) -> Simulation:
+        """OpenMM Simulation configuration."""
+        if self._openmm_simulation is None:
+            raise ValueError("OpenMM simulation has not been initialised.")
+        return self._openmm_simulation
+
+    @property
+    def context(self) -> mm.Context:
+        """OpenMM Context."""
+        return self.simulation.context
+
+    @property
+    def natoms(self) -> int:
+        """The number of atoms in the system."""
+        return self.system.getNumParticles()
+
+    @property
+    def universe(self) -> Universe:
+        """Atomic universe."""
+        if self._universe is None:
+            raise ValueError("OpenMM universe has not been initialised.")
+        return self._universe
+
+    @universe.setter
+    def universe(self, value: Universe | None) -> None:
+        if value is not None and not isinstance(value, Universe):
+            raise TypeError(f"Unsupported universe ({type(value).__name__})")
+        self._universe = value
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
         """Set up the openmm system.
@@ -79,27 +118,18 @@ class OpenMMEngine(MDEngine):
             Some settings which are used to set up the openmm engine.
         """
         self.universe = universe
-        self.openmm_system = mm.System()
+        self._openmm_system = mm.System()
         self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)
 
-        # set the unit cell, note that currently MDMC can only deal with
-        # orthorhombic lattices
         box_matrix = (
-            np.array(
-                [
-                    [self.universe.dimensions[0], 0, 0],
-                    [0, self.universe.dimensions[1], 0],
-                    [0, 0, self.universe.dimensions[2]],
-                ],
-            )
-            * unit.angstrom
+            np.diag(self.universe.dimensions) * unit.angstrom
         )
-        self.openmm_system.setDefaultPeriodicBoxVectors(*box_matrix)
+        self.system.setDefaultPeriodicBoxVectors(*box_matrix)
 
         # add atoms
         for i, atom in enumerate(self.universe.atoms):
             self.MDMC_ID_to_idx[atom.ID] = i
-            self.openmm_system.addParticle(atom.mass * unit.amu)
+            self.system.addParticle(atom.mass * unit.amu)
             self.bond_graph.add_node(i)
 
         for atom in self.universe.atoms:
@@ -111,7 +141,7 @@ class OpenMMEngine(MDEngine):
                 w_j = atom.weights[0]
                 w_k = atom.weights[1]
                 w_m = atom.weights[2]
-                self.openmm_system.setVirtualSite(
+                self.system.setVirtualSite(
                     i,
                     mm.ThreeParticleAverageSite(j, k, m, w_j, w_k, w_m),
                 )
@@ -133,7 +163,8 @@ class OpenMMEngine(MDEngine):
                 ):
                     continue
                 equil_length = mdmc_bond.function.equilibrium_state.value
-                self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
+                self.system.addConstraint(i, j, equil_length * unit.angstroms)
+
                 bond_dists[(i, j)] = equil_length
                 bond_dists[(j, i)] = equil_length
 
@@ -160,7 +191,7 @@ class OpenMMEngine(MDEngine):
                 # constraints are set so we assume that bond constraints
                 # were already made above and can add a length constraint
                 # to fix the angle
-                self.openmm_system.addConstraint(i, k, a * unit.angstroms)
+                self.system.addConstraint(i, k, a * unit.angstroms)
 
         # add force field
         self.change_openmm_force_field()
@@ -247,17 +278,17 @@ class OpenMMEngine(MDEngine):
                 # by a specific number of bonds away
                 nonbonded.addException(i, j, *self.nonbonded_scaling[dist - 1])
 
-        self.openmm_system.addForce(nonbonded)
-        self.openmm_system.addForce(bond_force)
-        self.openmm_system.addForce(angle_force)
-        self.openmm_system.addForce(mm.CMMotionRemover())
+        self.system.addForce(nonbonded)
+        self.system.addForce(bond_force)
+        self.system.addForce(angle_force)
+        self.system.addForce(mm.CMMotionRemover())
 
     def clear_forces(self):
         """Clear the OpenMM force fields from the OpenMM system."""
-        for i in reversed(range(self.openmm_system.getNumForces())):
-            self.openmm_system.removeForce(i)
+        for i in reversed(range(self.system.getNumForces())):
+            self.system.removeForce(i)
 
-    def setup_simulation(self, **settings: Any) -> None:
+    def setup_simulation(self, temperature: float | None = None, openmm_platform: Literal[] | None = None, openmm_properties: dict | None = None, **settings: Any) -> None:
         """Set up the openmm simulation.
 
         Parameters
@@ -266,35 +297,45 @@ class OpenMMEngine(MDEngine):
             Some settings which are used to set up the openmm
             simulation object.
         """
-        self.temperature = float(settings.get("temperature"))
+        self.current_temperature = temperature
         time_step = float(self.time_step)
 
         compound_integrator = mm.CompoundIntegrator()
+
         lang_int_1 = mm.LangevinMiddleIntegrator(
-            self.temperature * unit.kelvin,
+            self.current_temperature * unit.kelvin,
             10.0 / unit.picoseconds,
             time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_1)
         lang_int_2 = mm.LangevinMiddleIntegrator(
-            self.temperature * unit.kelvin,
+            self.current_temperature * unit.kelvin,
             1.0 / unit.picoseconds,
             time_step * unit.femtoseconds,
         )
         compound_integrator.addIntegrator(lang_int_2)
         compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
 
-        self.openmm_simulation = Simulation(
+        if openmm_platform is not None:
+            openmm_platform = mm.Platform.getPlatform(openmm_platform)
+
+        self._openmm_simulation = Simulation(
             Topology(),
-            self.openmm_system,
+            self.system,
             compound_integrator,
-            mm.Platform.getPlatformByName(settings.get("openmm_platform", "CPU")),
-            settings.get("openmm_properties", {}),
+            openmm_platform,
+            openmm_properties,
         )
 
         positions = np.array([atom.position for atom in self.universe.atoms]) * unit.angstrom
-        self.openmm_simulation.context.setPositions(positions)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
+        self.simulation.context.setPositions(positions)
+
+        if any(np.any(atom.velocity) for atom in self.universe.atoms):
+            self.simulation.context.setVelocities(
+                np.array([atom.velocity for atom in self.universe.atoms]),
+            )
+        else:
+            self.simulation.context.setVelocitiesToTemperature(self.current_temperature)
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
@@ -306,14 +347,14 @@ class OpenMMEngine(MDEngine):
         minimize_every : int, optional, default 10
             Not used.
         """
-        self.openmm_simulation.minimizeEnergy(maxIterations=n_steps)
+        self.simulation.minimizeEnergy(maxIterations=n_steps)
 
     def run(
         self,
         n_steps: int,
-        equilibration: bool,
-        output_log: str = None,
-        work_dir: str = None,
+        equilibration: bool = False,
+        output_log: str | None = None,
+        work_dir: str | None = None,
         **settings: Any,
     ) -> None:
         """Run the simulation.
@@ -334,16 +375,14 @@ class OpenMMEngine(MDEngine):
         """
         if equilibration:
             try:
-                self.openmm_simulation.minimizeEnergy()
-                self.openmm_simulation.context.setVelocitiesToTemperature(
-                    self.temperature * unit.kelvin,
-                )
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
-                self.openmm_simulation.step(n_steps // 3)
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
-                self.openmm_simulation.step(n_steps // 3)
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
-                self.openmm_simulation.step(n_steps // 3)
+                self.simulation.minimizeEnergy()
+                self.simulation.context.setVelocitiesToTemperature(self.current_temperature)
+                self.simulation.context.getIntegrator().setCurrentIntegrator(0)
+                self.simulation.step(n_steps // 3)
+                self.simulation.context.getIntegrator().setCurrentIntegrator(1)
+                self.simulation.step(n_steps // 3)
+                self.simulation.context.getIntegrator().setCurrentIntegrator(2)
+                self.simulation.step(n_steps // 3)
             except mm.OpenMMException as e:
                 LOGGER.warning(f"OpenMM exception during equilibration: {e}")
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
@@ -356,29 +395,29 @@ class OpenMMEngine(MDEngine):
                 n_steps,
                 np.array(self.real_atom),
             )
-            self.openmm_simulation.reporters.append(reporter)
-            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
-            self.openmm_simulation.currentStep = 0
-            self.openmm_simulation.context.setTime(0.0)
-            state = self.openmm_simulation.context.getState(
+            self.simulation.reporters.append(reporter)
+            self.simulation.context.getIntegrator().setCurrentIntegrator(2)
+            self.simulation.currentStep = 0
+            self.simulation.context.setTime(0.0)
+            state = self.simulation.context.getState(
                 getPositions=True,
                 getVelocities=True,
                 getEnergy=True,
                 enforcePeriodicBox=True,
             )
-            reporter.report(self.openmm_simulation, state)
+            reporter.report(self.simulation, state)
             try:
-                self.openmm_simulation.step(n_steps)
+                self.simulation.step(n_steps)
             except mm.OpenMMException as e:
                 LOGGER.warning(f"OpenMM exception during production run: {e}")
                 raise MDEngineError(f"OpenMM exception during production run: {e}") from e
             finally:
-                self.openmm_simulation.reporters.clear()
+                self.simulation.reporters.clear()
 
     def convert_trajectory(
         self,
         start: int = 0,
-        stop: int = None,
+        stop: int | None = None,
         step: int = 1,
         **settings: Any,
     ) -> CompactTrajectory:
@@ -413,11 +452,11 @@ class OpenMMEngine(MDEngine):
         """Updates the ``OpenMMEngine`` force field parameters."""
         self.clear_forces()
         self.change_openmm_force_field()
-        self.openmm_simulation.context.reinitialize(preserveState=True)
+        self.simulation.context.reinitialize(preserveState=True)
 
     def save_config(self) -> None:
         """Sets ``self._saved_config`` to the current set of positions."""
-        state = self.openmm_simulation.context.getState(getPositions=True)
+        state = self.simulation.context.getState(getPositions=True)
         self._saved_config = np.array(state.getPositions().value_in_unit(unit.angstrom))
 
     def clear(self) -> None:
@@ -425,8 +464,8 @@ class OpenMMEngine(MDEngine):
 
     def reset_config(self) -> None:
         """Resets the atomic positions of the simulation to that in ``saved_config``."""
-        self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
+        self.simulation.context.setPositions(self.saved_config * unit.angstrom)
+        self.simulation.context.setVelocitiesToTemperature(self.current_temperature)
 
     def eval(self, variable: str) -> Any:
         raise NotImplementedError
@@ -497,3 +536,25 @@ class CompactTrajectoryReporter:
             return steps, False, False, False, False
 
         return steps, True, True, True, True
+
+
+def parse_kspace_solver(solver: KSpaceSolver | None) -> mm.NonbondedForce | None:
+    force = mm.NonbondedForce()
+    match solver:
+        case Ewald(accuracy=accuracy):
+            force.setNonbondedMethod(force.Ewald)
+            force.setEwaldErrorTolerance(accuracy)
+            force.setUseSwitchingFunction(False)
+            force.setUseDispersionCorrection(False)
+        case PPPM(accuracy=accuracy):
+            force.setNonbondedMethod(force.PME)
+            force.setEwaldErrorTolerance(accuracy)
+            force.setUseSwitchingFunction(False)
+            force.setUseDispersionCorrection(False)
+        case None:
+            force.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
+        case _:
+            raise NotImplementedError
+
+    force.setName("Coulomb")
+    return force

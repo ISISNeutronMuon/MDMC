@@ -12,6 +12,9 @@ from MDMC.MD.packmol.packmol_setup import PackmolSetup
 # lammps mark used to ensure test runs in docker container
 pytestmark = [pytest.mark.lammps]
 
+if shutil.which("packmol") is None:
+    pytest.skip("No packmol available", allow_module_level=True)
+
 UNIVERSE_SIZE = 30.  # size of simple_filled_universe
 UNIVERSE_SHIFT = 40.  # size increase when adding argon cube to water setup in water_argon_mix_setup
 MIX_UNIVERSE_SIZE = UNIVERSE_SIZE + UNIVERSE_SHIFT  # size of complex_filled_universe

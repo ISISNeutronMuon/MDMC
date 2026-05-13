@@ -7,11 +7,9 @@ env:
   ruff_version: 0.15.5
 
 jobs:
-  build:
-    name: Build docker container
+  testing:
+    name: Testing (OpenMM only)
     runs-on: ubuntu-22.04
-    # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
-    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -44,12 +42,10 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          BRANCH="${BRANCH//\//-}"
-          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
-      - name: Run tests
-        env:
-          TESTSET: ${{ matrix.testset }}
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
+        # we use cat and grep here to get the version-pinned pylint version from .dev_requirements.txt; thus we can version control pylint
+      - name: pip3 install
         run: |
           docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
           exit 0

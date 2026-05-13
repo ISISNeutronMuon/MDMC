@@ -72,7 +72,9 @@ from MDMC.MD.interactions import (
     Interaction,
     NonBondedInteraction,
 )
-from MDMC.MD.simulation import ConstraintAlgorithm, KSpaceSolver, Universe
+from MDMC.MD.kspace_solvers import KSpaceSolver
+from MDMC.MD.constraints import ConstraintAlgorithm
+from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition, partition_interactions

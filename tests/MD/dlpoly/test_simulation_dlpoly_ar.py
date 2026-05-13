@@ -3,6 +3,8 @@
 import numpy as np
 import pytest
 
+pytest.importorskip("dlpoly_py")
+
 from MDMC.control import Control
 from MDMC.MD.interaction_functions import LennardJones
 from MDMC.MD.interactions import Dispersion
