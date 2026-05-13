@@ -34,6 +34,7 @@ from inspect import getmembers, isabstract, isclass
 from pkgutil import iter_modules
 
 from . import ase, engine_facades, force_fields, solvents
+from .constraints import Rattle, Shake
 from .interaction_functions import (
     Buckingham,
     Coulomb,
@@ -55,14 +56,10 @@ from .interactions import (
     Interaction,
     NonBondedInteraction,
 )
+from .kspace_solvers import PPPM, Ewald, KSpaceSolver
 from .parameters import Parameter, Parameters
 from .simulation import (
-    PPPM,
     ConstraintAlgorithm,
-    Ewald,
-    KSpaceSolver,
-    Rattle,
-    Shake,
     Simulation,
     Universe,
 )
