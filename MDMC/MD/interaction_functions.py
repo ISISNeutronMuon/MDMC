@@ -31,12 +31,13 @@ from __future__ import annotations
 
 import functools
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator
+from MDMC.common.units import UnitFloat, UnitNDArray
 from MDMC.MD.parameters import Parameter, Parameters
 
 if TYPE_CHECKING:
@@ -57,16 +58,24 @@ class InteractionFunction:
         ``value`` must either be an object with a ``value`` and a ``unit`` (e.g.
         a ``UnitFloat`` object), or a (`float`, `str`) `tuple`, where `float` is
         the value and `str` is the unit.
+    name_override : dict[str, str]
+        `dict` of ``{from: to}`` to replace name (``from``) given in interaction function
+        with provided names (``to``).
     """
 
-    def __init__(self, val_dict: dict):
+    def __init__(
+        self,
+        val_dict: dict[str, UnitFloat | UnitNDArray | tuple[float, str] | float],
+        name_override: dict[str, str] = None,
+    ):
+        name_override = name_override or {}
 
         # locals which are excluded from Parameter creation
         excluded = ["self", "settings", "__class__"]
         parameters = Parameters()
         for name, value in val_dict.items():
             if name not in excluded:
-                parameter = Parameter(value, name)
+                parameter = Parameter(value, name_override.get(name, name), type_=name)
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
                 setattr(self, parameter.type, parameter)
@@ -272,13 +281,11 @@ class Buckingham(InteractionFunction):
     """
 
     @inter_func_decorator(
-        ("A", units.ENERGY),
-        ("B", units.LENGTH**-1),
-        ("C", units.LENGTH**6 * units.ENERGY),
+        ("A", units.ENERGY), ("B", units.LENGTH**-1), ("C", units.LENGTH**6 * units.ENERGY)
     )
-    def __init__(self, A: float, B: float, C: float):
+    def __init__(self, A: float, B: float, C: float, *, names: dict[str, str] = None):
 
-        super().__init__(locals())
+        super().__init__({"A": A, "B": B, "C": C}, names if names is not None else {})
 
 
 class Coulomb(InteractionFunction):
@@ -319,7 +326,7 @@ class Coulomb(InteractionFunction):
     @inter_func_decorator(("charge", units.CHARGE))
     def __init__(self, charge: float):
 
-        super().__init__(locals())
+        super().__init__({"charge": charge})
 
 
 class HarmonicPotential(InteractionFunction):
@@ -424,9 +431,18 @@ class HarmonicPotential(InteractionFunction):
         )(cls._init)
         return h_pot
 
-    def __init__(self, equilibrium_state, potential_strength, **settings):
-
-        super().__init__(locals())
+    def __init__(
+        self,
+        equilibrium_state,
+        potential_strength,
+        *,
+        names: dict[str, str] = None,
+        **settings,
+    ):
+        super().__init__(
+            {"equilibrium_state": equilibrium_state, "potential_strength": potential_strength},
+            names if names is not None else {},
+        )
 
     # Declare a class method equal to the __init__ method
     _init = __init__
@@ -484,8 +500,9 @@ class Periodic(InteractionFunction):
                                function=periodic)
     """
 
-    def __init__(self, K1: float, n1: float, d1: float, *parameters: float):
-
+    def __init__(
+        self, K1: float, n1: float, d1: float, *parameters: float, names: dict[str, str] = None
+    ):
         # Check that total number of parameters is divisible by 3
         # Check that all n values are non-negative ints
         val_dict = {}
@@ -509,7 +526,7 @@ class Periodic(InteractionFunction):
             val_dict[f"n{order}"] = order_parameters[1]
             val_dict[f"d{order}"] = units.UnitFloat(order_parameters[2], units.ANGLE)
 
-        super().__init__(val_dict)
+        super().__init__(val_dict, names if names is not None else {})
 
 
 class LennardJones(InteractionFunction):
@@ -548,7 +565,16 @@ class LennardJones(InteractionFunction):
     """
 
     @inter_func_decorator(("epsilon", units.ENERGY), ("sigma", units.LENGTH))
-    def __init__(self, epsilon: float, sigma: float, **settings: Any):
+    def __init__(
+        self,
+        epsilon: float,
+        sigma: float,
+        *,
+        cutoff: float | None = None,
+        long_range_solver: Literal["PPPM", "PME", "E", None] = None,
+        names: dict[str, str] | None = None,
+        **settings: dict,
+    ):
 
         super().__init__({"epsilon": epsilon, "sigma": sigma})
         self.cutoff = settings.get("cutoff")

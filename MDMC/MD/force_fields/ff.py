@@ -676,7 +676,10 @@ class FileForceField(ForceField):
                 var_positional = True
             else:
                 name = function_parameters.name
-                if name not in ["self", "settings"]:
+                if name != "self" and function_parameters.kind in (
+                    function_parameters.POSITIONAL_ONLY,
+                    function_parameters.POSITIONAL_OR_KEYWORD,
+                ):
                     parameter_names.append(name)
 
         if var_positional:
@@ -686,7 +689,8 @@ class FileForceField(ForceField):
             # If this is the case, assume file parameter names are correctly
             # ordered and use these, otherwise raise a ValueError
             if any(
-                parameter_names[i] != file_parameter_names[i] for i in range(len(parameter_names))
+                p_name != f_p_name
+                for p_name, f_p_name in zip(parameter_names, file_parameter_names, strict=True)
             ):
                 msg = (
                     f"The force field data file has incorrectly ordered {parameter_names}"

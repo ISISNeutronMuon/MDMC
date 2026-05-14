@@ -300,6 +300,8 @@ class Control:
         file_dump_loc: Path = Path("."),
         file_dump_timestamped: bool = False,
         file_dump_prefix: str = "trajectory",
+        *,
+        rename: dict[str, str] | None = None,
         **settings: Any,
     ):
 
@@ -337,10 +339,13 @@ class Control:
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         # if a Parameters object, convert to list first for comprehension
+
         if isinstance(fit_parameters, Parameters):
             fit_parameters = list(fit_parameters.values())
         fit_parameters = [p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
+        if rename is not None:
+            self.fit_parameters.rename(rename)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.settings = settings

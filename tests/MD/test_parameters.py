@@ -100,6 +100,29 @@ def test_parameter_value_init(value, unit):
     assert parameter.unit == UNIT
 
 
+@pytest.mark.parametrize(
+    'rename, expected', [
+        ({"not NAME": "new"}, NAME),
+        ({NAME: "new"}, "new"),
+    ],
+)
+def test_parameter_rename(parameter, rename, expected):
+    parameter.rename(rename)
+    assert parameter.bare_name == expected
+
+
+@pytest.mark.parametrize(
+    'rename, expected', [
+        ({"not NAME": "new"}, f"{NAME}3"),
+        ({f"{NAME}3": "new"}, "new"),
+    ],
+)
+def test_parameters_rename(parameters, rename, expected):
+    parameters.rename(rename)
+    assert any(param.bare_name == expected for param in parameters.values())
+    assert not any(param.bare_name == next(iter(rename.keys())) for param in parameters.values())
+
+
 def test_tied_parameters(parameter, scaled_parameter):
     """
     Tests that parameters that are tied with a scale of 1 have the same value,

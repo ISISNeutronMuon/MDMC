@@ -140,6 +140,16 @@ def periodic():
     return Periodic(K1, N1, D1, K2, N2, D2, K3, N3, D3, K4, N4, D4)
 
 
+def test_interaction_function_rename():
+    """
+    Test passing `names` renames parameters externally.
+    """
+    int_func = LennardJones(LJ_EPSILON, LJ_SIGMA, names={'epsilon': 'bob'})
+    print(int_func.parameters)
+    assert not any(param.bare_name == 'epsilon' for param in int_func.parameters.values())
+    assert any(param.bare_name == 'bob' for param in int_func.parameters.values())
+
+
 def test_interaction_function_get_parameters(interaction_func):
     """
     Tests that the correct parameters are returned when retrieving them from
@@ -209,7 +219,7 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
-    
+
     for value, name in zip(values, names):
         assert obj.parameters[name].value == value
 

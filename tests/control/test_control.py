@@ -363,6 +363,20 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                       '\n')
     assert stdout_message in stdout
 
+def test_control_rename_parameters(simulation, monkeypatch):
+    monkeypatch.setattr(Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(Control, "calculate_max_FoM", mock_calculate_max_FoM)
+    parameters = [Parameter(1., 'one'),
+                  Parameter(3., 'constraints', constraints=(2.9, 3.1))]
+    fit_parameters = Parameters(parameters)
+    ctrl = Control(simulation(),
+                   [],
+                   fit_parameters,
+                   rename={'one': 'geoff'},
+                   )
+    assert "geoff" in ctrl.fit_parameters and "one" not in ctrl.fit_parameters
+    assert ctrl.fit_parameters["geoff"] == parameters[0]
+
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
