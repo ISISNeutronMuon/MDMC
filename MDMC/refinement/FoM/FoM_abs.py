@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.refinement.FoM import AutoScale
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
@@ -468,3 +469,69 @@ class FigureOfMerit(ABC):
         """
 
         raise NotImplementedError
+
+    @abstractmethod
+    def _compute_unreduced(self, obs_pair: ObservablePair) -> float:
+        """
+        Compute the unreduced FoM value for the given observable pair.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated.
+
+        Returns
+        -------
+        float
+            Unreduced FoM value.
+        """
+
+    @abstractmethod
+    def _minimise_factor(self, obs_pair: ObservablePair) -> float:
+        """
+        Minimise the FoM factor for the given FoM type.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            Computed auto_scale factor to minimise the FoM.
+        """
+
+    def compute_rescale_factor(self, obs_pair: ObservablePair) -> float:
+        """
+        Compute rescale factor for calculated observable to match experimental data.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            Computed rescale factor.
+        """
+        dep_vars = np.array(*obs_pair.exp_obs.dependent_variables.values())
+
+        match obs_pair.auto_scale:
+            case AutoScale.CONSTANT:
+                fac = obs_pair.rescale_factor
+            case AutoScale.MINIMISE_FOM:
+                fac = self._minimise_factor(obs_pair)
+            case AutoScale.MATCH_MAXIMUM:
+                fac = max(obs.max() for obs in dep_vars)
+            case AutoScale.MATCH_ABS_MAXIMUM:
+                fac = max(np.abs(obs).max() for obs in dep_vars)
+            case AutoScale.MATCH_SUM:
+                fac = sum(obs.sum() for obs in dep_vars)
+            case AutoScale.MATCH_ABS_SUM:
+                fac = sum(np.abs(obs.sum()) for obs in dep_vars)
+            case _:
+                fac = 1.0
+
+        return fac

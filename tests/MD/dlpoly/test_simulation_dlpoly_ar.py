@@ -56,7 +56,7 @@ def exp_datasets():
              'type': 'SQw',
              'reader': 'xml_SQw',
              'weight': 1.,
-             'auto_scale': True,
+             'auto_scale': 'minimise_fom',
              'resolution': None}]
 
 

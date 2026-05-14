@@ -17,10 +17,12 @@
 """A module for Figure of Merit calculation"""
 
 from . import ChiSquared_experror, FoM_abs, FoM_factory, RSquared_noneerror
+from .FoM_abs import AutoScale
 
 __all__ = [
     "ChiSquared_experror",
     "FoM_abs",
     "FoM_factory",
     "RSquared_noneerror",
+    "AutoScale",
 ]

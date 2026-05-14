@@ -1,24 +1,26 @@
-"""Tests the Control class
-"""
+"""Tests the Control class."""
+
+import re
+from typing import List
+from unittest.mock import Mock
 
 import logging
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-import re
-from typing import List
-from unittest.mock import Mock, ANY
 
 from MDMC.control import Control
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
+from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
-from MDMC.MD.engine_facades.facade import MDEngineError
+from MDMC.refinement.FoM import AutoScale
 from MDMC.resolution.from_file import FileResolution
-from MDMC.MD import Atom, Dispersion, LennardJones
+from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
+from MDMC.trajectory_analysis.observables.sqw import SQw
 from tests.test_data import data
 from MDMC.control import Control
 from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
@@ -392,7 +394,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                                        MockParameter('A', 1),
                                        MockParameter('B', 34743.233E6)])
 
-    datasets = exp_datasets(auto_scale=True, file_name=file_name)
+    datasets = exp_datasets(auto_scale="MINIMISE_FOM", file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
@@ -442,7 +444,7 @@ def test_control_no_scaling(simulation, exp_datasets, file_name):
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
-        assert not pair.auto_scale
+        assert pair.auto_scale is AutoScale.CONSTANT
 
 
 @pytest.mark.parametrize('file_name',
@@ -460,43 +462,51 @@ def test_control_rescale_factor(simulation, exp_datasets, file_name):
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
-        assert not pair.auto_scale
+        assert pair.auto_scale is AutoScale.CONSTANT
 
-
-@pytest.mark.parametrize('file_name',
-                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_auto_scale(simulation, exp_datasets, file_name):
+@pytest.mark.parametrize("scale_type, expected", [("NONE", 1.),
+                                                  ("CONSTANT", 2.),
+                                                  ("MINIMISE_FOM", 8889991348.84444),
+                                                  ("MATCH_MAXIMUM", 5.113321478819434),
+                                                  ("MATCH_ABS_MAXIMUM", 5.113321478819434),
+                                                  ("MATCH_SUM", 75.04494098975),
+                                                  ("MATCH_ABS_SUM", 75.04494098975),
+                                                  ])
+def test_control_auto_scale(simulation, exp_datasets, scale_type, expected):
     """
     Test that ``auto_scale`` is applied.
     """
 
-    datasets = exp_datasets(auto_scale=True, file_name=file_name)
-    dt = DATASET_INFO['use_FFT'][file_name]['dt']
+    datasets = exp_datasets(auto_scale=scale_type,
+                            rescale_factor=2.,
+                            file_name="Well_s_q_omega_Ar_data.xml")
+    dt = DATASET_INFO["use_FFT"]["Well_s_q_omega_Ar_data.xml"]["dt"]
     ctrl = Control(simulation(time_step=dt), datasets, [],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        assert pair.auto_scale
+        assert pair.auto_scale is AutoScale[scale_type]
+        assert pair.rescale_factor == pytest.approx(expected)
 
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_scaling_warning(simulation, exp_datasets, file_name,
-                                 capsys):
+                                 caplog):
     """
     Test that when both ``rescale_factor`` and ``auto_scale`` specified then
     the latter is used and a warning is printed to explain this.
     """
 
     datasets = exp_datasets(rescale_factor=0.5,
-                            auto_scale=True,
+                            auto_scale="minimize_fom",
                             file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        assert pair.auto_scale
+        assert pair.auto_scale is AutoScale.MINIMISE_FOM
 
     stdout = capsys.readouterr().out
     stdout_message = ('Both `rescale_factor` and `auto_scale` set for file '
@@ -836,8 +846,8 @@ def test_control_resolution_function(simulation, exp_datasets):
                            verbose=-1,
                            reset_config=False)
 
-    assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
-    assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
+    assert isinstance(ctrl.observable_pairs[0].exp_obs.resolution, FileResolution)
+    assert isinstance(ctrl.observable_pairs[0].MD_obs.resolution, FileResolution)
 
 @pytest.mark.parametrize('steps', [0, None])
 def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeypatch):

@@ -147,10 +147,9 @@ class Control:
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
-          - ``auto_scale`` (`bool`, optional, defaults to `False`) set the
-            ``rescale_factor`` automatically to minimise the FoM, if both
-            ``rescale_factor`` and ``auto_scale`` are provided then a warning
-            is printed and ``auto_scale`` takes precedence
+          - ``auto_scale`` (str or :class:`AutoScale`, optional, defaults to `CONSTANT`)
+            The method for automatically setting the rescale factor.
+            See :class:`AutoScale` documentation for more information.
           - ``use_FFT`` (`bool`, optional, defaults to `True`) whether to use
             Fast Fourier Transforms in the calculation of dependent variables.
             FFT speeds up calculation but places restrictions on spacing in the
@@ -261,7 +260,7 @@ class Control:
           'reader':'GENERIC_READER',
           'weight':0.5,
           'resolution':{'gaussian':2.35}
-          'auto_scale':True}]
+          'auto_scale': 'minimise_fom'}]
 
     Attributes
     ----------

@@ -59,12 +59,12 @@ simulation = Simulation(universe,
 exp_dataset_ILL = [{'file_name':'../doc/tutorials/data/263K05Awat_LAMP',
                  'type':'SQw',
                  'reader':'LAMPSQw',
-                 'auto_scale':True,
+                 'auto_scale':'minimise_fom',
                  'weight':1.}]
 exp_dataset_ISIS = [{'file_name':'../doc/tutorials/data/IRIS_26176_water_data.dat',
                  'type':'SQw',
                  'reader':'MantidSQw',
-                 'auto_scale':True,
+                 'auto_scale':'minimise_fom',
                  'weight':1.,
                  'resolution':'../doc/tutorials/data/IRIS_26173_water_data_resolution.dat'}]
 
