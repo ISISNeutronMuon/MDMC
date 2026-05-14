@@ -170,11 +170,11 @@ class Control:
     file_dump_extent : DumpExtent | str, optional
         Which files should be written out in the dump. Default is `DumpExtent.BOTH`
     file_dump_loc: Path, optional
-        Location the H5MD file should be stored. Default is `Path('.')`
+        Location that the H5MD and/or MDA file should be stored at. Default is `Path('.')`
     file_dump_timestamped: bool, optional
         Whether a time stamp should be added to the output file names. Default is `False`
     file_dump_prefix: str, optional
-        The name the dumped H5MD file should be. Default is ``trajectory``
+        The name the dumped H5MD and/or MDA file should be. Default is ``trajectory``
     minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'CMAES'.
     FoM_options : dict of {str : str}, optional
