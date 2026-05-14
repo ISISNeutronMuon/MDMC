@@ -131,29 +131,7 @@ Alternatively, you can download a ZIP archive containing the source using
 
  wget https://github.com/MDMCproject/MDMCv0.2_pilot/archive/master.zip
 
-3.1.2. Installing Python dependencies
---------------------------------------
-We supply a requirements.txt file that can be used to install all required Python dependencies via
-
-.. code-block:: bash
-
- cd MDMCv0.2_pilot/
- python3 -m pip install -r requirements.txt
-
-
-The list of required Python modules is
-
-.. code-block:: bash
-
- pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
-
-An alternative way of installing the Python dependencies is to install them through Anaconda3. To do this one has to first install Anaconda3 itself, which can be done by the following the instructions on the its installation page:
-
-.. code-block:: bash
-
- https://docs.anaconda.com/anaconda/install/linux/
-
-3.1.3 Installing MDMC package
+3.1.2 Installing MDMC package
 -----------------------------
 
 To install MDMC and add it to the list of Python modules you can simply run the following command from the root directory of the MDMC source code:
@@ -170,13 +148,7 @@ Once this is done, you should see MDMC appear on the list of installed modules w
 
 3.2. Using anaconda3
 --------------------
-Since MDMC is a Python-based code the following dependencies are need to be installed:
-
-.. code-block:: bash
-
- pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
-
-Then you are ready to download the code for MDMC from GitHub using the following link:
+To download the code for MDMC from GitHub using the following link:
 
 .. code-block:: bash
 
@@ -235,6 +207,5 @@ The following commands will install MDMC and all its dependencies, including LAM
  #install required Python packages
  cd MDMCv0.2_pilot/
  python3 -m pip install --upgrade pip
- python3 -m pip install -r requirements.txt
  #install MDMC module
  python3 -m pip install .

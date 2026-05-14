@@ -27,21 +27,16 @@ Install the needed Sphinx-related Python modules:
 pip3 install sphinx nbsphinx sphinx_rtd_theme
 ```
 
-Where you haven't done this already, clone the MDMC repository:
+Where you haven't done this already, clone and install the MDMC repository:
 
 ```
 git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
 cd MDMCv0.2_pilot
+pip install .
 ```
 
-and install the remaining Python modules that are required:
-
-```
-pip3 install -r requirements.txt
-```
-
-Now navigate into the `doc` subfolder and create the documentation by running
-the make.bat with the relevant argument:
+use `pip install -e .` for an editable installation. Now navigate into the `doc` 
+subfolder and create the documentation by running  the make.bat with the relevant argument:
 
 ```bash
 cd doc/
@@ -72,7 +67,7 @@ pip3 install sphinx nbsphinx sphinx_rtd_theme
 git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
 #install remaining python modules needed
 cd MDMCv0.2_pilot/
-pip3 install -r requirements.txt
+pip3 install .
 #navigate to documentation directory
 cd doc/
 #compile the documentation. NB: if the sphinx-build command is not found it

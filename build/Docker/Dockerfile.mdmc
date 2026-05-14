@@ -6,7 +6,7 @@ ARG BASE_IMAGE=mdmc/engines:latest
 FROM $BASE_IMAGE
 
 # Install any packages required for container which are not specifically for
-# running MDMC (i.e. not in requirements.txt)
+# running MDMC
 RUN pip3 install --upgrade pip
 # Until --only-deps becomes an option:
 # https://github.com/pypa/pip/issues/11440

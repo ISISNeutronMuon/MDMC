@@ -68,7 +68,7 @@ as follows.
 
 2.  Python requirements. These are installed from a requirements
     files; the requirements file `dependencies.txt` is generated from
-    the `pyproject.toml` and `requirements.txt` by `piptools`. Using
+    the `pyproject.toml` by `piptools`. Using
     files like this allows us to version-control both regular and
     development packages within our Docker image via Dependabot.
 
