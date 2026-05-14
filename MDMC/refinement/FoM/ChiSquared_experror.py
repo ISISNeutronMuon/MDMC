@@ -58,9 +58,6 @@ class ChiSquaredExpError(FigureOfMerit):
         print(f"ChiSquared_noneerror.calculate_single_FoM: value_unreduced: {value_unreduced}")
 
         if obs_pair.auto_scale:
-            exp_errors = np.array(*obs_pair.exp_obs.errors.values())
-            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
-            MD_values = np.array(*obs_pair.matching_obs.dependent_variables.values())
             A = np.nansum((MD_values / exp_errors) ** 2)
             B = np.nansum(MD_values * exp_values / exp_errors**2)
             print(f"ChiSquared_noneerror.calculate_single_FoM: A: {A}")

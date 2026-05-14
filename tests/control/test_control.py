@@ -1,6 +1,7 @@
 """Tests the Control class
 """
 
+import copy
 import logging
 from pathlib import Path
 import numpy as np
@@ -18,6 +19,8 @@ from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.MD.engine_facades.facade import MDEngineError
 from MDMC.resolution.from_file import FileResolution
+from MDMC.readers.observables.xml_SQw import XML_SQw
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.MD import Atom, Dispersion, LennardJones
 from tests.test_data import data
 from MDMC.control import Control
@@ -135,7 +138,6 @@ class MockMinimizer:
     def present_result(self):
         return ""
 
-
 def mock_generate_FoM(self):
     return 1000, None
 
@@ -147,6 +149,34 @@ def mock_equilibrate(self, *extras):
 
 def mock_calculate_max_FoM(self):
     pass
+
+@pytest.fixture(scope="function")
+def obs_pair_argon():
+    exp_observable = SQw()
+    exp_observable.read_from_file("xml_SQw", str(data._EXP_DATA_PATH / "Well_s_q_omega_Ar_data.xml"))
+    md_observable = SQw()
+    md_observable.origin = "MD"
+    for obs in {exp_observable, md_observable}:
+        obs.name = "SQw"
+    md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
+
+    return ObservablePair(
+        exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
+    )
+
+@pytest.fixture(scope="function")
+def obs_pair_water():
+    exp_observable = SQw()
+    exp_observable.read_from_file("LAMPSQw", str(data._EXP_DATA_PATH / "263K05Awat_LAMP"))
+    md_observable = SQw()
+    md_observable.origin = "MD"
+    for obs in {exp_observable, md_observable}:
+        obs.name = "SQw"
+    md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
+
+    return ObservablePair(
+        exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
+    )
 
 
 @pytest.fixture(scope="module")
@@ -254,7 +284,7 @@ def exp_datasets() -> callable:
                          ])
 
 def test_control_init_stdout(print_value, expected_indexes, expected_data, monkeypatch,
-                             capsys, exp_datasets, simulation):
+                             capsys, exp_datasets, simulation, obs_pair_argon):
     """
     A test to make sure that the stdout when creating a control object
     is as expected, both when a full output is requested, and when not .
@@ -282,6 +312,7 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
     Control(simulation(time_step=dt),
                     datasets,
                     [],
+                    observable_pairs=[obs_pair_argon],
                     FoM_options={'error': "none"},
                     reset_config=False,
                     print_all_settings=print_value,
@@ -311,7 +342,7 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
-                               file_name, error, capsys):
+                               file_name, error, capsys, obs_pair_argon, obs_pair_water):
     """
     Tests that the stdout from Control.refine is in the expected format. Test
     considers float, str, int all of variable lengths.
@@ -339,6 +370,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
                            FoM_options={'error': error[0]},
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            reset_config=False)
 
     ctrl.minimizer = minim
@@ -367,7 +399,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
-                                          monkeypatch, file_name, capsys):
+                                          monkeypatch, file_name, capsys, obs_pair_argon, obs_pair_water):
     """
     Tests that the stdout from Control.refine is in the expected format. Test
     considers float, str, int all of variable lengths.
@@ -395,6 +427,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            reset_config=False)
 
     ctrl.minimizer = minim
@@ -429,7 +462,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_no_scaling(simulation, exp_datasets, file_name):
+def test_control_no_scaling(simulation, exp_datasets, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that by default a rescale factor of `1.` is used.
     """
@@ -437,6 +470,7 @@ def test_control_no_scaling(simulation, exp_datasets, file_name):
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            verbose=-1,
                            reset_config=False)
 
@@ -447,7 +481,7 @@ def test_control_no_scaling(simulation, exp_datasets, file_name):
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_rescale_factor(simulation, exp_datasets, file_name):
+def test_control_rescale_factor(simulation, exp_datasets, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that a manually specified ``rescale_factor`` is applied to the
     ``observable_pair``.
@@ -456,6 +490,7 @@ def test_control_rescale_factor(simulation, exp_datasets, file_name):
     datasets = exp_datasets(rescale_factor=0.5, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -465,7 +500,7 @@ def test_control_rescale_factor(simulation, exp_datasets, file_name):
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_auto_scale(simulation, exp_datasets, file_name):
+def test_control_auto_scale(simulation, exp_datasets, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that ``auto_scale`` is applied.
     """
@@ -473,6 +508,7 @@ def test_control_auto_scale(simulation, exp_datasets, file_name):
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -482,7 +518,7 @@ def test_control_auto_scale(simulation, exp_datasets, file_name):
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_scaling_warning(simulation, exp_datasets, file_name,
-                                 capsys):
+                                 capsys, obs_pair_argon, obs_pair_water):
     """
     Test that when both ``rescale_factor`` and ``auto_scale`` specified then
     the latter is used and a warning is printed to explain this.
@@ -493,6 +529,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                             file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -514,7 +551,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_use_FFT_default(simulation, exp_datasets, file_name):
+def test_control_use_FFT_default(simulation, exp_datasets, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that ``use_FFT`` defaults to True.
     """
@@ -522,6 +559,7 @@ def test_control_use_FFT_default(simulation, exp_datasets, file_name):
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -531,7 +569,7 @@ def test_control_use_FFT_default(simulation, exp_datasets, file_name):
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_use_FFT(simulation, exp_datasets, file_name):
+def test_control_use_FFT(simulation, exp_datasets, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that ``use_FFT`` is applied when specified.
     """
@@ -539,6 +577,7 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
     datasets = exp_datasets(use_FFT=False, file_name=file_name)
     dt = DATASET_INFO['no_FFT'][file_name]['dt']
     ctrl = Control(simulation(time_step=dt), datasets, [],
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -546,17 +585,19 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
         assert not pair.MD_obs.use_FFT
 
 
-def test_control_max_parameter_change(monkeypatch):
+def test_control_max_parameter_change(monkeypatch, obs_pair_argon):
     """
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
     monkeypatch.setattr(Control, "calculate_max_FoM", mock_calculate_max_FoM)
 
-    ctrl_default = Control(None, [], [], minimizer_type="CMAES",verbose=-1, reset_config=False)
+    ctrl_default = Control(None, [], [], minimizer_type="CMAES",verbose=-1,
+                    observable_pairs=[obs_pair_argon], reset_config=False)
     assert ctrl_default.minimizer.sigma0 == 0.2
 
     ctrl = Control(None, [], [], reset_config=False, verbose=-1,
+                    observable_pairs=[obs_pair_argon],
                            minimizer_type="CMAES", sigma0=0.02)
     assert ctrl.minimizer.sigma0 == 0.02
 
@@ -685,7 +726,7 @@ def test_control_make_data_uniform(mock_observable):
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
 @pytest.mark.parametrize('use_FFT', [True, False])
 def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
-                             file_name):
+                             file_name, obs_pair_argon, obs_pair_water):
     """
     Test that ``MD_steps`` defaults to the minimum required if not specified.
     """
@@ -700,6 +741,7 @@ def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
     ctrl = Control(simulation(traj_step=traj_step, time_step=time_step),
                            exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [], verbose=-1,
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            reset_config=False)
     assert ctrl.MD_steps == n_frames * traj_step
 
@@ -709,7 +751,7 @@ def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
 @pytest.mark.parametrize('use_FFT', [True, False])
 def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
-                                   traj_step, file_name):
+                                   traj_step, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that ``MD_steps`` is accepted when greater than the minimum required,
     and rounded down to an integer number of ``nE * traj_steps`` if there is a
@@ -731,6 +773,7 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
                            exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [],
                            verbose=-1,
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                            reset_config=False,
                            MD_steps=user_MD_steps)
 
@@ -742,7 +785,7 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
 @pytest.mark.parametrize('use_FFT', [True, False])
 def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
-                                   traj_step, file_name):
+                                   traj_step, file_name, obs_pair_argon, obs_pair_water):
     """
     Test that ``MD_steps`` is rejected when greater than the minimum required.
     """
@@ -758,6 +801,7 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
                         exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
                         verbose=-1,
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                         reset_config=False,
                         MD_steps=1)
 
@@ -767,7 +811,7 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
 @pytest.mark.parametrize('traj_step', [2, 5, 25])
 @pytest.mark.parametrize('use_FFT', [True, False])
 def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
-                                 file_name):
+                                 file_name, obs_pair_argon, obs_pair_water):
     """
     Test that the time_step and traj_step values are changed correctly when an incompatible
     time separation is specified.
@@ -783,6 +827,7 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                     exp_datasets(use_FFT=use_FFT, file_name=file_name),
                     [],
                     verbose=-1,
+                    observable_pairs=[obs_pair_argon if "Well" in file_name else obs_pair_water],
                     reset_config=False)
 
     traj_step_required = np.round(ctrl.dt_required/time_step)
@@ -791,7 +836,7 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
     assert ctrl.simulation.time_step == time_step_required
     assert ctrl.simulation.traj_step == traj_step_required
 
-def test_control_fit_parameters(simulation, monkeypatch):
+def test_control_fit_parameters(simulation, monkeypatch, obs_pair_argon):
     """
     Test that unsuitable fit_parameters are removed from the Control object:
       - Parameters with a value of 0
@@ -812,12 +857,13 @@ def test_control_fit_parameters(simulation, monkeypatch):
                                  Parameter(4., 'constraints', constraints=(3.9, 4.1))])
 
     ctrl = Control(simulation(), [], fit_parameters=fit_parameters,
+                    observable_pairs=[obs_pair_argon],
                            verbose=-1, reset_config=False)
 
     assert len(ctrl.fit_parameters) == 2
     assert 'constraints' in list(ctrl.fit_parameters.keys())[0]
 
-def test_control_resolution_function(simulation, exp_datasets):
+def test_control_resolution_function(simulation, exp_datasets, obs_pair_water):
     """
     Test that when a resolution file is provided, a resolution function is added to both the
     experimental and MD observables.
@@ -834,13 +880,14 @@ def test_control_resolution_function(simulation, exp_datasets):
                            exp_datasets(file_name=file_name, resolution=resolution_file),
                            [],
                            verbose=-1,
+                    observable_pairs=[obs_pair_water],
                            reset_config=False)
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
 
 @pytest.mark.parametrize('steps', [0, None])
-def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeypatch):
+def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeypatch, obs_pair_water):
     """
     Tests that when the equilibration method is called with no steps specified
     (either 0 or None), then the auto_equilibrate method is called.
@@ -851,13 +898,14 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
                    exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                    [],
                    reset_config=False,
+                    observable_pairs=[obs_pair_water],
                    equilibration_steps=steps)
 
     ctrl.equilibrate(steps)
     assert sim.auto_equilibrated
 
 @pytest.mark.parametrize('steps', [1, 50])
-def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch):
+def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch, obs_pair_water):
     """
     Tests that when the equilibration method is called with equilibration steps specified
     (an integer > 0), then the simulation.run method is called accordingly.
@@ -868,18 +916,20 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
                    exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                    [],
                    reset_config=False,
+                    observable_pairs=[obs_pair_water],
                    equilibration_steps=steps)
 
     ctrl.equilibrate(steps)
     assert sim.ran
 
-def test_control_auto_equil_params(simulation, exp_datasets, monkeypatch):
+def test_control_auto_equil_params(simulation, exp_datasets, monkeypatch, obs_pair_water):
     """Tests that params are passed through to auto_equilibrate."""
     sim = simulation()
     ctrl = Control(sim,
                    exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
                    [],
                    reset_config=False,
+                    observable_pairs=[obs_pair_water],
                    equilibration_steps=0,
                    auto_equil_eq_step=50,
                    auto_equil_window_size=500,
@@ -895,7 +945,7 @@ def test_control_auto_equil_params(simulation, exp_datasets, monkeypatch):
     mocked.assert_called_with(eq_step=50, window_size=500, tolerance=0.00001, max_steps=100)
 
 
-def test_control_md_engine_error(simulation, exp_datasets, caplog):
+def test_control_md_engine_error(simulation, exp_datasets, caplog, obs_pair_water):
     """
     Tests that `MDEngineError`s are propagated to the Control object and logged.
     """
@@ -903,7 +953,8 @@ def test_control_md_engine_error(simulation, exp_datasets, caplog):
     sim.engine = MockBadEngine()
     minim = MockMinimizer(history=[])
 
-    ctrl = Control(sim, exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'), [MockParameter('eps', 0)])
+    ctrl = Control(sim, exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'), [MockParameter('eps', 0)],
+                    observable_pairs=[obs_pair_water],)
     ctrl.min = minim
 
     with pytest.raises(MDEngineError):
@@ -914,7 +965,7 @@ def test_control_md_engine_error(simulation, exp_datasets, caplog):
 
     assert log_msg in caplog.text
 
-def test_control_md_engine_recover(simulation, exp_datasets):
+def test_control_md_engine_recover(simulation, exp_datasets, obs_pair_water):
     """
     Tests that recoverable MDEngineErrors are recovered.
     """
@@ -922,7 +973,8 @@ def test_control_md_engine_recover(simulation, exp_datasets):
     sim.engine = MockRecoverableEngine()
     minim = MockMinimizer(history=[])
 
-    ctrl = Control(sim, exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'), [MockParameter('eps', 0)])
+    ctrl = Control(sim, exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'), [MockParameter('eps', 0)],
+                    observable_pairs=[obs_pair_water],)
     ctrl.min = minim
 
     ctrl.equilibrate(1)
@@ -944,7 +996,7 @@ def test_control_md_engine_recover(simulation, exp_datasets):
     (True, 0., 1., 99),
 ])
 def test_control_md_filter_threshold_on_read(caplog, simulation, exp_datasets, mag,
-                                             abs_threshold, rel_threshold, pct_removed):
+                                             abs_threshold, rel_threshold, pct_removed, obs_pair_argon):
     sim = simulation()
 
     ctrl = Control(sim,
@@ -955,7 +1007,8 @@ def test_control_md_filter_threshold_on_read(caplog, simulation, exp_datasets, m
                        rel_threshold=rel_threshold,
                        absolute=mag,
                    ),
-                   [MockParameter('eps', 0)])
+                   [MockParameter('eps', 0)],
+                    observable_pairs=[obs_pair_argon],)
 
     data = {'dep': ctrl.observable_pairs[0].exp_obs.dependent_variables['SQw'][0],
             'err': ctrl.observable_pairs[0].exp_obs.errors['SQw'][0]}

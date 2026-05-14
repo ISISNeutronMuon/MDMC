@@ -273,10 +273,10 @@ def test_OP_weight_validation(SQw_from_exp, SQw_from_MD, observable_pair):
             observable_pair.weight = weight
 
 
-def test_difference_calculation(SQw_dict):
+def test_observable_interpolation(SQw_dict):
 
     """
-    Tests the ObservablePair difference calculation is correct
+    Check if interpolating does not change values at known points.
     """
 
     from_exp = SQw_dict['from_exp']
@@ -284,14 +284,7 @@ def test_difference_calculation(SQw_dict):
     from_MD._dependent_variables['dep'] = 2 * SQw_dict['dep']
 
     pair = ObservablePair(from_exp, from_MD, weight=1.)
-    assert np.all(pair.interpolate_MD_onto_exp() == -SQw_dict['dep'])
-
-    pair.exp_obs._dependent_variables['dep'] = 4 * SQw_dict['dep']
-    assert np.all(pair.interpolate_MD_onto_exp() == 2 * SQw_dict['dep'])
-
-    rescaled_pair = ObservablePair(from_exp, from_MD, weight=1.,
-                                       rescale_factor=0.75)
-    assert np.all(rescaled_pair.interpolate_MD_onto_exp() == SQw_dict['dep'])
+    assert np.allclose(pair.interpolate_MD_onto_exp(), 2*SQw_dict['dep'])
 
 
 def test_error_calculation(SQw_dict):
@@ -526,16 +519,19 @@ def test_zero_error_RSquaredNoError(pairs):
     """
     Test that inputting a zero for the error is accepted by the RSquared FoM.
     """
+    calculator = FoMFactory.create('none',pairs)
+    normal_FoM = calculator.calculate()
+
     for pair in pairs:
         error_shape = pair.exp_obs._errors['err'].shape
         pair.exp_obs._errors = {'err':np.zeros(error_shape)}
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
+    
 
     calculator = FoMFactory.create('none',pairs)
-    expected_FoM = np.sum(pair.interpolate_MD_onto_exp() ** 2)/21  # 21 points
-    normal_FoM = calculator.calculate()
+    zero_errors_FoM = calculator.calculate()
 
-    assert np.isclose(normal_FoM, expected_FoM)
+    assert np.isclose(normal_FoM, zero_errors_FoM)
 
 
 def test_zero_error_ChiSquared(pairs):
