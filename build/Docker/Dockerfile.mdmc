@@ -12,10 +12,9 @@ RUN pip3 install --upgrade pip
 # https://github.com/pypa/pip/issues/11440
 RUN pip3 install setuptools pip-tools --upgrade
 COPY pyproject.toml pyproject.toml
-COPY requirements.txt requirements.txt
 RUN pip-compile --extra LAMMPS,DLPOLY,test,docs -o dependencies.txt pyproject.toml
 RUN pip3 install -r dependencies.txt
-RUN rm -r pyproject.toml requirements.txt dependencies.txt
+RUN rm pyproject.toml dependencies.txt
 
 # create a file in root directory called TIMESTAMP, containing
 # the time and date the image was created, as well as its dependency versions.
