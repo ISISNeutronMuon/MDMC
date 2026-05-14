@@ -23,6 +23,7 @@ Control
 """
 
 from .control import Control
+from .h5md import H5MDControl
 from .plot_results import PlotResults
 
-__all__ = ["Control", "PlotResults"]
+__all__ = ["Control", "H5MDControl", "PlotResults"]

@@ -21,7 +21,7 @@ Creating a trajectory File
 In MDMC, an H5MD file can be created at the refinement stage of the simulation. It is possible to
 either create a H5MD file only from the trajectory with the best figure of merit or from every trajectory generated.
 
-To get an H5MD trajectory file from the refinement stage pass ``DumpFreq.EVERY`` to the control object to create a H5MD file from every trajectory,
+To get an H5MD trajectory file from the refinement stage pass ``DumpFreq.EVERY`` to the H5MDControl object to create a H5MD file from every trajectory,
 or ``DumpFreq.BEST``, to create a H5MD file from the trajectory with the best figure of merit.
 
 This will result in files name "<timestamp>trajectory.h5" being created within the MDMC files.
@@ -30,13 +30,13 @@ Optional
 ^^^^^^^^
 Optionally, additional parameters can be used to change how or where the File is created:
 
-* ``file_dump_prefix`` can be set to a preferred name of the H5MD trajectory files.
-* ``file_dump_loc`` can be set to change where the file is stored,
-* ``file_dump_timestamp`` can be set to True or False, adding or removing the time stamp at the end of the file name respectively.
+* ``file_prefix`` can be set to a preferred name of the H5MD trajectory files.
+* ``folder`` can be set to change where the file is stored,
+* ``timestamp`` can be set to True or False, adding or removing the time stamp at the end of the file name respectively.
 
 .. note::
 
-    MDMC will not add the ``.h5`` extension to the name of the file and will use exactly the name you define. 
+    MDMC will not add the ``.h5`` extension to the name of the file and will use exactly the name you define.
     Not specifying this will not break the file but it is recommended, as some operating systems rely on the extension
     to work out the appropriate reader, as well as simply making the file easier to find.
 
@@ -49,34 +49,44 @@ to the file ``my_refinement_folder/trajectories/best_trajectory.h5``.
 
 .. code-block:: Python
 
+   h5md = H5MDControl(
+       frequency="best",
+       file_prefix="best_trajectory.h5",
+       folder="./trajectories",
+       timestamp=False,
+   )
+
   control = Control(simulation=simulation,
               exp_datasets=exp_datasets,
               fit_parameters=fit_parameters,
               MD_steps=570,
-              file_dump_frequency="best",
-              file_dump_loc="./trajectories"
-              file_dump_prefix="best_trajectory.h5",
-              file_dump_timestamp=False)
+              dump_control=h5md)
 
-We can set file_dump_frequency to dump every trajectory created by the analysis with a timestamp. This example ``Control`` object would dump trajectories
+We can set frequency to dump every trajectory created by the analysis with a timestamp. This example ``Control`` object would dump trajectories
 to the same ``trajectories`` subfolder as previously, with the name ``traj_DDMMYYYY-HH.MM.SS``, i.e. trajectory dumped
 at 12:23:15pm on the 18th of October 2025, the name would be ``traj_18102025-12.23.15``.
 
 .. code-block:: Python
 
-  control = Control(simulation=simulation,
-              exp_datasets=exp_datasets,
-              fit_parameters=fit_parameters,
-              MD_steps=570,
-              file_dump_frequency="best",
-              file_dump_loc="./trajectories"
-              file_dump_prefix="traj",
-              file_dump_timestamp=True)
+   h5md = H5MDControl(
+       frequency="every",
+       file_prefix="traj",
+       folder="./trajectories",
+       timestamp=True,
+   )
+
+   control = Control(
+       simulation=simulation,
+       exp_datasets=exp_datasets,
+       fit_parameters=fit_parameters,
+       MD_steps=570,
+       dump_control=h5md,
+   )
 
 
 .. warning::
 
-    If printing all trajectories ``file_dump_timestamp`` should be set to true, if not the file will be continually overwritten
+    If printing all trajectories ``timestamp`` should be set to true, if not the file will be continually overwritten
     and the file will only contain the last trajectory.
 
 External Use
@@ -105,7 +115,7 @@ Once ``MDANSE`` is installed, you can use the User Interface to visualise the tr
 3. Chose an analysis type and configer the paramiters.
 4. Run analysis with the run button.
 
-``MDANSE`` has futher fcuntionality and for more infomation use the MDANSE documentation `MDANSE`_ or the MDANSE Tutorials `MDANSE Turorials`_.
+``MDANSE`` has futher functionality and for more infomation use the MDANSE documentation `MDANSE`_ or the MDANSE Tutorials `MDANSE Turorials`_.
 
 Useful Links
 ------------

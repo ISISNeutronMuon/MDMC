@@ -10,7 +10,7 @@ import os
 os.environ["OMP_NUM_THREADS"] = "4"
 
 
-from MDMC.control import Control
+from MDMC.control import Control, H5MDControl
 from MDMC.MD import Atom, NonBonded, Simulation, Universe
 from MDMC.MD.interactions import NonBondedForce
 
@@ -72,15 +72,25 @@ fit_parameters = universe.parameters
 fit_parameters['sigma'].constraints = [2.0, 4.0]
 fit_parameters['epsilon'].constraints = [0.5, 1.5]
 
+h5md = H5MDControl(
+    frequency="best",
+    extent="obs",
+    folder=".",
+    timestamp=False,
+    observable_format="mda",
+    file_prefix="mdmc_argon",
+)
+
 # Specify how the refinement is going to be controlled
 control = Control(
     simulation=simulation,
     exp_datasets=exp_datasets,
     fit_parameters=fit_parameters,
     reset_config=True,
+    dump_control=h5md,
     equilibration_steps=30000,
     MD_steps=16000,
-    FoM_options={'error': 'none'}
+    FoM_options={'error': 'none'},
 )
 
 # Run the refinement, i.e. refine the FF parameters against the data.
