@@ -21,7 +21,7 @@ fi
 
 
 # mdmc/mdmc image rebuild without base image changes
-if ! git diff remotes/origin/master --name-only | grep 'build/Docker/Dockerfile.mdmc\|requirements.txt\|pyproject.toml'
+if ! git diff remotes/origin/master --name-only | grep 'build/Docker/Dockerfile.mdmc\|pyproject.toml'
 then
   echo "Docker file does not require rebuilding."
 else

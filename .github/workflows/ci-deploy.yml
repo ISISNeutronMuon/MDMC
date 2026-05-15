@@ -26,7 +26,6 @@ jobs:
           docker:
             - 'build/Docker/Dockerfile.engines'
             - 'build/Docker/Dockerfile.mdmc'
-            - 'requirements.txt'
             - 'pyproject.toml'
 
   update-latest-image:

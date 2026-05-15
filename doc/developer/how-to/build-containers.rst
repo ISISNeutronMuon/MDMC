@@ -6,7 +6,7 @@ Building the Docker image
 
 Github Actions automatically builds and tests new Docker images for MDMC.
 It does so ONLY IF files in the ``/build/Docker`` directory are changed,
-or if ``requirements.txt`` is changed. In this case, the pull request testing will
+or if the ``pyproject.toml`` has changed. In this case, the pull request testing will
 automatically detect these changes, rebuild the image from the Dockerfile,
 test it, and then push it to ``mdmc/mdmc:ci-[branch]`` where ``[branch]``
 is the name of the branch the image was built on. Note that the 'slow' build stage,
