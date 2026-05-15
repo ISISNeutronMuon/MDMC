@@ -69,7 +69,7 @@ class ObservablePair:
         self.last_rescale_factor = 1.0
         self.auto_scale = auto_scale
         if isinstance(self.MD_obs, MDANSEObservable):
-            self.matching_obs = MDANSEObservable(mdanse_job_type="SQw")
+            self.matching_obs = MDANSEObservable(mdanse_job_type=self.MD_obs.job_type)
             self.matching_obs.origin = "MD"
             self.matching_obs.independent_variables = copy.deepcopy(
                 self.exp_obs.independent_variables,
