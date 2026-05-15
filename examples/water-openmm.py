@@ -53,6 +53,8 @@ for p in universe.parameters.as_array:
         p.constraints = [0.5, 0.8]
     elif p.parameter_name == 'TIP4P-Ewald-O-nonbonded_sigma':
         p.constraints = [2.95, 3.35]
+    elif p.parameter_name == 'TIP4P-Ewald-HOH-harmonicangle_equilibrium_state':
+        p.constraints = [80, 120]
     else:
         p.fixed = True
 

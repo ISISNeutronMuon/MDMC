@@ -119,54 +119,19 @@ class OpenMMEngine(MDEngine):
             else:
                 self.real_atom.append(True)
 
-        # set bond constraints
+        # build bond graph
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
-        bond_dists = {}
         for mdmc_bond in mdmc_bonds:
             for atm_i, atm_j in mdmc_bond.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 self.bond_graph.add_edge(i, j)
-                if (
-                    isinstance(mdmc_bond.function, DummyInteractionFunction)
-                    or not mdmc_bond.constrained
-                ):
-                    continue
-                equil_length = mdmc_bond.function.equilibrium_state.value
-                self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
-                bond_dists[(i, j)] = equil_length
-                bond_dists[(j, i)] = equil_length
-
-        # set angle constraints
-        mdmc_bondangles = [
-            force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
-        ]
-        for mdmc_bondangle in mdmc_bondangles:
-            if (
-                isinstance(mdmc_bondangle.function, DummyInteractionFunction)
-                or not mdmc_bondangle.constrained
-            ):
-                continue
-            equil_angle = mdmc_bondangle.function.equilibrium_state.value
-            for atm_i, atm_j, atm_k in mdmc_bondangle.atoms:
-                i = self.MDMC_ID_to_idx[atm_i.ID]
-                j = self.MDMC_ID_to_idx[atm_j.ID]
-                k = self.MDMC_ID_to_idx[atm_k.ID]
-                b = bond_dists[(i, j)]
-                c = bond_dists[(j, k)]
-                a = np.sqrt(b**2 + c**2 - 2 * b * c * np.cos(np.deg2rad(equil_angle)))
-                # openmm doesn't have angle constraints, we expect
-                # bond constraints to be already set if angle
-                # constraints are set so we assume that bond constraints
-                # were already made above and can add a length constraint
-                # to fix the angle
-                self.openmm_system.addConstraint(i, k, a * unit.angstroms)
 
         # add force field
-        self.change_openmm_force_field()
+        self.change_openmm_force_field_and_constraints()
 
-    def change_openmm_force_field(self):
-        """Change the OpenMM force fields."""
+    def change_openmm_force_field_and_constraints(self):
+        """Change the OpenMM force fields and constraints."""
         nonbonded = mm.NonbondedForce()
         for atom in self.universe.atoms:
             mdmc_nonbonded = [
@@ -193,12 +158,13 @@ class OpenMMEngine(MDEngine):
         nonbonded.setUseSwitchingFunction(False)
         nonbonded.setUseDispersionCorrection(False)
 
+        bond_dists = {}
         bond_force = mm.HarmonicBondForce()
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
-            if isinstance(mdmc_bond.function, DummyInteractionFunction) or mdmc_bond.constrained:
+            if isinstance(mdmc_bond.function, DummyInteractionFunction):
                 continue
-            equil_length = mdmc_bond.function.equilibrium_state.value * unit.angstroms
+            equil_length = mdmc_bond.function.equilibrium_state.value
             force_const = (
                 mdmc_bond.function.potential_strength.value
                 * unit.kilojoules_per_mole
@@ -207,21 +173,23 @@ class OpenMMEngine(MDEngine):
             for atm_i, atm_j in mdmc_bond.atoms:
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
-                # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
-                # in lammps and therefore MDMC it is without the 1/2
-                bond_force.addBond(i, j, equil_length, 2 * force_const)
+                if mdmc_bond.constrained:
+                    self.openmm_system.addConstraint(i, j, equil_length * unit.angstroms)
+                    bond_dists[(i, j)] = equil_length
+                    bond_dists[(j, i)] = equil_length
+                else:
+                    # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
+                    # in lammps and therefore MDMC it is without the 1/2
+                    bond_force.addBond(i, j, equil_length * unit.angstroms, 2 * force_const)
 
         angle_force = mm.HarmonicAngleForce()
         mdmc_bondangles = [
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
         for mdmc_bondangle in mdmc_bondangles:
-            if (
-                isinstance(mdmc_bondangle.function, DummyInteractionFunction)
-                or mdmc_bondangle.constrained
-            ):
+            if isinstance(mdmc_bondangle.function, DummyInteractionFunction):
                 continue
-            equil_angle = mdmc_bondangle.function.equilibrium_state.value * unit.degrees
+            equil_angle = mdmc_bondangle.function.equilibrium_state.value
             force_const = (
                 mdmc_bondangle.function.potential_strength.value
                 * unit.kilojoules_per_mole
@@ -231,9 +199,23 @@ class OpenMMEngine(MDEngine):
                 i = self.MDMC_ID_to_idx[atm_i.ID]
                 j = self.MDMC_ID_to_idx[atm_j.ID]
                 k = self.MDMC_ID_to_idx[atm_k.ID]
-                # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
-                # in lammps and therefore MDMC it is without the 1/2
-                angle_force.addAngle(i, j, k, equil_angle, 2 * force_const)
+                if mdmc_bondangle.constrained:
+                    b = bond_dists[(i, j)]
+                    c = bond_dists[(j, k)]
+                    a = (
+                        np.sqrt(b**2 + c**2 - 2 * b * c * np.cos(np.deg2rad(equil_angle)))
+                        * unit.angstroms
+                    )
+                    # openmm doesn't have angle constraints, we expect
+                    # bond constraints to be already set if angle
+                    # constraints are set so we assume that bond constraints
+                    # were already made above and can add a length constraint
+                    # to fix the angle
+                    self.openmm_system.addConstraint(i, k, a)
+                else:
+                    # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
+                    # in lammps and therefore MDMC it is without the 1/2
+                    angle_force.addAngle(i, j, k, equil_angle * unit.degrees, 2 * force_const)
 
         for i in range(self.universe.n_atoms):
             for j, dist in nx.single_source_shortest_path_length(
@@ -252,10 +234,12 @@ class OpenMMEngine(MDEngine):
         self.openmm_system.addForce(angle_force)
         self.openmm_system.addForce(mm.CMMotionRemover())
 
-    def clear_forces(self):
-        """Clear the OpenMM force fields from the OpenMM system."""
+    def clear_forces_and_constraints(self):
+        """Clear the OpenMM force fields and constraints from the OpenMM system."""
         for i in reversed(range(self.openmm_system.getNumForces())):
             self.openmm_system.removeForce(i)
+        for i in reversed(range(self.openmm_system.getNumConstraints())):
+            self.openmm_system.removeConstraint(i)
 
     def setup_simulation(self, **settings: Any) -> None:
         """Set up the openmm simulation.
@@ -411,8 +395,8 @@ class OpenMMEngine(MDEngine):
 
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters."""
-        self.clear_forces()
-        self.change_openmm_force_field()
+        self.clear_forces_and_constraints()
+        self.change_openmm_force_field_and_constraints()
         self.openmm_simulation.context.reinitialize(preserveState=True)
 
     def save_config(self) -> None:
