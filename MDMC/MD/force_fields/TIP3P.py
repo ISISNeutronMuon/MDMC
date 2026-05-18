@@ -48,7 +48,6 @@ class TIP3P(WaterModel):
 
     @property
     def interaction_dictionary(self):
-
         # Charge Parameters
         q_O = -0.834  # e
         q_H = abs(q_O / 2)  # e

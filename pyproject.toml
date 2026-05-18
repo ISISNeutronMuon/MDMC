@@ -31,7 +31,9 @@ dependencies = [
   "cma==4.4.4",
   "h5py==3.16.0",
   "openmm==8.4.0",
-  "networkx==3.4"
+  "networkx==3.4",
+  "mdanse==2.0.1",
+  "more_itertools==10.8.0",
 ]
 keywords = ["neutron scattering", "molecular dynamics"]
 classifiers = [
@@ -150,6 +152,7 @@ ignore = [
     "B905",  # No strict in zip
     "A003",  # Shadowing by attribute
     "UP015", # Don't use 'r' mode parameter
+    "COM812",
 ]
 
 [tool.ruff.lint.pydocstyle]

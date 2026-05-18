@@ -105,7 +105,6 @@ class PyLammpsAttribute:
     """
 
     def __init__(self, lmp: PyLammps = None, atom_style: str = "full"):
-
         if lmp:
             self.lmp = lmp
         else:
@@ -261,7 +260,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self.lmp_simulation.temperature = value
 
     @property
@@ -280,7 +278,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float) -> None:
-
         self.lmp_simulation.pressure = value
 
     @property
@@ -299,7 +296,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     @ensemble.setter
     def ensemble(self, value: LAMMPSEnsemble) -> None:
-
         self.lmp_simulation.ensemble = value
 
     @property
@@ -317,7 +313,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     @thermostat.setter
     def thermostat(self, value: str) -> None:
-
         self.ensemble.thermostat = value
 
     @property
@@ -335,7 +330,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     @barostat.setter
     def barostat(self, value: str) -> None:
-
         self.ensemble.barostat = value
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
@@ -749,7 +743,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return traj
 
     def update_parameters(self) -> None:
-
         self.lmp_universe.update_parameters()
 
     def clear(self) -> None:
@@ -760,7 +753,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp.clear()
 
     def save_config(self) -> None:
-
         # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
         # or the individual atoms, so instead this saves the x, y, z, mass
         # and charge in a NumPy array with the indexes given by the atom ID
@@ -852,7 +844,6 @@ class LAMMPSUniverse(PyLammpsAttribute):
     """
 
     def __init__(self, universe: Universe, lmp: PyLammps = None, **settings: Any):
-
         super().__init__(lmp, settings.get("atom_style", "full"))
         self.universe = universe
         self.atom_dict = {}
@@ -914,7 +905,6 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
     @nonbonded_mix.setter
     def nonbonded_mix(self, value: str) -> None:
-
         if not value:
             self._nonbonded_mix = value
         else:
@@ -1524,7 +1514,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
     """
 
     def __init__(self, universe, traj_step: int, time_step: float = 1.0, lmp=None, **settings: Any):
-
         super().__init__(lmp, settings.get("atom_style", "full"))
         self.universe = universe
         self.ensemble = LAMMPSEnsemble(self.lmp, **settings)
@@ -1562,7 +1551,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
-
         self._time_step = value
         with suppress(ValueError):
             # Set the timestep in LAMMPS wrapper
@@ -1584,7 +1572,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self._temperature = value
         self.ensemble.temperature = value
         try:
@@ -1634,7 +1621,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float) -> None:
-
         self.ensemble.pressure = value
 
     @property
@@ -1652,7 +1638,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @thermostat.setter
     def thermostat(self, value: str) -> None:
-
         self.ensemble.thermostat = value
 
     @property
@@ -1670,7 +1655,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @barostat.setter
     def barostat(self, value: str) -> None:
-
         self.ensemble.barostat = value
 
     @property
@@ -1691,7 +1675,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
     @skin.setter
     @unit_decorator(unit=units.LENGTH)
     def skin(self, value: float) -> None:
-
         self._skin = value
         # Set the neighor list parameters in the LAMMPS wrapper
         self.lmp.neighbor(convert_unit(self._skin), "bin")
@@ -1711,7 +1694,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @neighbor_steps.setter
     def neighbor_steps(self, value: int) -> None:
-
         self._neighbor_steps = value
         with suppress(TypeError):
             # Set the modifiers to the neighbor list in the LAMMPS wrapper
@@ -1732,7 +1714,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @lin_momentum_steps.setter
     def lin_momentum_steps(self, value: int) -> None:
-
         self._lin_momentum_steps = value
         # Set the momentum removers in the LAMMPS wrapper
         self._set_momentum_removers()
@@ -1752,7 +1733,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @ang_momentum_steps.setter
     def ang_momentum_steps(self, value: int) -> None:
-
         self._ang_momentum_steps = value
         # Set the momentum removers in the LAMMPS wrapper
         self._set_momentum_removers()
@@ -1913,7 +1893,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         barostat: str = None,
         **settings: Any,
     ):
-
         # Requires a lmp object as thermostats cannot be applied before
         # configuration is defined
         super().__init__(lmp)
@@ -1950,7 +1929,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value):
-
         self._time_step = value
 
     @property
@@ -1964,7 +1942,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self._temperature = value
         self.apply_ensemble_fixes()
 
@@ -1979,7 +1956,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float) -> None:
-
         self._pressure = value
         self.apply_ensemble_fixes()
 
@@ -2014,7 +1990,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     @t_damp.setter
     def t_damp(self, value: int) -> None:
-
         try:
             # LAMMPS requires t_damp to be given in units of time, but it is
             # more natural to give it in units of steps - convert between them
@@ -2057,7 +2032,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     @p_damp.setter
     def p_damp(self, value: int) -> None:
-
         try:
             # LAMMPS requires p_damp to be given in units of time, but it is
             # more natural to give it in units of steps - convert between them
@@ -2093,7 +2067,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     @t_fraction.setter
     def t_fraction(self, value: float) -> None:
-
         # Must be a fraction
         if value is None or 0.0 <= value <= 1.0:
             self._t_fraction = value
@@ -2119,7 +2092,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
     @t_window.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def t_window(self, value: float) -> None:
-
         self._t_window = value
 
     @property
@@ -2137,7 +2109,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     @thermostat.setter
     def thermostat(self, value: str) -> None:
-
         if value and not self.temperature:
             raise AttributeError("all ensembles with a thermostat must have a temperature")
         self._thermostat = value
@@ -2159,7 +2130,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     @barostat.setter
     def barostat(self, value: str) -> None:
-
         if value and not self.pressure:
             raise AttributeError("all ensembles with a barostat must have a pressure")
 

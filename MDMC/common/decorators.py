@@ -506,7 +506,6 @@ def weakref_cache(maxsize: int = 128) -> Callable:
     """
 
     def wrapper(func):
-
         @functools.lru_cache(maxsize)  # create a 'semi-static' cached version of the method
         def _func(_self, *args, **kwargs):
             return func(_self(), *args, **kwargs)

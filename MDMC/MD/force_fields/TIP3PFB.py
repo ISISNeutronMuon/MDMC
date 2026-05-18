@@ -48,7 +48,6 @@ class TIP3PFB(WaterModel):
 
     @property
     def interaction_dictionary(self):
-
         # Parameters from:
         # Building Force Fields: An Automatic, Systematic, and Reproducible
         # Approach

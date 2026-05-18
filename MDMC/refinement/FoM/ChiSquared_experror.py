@@ -48,16 +48,32 @@ class ChiSquaredExpError(FigureOfMerit):
             The FoM for the obs_pair
         """
 
-        if obs_pair.auto_scale:
-            exp_errors = np.array(*obs_pair.exp_obs.errors.values())
-            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
-            MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            obs_pair.rescale_factor = np.sum((MD_values / exp_errors) ** 2) / np.sum(
-                MD_values * exp_values / exp_errors**2,
-            )
-
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum(
-            (obs_pair.calculate_difference() / obs_pair.calculate_exp_errors()) ** 2,
-        )
+        MD_values = obs_pair.interpolate_MD_onto_exp()
+        exp_values = np.squeeze(np.array(obs_pair.exp_y))
+        exp_errors = np.array(*obs_pair.exp_obs.errors.values())
+        obs_pair.fom_contribution = ((MD_values - exp_values) / exp_errors) ** 2
+        value_unreduced = np.nansum(obs_pair.fom_contribution)
+        print(f"ChiSquared_noneerror.calculate_single_FoM: norm_factor: {norm_factor}")
+        print(f"ChiSquared_noneerror.calculate_single_FoM: value_unreduced: {value_unreduced}")
+
+        if obs_pair.auto_scale:
+            A = np.nansum((MD_values / exp_errors) ** 2)
+            B = np.nansum(MD_values * exp_values / exp_errors**2)
+            print(f"ChiSquared_noneerror.calculate_single_FoM: A: {A}")
+            print(f"ChiSquared_noneerror.calculate_single_FoM: B: {B}")
+            rescale_factor = A / B
+            print(f"Rescale factor: {rescale_factor}")
+            obs_pair.fom_contribution = (
+                (MD_values / rescale_factor - exp_values) / exp_errors
+            ) ** 2
+            obs_pair.last_rescale_factor = rescale_factor
+        else:
+            obs_pair.fom_contribution = (
+                (MD_values / obs_pair.rescale_factor - exp_values) / exp_errors
+            ) ** 2
+            obs_pair.last_rescale_factor = obs_pair.rescale_factor
+
+        value_unreduced = np.nansum(obs_pair.fom_contribution)
+
         return obs_pair.weight * value_unreduced / norm_factor

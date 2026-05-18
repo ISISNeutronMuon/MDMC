@@ -148,7 +148,6 @@ class AbstractFQt(SQwMixins, Observable):
     @t.setter
     @unit_decorator(unit=units.TIME)
     def t(self, value: np.ndarray) -> None:
-
         self.independent_variables["t"] = value
 
     @property

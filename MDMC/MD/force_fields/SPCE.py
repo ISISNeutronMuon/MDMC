@@ -49,7 +49,6 @@ class SPCE(WaterModel):
 
     @property
     def interaction_dictionary(self):
-
         # Charge Parameters
         q_O = -0.8476  # e
         q_H = abs(q_O / 2)  # e

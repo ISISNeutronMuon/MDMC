@@ -182,7 +182,6 @@ class LAMPSQw(SQwReader):
         """
 
         def get_row_data(dim):
-
             row_data = np.empty(dim)
 
             for j in range(dim):

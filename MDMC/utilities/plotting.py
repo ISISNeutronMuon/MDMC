@@ -210,7 +210,6 @@ def plot_progress(inst: Control, ynames: str) -> Control:
     # Used to change inst._print_header to pass through as header printing is
     # handled in substitute refine instead
     def print_header(self):
-
         pass
 
     def plot_history(self):
