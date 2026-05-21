@@ -133,6 +133,7 @@ class OpenMMEngine(MDEngine):
     def change_openmm_force_field_and_constraints(self):
         """Change the OpenMM force fields and constraints."""
         nonbonded = mm.NonbondedForce()
+        use_ewald = False
         for atom in self.universe.atoms:
             mdmc_nonbonded = [
                 force.function
@@ -146,15 +147,20 @@ class OpenMMEngine(MDEngine):
             sigma = mdmc_nonbonded.sigma.value * unit.angstrom
             epsilon = mdmc_nonbonded.epsilon.value * unit.kilojoules_per_mole
             nonbonded.addParticle(charge, sigma, epsilon)
+            if mdmc_nonbonded.charge.value != 0.0:
+                use_ewald = True
 
         mdmc_nonbonded = [
             force for force in set(self.universe.interactions) if isinstance(force, NonBondedForce)
         ]
         cutoff = max(force.cutoff for force in mdmc_nonbonded)
         ewald = min(force.ewald for force in mdmc_nonbonded)
-        nonbonded.setNonbondedMethod(mm.NonbondedForce.PME)
+        if use_ewald:
+            nonbonded.setNonbondedMethod(mm.NonbondedForce.PME)
+            nonbonded.setEwaldErrorTolerance(ewald)
+        else:
+            nonbonded.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
         nonbonded.setCutoffDistance(cutoff * unit.angstrom)
-        nonbonded.setEwaldErrorTolerance(ewald)
         nonbonded.setUseSwitchingFunction(False)
         nonbonded.setUseDispersionCorrection(False)
 
