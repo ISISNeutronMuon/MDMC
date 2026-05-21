@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.MD.structures import Molecule
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -206,7 +207,7 @@ class Configuration(AtomCollection):
             A `list` of ``Molecule``.
         """
 
-        return self.filter_structures(lambda x: x.structure_type == "Molecule")
+        return self.filter_structures(lambda x: isinstance(x, Molecule))
 
     @property
     def structure_list(self) -> list[Structure]:

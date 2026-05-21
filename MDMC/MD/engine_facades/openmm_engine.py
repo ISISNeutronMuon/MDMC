@@ -333,6 +333,14 @@ class OpenMMEngine(MDEngine):
                 charge, sigma, epsilon = nonbonded.getParticleParameters(i)
                 nonbonded.setParticleParameters(i, charge, sigma, 0.0)
 
+    def update_charges(self):
+        # identify the charges that are being refined
+
+        # set the charges on molecules
+
+        # have molecules rescale the remaining charges
+        return
+
     def clear_forces_and_constraints(self):
         """Clear the OpenMM force fields and constraints from the OpenMM system."""
         for i in reversed(range(self.openmm_system.getNumForces())):
@@ -514,6 +522,7 @@ class OpenMMEngine(MDEngine):
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters."""
         self.clear_forces_and_constraints()
+        self.update_charges()
         self.change_openmm_force_field_and_constraints()
         self.openmm_simulation.context.reinitialize(preserveState=True)
 
