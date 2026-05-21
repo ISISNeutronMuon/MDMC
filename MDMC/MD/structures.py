@@ -1266,9 +1266,12 @@ class Molecule(CompositeStructure):
         position: ThreeVec | None = None,
         velocity: ThreeVec = (0, 0, 0),
         name: str | None = None,
+        target_charge: float = 0.0,
         **settings: Any,
     ):
         self._structure_list = settings["atoms"]
+        self._target_charge = target_charge
+        self._stoichiometry = Counter([atom.element for atom in self._structure_list])
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
