@@ -45,10 +45,10 @@ simulation = Simulation(
     # default precision on CUDA and OpenCL is single
     openmm_properties={"Precision": "mixed"},
     openmm_nonbonded_scaling=[
-            [0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0],
-            [0.5, 0.5, 0.5],
-        ]
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0],
+        [0.5, 1.0, 0.5],
+    ]
 )
 
 simulation.run(n_steps=30000, equilibration=True)

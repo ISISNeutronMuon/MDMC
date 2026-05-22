@@ -17,7 +17,6 @@
 """A module for defining the OPLSAA force field. This was generated from the
 corresponding TINKER file."""
 
-
 from MDMC.MD.force_fields.ff import FileForceField
 from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded, Periodic
 from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle, NonBondedForce

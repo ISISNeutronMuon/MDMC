@@ -50,7 +50,7 @@ class OpenMMEngine(MDEngine):
         self.nonbonded_scaling = [
             [0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0],
-            [0.5, 0.5, 0.5],
+            [0.5, 1.0, 0.5],
         ]
         self.real_atom = []
 
@@ -256,7 +256,15 @@ class OpenMMEngine(MDEngine):
                     continue
                 # scale nonbonded interaction when atoms are connected
                 # by a specific number of bonds away
-                nonbonded.addException(i, j, *self.nonbonded_scaling[dist - 1])
+                scale_q, scale_sigma, scale_eps = self.nonbonded_scaling[dist - 1]
+                q_i, sig_i, eps_i = nonbonded.getParticleParameters(i)
+                q_j, sig_j, eps_j = nonbonded.getParticleParameters(j)
+
+                charge = scale_q * (q_i * q_j)
+                sigma = scale_sigma * ((sig_i + sig_j) / 2)
+                epsilon = scale_eps * (eps_i * eps_j) ** 0.5
+
+                nonbonded.addException(i, j, charge, sigma, epsilon)
 
         self.openmm_system.addForce(nonbonded)
         self.openmm_system.addForce(bond_force)
