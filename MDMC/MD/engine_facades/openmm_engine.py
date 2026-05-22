@@ -170,7 +170,7 @@ class OpenMMEngine(MDEngine):
         for mdmc_bond in mdmc_bonds:
             if isinstance(mdmc_bond.function, DummyInteractionFunction):
                 continue
-            equil_length = float(mdmc_bond.function.equilibrium_state.value) * unit.angstroms
+            equil_length = float(mdmc_bond.function.equilibrium_state.value)
             force_const = (
                 float(mdmc_bond.function.potential_strength.value)
                 * unit.kilojoules_per_mole
@@ -195,7 +195,7 @@ class OpenMMEngine(MDEngine):
         for mdmc_bondangle in mdmc_bondangles:
             if isinstance(mdmc_bondangle.function, DummyInteractionFunction):
                 continue
-            equil_angle = float(mdmc_bondangle.function.equilibrium_state.value) * unit.degrees
+            equil_angle = float(mdmc_bondangle.function.equilibrium_state.value)
             force_const = (
                 float(mdmc_bondangle.function.potential_strength.value)
                 * unit.kilojoules_per_mole
