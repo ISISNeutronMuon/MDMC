@@ -28,7 +28,7 @@ from openmm.app import Simulation, Topology
 from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.interaction_functions import DummyInteractionFunction
-from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
+from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -143,9 +143,9 @@ class OpenMMEngine(MDEngine):
             if len(mdmc_nonbonded) != 1:
                 raise Exception("Unexpected number of non-bonded interactions.")
             mdmc_nonbonded = mdmc_nonbonded[0]
-            charge = mdmc_nonbonded.charge.value * unit.elementary_charge
-            sigma = mdmc_nonbonded.sigma.value * unit.angstrom
-            epsilon = mdmc_nonbonded.epsilon.value * unit.kilojoules_per_mole
+            charge = float(mdmc_nonbonded.charge.value) * unit.elementary_charge
+            sigma = float(mdmc_nonbonded.sigma.value) * unit.angstrom
+            epsilon = float(mdmc_nonbonded.epsilon.value) * unit.kilojoules_per_mole
             nonbonded.addParticle(charge, sigma, epsilon)
             if mdmc_nonbonded.charge.value != 0.0:
                 use_ewald = True
@@ -170,9 +170,9 @@ class OpenMMEngine(MDEngine):
         for mdmc_bond in mdmc_bonds:
             if isinstance(mdmc_bond.function, DummyInteractionFunction):
                 continue
-            equil_length = mdmc_bond.function.equilibrium_state.value
+            equil_length = float(mdmc_bond.function.equilibrium_state.value) * unit.angstroms
             force_const = (
-                mdmc_bond.function.potential_strength.value
+                float(mdmc_bond.function.potential_strength.value)
                 * unit.kilojoules_per_mole
                 / unit.angstroms**2
             )
@@ -195,9 +195,9 @@ class OpenMMEngine(MDEngine):
         for mdmc_bondangle in mdmc_bondangles:
             if isinstance(mdmc_bondangle.function, DummyInteractionFunction):
                 continue
-            equil_angle = mdmc_bondangle.function.equilibrium_state.value
+            equil_angle = float(mdmc_bondangle.function.equilibrium_state.value) * unit.degrees
             force_const = (
-                mdmc_bondangle.function.potential_strength.value
+                float(mdmc_bondangle.function.potential_strength.value)
                 * unit.kilojoules_per_mole
                 / unit.radians**2
             )
@@ -222,6 +222,29 @@ class OpenMMEngine(MDEngine):
                     # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
                     # in lammps and therefore MDMC it is without the 1/2
                     angle_force.addAngle(i, j, k, equil_angle * unit.degrees, 2 * force_const)
+
+        dihedral = mm.PeriodicTorsionForce()
+        mdmc_dihedrals = [
+            force for force in set(self.universe.interactions) if isinstance(force, DihedralAngle)
+        ]
+        for mdmc_dihedral in mdmc_dihedrals:
+            func = mdmc_dihedral.function
+            params = func.parameters
+            n_funcs = len(params) // 3
+            for i in range(1, n_funcs + 1):
+                force_const = float(getattr(func, f"K{i}").value)
+                n = int(getattr(func, f"n{i}").value)
+                d = float(getattr(func, f"d{i}").value)
+                if force_const == 0.0:
+                    continue
+                for atm_i, atm_j, atm_k, atm_l in mdmc_dihedral.atoms:
+                    i = self.MDMC_ID_to_idx[atm_i.ID]
+                    j = self.MDMC_ID_to_idx[atm_j.ID]
+                    k = self.MDMC_ID_to_idx[atm_k.ID]
+                    l = self.MDMC_ID_to_idx[atm_l.ID]  # noqa: E741
+                    dihedral.addTorsion(
+                        i, j, k, l, n, d * unit.degrees, force_const * unit.kilojoules_per_mole
+                    )
 
         for i in range(self.universe.n_atoms):
             for j, dist in nx.single_source_shortest_path_length(

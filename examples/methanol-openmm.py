@@ -31,7 +31,7 @@ methanol = Molecule(
 )
 
 # Create a universe and add the methanol
-universe = Universe(dimensions=15.0, constraint_algorithm=Shake(1e-5, 100), electrostatic_solver=PPPM(accuracy=1e-4))
+universe = Universe(dimensions=15.0)
 universe.fill(methanol, num_density=0.01)
 add_opls_force_field(universe, cutoff=6.0, ewald=1e-4)
 
@@ -43,7 +43,12 @@ simulation = Simulation(
     traj_step=10,
     openmm_platform="OpenCL",
     # default precision on CUDA and OpenCL is single
-    openmm_properties={"Precision": "single"},
+    openmm_properties={"Precision": "mixed"},
+    openmm_nonbonded_scaling=[
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0],
+            [0.5, 0.5, 0.5],
+        ]
 )
 
 simulation.run(n_steps=30000, equilibration=True)

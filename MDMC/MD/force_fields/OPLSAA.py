@@ -17,8 +17,9 @@
 """A module for defining the OPLSAA force field. This was generated from the
 corresponding TINKER file."""
 
+
 from MDMC.MD.force_fields.ff import FileForceField
-from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded
+from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded, Periodic
 from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle, NonBondedForce
 
 
@@ -31,6 +32,17 @@ class OPLSAA(FileForceField):
 
 
 def add_opls_force_field(universe, cutoff: float, ewald: float):
+    """Adds the OPLS force field to the universe.
+
+    Parameters
+    ----------
+    universe : Universe
+        The MDMC universe object.
+    cutoff : float
+        The cutoff distance (angstrom) used for nonbonded interactions.
+    ewald : float
+        The error tolerance for Ewald summation.
+    """
     opls_aa_file = OPLSAA()
 
     atom_types = set()
@@ -55,6 +67,8 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
 
     bonds_df = opls_aa_file.bonds
     angles_df = opls_aa_file.bond_angles
+    impropers_df = opls_aa_file.impropers
+    propers_df = opls_aa_file.propers
 
     for interaction in universe.interactions:
         if isinstance(interaction, Bond):
@@ -112,3 +126,54 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                 f"OPLS-{grp_i}-{grp_j}-{grp_k}-harmonicangle_potential_strength"
             )
             interaction.function = harmonicangle
+
+        elif isinstance(interaction, DihedralAngle):
+            atm_i, atm_j, atm_k, atm_l = interaction.atoms[0]
+
+            s_i = atoms_df["atom_type"] == int(atm_i.atom_type)
+            s_j = atoms_df["atom_type"] == int(atm_j.atom_type)
+            s_k = atoms_df["atom_type"] == int(atm_k.atom_type)
+            s_l = atoms_df["atom_type"] == int(atm_l.atom_type)
+            grp_i = atoms_df[s_i].iloc[0]["atom_group"]
+            grp_j = atoms_df[s_j].iloc[0]["atom_group"]
+            grp_k = atoms_df[s_k].iloc[0]["atom_group"]
+            grp_l = atoms_df[s_l].iloc[0]["atom_group"]
+
+            if (grp_i == grp_l and grp_j > grp_k) or grp_i > grp_l:
+                grp_i, grp_j, grp_k, grp_l = reversed([grp_i, grp_j, grp_k, grp_l])
+
+            if interaction.improper:
+                dihedral_df = impropers_df
+                type_str = "improper"
+            else:
+                dihedral_df = propers_df
+                type_str = "proper"
+
+            s_i = dihedral_df["atom_group1"] == grp_i
+            s_j = dihedral_df["atom_group2"] == grp_j
+            s_k = dihedral_df["atom_group3"] == grp_k
+            s_l = dihedral_df["atom_group4"] == grp_l
+            dihedral_row = dihedral_df[s_i][s_j][s_k][s_l].iloc[0]
+
+            dihedral = Periodic(
+                dihedral_row["K1"],
+                int(dihedral_row["n1"]),
+                dihedral_row["d1"],
+                dihedral_row["K2"],
+                int(dihedral_row["n2"]),
+                dihedral_row["d2"],
+                dihedral_row["K3"],
+                int(dihedral_row["n3"]),
+                dihedral_row["d3"],
+            )
+            opls_str = f"OPLS-{grp_i}-{grp_j}-{grp_k}-{grp_l}"
+            dihedral.K1.parameter_name = f"{opls_str}-dihedral-{type_str}-K1"
+            dihedral.K2.parameter_name = f"{opls_str}-dihedral-{type_str}-K2"
+            dihedral.K3.parameter_name = f"{opls_str}-dihedral-{type_str}-K3"
+            dihedral.n1.parameter_name = f"{opls_str}-dihedral-{type_str}-n1"
+            dihedral.n2.parameter_name = f"{opls_str}-dihedral-{type_str}-n2"
+            dihedral.n3.parameter_name = f"{opls_str}-dihedral-{type_str}-n3"
+            dihedral.d1.parameter_name = f"{opls_str}-dihedral-{type_str}-d1"
+            dihedral.d2.parameter_name = f"{opls_str}-dihedral-{type_str}-d2"
+            dihedral.d3.parameter_name = f"{opls_str}-dihedral-{type_str}-d3"
+            interaction.function = dihedral
