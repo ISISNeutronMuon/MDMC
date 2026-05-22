@@ -415,8 +415,8 @@ class OpenMMEngine(MDEngine):
         """
         real_atoms = [atom for atom in self.universe.atoms if not isinstance(atom, AverageSite3P)]
         self.compact_trajectory.validateTypes([atom.atom_type for atom in real_atoms])
-        atom_elements = [atom.element for atom in real_atoms]
-        atom_masses = [atom.mass for atom in real_atoms]
+        atom_elements = {atom.atom_type: atom.element for atom in real_atoms}
+        atom_masses = {atom.atom_type: atom.mass for atom in real_atoms}
         self.compact_trajectory.labelAtoms(atom_elements, atom_masses)
         self.compact_trajectory.setCharge([atom.charge for atom in real_atoms])
         self.compact_trajectory.postProcess()
