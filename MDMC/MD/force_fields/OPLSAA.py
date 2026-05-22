@@ -142,37 +142,56 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                 grp_i, grp_j, grp_k, grp_l = reversed([grp_i, grp_j, grp_k, grp_l])
 
             if interaction.improper:
-                dihedral_df = impropers_df
-                type_str = "improper"
+                s_i = impropers_df["atom_group1"] == grp_i
+                s_j = impropers_df["atom_group2"] == grp_j
+                s_k = impropers_df["atom_group3"] == grp_k
+                s_l = impropers_df["atom_group4"] == grp_l
+                dihedral_row = impropers_df[s_i][s_j][s_k][s_l].iloc[0]
+
+                dihedral = Periodic(
+                    # the force constant oplsaa.dat is defined for a fourier
+                    # type potential with a factor of 1/2 in front. MDMC
+                    # Periodic function does not have a factor of 1/2
+                    # according to the docstring
+                    dihedral_row["K1"] / 2,
+                    int(dihedral_row["n1"]),
+                    dihedral_row["d1"],
+                )
+                opls_str = f"OPLS-{grp_i}-{grp_j}-{grp_k}-{grp_l}"
+                dihedral.K1.parameter_name = f"{opls_str}-dihedral-improper-K1"
+                dihedral.n1.parameter_name = f"{opls_str}-dihedral-improper-n1"
+                dihedral.d1.parameter_name = f"{opls_str}-dihedral-improper-d1"
             else:
-                dihedral_df = propers_df
-                type_str = "proper"
+                s_i = propers_df["atom_group1"] == grp_i
+                s_j = propers_df["atom_group2"] == grp_j
+                s_k = propers_df["atom_group3"] == grp_k
+                s_l = propers_df["atom_group4"] == grp_l
+                dihedral_row = propers_df[s_i][s_j][s_k][s_l].iloc[0]
 
-            s_i = dihedral_df["atom_group1"] == grp_i
-            s_j = dihedral_df["atom_group2"] == grp_j
-            s_k = dihedral_df["atom_group3"] == grp_k
-            s_l = dihedral_df["atom_group4"] == grp_l
-            dihedral_row = dihedral_df[s_i][s_j][s_k][s_l].iloc[0]
+                dihedral = Periodic(
+                    # need to divide by 2 see above
+                    dihedral_row["K1"] / 2,
+                    int(dihedral_row["n1"]),
+                    dihedral_row["d1"],
+                    dihedral_row["K2"] / 2,
+                    int(dihedral_row["n2"]),
+                    # in opls the second and fourth terms have a minus in front
+                    # of the cosine. MDMC Periodic function does, we need to
+                    # remove this by moving the function forward by 180 degrees
+                    dihedral_row["d2"] - 180.0,
+                    dihedral_row["K3"] / 2,
+                    int(dihedral_row["n3"]),
+                    dihedral_row["d3"],
+                )
+                opls_str = f"OPLS-{grp_i}-{grp_j}-{grp_k}-{grp_l}"
+                dihedral.K1.parameter_name = f"{opls_str}-dihedral-proper-K1"
+                dihedral.K2.parameter_name = f"{opls_str}-dihedral-proper-K2"
+                dihedral.K3.parameter_name = f"{opls_str}-dihedral-proper-K3"
+                dihedral.n1.parameter_name = f"{opls_str}-dihedral-proper-n1"
+                dihedral.n2.parameter_name = f"{opls_str}-dihedral-proper-n2"
+                dihedral.n3.parameter_name = f"{opls_str}-dihedral-proper-n3"
+                dihedral.d1.parameter_name = f"{opls_str}-dihedral-proper-d1"
+                dihedral.d2.parameter_name = f"{opls_str}-dihedral-proper-d2"
+                dihedral.d3.parameter_name = f"{opls_str}-dihedral-proper-d3"
 
-            dihedral = Periodic(
-                dihedral_row["K1"],
-                int(dihedral_row["n1"]),
-                dihedral_row["d1"],
-                dihedral_row["K2"],
-                int(dihedral_row["n2"]),
-                dihedral_row["d2"],
-                dihedral_row["K3"],
-                int(dihedral_row["n3"]),
-                dihedral_row["d3"],
-            )
-            opls_str = f"OPLS-{grp_i}-{grp_j}-{grp_k}-{grp_l}"
-            dihedral.K1.parameter_name = f"{opls_str}-dihedral-{type_str}-K1"
-            dihedral.K2.parameter_name = f"{opls_str}-dihedral-{type_str}-K2"
-            dihedral.K3.parameter_name = f"{opls_str}-dihedral-{type_str}-K3"
-            dihedral.n1.parameter_name = f"{opls_str}-dihedral-{type_str}-n1"
-            dihedral.n2.parameter_name = f"{opls_str}-dihedral-{type_str}-n2"
-            dihedral.n3.parameter_name = f"{opls_str}-dihedral-{type_str}-n3"
-            dihedral.d1.parameter_name = f"{opls_str}-dihedral-{type_str}-d1"
-            dihedral.d2.parameter_name = f"{opls_str}-dihedral-{type_str}-d2"
-            dihedral.d3.parameter_name = f"{opls_str}-dihedral-{type_str}-d3"
             interaction.function = dihedral
