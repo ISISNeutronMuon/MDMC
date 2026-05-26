@@ -32,6 +32,7 @@ import re
 import warnings
 import weakref
 from collections.abc import Callable, Iterable
+from enum import Enum, auto
 from itertools import chain, count
 from typing import TYPE_CHECKING, Any, NoReturn
 
@@ -41,6 +42,14 @@ from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorato
 
 if TYPE_CHECKING:
     from MDMC.MD.interactions import Interaction
+
+
+class ParameterRole(Enum):
+    ENERGY = auto()
+    DISTANCE = auto()
+    ANGLE = auto()
+    CHARGE = auto()
+    OTHER = auto()
 
 
 @repr_decorator(
@@ -80,10 +89,19 @@ class Parameter:
     # each Parameter has a unique ID, so they can be distinguished
     _ID_generator = count(start=1, step=1)
 
-    def __init__(self, value, name, fixed=False, constraints=None, **settings):
+    def __init__(
+        self,
+        value,
+        name,
+        fixed=False,
+        constraints=None,
+        role: ParameterRole = ParameterRole.OTHER,
+        **settings,
+    ):
         self.ID = self._generate_ID()
         self.name = name + f" (#{self.ID})"
         self.type = name
+        self.role = role
         self.unit = settings.get("unit", getattr(value, "unit", None))
         self.constraints = constraints
         self.value = value
@@ -91,6 +109,8 @@ class Parameter:
         self.parameter_name = None
         self.interactions_name = None
         self.functions_name = None
+        self.elements = []
+        self.molecules = []
         self._interactions = []
         self._tie = None
         self._tie_parameter = None
@@ -547,6 +567,59 @@ class Parameters(dict):
                 ]
             ),
         )
+
+    def filter_role(self, role: str | ParameterRole) -> Parameters:
+        """
+        Return parameters with a specific role.
+
+        Parameters
+        ----------
+        role : str
+            Role of this parameter as str or an enum from ParameterRole.
+
+        Returns
+        -------
+        Parameters
+            The ``Parameter`` objects which have a ``function`` with the
+            specified ``function_name``
+        """
+        real_role = ParameterRole[role.upper()] if isinstance(role, str) else role
+
+        return self.filter(lambda p: p.role == real_role)
+
+    def filter_molecule(self, molecule_name: str) -> Parameters:
+        """
+        Return parameters applicable to a specific molecule.
+
+        Parameters
+        ----------
+        molecule_name : str
+            The name of the molecule to which the parameters apply.
+
+        Returns
+        -------
+        Parameters
+            The ``Parameter`` objects which have a ``function`` with the
+            specified ``function_name``
+        """
+        return self.filter(lambda p: any(mol == molecule_name for mol in p.molecules))
+
+    def filter_element(self, element: str) -> Parameters:
+        """
+        Return parameters applicable to a specific molecule.
+
+        Parameters
+        ----------
+        element : str
+            The chemical element to which the parameters apply.
+
+        Returns
+        -------
+        Parameters
+            The ``Parameter`` objects which have a ``function`` with the
+            specified ``function_name``
+        """
+        return self.filter(lambda p: any(mol == element for mol in p.elements))
 
     def filter_structure(self, structure_name: str) -> Parameters:
         """
