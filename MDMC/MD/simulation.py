@@ -861,6 +861,44 @@ class Universe(AtomContainer):
             new_unit = structures.copy(position)
             self.add_structure(new_unit)
 
+    def set_atom_charge(self, atom_name: str = "", charge=0.0):
+        if not atom_name:
+            for atom in self.atoms:
+                atom.charge = charge
+            return
+        for atom in self.atoms:
+            if atom.name == atom_name:
+                atom.charge = charge
+
+    def update_charges(self, charge_parameters: Parameters):
+        all_indices = set(range(1, 1 + len(self.atoms)))
+        for molecule in self.molecule_list:
+            temp_parameters = charge_parameters.filter_molecule(molecule.name).values()
+            new_values = [par.value for par in temp_parameters]
+            fixed_status = [par.fixed for par in temp_parameters]
+            element_names = [par.elements[0] for par in temp_parameters]
+            molecule.update_charges(new_values, fixed_status, element_names)
+            all_indices -= molecule.indices
+        for atom in self.atoms:
+            if atom.ID not in all_indices:
+                continue
+            temp_parameters = charge_parameters.filter_element(atom.element).values()
+            if len(temp_parameters) > 1:
+                for par in temp_parameters:
+                    if par.molecules:
+                        continue
+                    else:
+                        real_par = par
+                        break
+            elif len(temp_parameters) == 0:
+                continue
+            else:
+                real_par = temp_parameters[0]
+            new_value = real_par.value
+            fixed_status = real_par.fixed
+            if not fixed_status:
+                atom.charge = new_value
+
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(
         self,

@@ -37,12 +37,25 @@ import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator
-from MDMC.MD.parameters import Parameter, Parameters
+from MDMC.MD.parameters import Parameter, ParameterRole, Parameters
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from MDMC.MD.interactions import Interaction
+
+
+def guess_parameter_role(par_name: str) -> ParameterRole:
+    low_name = par_name.lower()
+    if "sigma" in low_name or "length" in low_name or "dist" in low_name:
+        return ParameterRole.DISTANCE
+    if "epsilon" in low_name or "energy" in low_name:
+        return ParameterRole.ENERGY
+    if "angle" in low_name:
+        return ParameterRole.ANGLE
+    if "charge" in low_name or ("q" in low_name and "equi" not in low_name):
+        return ParameterRole.CHARGE
+    return ParameterRole.OTHER
 
 
 @repr_decorator("parameters")
@@ -61,11 +74,15 @@ class InteractionFunction:
 
     def __init__(self, val_dict: dict):
         # locals which are excluded from Parameter creation
-        excluded = ["self", "settings", "__class__"]
+        excluded = ["self", "settings", "__class__", "elements", "molecules"]
         parameters = Parameters()
+        elements = val_dict.get("elements", [])
+        molecules = val_dict.get("molecules", [])
         for name, value in val_dict.items():
             if name not in excluded:
-                parameter = Parameter(value, name)
+                parameter = Parameter(value, name, role=guess_parameter_role(name))
+                parameter.elements = elements
+                parameter.molecules = molecules
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
                 setattr(self, parameter.type, parameter)
@@ -272,8 +289,10 @@ class Buckingham(InteractionFunction):
         ("B", units.LENGTH**-1),
         ("C", units.LENGTH**6 * units.ENERGY),
     )
-    def __init__(self, A: float, B: float, C: float):
-        super().__init__(locals())
+    def __init__(self, A: float, B: float, C: float, **kwargs):
+        parameters = {"A": A, "B": B, "C": C}
+        parameters.update(kwargs)
+        super().__init__(parameters)
 
 
 class Coulomb(InteractionFunction):
@@ -312,8 +331,10 @@ class Coulomb(InteractionFunction):
     """
 
     @inter_func_decorator(("charge", units.CHARGE))
-    def __init__(self, charge: float):
-        super().__init__(locals())
+    def __init__(self, charge: float, **kwargs):
+        parameters = {"charge": charge}
+        parameters.update(kwargs)
+        super().__init__(parameters)
 
 
 class HarmonicPotential(InteractionFunction):
@@ -540,7 +561,11 @@ class LennardJones(InteractionFunction):
 
     @inter_func_decorator(("epsilon", units.ENERGY), ("sigma", units.LENGTH))
     def __init__(self, epsilon: float, sigma: float, **settings: Any):
-        super().__init__({"epsilon": epsilon, "sigma": sigma})
+        parameters = {"epsilon": epsilon, "sigma": sigma}
+        parameters.update(
+            {"elements": settings.get("elements", []), "molecules": settings.get("molecules", [])}
+        )
+        super().__init__(parameters)
         self.cutoff = settings.get("cutoff")
         self.solver = settings.get("long_range_solver")
 
@@ -565,4 +590,6 @@ class NonBonded(InteractionFunction):
         ("sigma", units.LENGTH),
     )
     def __init__(self, charge: float, epsilon: float, sigma: float, **settings: Any):
-        super().__init__({"charge": charge, "epsilon": epsilon, "sigma": sigma})
+        parameters = {"charge": charge, "epsilon": epsilon, "sigma": sigma}
+        parameters.update(settings)
+        super().__init__(parameters)

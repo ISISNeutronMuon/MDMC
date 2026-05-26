@@ -335,9 +335,9 @@ class OpenMMEngine(MDEngine):
 
     def update_charges(self):
         # identify the charges that are being refined
-
+        all_charge_parameters = self.universe.parameters.filter_role("charge")
         # set the charges on molecules
-
+        self.universe.update_charges(all_charge_parameters)
         # have molecules rescale the remaining charges
         return
 
