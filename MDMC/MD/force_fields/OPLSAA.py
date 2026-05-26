@@ -213,7 +213,7 @@ def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom):
 
             try:
                 new_df = params_df
-                for s, grp in zip(selections, grps):
+                for s in selections:
                     new_df = new_df[s]
                 rows.append(new_df.iloc[0])
                 atm_grps.append([str(grp) for grp in grps])
