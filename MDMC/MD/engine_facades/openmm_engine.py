@@ -142,7 +142,7 @@ class OpenMMEngine(MDEngine):
             if len(mdmc_nonbonded) != 1:
                 raise Exception("Unexpected number of non-bonded interactions.")
             mdmc_nonbonded = mdmc_nonbonded[0]
-            charge = mdmc_nonbonded.charge.value * unit.elementary_charge
+            charge = atom.charge * unit.elementary_charge
             sigma = mdmc_nonbonded.sigma.value * unit.angstrom
             epsilon = mdmc_nonbonded.epsilon.value * unit.kilojoules_per_mole
             nonbonded.addParticle(charge, sigma, epsilon)
@@ -236,9 +236,9 @@ class OpenMMEngine(MDEngine):
 
     def update_charges(self):
         # identify the charges that are being refined
-
+        all_charge_parameters = self.universe.parameters.filter_role("charge")
         # set the charges on molecules
-
+        self.universe.update_charges(all_charge_parameters)
         # have molecules rescale the remaining charges
         return
 

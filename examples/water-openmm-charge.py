@@ -1,6 +1,4 @@
 import copy
-import os
-import sys
 
 from MDMC.MD import *
 from MDMC.MD.force_fields.three_site_water import ThreeSiteWater, add_three_site_water_ff
@@ -23,14 +21,8 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
 # 24.83602653 is 512 water molecules
 def run_everything():
     universe = Universe(dimensions=24.83602653)
-    universe.fill(ThreeSiteWater(model_name="TIP3P"), num_density=0.03356718472021752)
+    universe.fill(ThreeSiteWater(model_name="TIP3P", name="H2O"), num_density=0.03356718472021752)
     add_three_site_water_ff(universe, cutoff=10.0, ewald=1e-4, model_name="TIP3P")
-
-    print(f"molecules: {universe.molecule_list[:3]}")
-    print(f"structures: {universe.structure_list[:3]}")
-    print(f"interactions: {[atom.interactions for atom in universe.structure_list[:3]]}")
-    print(f"charges: ")
-    sys.exit(0)
 
     # Setup refinement
     QENS = [
@@ -92,7 +84,7 @@ def run_everything():
             p.constraints = [0.4, 0.8]
         elif p.parameter_name == "TIP3P-O-nonbonded_sigma":
             p.constraints = [2.5, 3.5]
-        elif p.parameter_name == "TIP3P-q_H":
+        elif p.parameter_name == "TIP3P-H-nonbonded_charge":
             p.constraints = [0.0, 0.9]
         else:
             p.fixed = True
@@ -101,9 +93,9 @@ def run_everything():
         print(f"Experiment {name}: {axis}")
 
     TIME_STEP_FS = 1.0
-    FRAME_STEP = 4
-    CORR_FRAMES = 40
-    TOTAL_FRAMES = 4000
+    FRAME_STEP = 40
+    CORR_FRAMES = 4000
+    TOTAL_FRAMES = 400000
 
     for output_axis in md_observable.predict_output(
         time_step=TIME_STEP_FS,
@@ -135,23 +127,23 @@ def run_everything():
         observable_pairs=[observable_pair],
         fit_parameters=universe.parameters,
         reset_config=True,
-        equilibration_steps=6000,
+        equilibration_steps=60000,
         minimizer_type="CMAES",
         MD_steps=TOTAL_FRAMES,
         energy_resolution=13.6,
         cont_slicing=True,
         file_dump_extent="all_obs",
         file_dump_frequency="best",
-        file_dump_prefix="water_mdanse_cropped_NoError",
+        file_dump_prefix="water_with_charges",
         FoM_options={"error": "none"},
         conv_tol=1e-6,
     )
 
-    control.minimize(n_steps=1500)
-    control.equilibrate(n_steps=4500)
+    control.minimize(n_steps=15000)
+    control.equilibrate(n_steps=45000)
 
     # Run refinement
-    control.refine(n_steps=20)
+    control.refine(n_steps=200)
 
 
 if __name__ == "__main__":
