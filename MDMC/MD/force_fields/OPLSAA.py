@@ -17,9 +17,14 @@
 """A module for defining the OPLSAA force field. This was generated from the
 corresponding TINKER file."""
 
+import itertools as it
+
+import pandas as pd
+
 from MDMC.MD.force_fields.ff import FileForceField
 from MDMC.MD.interaction_functions import HarmonicPotential, NonBonded, Periodic
 from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle, NonBondedForce
+from MDMC.MD.structures import Atom
 
 
 class OPLSAA(FileForceField):
@@ -71,17 +76,7 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
 
     for interaction in universe.interactions:
         if isinstance(interaction, Bond):
-            atm_i, atm_j = interaction.atoms[0]
-
-            s_i = atoms_df["atom_type"] == int(atm_i.atom_type)
-            s_j = atoms_df["atom_type"] == int(atm_j.atom_type)
-            grp_i = atoms_df[s_i].iloc[0]["atom_group"]
-            grp_j = atoms_df[s_j].iloc[0]["atom_group"]
-            grp_i, grp_j = sorted([grp_i, grp_j])
-
-            s_i = bonds_df["atom_group1"] == grp_i
-            s_j = bonds_df["atom_group2"] == grp_j
-            bond_row = bonds_df[s_i][s_j].iloc[0]
+            bond_row, opls_str = find_row(atoms_df, bonds_df, *interaction.atoms[0])
 
             harmonicbond = HarmonicPotential(
                 equilibrium_state=bond_row["equilibrium_state"],
@@ -89,29 +84,15 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                 interaction_type="bond",
             )
             harmonicbond.equilibrium_state.parameter_name = (
-                f"OPLS-{grp_i}-{grp_j}-harmonicbond_equilibrium_state"
+                f"{opls_str}-harmonicbond_equilibrium_state"
             )
             harmonicbond.potential_strength.parameter_name = (
-                f"OPLS-{grp_i}-{grp_j}-harmonicbond_potential_strength"
+                f"{opls_str}-harmonicbond_potential_strength"
             )
             interaction.function = harmonicbond
 
         elif isinstance(interaction, BondAngle):
-            atm_i, atm_j, atm_k = interaction.atoms[0]
-
-            s_i = atoms_df["atom_type"] == int(atm_i.atom_type)
-            s_j = atoms_df["atom_type"] == int(atm_j.atom_type)
-            s_k = atoms_df["atom_type"] == int(atm_k.atom_type)
-            grp_i = atoms_df[s_i].iloc[0]["atom_group"]
-            grp_j = atoms_df[s_j].iloc[0]["atom_group"]
-            grp_k = atoms_df[s_k].iloc[0]["atom_group"]
-            if grp_i > grp_k:
-                grp_i, grp_j, grp_k = reversed([grp_i, grp_j, grp_k])
-
-            s_i = angles_df["atom_group1"] == grp_i
-            s_j = angles_df["atom_group2"] == grp_j
-            s_k = angles_df["atom_group3"] == grp_k
-            angle_row = angles_df[s_i][s_j][s_k].iloc[0]
+            angle_row, opls_str = find_row(atoms_df, angles_df, *interaction.atoms[0])
 
             harmonicangle = HarmonicPotential(
                 equilibrium_state=angle_row["equilibrium_state"],
@@ -119,34 +100,20 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                 interaction_type="angle",
             )
             harmonicangle.equilibrium_state.parameter_name = (
-                f"OPLS-{grp_i}-{grp_j}-{grp_k}-harmonicangle_equilibrium_state"
+                f"{opls_str}-harmonicangle_equilibrium_state"
             )
             harmonicangle.potential_strength.parameter_name = (
-                f"OPLS-{grp_i}-{grp_j}-{grp_k}-harmonicangle_potential_strength"
+                f"{opls_str}-harmonicangle_potential_strength"
             )
             interaction.function = harmonicangle
 
         elif isinstance(interaction, DihedralAngle):
             atm_i, atm_j, atm_k, atm_l = interaction.atoms[0]
 
-            s_i = atoms_df["atom_type"] == int(atm_i.atom_type)
-            s_j = atoms_df["atom_type"] == int(atm_j.atom_type)
-            s_k = atoms_df["atom_type"] == int(atm_k.atom_type)
-            s_l = atoms_df["atom_type"] == int(atm_l.atom_type)
-            grp_i = atoms_df[s_i].iloc[0]["atom_group"]
-            grp_j = atoms_df[s_j].iloc[0]["atom_group"]
-            grp_k = atoms_df[s_k].iloc[0]["atom_group"]
-            grp_l = atoms_df[s_l].iloc[0]["atom_group"]
-
-            if (grp_i == grp_l and grp_j > grp_k) or grp_i > grp_l:
-                grp_i, grp_j, grp_k, grp_l = reversed([grp_i, grp_j, grp_k, grp_l])
-
             if interaction.improper:
-                s_i = impropers_df["atom_group1"] == grp_i
-                s_j = impropers_df["atom_group2"] == grp_j
-                s_k = impropers_df["atom_group3"] == grp_k
-                s_l = impropers_df["atom_group4"] == grp_l
-                dihedral_row = impropers_df[s_i][s_j][s_k][s_l].iloc[0]
+                dihedral_row, opls_str = find_row(
+                    atoms_df, impropers_df, atm_i, atm_j, atm_k, atm_l
+                )
 
                 dihedral = Periodic(
                     # the force constant oplsaa.dat is defined for a fourier
@@ -157,16 +124,11 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                     int(dihedral_row["n1"]),
                     dihedral_row["d1"],
                 )
-                opls_str = f"OPLS-{grp_i}-{grp_j}-{grp_k}-{grp_l}"
                 dihedral.K1.parameter_name = f"{opls_str}-dihedral-improper-K1"
                 dihedral.n1.parameter_name = f"{opls_str}-dihedral-improper-n1"
                 dihedral.d1.parameter_name = f"{opls_str}-dihedral-improper-d1"
             else:
-                s_i = propers_df["atom_group1"] == grp_i
-                s_j = propers_df["atom_group2"] == grp_j
-                s_k = propers_df["atom_group3"] == grp_k
-                s_l = propers_df["atom_group4"] == grp_l
-                dihedral_row = propers_df[s_i][s_j][s_k][s_l].iloc[0]
+                dihedral_row, opls_str = find_row(atoms_df, propers_df, atm_i, atm_j, atm_k, atm_l)
 
                 dihedral = Periodic(
                     # need to divide by 2 see above
@@ -183,7 +145,6 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                     int(dihedral_row["n3"]),
                     dihedral_row["d3"],
                 )
-                opls_str = f"OPLS-{grp_i}-{grp_j}-{grp_k}-{grp_l}"
                 dihedral.K1.parameter_name = f"{opls_str}-dihedral-proper-K1"
                 dihedral.K2.parameter_name = f"{opls_str}-dihedral-proper-K2"
                 dihedral.K3.parameter_name = f"{opls_str}-dihedral-proper-K3"
@@ -195,3 +156,68 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                 dihedral.d3.parameter_name = f"{opls_str}-dihedral-proper-d3"
 
             interaction.function = dihedral
+
+
+def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom):
+    """From the OPLS parameter data frame get the data frame row for the
+    inputted atoms. Uses wildcards atom groups if required. A parameter
+    set which uses a fewer number of wildcard atom groups are given
+    higher priority than those with more.
+
+    Parameters
+    ----------
+    atoms_df : pd.DataFrame
+        Data frame of OPLS atom types.
+    params_df : pd.DataFrame
+        Data frame of OPLS force field parameters.
+    *args : Atom
+        The atoms to find OPLS parameters for.
+
+    Raises
+    ------
+    ValueError
+        If a parameter set is unable to be found or if multiple parameter
+        sets are found for the same number of wildcard atom groups used.
+
+    """
+    atm_types = [int(atm.atom_type) for atm in args]
+    atm_types_rev = list(reversed(atm_types))
+    orders = [atm_types] if atm_types == atm_types_rev else [atm_types, atm_types_rev]
+
+    switches = list(it.product([0, 1], repeat=len(args)))
+    switches.sort(key=lambda x: sum(x), reverse=True)
+
+    rows = []
+    atm_grps = []
+    prev_n_wild_cards = 0
+    for switch in switches:
+        n_wild_cards = len(args) - sum(switch)
+        if n_wild_cards > prev_n_wild_cards:
+            if len(rows) == 1:
+                return rows[0], "OPLS-" + "-".join(atm_grps[0])
+            raise ValueError(
+                f"Multiple parameter sets found for atom types {atm_types} "
+                f"with groups {atm_grps}, when {n_wild_cards} wildcard atom "
+                f"groups are used."
+            )
+        prev_n_wild_cards = n_wild_cards
+
+        for order in orders:
+            grps = []
+            selections = []
+            for i, atm_type in enumerate(order):
+                s_i = atoms_df["atom_type"] == atm_type
+                grp_i = int(atoms_df[s_i].iloc[0]["atom_group"] * switch[i])
+                grps.append(grp_i)
+                selections.append(params_df[f"atom_group{i + 1}"] == grp_i)
+
+            try:
+                new_df = params_df
+                for s, grp in zip(selections, grps):
+                    new_df = new_df[s]
+                rows.append(new_df.iloc[0])
+                atm_grps.append([str(grp) for grp in grps])
+            except IndexError:
+                pass
+
+    raise ValueError(f"Unable to find parameters set for atom types: {atm_types}")
