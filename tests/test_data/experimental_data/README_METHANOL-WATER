@@ -1,0 +1,22 @@
+Files containing the following information:
+
+1. PURE_MEOH.xml: contains data for the pure methanol. The data is taken from the digitized figure S1
+in Supporting Information for paper J.PHYS.CHEM. B, 2016, 120, 20, 4679-4688.
+S(q, omega) is in logarithmic values.
+Energy, E, is in meV.
+Values were available only for q=1.1 Å^{-1}
+
+2. H2O_MEOD.xml: contains data for the deuterated methanol. The data is taken from the digitized figure 3
+of the main text in paper J.PHYS.CHEM. B, 2016, 120, 20, 4679-4688.
+S(q, omega) is in logarithmic values.
+Energy, E, is in meV.
+Values were available only for q=1.1 Å^{-1}
+Ratio water-MEOD: 85/15 (v/v)
+
+3. D2O_MEOH.xml: contains data for the methanol in deuterated water. The data is taken from the digitized figure S3
+in Supporting Information for paper J.PHYS.CHEM. B, 2016, 120, 20, 4679-4688.
+S(q, omega) is in logarithmic values.
+Energy, E, is in meV.
+Values were available only for q=1.1 Å^{-1}
+Ratio D2O-MEOH: 85/15 (v/v)
+
