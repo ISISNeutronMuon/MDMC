@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-   <description> Deuterated methanol in water (15/85 v/v) at 294 K, S-values are logarithmic, E is in meV </description>
-   <description> Data from Figure 3 of paper J.PHYS.CHEM. B, 2016, 120, 20, 4679-4688 </description>
+<s-q-omega S-unit="a.u." n-omega-points="601" n-q-points="1" omega-unit="meV" q-unit="AA^-1">
+   <description>
+      Deuterated methanol in water (15/85 v/v) at 294 K, S-values are logarithmic, E is in meV
+      Data from Figure 3 of paper J.PHYS.CHEM. B, 2016, 120, 20, 4679-4688
+   </description>
    <SQomega S="-1.84807" error="0.001" q="1.1" E="-1"/>
    <SQomega S="-1.82651" error="0.001" q="1.1" E="-0.99"/>
    <SQomega S="-1.80494" error="0.001" q="1.1" E="-0.98"/>
