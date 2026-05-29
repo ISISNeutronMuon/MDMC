@@ -16,8 +16,7 @@ import copy
 from MDMC.control import Control
 from MDMC.MD import Atom, NonBonded, Simulation, Universe
 from MDMC.MD.interactions import NonBondedForce
-from MDMC.readers.observables.xml_SQw import XML_SQw
-from MDMC.refinement.FoM.FoM_abs import Observable, ObservablePair
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.trajectory_analysis.observables.sqw import SQw
 
 # Build universe with density 0.0176 atoms per AA^-3
