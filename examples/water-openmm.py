@@ -64,7 +64,7 @@ observable_pair = ObservablePair(
     exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
 )
 
-# only refit the LJ parameters on oxygen
+# only refit the LJ parameters on oxygen and the HOH angle
 for p in universe.parameters.as_array:
     if p.parameter_name == "TIP4P-Ewald-O-nonbonded_epsilon":
         p.constraints = [0.5, 0.8]

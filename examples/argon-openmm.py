@@ -72,8 +72,6 @@ exp_datasets = [
     }
 ]
 
-data_parser = XML_SQw("../doc/tutorials/data/Well_s_q_omega_Ar_data.xml")
-
 exp_observable = SQw()
 exp_observable.read_from_file("xml_SQw", "../doc/tutorials/data/Well_s_q_omega_Ar_data.xml")
 md_observable = SQw()
