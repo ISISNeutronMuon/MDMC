@@ -325,7 +325,7 @@ class OpenMMEngine(MDEngine):
                     sigma = scale_sigma * ((sig_i + sig_j) / 2)
                     epsilon = scale_eps * (eps_i * eps_j) ** 0.5
 
-                nonbonded.addException(i, j, charge, sigma, epsilon)
+                nonbonded.addException(i, j, charge, sigma, epsilon, replace=True)
 
         if self.nonbonded_combining != CombiningRules.LORENTZBERTHLOT:
             for i in range(self.universe.n_atoms):
