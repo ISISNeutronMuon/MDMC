@@ -171,12 +171,6 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
     harmonicbond.potential_strength.parameter_name = (
         f"{model_name}-OH-harmonicbond_potential_strength"
     )
-    for interaction in universe.interactions:
-        if not isinstance(interaction, Bond):
-            continue
-        for atm_i, atm_j in interaction.atoms:
-            if sorted((atm_i.atom_type, atm_j.atom_type)) == [f"{model_name}-H", f"{model_name}-O"]:
-                interaction.function = harmonicbond
 
     harmonicangle = HarmonicPotential(
         equilibrium_state=a_HOH,
@@ -189,10 +183,15 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
     harmonicangle.potential_strength.parameter_name = (
         f"{model_name}-HOH-harmonicangle_potential_strength"
     )
+
     for interaction in universe.interactions:
-        if not isinstance(interaction, BondAngle):
-            continue
-        for atm_i, atm_j, atm_k in interaction.atoms:
+        if isinstance(interaction, Bond):
+            atm_i, atm_j = interaction.atoms[0]
+            if sorted((atm_i.atom_type, atm_j.atom_type)) == [f"{model_name}-H", f"{model_name}-O"]:
+                interaction.function = harmonicbond
+                break
+        elif isinstance(interaction, BondAngle):
+            atm_i, atm_j, atm_k = interaction.atoms[0]
             if sorted((atm_i.atom_type, atm_j.atom_type, atm_k.atom_type)) == [
                 f"{model_name}-H",
                 f"{model_name}-H",
