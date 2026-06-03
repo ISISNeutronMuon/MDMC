@@ -16,8 +16,7 @@ import copy
 from MDMC.control import Control
 from MDMC.MD import Atom, NonBonded, Simulation, Universe
 from MDMC.MD.interactions import NonBondedForce
-from MDMC.readers.observables.xml_SQw import XML_SQw
-from MDMC.refinement.FoM.FoM_abs import Observable, ObservablePair
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.trajectory_analysis.observables.sqw import SQw
 
 # Build universe with density 0.0176 atoms per AA^-3
@@ -71,8 +70,6 @@ exp_datasets = [
         "cont_slicing": True,
     }
 ]
-
-data_parser = XML_SQw("../doc/tutorials/data/Well_s_q_omega_Ar_data.xml")
 
 exp_observable = SQw()
 exp_observable.read_from_file("xml_SQw", "../doc/tutorials/data/Well_s_q_omega_Ar_data.xml")

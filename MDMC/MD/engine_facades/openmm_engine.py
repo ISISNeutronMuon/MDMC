@@ -17,6 +17,7 @@
 """Facade for OpenMM MD engine."""
 
 import logging
+from enum import Enum
 from typing import Any
 
 import networkx as nx
@@ -28,12 +29,17 @@ from openmm.app import Simulation, Topology
 from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
 from MDMC.MD.interaction_functions import DummyInteractionFunction
-from MDMC.MD.interactions import Bond, BondAngle, NonBondedForce
+from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle, NonBondedForce
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import AverageSite3P
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 LOGGER = logging.getLogger(__name__)
+
+
+class CombiningRules(Enum):
+    LORENTZBERTHLOT = 0
+    GEOMETRIC = 1
 
 
 class OpenMMEngine(MDEngine):
@@ -50,8 +56,9 @@ class OpenMMEngine(MDEngine):
         self.nonbonded_scaling = [
             [0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0],
-            [0.5, 0.5, 0.5],
+            [0.5, 1.0, 0.5],
         ]
+        self.nonbonded_combining = CombiningRules.LORENTZBERTHLOT
         self.real_atom = []
 
     @property
@@ -81,6 +88,13 @@ class OpenMMEngine(MDEngine):
         self.universe = universe
         self.openmm_system = mm.System()
         self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)
+        combining_rule = settings.get("openmm_nonbonded_combining", "LORENTZBERTHLOT")
+        if combining_rule.upper() not in CombiningRules.__members__:
+            raise ValueError(
+                f"Combining rule option {combining_rule} is not valid, "
+                f"use one of the following: {list(CombiningRules.__members__)}"
+            )
+        self.nonbonded_combining = CombiningRules[combining_rule.upper()]
 
         # set the unit cell, note that currently MDMC can only deal with
         # orthorhombic lattices
@@ -132,47 +146,17 @@ class OpenMMEngine(MDEngine):
 
     def change_openmm_force_field_and_constraints(self):
         """Change the OpenMM force fields and constraints."""
-        nonbonded = mm.NonbondedForce()
-        use_ewald = False
-        for atom in self.universe.atoms:
-            mdmc_nonbonded = [
-                force.function
-                for force in atom.nonbonded_interactions
-                if isinstance(force.function, NonBonded)
-            ]
-            if len(mdmc_nonbonded) != 1:
-                raise Exception("Unexpected number of non-bonded interactions.")
-            mdmc_nonbonded = mdmc_nonbonded[0]
-            charge = atom.charge * unit.elementary_charge
-            sigma = mdmc_nonbonded.sigma.value * unit.angstrom
-            epsilon = mdmc_nonbonded.epsilon.value * unit.kilojoules_per_mole
-            nonbonded.addParticle(charge, sigma, epsilon)
-            if mdmc_nonbonded.charge.value != 0.0:
-                use_ewald = True
 
-        mdmc_nonbonded = [
-            force for force in set(self.universe.interactions) if isinstance(force, NonBondedForce)
-        ]
-        cutoff = max(force.cutoff for force in mdmc_nonbonded)
-        ewald = min(force.ewald for force in mdmc_nonbonded)
-        if use_ewald:
-            nonbonded.setNonbondedMethod(mm.NonbondedForce.PME)
-            nonbonded.setEwaldErrorTolerance(ewald)
-        else:
-            nonbonded.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
-        nonbonded.setCutoffDistance(cutoff * unit.angstrom)
-        nonbonded.setUseSwitchingFunction(False)
-        nonbonded.setUseDispersionCorrection(False)
-
+        # add harmonic bond forces
         bond_dists = {}
         bond_force = mm.HarmonicBondForce()
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
             if isinstance(mdmc_bond.function, DummyInteractionFunction):
                 continue
-            equil_length = mdmc_bond.function.equilibrium_state.value
+            equil_length = float(mdmc_bond.function.equilibrium_state.value)
             force_const = (
-                mdmc_bond.function.potential_strength.value
+                float(mdmc_bond.function.potential_strength.value)
                 * unit.kilojoules_per_mole
                 / unit.angstroms**2
             )
@@ -187,7 +171,9 @@ class OpenMMEngine(MDEngine):
                     # in openmm HarmonicBondForce is 1/2 K (x_0 - x)**2
                     # in lammps and therefore MDMC it is without the 1/2
                     bond_force.addBond(i, j, equil_length * unit.angstroms, 2 * force_const)
+        self.openmm_system.addForce(bond_force)
 
+        # add harmonic angle forces
         angle_force = mm.HarmonicAngleForce()
         mdmc_bondangles = [
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
@@ -195,9 +181,9 @@ class OpenMMEngine(MDEngine):
         for mdmc_bondangle in mdmc_bondangles:
             if isinstance(mdmc_bondangle.function, DummyInteractionFunction):
                 continue
-            equil_angle = mdmc_bondangle.function.equilibrium_state.value
+            equil_angle = float(mdmc_bondangle.function.equilibrium_state.value)
             force_const = (
-                mdmc_bondangle.function.potential_strength.value
+                float(mdmc_bondangle.function.potential_strength.value)
                 * unit.kilojoules_per_mole
                 / unit.radians**2
             )
@@ -222,6 +208,99 @@ class OpenMMEngine(MDEngine):
                     # in openmm HarmonicBondForce is 1/2 K (theta_0 - theta)**2
                     # in lammps and therefore MDMC it is without the 1/2
                     angle_force.addAngle(i, j, k, equil_angle * unit.degrees, 2 * force_const)
+        self.openmm_system.addForce(angle_force)
+
+        # add periodic torsion forces
+        dihedral = mm.PeriodicTorsionForce()
+        mdmc_dihedrals = [
+            force for force in set(self.universe.interactions) if isinstance(force, DihedralAngle)
+        ]
+        for mdmc_dihedral in mdmc_dihedrals:
+            func = mdmc_dihedral.function
+            params = func.parameters
+            n_funcs = len(params) // 3
+            for i in range(1, n_funcs + 1):
+                force_const = float(getattr(func, f"K{i}").value)
+                n = int(getattr(func, f"n{i}").value)
+                d = float(getattr(func, f"d{i}").value)
+                if force_const == 0.0:
+                    continue
+                for atm_i, atm_j, atm_k, atm_l in mdmc_dihedral.atoms:
+                    i = self.MDMC_ID_to_idx[atm_i.ID]
+                    j = self.MDMC_ID_to_idx[atm_j.ID]
+                    k = self.MDMC_ID_to_idx[atm_k.ID]
+                    l = self.MDMC_ID_to_idx[atm_l.ID]  # noqa: E741
+                    dihedral.addTorsion(
+                        i, j, k, l, n, d * unit.degrees, force_const * unit.kilojoules_per_mole
+                    )
+        self.openmm_system.addForce(dihedral)
+
+        # add nonbonded forces
+        nonbonded = mm.NonbondedForce()
+        use_ewald = False
+        for atom in self.universe.atoms:
+            mdmc_nonbonded = [
+                force.function
+                for force in atom.nonbonded_interactions
+                if isinstance(force.function, NonBonded)
+            ]
+            if len(mdmc_nonbonded) != 1:
+                raise Exception("Unexpected number of non-bonded interactions.")
+            mdmc_nonbonded = mdmc_nonbonded[0]
+            charge = float(atom.charge.value) * unit.elementary_charge
+            sigma = float(mdmc_nonbonded.sigma.value) * unit.angstrom
+            epsilon = float(mdmc_nonbonded.epsilon.value) * unit.kilojoules_per_mole
+            nonbonded.addParticle(charge, sigma, epsilon)
+            if atom.charge.value != 0.0:
+                use_ewald = True
+
+        mdmc_nonbonded = [
+            force for force in set(self.universe.interactions) if isinstance(force, NonBondedForce)
+        ]
+        cutoff = max(force.cutoff for force in mdmc_nonbonded)
+        ewald = min(force.ewald for force in mdmc_nonbonded)
+        if use_ewald:
+            nonbonded.setNonbondedMethod(mm.NonbondedForce.PME)
+            nonbonded.setEwaldErrorTolerance(ewald)
+        else:
+            nonbonded.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
+        nonbonded.setCutoffDistance(cutoff * unit.angstrom)
+        nonbonded.setUseSwitchingFunction(False)
+        nonbonded.setUseDispersionCorrection(False)
+        self.openmm_system.addForce(nonbonded)
+        self.apply_nonbonded_rules(nonbonded)
+
+        # add centre of mass remover force
+        self.openmm_system.addForce(mm.CMMotionRemover())
+
+    def apply_nonbonded_rules(self, nonbonded: mm.NonbondedForce):
+        """Change the combining rules and scale the sigma and epsilon
+        parameters of the nonbonded force. Adds a custrom force to the
+        openmm system if needed.
+
+        Parameters
+        ----------
+        nonbonded : mm.NonbondedForce
+            The openmm NonbondedForce object.
+
+        """
+        if self.nonbonded_combining == CombiningRules.GEOMETRIC:
+            custom = mm.CustomNonbondedForce(
+                "4*epsilon*((sigma/r)^12-(sigma/r)^6); "
+                "sigma=sqrt(sigma1*sigma2); "
+                "epsilon=sqrt(epsilon1*epsilon2)"
+            )
+
+            custom.addPerParticleParameter("sigma")
+            custom.addPerParticleParameter("epsilon")
+            custom.setCutoffDistance(nonbonded.getCutoffDistance())
+            custom.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
+            custom.setUseSwitchingFunction(False)
+            self.openmm_system.addForce(custom)
+
+            for i in range(self.universe.n_atoms):
+                charge, sigma, epsilon = nonbonded.getParticleParameters(i)
+                custom.addParticle([sigma, epsilon])
 
         for i in range(self.universe.n_atoms):
             for j, dist in nx.single_source_shortest_path_length(
@@ -233,12 +312,25 @@ class OpenMMEngine(MDEngine):
                     continue
                 # scale nonbonded interaction when atoms are connected
                 # by a specific number of bonds away
-                nonbonded.addException(i, j, *self.nonbonded_scaling[dist - 1])
+                scale_q, scale_sigma, scale_eps = self.nonbonded_scaling[dist - 1]
+                q_i, sig_i, eps_i = nonbonded.getParticleParameters(i)
+                q_j, sig_j, eps_j = nonbonded.getParticleParameters(j)
 
-        self.openmm_system.addForce(nonbonded)
-        self.openmm_system.addForce(bond_force)
-        self.openmm_system.addForce(angle_force)
-        self.openmm_system.addForce(mm.CMMotionRemover())
+                charge = scale_q * (q_i * q_j)
+                if self.nonbonded_combining == CombiningRules.GEOMETRIC:
+                    sigma = scale_sigma * (sig_i * sig_j) ** 0.5
+                    epsilon = scale_eps * (eps_i * eps_j) ** 0.5
+                    custom.addExclusion(i, j)
+                else:
+                    sigma = scale_sigma * ((sig_i + sig_j) / 2)
+                    epsilon = scale_eps * (eps_i * eps_j) ** 0.5
+
+                nonbonded.addException(i, j, charge, sigma, epsilon, replace=True)
+
+        if self.nonbonded_combining != CombiningRules.LORENTZBERTHLOT:
+            for i in range(self.universe.n_atoms):
+                charge, sigma, epsilon = nonbonded.getParticleParameters(i)
+                nonbonded.setParticleParameters(i, charge, sigma, 0.0)
 
     def update_charges(self):
         # identify the charges that are being refined
@@ -399,9 +491,9 @@ class OpenMMEngine(MDEngine):
             The ``CompactTrajectory`` from the most recent production simulation.
         """
         real_atoms = [atom for atom in self.universe.atoms if not isinstance(atom, AverageSite3P)]
-        self.compact_trajectory.validateTypes([atom.atom_type for atom in real_atoms])
-        atom_elements = [atom.element for atom in real_atoms]
-        atom_masses = [atom.mass for atom in real_atoms]
+        self.compact_trajectory.atom_types = [atom.atom_type for atom in real_atoms]
+        atom_elements = {atom.atom_type: atom.element for atom in real_atoms}
+        atom_masses = {atom.atom_type: atom.mass for atom in real_atoms}
         self.compact_trajectory.labelAtoms(atom_elements, atom_masses)
         self.compact_trajectory.setCharge([atom.charge for atom in real_atoms])
         self.compact_trajectory.postProcess()
