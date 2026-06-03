@@ -23,10 +23,12 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.stats as st
 from scipy.ndimage import minimum, minimum_position
+from scipy.spatial import Voronoi, voronoi_plot_2d
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 
@@ -428,3 +430,105 @@ class GPR(Minimizer):
                             """
 
             return dedent(output_string)
+
+    @staticmethod
+    def plot_results(
+        input_regressor,
+        min_parameters_predicted,
+        plot_stddev=False,
+        plot_voronoi=False,
+    ):
+        """
+        Produces 2D plot of GPR fit between the min and max measured points.
+        Optionally also plot standard deviation of predictions and Voronoi plot
+        of sampled points.
+        Only works if system has 2 parameters.
+
+        Parameters
+        ----------
+        input_regressor : GaussianProcessRegressor
+            A fitted Gaussian Process regressor object
+        min_parameters_predicted: list
+            A ``list`` of the parameter values where the minimum FoM was predicted.
+        plot_stddev: bool, optional
+            Whether or not to plot the standard deviation of predictions. Defaults to False.
+        plot_voronoi: bool, optional
+            Whether or not to plot the Voronoi diagram of sampled points. Defaults to False.
+        """
+        regressor_points = input_regressor.X_train_
+        predictive_coordinates = []
+        labels = []
+
+        if regressor_points.ndim != 2:
+            raise ValueError(f"""Fit results can only be plotted for systems with 2 parameters.
+                             Yours has {regressor_points.ndim}""")
+
+        n_points = 100
+        n_labels = 5
+
+        for column in regressor_points.T:
+            min_point, max_point = np.min(column), np.max(column)
+            labels.append(np.linspace(min_point, max_point, n_labels))
+            dense_array = np.linspace(min_point, max_point, n_points)
+            predictive_coordinates.append(dense_array)
+
+        point_array = list(itertools.product(*predictive_coordinates))
+        # predict method needs explicit array
+
+        if plot_stddev:
+            prediction, std = input_regressor.predict(point_array, return_std=True)
+        else:
+            prediction = input_regressor.predict(point_array)
+
+        if plot_voronoi:
+            voronoi = Voronoi(regressor_points)
+            fig = voronoi_plot_2d(voronoi)
+            plt.savefig("voronoi.png")
+
+        fig = plt.figure()
+        overlay = np.zeros([100, 100, 4])
+
+        for x, y in regressor_points:
+            idx_x = np.argmin(np.abs(predictive_coordinates[0]-x))
+            idx_y = np.argmin(np.abs(predictive_coordinates[1]-y))
+            overlay[idx_x, idx_y, 3] = 1.
+
+        #Get position of predicted minimum
+        idx_x = np.argmin(np.abs(predictive_coordinates[0] - min_parameters_predicted[0]))
+        idx_y = np.argmin(np.abs(predictive_coordinates[1] - min_parameters_predicted[1]))
+
+        overlay[idx_x, idx_y, 0] = 1.
+        overlay[idx_x, idx_y, 1] = 0
+        overlay[idx_x, idx_y, 2] = 0.5
+        overlay[idx_x, idx_y, 3] = 1.
+
+        ax = fig.add_subplot(111)
+        cax = ax.matshow(prediction.reshape(100, 100))
+        fig.colorbar(cax)
+
+        ax.imshow(overlay, interpolation="nearest")
+
+        ticks = np.linspace(0, n_points-1, n_labels)
+
+        ax.set_xticks(ticks)
+        ax.set_yticks(ticks)
+
+        ax.set_xticklabels(["{:.5f}".format(x) for x in labels[1]])
+        ax.set_yticklabels(["{:.5f}".format(x) for x in labels[0]])
+
+        plt.savefig("prediction.png")
+
+        if plot_stddev:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            cax = ax.matshow(std.reshape(100, 100))
+
+            fig.colorbar(cax)
+
+            ax.set_xticks(ticks)
+            ax.set_yticks(ticks)
+
+            ax.set_xticklabels(["{:.5f}".format(x) for x in labels[1]])
+            ax.set_yticklabels(["{:.5f}".format(x) for x in labels[0]])
+
+            plt.savefig("prediction_std.png")
