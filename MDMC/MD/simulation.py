@@ -28,6 +28,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
+from ase.io import read as ase_read
+from MDANSE.Framework.Parsers.pdb import PDBFile
 from statsmodels.tsa.stattools import kpss
 from verbosemanager import VerboseManager
 
@@ -44,9 +46,14 @@ from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.interactions import Coulombic, Dispersion
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from ase import Atom as ase_atom
+
     from MDMC.MD.interactions import Interaction
     from MDMC.MD.structures import Atom, Molecule, Structure
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -212,6 +219,50 @@ class Universe(AtomContainer):
         return False
 
     # Unit decorator on getter due to operations in setter
+
+    @classmethod
+    def from_file(self, file_path: str | Path, file_format: str | None = None) -> Universe:
+        init_struct = ase_read(file_path, format=file_format)
+        new_instance = Universe(np.diag(init_struct.get_cell()))
+        for atom in init_struct:
+            new_instance.add_structure(
+                Atom(atom.symbol, position=atom.position, charge=atom.charge)
+            )
+        return new_instance
+
+    @classmethod
+    def from_pdb_file(self, file_path: str | Path) -> Universe:
+        init_struct = ase_read(file_path)
+        atom_aliases = {atom.symbol: atom.symbol for atom in init_struct}
+        mdanse_parser = PDBFile(file_path)
+        mdanse_parser.parse()
+        topology = mdanse_parser.build_chemical_system(atom_aliases)
+        all_indices = topology.all_indices
+        atom_types = topology.atom_list
+        molecules = topology._clusters
+
+        new_instance = Universe(np.diag(init_struct.get_cell()))
+        for molecule_type, mol_list in molecules.items():
+            for atom_list in mol_list:
+                mol_settings = {
+                    "atoms": [
+                        Atom(
+                            atom_types[ind],
+                            position=init_struct[ind].position,
+                            charge=init_struct[ind].charge,
+                        )
+                        for ind in atom_list
+                    ],
+                    "name": molecule_type,
+                }
+                new_instance.add_structure(Molecule(**mol_settings))
+                all_indices -= set(atom_list)
+        for atom_index in all_indices:
+            atom = init_struct[atom_index]
+            new_instance.add_structure(
+                Atom(atom.symbol, position=atom.position, charge=atom.charge)
+            )
+        return new_instance
 
     @property
     @unit_decorator_getter(unit=units.LENGTH)
@@ -1057,6 +1108,11 @@ class Universe(AtomContainer):
         """
 
         return any(position > self.dimensions) or any(position < [0, 0, 0])
+
+    @property
+    def unique_atom_types(self):
+        """Set of unique atom types in the system"""
+        return set(atom.atom_type for atom in self)
 
     @mod_docstring({"DYNAMIC_SOLVENT_LIST": ", ".join(get_solvent_names())})
     def solvate(
