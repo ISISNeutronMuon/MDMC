@@ -1076,6 +1076,11 @@ class Universe(AtomContainer):
         """Set of unique atom types in the system"""
         return set(atom.atom_type for atom in self)
 
+    @property
+    def unique_molecule_types(self):
+        """Set of unique atom types in the system"""
+        return set(molecule.name for molecule in self.molecule_list)
+
     @mod_docstring({"DYNAMIC_SOLVENT_LIST": ", ".join(get_solvent_names())})
     def solvate(
         self,
