@@ -52,9 +52,9 @@ if __name__ == "__main__":
     simulation = Simulation(
         universe,
         engine="openmm",
-        time_step=10.18893,
+        time_step=5,
         temperature=120.0,
-        traj_step=15,
+        traj_step=300,
         openmm_platform="OpenCL",
     )
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     exp_observable = MDANSEObservable(mdanse_job_type="SQw")
     exp_observable.read_from_file(data_parser)
-    md_observable = MDANSEObservable(mdanse_job_type="SQw", pick_dataset="/ndtsf/f(q,t)/total")
+    md_observable = MDANSEObservable(mdanse_job_type="SQw", pick_dataset="/ndsf/f(q,t)/total")
     md_observable.origin = "MD"
     md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
 
@@ -121,10 +121,11 @@ if __name__ == "__main__":
         fit_parameters=fit_parameters,
         observable_pairs=[observable_pair],
         reset_config=True,
+        cont_slicing=True,
         file_dump_frequency="best",
         file_dump_extent="all",
-        equilibration_steps=30000,
-        MD_steps=16000,
+        equilibration_steps=60000,
+        MD_steps=60000,
         FoM_options={"error": "none"},
     )
 

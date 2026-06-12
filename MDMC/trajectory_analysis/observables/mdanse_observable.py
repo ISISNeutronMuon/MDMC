@@ -59,7 +59,11 @@ else:
     MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.available_classes()
 
 
-def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, **parameters):
+def run_ndtsf_special_case(MD_input,
+                           file_path: Path | None = None,
+                           verbose=0,
+                           override_dataset: str | None = None,
+                           **parameters):
     """Evaluate the function using the current parameter values.
 
     Gets the current values of parameters from trajectory attributes.
@@ -110,7 +114,11 @@ def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, *
     job_instance.setup(settings)
     job_instance.run(settings, status=True)
     results = job_instance.results
-    main_name, axes_names = find_main_result(results)
+    if override_dataset is None:
+        main_name, axes_names = find_main_result(results)
+    else:
+        main_name = override_dataset
+        axes_names = results[main_name].attrs["axis"].split("|")
     dependent_variables = {"SQw": results[main_name][:]}
     independent_variables = {name.split("/")[-1]: results[name][:] for name in axes_names}
     for axis_name in independent_variables:
@@ -264,6 +272,7 @@ class MDANSEObservable(Observable):
                 MD_input,
                 file_path=file_path,
                 verbose=verbose,
+                override_dataset=self._override_dataset,
                 q_shells=self._q_shells,
                 **self.job_settings,
             )

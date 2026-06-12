@@ -338,13 +338,12 @@ class ObservablePair:
             md_part = np.squeeze(np.array(*self.MD_obs.dependent_variables.values()))
             exp_axes = list(self.exp_obs.independent_variables.values())
             md_axes = list(self.MD_obs.independent_variables.values())
-            # exp_part = np.squeeze(np.array(*self.exp_obs.dependent_variables.values()))
-            # for key, arr in self.exp_obs.independent_variables.items():
-            #     print(f"experiment: {key}, {arr}")
-            # print(f"experiment data shape: {exp_part.shape}")
-            # for key, arr in self.MD_obs.independent_variables.items():
-            #     print(f"MD: {key}, {arr}")
-            # print(f"MD data shape: {md_part.shape}")
+            # Check if data array needs flipping
+            exp_axis_keys = [str(x).lower() for x in self.exp_obs.independent_variables]
+            md_axis_keys = [str(x).lower() for x in self.MD_obs.independent_variables]
+            if md_axis_keys[0] == exp_axis_keys[1]:
+                md_axes = md_axes[::-1]
+                md_part = np.swapaxes(md_part, 1, 0)
             positions, values = [], []
             for nx, x in enumerate(md_axes[0]):
                 for ny, y in enumerate(md_axes[1]):
@@ -360,7 +359,6 @@ class ObservablePair:
             self.matching_obs.dependent_variables = {
                 first(self.exp_obs.dependent_variables): matching_vals,
             }
-
             return matching_vals
 
         else:
