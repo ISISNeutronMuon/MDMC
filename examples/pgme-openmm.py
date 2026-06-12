@@ -91,6 +91,7 @@ if __name__ == "__main__":
             ["../doc/tutorials/data/irs40979_fqt__spec_9.asc", 1.191],
         ]
     )
+    data_parser.parse(axis1_limits=(0.0, 0.15))
 
     exp_observable = MDANSEObservable(mdanse_job_type="SQw")
     exp_observable.read_from_file(data_parser)

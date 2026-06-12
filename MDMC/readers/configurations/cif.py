@@ -64,3 +64,4 @@ class CIFReader(ConfigurationReader):
             with reader:
                 reader.parse()
                 self._atoms = reader.atoms
+        self.finished_reading = True

@@ -47,3 +47,4 @@ class ASEReader(ConfigurationReader):
 
         ASE_atoms = ase.io.read(self.file_name, **settings)
         self._atoms = ASE_to_MDMC(ASE_atoms)
+        self.finished_reading = True
