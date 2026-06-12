@@ -16,7 +16,7 @@ os.environ["OMP_NUM_THREADS"] = "4"
 # 18.6270199 A is 216 water molecules
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
-universe = Universe.from_pdb_file("7rsa_nowater.pdb")
+universe = Universe.from_pdb_file("structure/7rsa_nowater.pdb")
 
 for atom_type in universe.unique_atom_types:
     NonBondedForce(
@@ -28,4 +28,4 @@ for atom_type in universe.unique_atom_types:
     )
 
 print(universe)
-print(universe.molecule_list)
+print(universe.unique_molecule_types)
