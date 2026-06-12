@@ -23,6 +23,11 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
     MDANSE_RESOLUTION_FUNCTIONS,
 )
 
+
+def normalise_to_first_value(input_2D_array):
+    return input_2D_array / input_2D_array[:1, :]
+
+
 if __name__ == "__main__":
     # Build universe with density 0.0176 atoms per AA^-3
     density = 0.0176
@@ -107,8 +112,9 @@ if __name__ == "__main__":
         MD_obs=md_observable,
         weight=1.0,
         rescale_factor=1.0,
-        auto_scale=True,
+        auto_scale=False,
     )
+    observable_pair.postprocessing_function = normalise_to_first_value
 
     fit_parameters = universe.parameters
     fit_parameters["sigma"].constraints = [2.0, 4.0]

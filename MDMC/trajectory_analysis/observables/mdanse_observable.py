@@ -59,11 +59,13 @@ else:
     MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.available_classes()
 
 
-def run_ndtsf_special_case(MD_input,
-                           file_path: Path | None = None,
-                           verbose=0,
-                           override_dataset: str | None = None,
-                           **parameters):
+def run_ndtsf_special_case(
+    MD_input,
+    file_path: Path | None = None,
+    verbose=0,
+    override_dataset: str | None = None,
+    **parameters,
+):
     """Evaluate the function using the current parameter values.
 
     Gets the current values of parameters from trajectory attributes.
