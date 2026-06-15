@@ -2,6 +2,7 @@ import os
 
 from MDMC.MD import *
 from MDMC.MD.force_fields.OPLSAA import add_opls_force_field
+from MDMC.exporters.trajectories.H5MD_build import write_H5MD
 
 # Currently MDMC uses OMP_NUM_THREADS to control the number of processes
 # in the sqw calculation
@@ -9,32 +10,41 @@ os.environ["OMP_NUM_THREADS"] = "4"
 
 # Define the unique atoms using the ForceField atom_type
 # These can be seen in the oplsaa.dat file (MDMC/MD/force_fields/data/oplsaa.dat)
-H1 = Atom("H", position=[-0.7006, 0.3636, 0.8900], name="98", atom_type="98")
-H2 = Atom("H", position=[-0.7006, 0.3636, -0.8900], name="98", atom_type="98")
-H3 = Atom("H", position=[-0.7076, -1.1754, 0.0000], name="98", atom_type="98")
-C = Atom("C", position=[-0.3366, -0.1504, 0.0000], name="99", atom_type="99")
-O = Atom("O", position=[1.0849, -0.1713, 0.0000], name="96", atom_type="96")
-H4 = Atom("H", position=[1.3606, 0.7699, 0.0000], name="97", atom_type="97")
+
+atom_type_mapping = {
+"H1" : {"name":"98", "atom_type":"98"},
+"H2" : {"name":"98", "atom_type":"98"},
+"H3" : {"name":"98", "atom_type":"98"},
+"C" : {"name":"99", "atom_type":"99"},
+"O" : {"name":"96", "atom_type":"96"},
+"H4" : {"name":"97", "atom_type":"97"},
 
 # the water atom names match those in the PDB file.
-OW = Atom("O", position=[1.0849, -0.1713, 0.0000], name="63", atom_type="63")
-HW1 = Atom("H", position=[1.0849, -0.1713, 0.0000], name="64", atom_type="64")
-HW2 = Atom("H", position=[1.0849, -0.1713, 0.0000], name="64", atom_type="64")
+"OW" : {"name":"63", "atom_type":"63"},
+"HW1" : {"name":"64", "atom_type":"64"},
+"HW2" : {"name":"64", "atom_type":"64"},
+}
 
-interactions = [
-    Bond((C, H1), (C, H2), (C, H3)),
-    Bond((O, H4)),
-    Bond((C, O)),
-    BondAngle((H1, C, O), (H2, C, O), (H3, C, O)),
-    BondAngle((H1, C, H2), (H2, C, H3), (H3, C, H1)),
-    BondAngle((H4, O, C)),
-    DihedralAngle((H1, C, O, H4), (H2, C, O, H4), (H3, C, O, H4)),
-    Bond((HW1, OW), (HW2, OW)),
-    BondAngle((HW1, OW, HW2)),
-]
+bonds = {
+    "MET": [("C", "H1"), ("C", "H2"), ("C", "H3"), ("O", "H4"), ("C", "O"), ],
+    "SOL": [("HW1", "OW"), ("HW2", "OW")]
+}
+
+angles = {
+    "MET": [("H1", "C", "O"), ("H2", "C", "O"),("H3", "C", "O"),
+            ("H1", "C", "H2"), ("H2", "C", "H3"), ("H3", "C", "H1"),
+            ("H4", "O", "C"),],
+    "SOL": [("HW1", "OW", "HW2")]
+}
+
+
 # Create the universe from file
-universe = Universe.from_pdb_file("structure/METHANOL_WATER.pdb")
+universe = Universe.from_pdb_file("structure/METHANOL_WATER.pdb",
+                                  atom_type_mapping=atom_type_mapping,
+                                  bonds_per_molecule=bonds,
+                                  angles_per_molecule=angles)
 add_opls_force_field(universe, cutoff=6.0, ewald=1e-4)
+
 
 simulation = Simulation(
     universe,
@@ -53,3 +63,11 @@ simulation = Simulation(
 )
 
 simulation.run(n_steps=30000, equilibration=True)
+
+simulation.run(n_steps=3000)
+
+write_H5MD(simulation.trajectory,
+           "one_run_Me_H2O_from_file.h5",
+           timestamp="",
+           creator_name="MDMC",
+           creator_email="place@hold.er")

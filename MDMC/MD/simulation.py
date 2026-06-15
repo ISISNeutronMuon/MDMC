@@ -43,7 +43,7 @@ from MDMC.common.decorators import (
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
-from MDMC.MD.interactions import Coulombic, Dispersion
+from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
 from MDMC.MD.structures import Atom, Molecule
@@ -231,7 +231,13 @@ class Universe(AtomContainer):
         return new_instance
 
     @classmethod
-    def from_pdb_file(self, file_path: str | Path) -> Universe:
+    def from_pdb_file(
+        self,
+        file_path: str | Path,
+        atom_type_mapping: dict[str, Any] | None = None,
+        bonds_per_molecule: dict[str, tuple[str, str]] | None = None,
+        angles_per_molecule: dict[str, tuple[str, str, str]] | None = None,
+    ) -> Universe:
         init_struct = ase_read(file_path)
         atom_aliases = {atom.symbol: atom.symbol for atom in init_struct}
         mdanse_parser = PDBFile(file_path)
@@ -240,22 +246,43 @@ class Universe(AtomContainer):
         all_indices = topology.all_indices
         atom_types = topology.atom_list
         molecules = topology._clusters
+        all_names = topology.name_list
+        index_to_label = {
+            index: label for label, value in topology._labels.items() for index in value
+        }
+
+        if atom_type_mapping is None:
+            atom_type_mapping = {name_string: {} for name_string in all_names}
 
         new_instance = Universe(np.diag(init_struct.get_cell()))
         for molecule_type, mol_list in molecules.items():
             for atom_list in mol_list:
+                mol_type = set(index_to_label[index] for index in atom_list)
+                if len(mol_type) > 1:
+                    raise ValueError(
+                        f"Atoms {atom_list} in molecule {molecule_type} have multiple PDB labels {mol_type}"
+                    )
+                mol_type = mol_type.pop()
+                bond_list = bonds_per_molecule[mol_type]
+                angle_list = angles_per_molecule[mol_type]
+                atom_dict = {
+                    all_names[ind]: Atom(
+                        atom_types[ind],
+                        position=init_struct[ind].position,
+                        charge=init_struct[ind].charge,
+                        **atom_type_mapping[all_names[ind]],
+                    )
+                    for ind in atom_list
+                }
                 mol_settings = {
-                    "atoms": [
-                        Atom(
-                            atom_types[ind],
-                            position=init_struct[ind].position,
-                            charge=init_struct[ind].charge,
-                        )
-                        for ind in atom_list
-                    ],
+                    "atoms": list(atom_dict.values()),
                     "name": molecule_type,
                 }
                 new_instance.add_structure(Molecule(**mol_settings))
+                for at_pair in bond_list:
+                    Bond(tuple(atom_dict[at_key] for at_key in at_pair))
+                for at_triplets in angle_list:
+                    BondAngle(tuple(atom_dict[at_key] for at_key in at_triplets))
                 all_indices -= set(atom_list)
         for atom_index in all_indices:
             atom = init_struct[atom_index]
