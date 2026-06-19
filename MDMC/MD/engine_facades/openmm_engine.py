@@ -247,11 +247,11 @@ class OpenMMEngine(MDEngine):
             if len(mdmc_nonbonded) != 1:
                 raise Exception("Unexpected number of non-bonded interactions.")
             mdmc_nonbonded = mdmc_nonbonded[0]
-            charge = float(atom.charge.value) * unit.elementary_charge
+            charge = float(atom.charge) * unit.elementary_charge
             sigma = float(mdmc_nonbonded.sigma.value) * unit.angstrom
             epsilon = float(mdmc_nonbonded.epsilon.value) * unit.kilojoules_per_mole
             nonbonded.addParticle(charge, sigma, epsilon)
-            if atom.charge.value != 0.0:
+            if atom.charge != 0.0:
                 use_ewald = True
 
         mdmc_nonbonded = [
