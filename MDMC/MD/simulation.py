@@ -52,8 +52,6 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ase import Atom as ase_atom
-
     from MDMC.MD.interactions import Interaction
     from MDMC.MD.structures import Atom, Molecule, Structure
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -254,41 +252,69 @@ class Universe(AtomContainer):
         if atom_type_mapping is None:
             atom_type_mapping = {name_string: {} for name_string in all_names}
 
+        bond_pairs = {}
+        for mol_label, pair_list in bonds_per_molecule.items():
+            for pair in pair_list:
+                bond_pairs[(mol_label, pair)] = []
+        angle_triplets = {}
+        for mol_label, triplet_list in angles_per_molecule.items():
+            for triplet in triplet_list:
+                angle_triplets[(mol_label, triplet)] = []
+        unique_atoms = {}
+
         new_instance = Universe(np.diag(init_struct.get_cell()))
         for molecule_type, mol_list in molecules.items():
             for atom_list in mol_list:
                 mol_type = set(index_to_label[index] for index in atom_list)
                 if len(mol_type) > 1:
                     raise ValueError(
-                        f"Atoms {atom_list} in molecule {molecule_type} have multiple PDB labels {mol_type}"
+                        f"Atoms {atom_list} in molecule {molecule_type} "
+                        f"have multiple PDB labels {mol_type}"
                     )
                 mol_type = mol_type.pop()
                 bond_list = bonds_per_molecule[mol_type]
                 angle_list = angles_per_molecule[mol_type]
-                atom_dict = {
-                    all_names[ind]: Atom(
-                        atom_types[ind],
-                        position=init_struct[ind].position,
-                        charge=init_struct[ind].charge,
-                        **atom_type_mapping[all_names[ind]],
-                    )
-                    for ind in atom_list
-                }
+                atom_dict = {}
+                for ind in atom_list:
+                    if (mol_type, all_names[ind]) not in unique_atoms:
+                        atom_instance = Atom(
+                            atom_types[ind],
+                            position=init_struct[ind].position,
+                            charge=init_struct[ind].charge,
+                            **atom_type_mapping[all_names[ind]],
+                        )
+                        unique_atoms[(mol_type, all_names[ind])] = atom_instance
+                    else:
+                        atom_instance = unique_atoms[(mol_type, all_names[ind])].copy(
+                            position=init_struct[ind].position,
+                        )
+                    atom_dict[all_names[ind]] = atom_instance
                 mol_settings = {
                     "atoms": list(atom_dict.values()),
                     "name": molecule_type,
                 }
                 new_instance.add_structure(Molecule(**mol_settings))
                 for at_pair in bond_list:
-                    Bond(tuple(atom_dict[at_key] for at_key in at_pair))
+                    bond_pairs[(mol_type, at_pair)].append(
+                        tuple(atom_dict[at_key] for at_key in at_pair)
+                    )
                 for at_triplets in angle_list:
-                    BondAngle(tuple(atom_dict[at_key] for at_key in at_triplets))
+                    angle_triplets[(mol_type, at_triplets)].append(
+                        tuple(atom_dict[at_key] for at_key in at_triplets)
+                    )
                 all_indices -= set(atom_list)
+        for tuple_list in bond_pairs.values():
+            Bond(*tuple_list)
+        for triplet_list in angle_triplets.values():
+            BondAngle(*triplet_list)
         for atom_index in all_indices:
             atom = init_struct[atom_index]
-            new_instance.add_structure(
-                Atom(atom.symbol, position=atom.position, charge=atom.charge)
-            )
+            if atom.symbol not in unique_atoms:
+                atom_instance = Atom(atom.symbol, position=atom.position, charge=atom.charge)
+                unique_atoms[atom.symbol] = atom_instance
+            else:
+                atom_instance = unique_atoms[atom.symbol].copy(position=atom.position)
+            new_instance.add_structure(atom_instance)
         return new_instance
 
     @property
