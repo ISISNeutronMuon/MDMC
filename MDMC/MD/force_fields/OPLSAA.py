@@ -70,6 +70,7 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
         nonbonded.function.charge.parameter_name = f"OPLS-{name}-nonbonded_charge"
         nonbonded.function.epsilon.parameter_name = f"OPLS-{name}-nonbonded_epsilon"
         nonbonded.function.sigma.parameter_name = f"OPLS-{name}-nonbonded_sigma"
+        universe.set_atom_charge(atom_type, charge)
 
     bonds_df = opls_aa_file.bonds
     angles_df = opls_aa_file.bond_angles
