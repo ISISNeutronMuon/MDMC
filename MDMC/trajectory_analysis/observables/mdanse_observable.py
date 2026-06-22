@@ -53,7 +53,10 @@ Q_MDANSE_TO_MDMC = measure(1.0, iunit="1/nm").toval("1/ang")
 R_MDANSE_TO_MDMC = measure(1.0, iunit="nm").toval("ang")
 TIME_MDANSE_TO_MDMC = measure(1.0, iunit="ps").toval("fs")
 
-MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.indirect_subclasses()
+if hasattr(IInstrumentResolution, "indirect_subclasses"):
+    MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.indirect_subclasses()
+else:
+    MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.available_classes()
 
 
 def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, **parameters):
