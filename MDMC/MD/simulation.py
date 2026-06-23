@@ -43,7 +43,7 @@ from MDMC.common.decorators import (
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
-from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
+from MDMC.MD.interactions import Bond, BondAngle, Coulombic, DihedralAngle, Dispersion
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
 from MDMC.MD.structures import Atom, Molecule
@@ -235,7 +235,16 @@ class Universe(AtomContainer):
         atom_type_mapping: dict[str, Any] | None = None,
         bonds_per_molecule: dict[str, tuple[str, str]] | None = None,
         angles_per_molecule: dict[str, tuple[str, str, str]] | None = None,
+        dihedrals_per_molecule: dict[str, tuple[str, str, str, str]] | None = None,
     ) -> Universe:
+        if dihedrals_per_molecule is None:
+            dihedrals_per_molecule = {}
+        if angles_per_molecule is None:
+            angles_per_molecule = {}
+        if bonds_per_molecule is None:
+            bonds_per_molecule = {}
+        if atom_type_mapping is None:
+            atom_type_mapping = {}
         init_struct = ase_read(file_path)
         atom_aliases = {atom.symbol: atom.symbol for atom in init_struct}
         mdanse_parser = PDBFile(file_path)
@@ -260,6 +269,10 @@ class Universe(AtomContainer):
         for mol_label, triplet_list in angles_per_molecule.items():
             for triplet in triplet_list:
                 angle_triplets[(mol_label, triplet)] = []
+        dihedral_quadruplets = {}
+        for mol_label, quadruplet_list in dihedrals_per_molecule.items():
+            for quadruplet in quadruplet_list:
+                dihedral_quadruplets[(mol_label, quadruplet)] = []
         unique_atoms = {}
 
         new_instance = Universe(np.diag(init_struct.get_cell()))
@@ -272,8 +285,9 @@ class Universe(AtomContainer):
                         f"have multiple PDB labels {mol_type}"
                     )
                 mol_type = mol_type.pop()
-                bond_list = bonds_per_molecule[mol_type]
-                angle_list = angles_per_molecule[mol_type]
+                bond_list = bonds_per_molecule.get(mol_type, [])
+                angle_list = angles_per_molecule.get(mol_type, [])
+                dihedral_list = dihedrals_per_molecule.get(mol_type, [])
                 atom_dict = {}
                 for ind in atom_list:
                     if (mol_type, all_names[ind]) not in unique_atoms:
@@ -302,11 +316,17 @@ class Universe(AtomContainer):
                     angle_triplets[(mol_type, at_triplets)].append(
                         tuple(atom_dict[at_key] for at_key in at_triplets)
                     )
+                for at_quadruplets in dihedral_list:
+                    dihedral_quadruplets[(mol_type, at_quadruplets)].append(
+                        tuple(atom_dict[at_key] for at_key in at_quadruplets)
+                    )
                 all_indices -= set(atom_list)
         for tuple_list in bond_pairs.values():
             Bond(*tuple_list)
         for triplet_list in angle_triplets.values():
             BondAngle(*triplet_list)
+        for quadruplet_list in dihedral_quadruplets.values():
+            DihedralAngle(*quadruplet_list)
         for atom_index in all_indices:
             atom = init_struct[atom_index]
             if atom.symbol not in unique_atoms:

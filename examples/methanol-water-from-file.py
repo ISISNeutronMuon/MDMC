@@ -37,12 +37,18 @@ angles = {
     "SOL": [("HW1", "OW", "HW2")]
 }
 
+dihedrals = {
+    "MET": [("H1", "C", "O", "H4"), ("H2", "C", "O", "H4"), ("H3", "C", "O", "H4")],
+    "SOL": []
+}
+
 
 # Create the universe from file
 universe = Universe.from_pdb_file("structure/METHANOL_WATER.pdb",
                                   atom_type_mapping=atom_type_mapping,
                                   bonds_per_molecule=bonds,
-                                  angles_per_molecule=angles)
+                                  angles_per_molecule=angles,
+                                  dihedrals_per_molecule=dihedrals)
 add_opls_force_field(universe, cutoff=6.0, ewald=1e-4)
 
 
