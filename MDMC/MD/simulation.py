@@ -237,6 +237,34 @@ class Universe(AtomContainer):
         angles_per_molecule: dict[str, tuple[str, str, str]] | None = None,
         dihedrals_per_molecule: dict[str, tuple[str, str, str, str]] | None = None,
     ) -> Universe:
+        """Build a Universe instance with atoms and positions from the input file.
+
+        Requires the user to specify which atoms form bonds, angles and dihedrals
+        in each molecule type.
+
+        Parameters
+        ----------
+        file_path : str | Path
+            Path to a PDB file.
+        atom_type_mapping : dict[str, Any] | None, optional
+            Dictionary translating the PDB atom names to the types used by the force field,
+            e.g. {"H1" : {"name":"98", "atom_type":"98"}} for OPLS, by default None
+        bonds_per_molecule : dict[str, tuple[str, str]] | None, optional
+            List of atom pairs forming a bond in a specific molecule type,
+            e.g. {"SOL": [("HW1", "OW"), ("HW2", "OW")]} for water, by default None
+        angles_per_molecule : dict[str, tuple[str, str, str]] | None, optional
+            List of atom triplets forming an angle in a molecule,
+            e.g. {"SOL": [("HW1", "OW", "HW2")]}, by default None
+        dihedrals_per_molecule : dict[str, tuple[str, str, str, str]] | None, optional
+            List of atom quadruplets forming a dihedral angle in a molecule
+            e.g. {"MET": [("H1", "C", "O", "H4"), ...]}, by default None
+
+        Returns
+        -------
+        Universe
+            A Universe instance containing the same atoms as the input PDB file.
+
+        """
         if dihedrals_per_molecule is None:
             dihedrals_per_molecule = {}
         if angles_per_molecule is None:
