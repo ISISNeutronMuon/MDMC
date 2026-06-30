@@ -78,7 +78,6 @@ class PairDistributionFunction(Observable):
     """
 
     def __init__(self):
-
         super().__init__()
         self._independent_variables = None
         self._dependent_variables = None

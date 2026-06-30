@@ -16,11 +16,15 @@
 
 """A module for Figure of Merits"""
 
+import copy
 from abc import ABC, abstractmethod
 
 import numpy as np
+from more_itertools import first
+from scipy.interpolate import LinearNDInterpolator
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.trajectory_analysis.observables.mdanse_observable import MDANSEObservable
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
@@ -57,12 +61,19 @@ class ObservablePair:
         rescale_factor: float = 1.0,
         auto_scale: bool = False,
     ):
-
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
+        self.matching_obs = None
         self.weight = weight
         self.rescale_factor = rescale_factor
+        self.last_rescale_factor = 1.0
         self.auto_scale = auto_scale
+        if isinstance(self.MD_obs, MDANSEObservable):
+            self.matching_obs = MDANSEObservable(mdanse_job_type=self.MD_obs.job_type)
+            self.matching_obs.origin = "MD"
+            self.matching_obs.independent_variables = copy.deepcopy(
+                self.exp_obs.independent_variables,
+            )
 
     @property
     def exp_obs(self) -> Observable:
@@ -294,7 +305,11 @@ class ObservablePair:
 
         raise NotImplementedError
 
-    def calculate_difference(self) -> np.ndarray:
+    @property
+    def exp_y(self):
+        return first(self.exp_obs.dependent_variables.values())
+
+    def interpolate_MD_onto_exp(self) -> np.ndarray:
         """
         Assumes a single dependent variable for each ``Observable``
 
@@ -306,12 +321,50 @@ class ObservablePair:
             between the ``dependent_variables`` taking the ``rescale_factor``
             into account.
         """
+        if self.matching_obs is None:
+            return first(self.MD_obs.dependent_variables.values())
+        if len(self.exp_obs.independent_variables) == 1:
+            exp_x = first(self.exp_obs.independent_variables.values())
+            md_x = first(self.MD_obs.independent_variables.values())
+            md_y = first(self.MD_obs.dependent_variables.values())
+            md_y_matching = np.interp(exp_x, md_x, md_y)
+            self.matching_obs.dependent_variables = {
+                first(self.exp_obs.dependent_variables): md_y_matching,
+            }
 
-        diff = np.array(
-            *self.exp_obs.dependent_variables.values(),
-        ) * self.rescale_factor - np.array(*self.MD_obs.dependent_variables.values())
+            return md_y_matching
 
-        return diff
+        elif len(self.exp_obs.independent_variables) == 2:
+            md_part = np.squeeze(np.array(*self.MD_obs.dependent_variables.values()))
+            exp_axes = list(self.exp_obs.independent_variables.values())
+            md_axes = list(self.MD_obs.independent_variables.values())
+            # exp_part = np.squeeze(np.array(*self.exp_obs.dependent_variables.values()))
+            # for key, arr in self.exp_obs.independent_variables.items():
+            #     print(f"experiment: {key}, {arr}")
+            # print(f"experiment data shape: {exp_part.shape}")
+            # for key, arr in self.MD_obs.independent_variables.items():
+            #     print(f"MD: {key}, {arr}")
+            # print(f"MD data shape: {md_part.shape}")
+            positions, values = [], []
+            for nx, x in enumerate(md_axes[0]):
+                for ny, y in enumerate(md_axes[1]):
+                    val = md_part[nx, ny]
+                    if np.isnan(val):
+                        continue
+                    pos = (x, y)
+                    positions.append(pos)
+                    values.append(val)
+            interpolator = LinearNDInterpolator(positions, values)
+            newX, newY = np.meshgrid(exp_axes[0], exp_axes[1])
+            matching_vals = interpolator(newX, newY).T
+            self.matching_obs.dependent_variables = {
+                first(self.exp_obs.dependent_variables): matching_vals,
+            }
+
+            return matching_vals
+
+        else:
+            raise NotImplementedError("Only 1D and 2D observables can be interpolated.")
 
     def calculate_errors(self) -> np.ndarray:
         """
@@ -378,7 +431,6 @@ class FigureOfMerit(ABC):
         norm: str = "data_points",
         n_parameters: int = None,
     ):
-
         self.obs_pairs = list(obs_pairs)
         self.value = None
         self.n_parameters = 0

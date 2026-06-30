@@ -188,7 +188,7 @@ def write_H5MD(
     file_loc: Path = Path("."),
     chunk_size: int = 128,
     **settings,
-):
+) -> Path:
     """
     Write a CompactTrajectory to a H5MD file.
 
@@ -299,3 +299,5 @@ def write_H5MD(
         create_box_data(file, trajectory)
         atom_symbols_data = np.array(symbol_list, dtype=object)
         create_parameter_data(file, atom_symbols_data)
+
+    return file_path_name

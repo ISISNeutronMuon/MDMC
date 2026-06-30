@@ -143,7 +143,6 @@ class Universe(AtomContainer):
     """
 
     def __init__(self, dimensions, force_field=None, structures=None, **settings):
-
         self.dimensions = dimensions
         self._parameters = None
         self._atom_types = defaultdict(list)
@@ -192,7 +191,6 @@ class Universe(AtomContainer):
             print(setup_frame)
 
     def __str__(self) -> str:
-
         return (
             f"Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, "
             f"{self.n_nonbonded} nonbonded interactions, and dimensions of {self.dimensions}"
@@ -237,7 +235,6 @@ class Universe(AtomContainer):
 
     @dimensions.setter
     def dimensions(self, dimensions: npt.ArrayLike) -> None:
-
         if isinstance(dimensions, float):
             if dimensions <= 0:
                 msg = "Only positive values for the Universe dimensions are currently supported."
@@ -1212,7 +1209,6 @@ class KSpaceSolver:
     """
 
     def __init__(self, **settings: Any):
-
         self.accuracy = settings.get("accuracy")
 
     @property
@@ -1264,7 +1260,6 @@ class PPPM(KSpaceSolver):
         return all(v == getattr(other, k) for k, v in self.__dict__.items())
 
     def __ne__(self, other) -> bool:
-
         return not self.__eq__(other)
 
 
@@ -1289,7 +1284,6 @@ class ConstraintAlgorithm:
     """
 
     def __init__(self, accuracy: float, max_iterations: int):
-
         self.accuracy = accuracy
         self.max_iterations = max_iterations
 
@@ -1323,7 +1317,6 @@ class ConstraintAlgorithm:
 
     @max_iterations.setter
     def max_iterations(self, value: int) -> None:
-
         self._max_iterations = int(value)
 
 
@@ -1431,7 +1424,6 @@ class Simulation:
         engine: str = "openmm",
         **settings,
     ):
-
         self.universe = universe
         self.traj_step = traj_step
         self.time_step = time_step

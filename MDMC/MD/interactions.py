@@ -157,7 +157,6 @@ class Interaction(ABC):
 
     @function.setter
     def function(self, value: InteractionFunction):
-
         self._function = value
 
     @property
@@ -264,7 +263,6 @@ class NonBondedInteraction(Interaction):
     """
 
     def __init__(self, universe, *atom_types, **settings):
-
         self.universe = universe
         if self.universe:
             self.universe.add_nonbonded_interaction(self)
@@ -279,15 +277,12 @@ class NonBondedInteraction(Interaction):
 
     @abstractmethod
     def __eq__(self, other) -> bool:
-
         raise NotImplementedError
 
     def __ne__(self, other) -> bool:
-
         return not self == other
 
     def __hash__(self):
-
         # Simplified version of immutable hash which Python3 produces
         # (marginally less efficient but shouldn't matter)
         return id(self) // 8
@@ -340,7 +335,6 @@ class NonBondedInteraction(Interaction):
 
     @universe.setter
     def universe(self, value: Universe) -> None:
-
         try:
             self._universe = weakref.ref(value)
         except TypeError:
@@ -362,7 +356,6 @@ class NonBondedInteraction(Interaction):
     @cutoff.setter
     @unit_decorator(unit=units.LENGTH)
     def cutoff(self, value: float) -> None:
-
         self._cutoff = value
 
     def is_equivalent(self, other) -> bool:
@@ -426,7 +419,6 @@ class Dispersion(NonBondedInteraction):
     __hash__ = NonBondedInteraction.__hash__
 
     def __init__(self, universe: Universe, *atom_types: int, **settings: Any):
-
         # Ignore pylint warning for inner function docstring
         # pylint: disable=missing-docstring
         def validate_atom_type_pair(atom_type_pair):
@@ -456,12 +448,10 @@ class Dispersion(NonBondedInteraction):
         self.vdw_tail_correction = settings.get("vdw_tail_correction", False)
 
     def __eq__(self, other):
-
         return other.atom_types == self.atom_types and isinstance(other, type(self))
 
     @property
     def atom_types(self):
-
         return tuple(sorted(self._atom_types))
 
     @property
@@ -670,7 +660,6 @@ class Coulombic(NonBondedInteraction):
         return self.atoms[key]
 
     def __eq__(self, other) -> bool:
-
         return (
             isinstance(other, type(self))
             and (sorted(self.atom_types, key=id) == sorted(other.atom_types, key=id))
@@ -817,7 +806,6 @@ class BondedInteraction(Interaction):
     """
 
     def __init__(self, *atom_tuples: list[tuple], **settings: Any):
-
         if atom_tuples and is_atom(atom_tuples[0]):
             atom_tuples = (atom_tuples,)
 
@@ -912,7 +900,6 @@ class BondedInteraction(Interaction):
 
     @atoms.setter
     def atoms(self, atom_tuples: list[tuple[Atom]]) -> None:
-
         # Check for duplicate tuples in list
         self._check_duplicates(atom_tuples)
         # Check for duplicate atoms in each tuple
@@ -1124,7 +1111,6 @@ class ConstrainableMixin:
     """
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
-
         self.constrained = settings.get("constrained", False)
         super().__init__(*atom_tuples, **settings)
 
@@ -1144,7 +1130,6 @@ class Bond(ConstrainableMixin, BondedInteraction):
     """
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
-
         settings["n_atoms"] = (2,)
         super().__init__(*atom_tuples, **settings)
 
@@ -1191,7 +1176,6 @@ class BondAngle(ConstrainableMixin, BondedInteraction):
     """
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
-
         settings["n_atoms"] = (3,)
         super().__init__(*atom_tuples, **settings)
 
@@ -1263,7 +1247,6 @@ class DihedralAngle(BondedInteraction):
     """
 
     def __init__(self, *atom_tuples: tuple, **settings: Any):
-
         settings["n_atoms"] = (4,)
         self.improper = settings.get("improper", False)
         super().__init__(*atom_tuples, **settings)

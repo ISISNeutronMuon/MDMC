@@ -31,7 +31,6 @@ class MDEngine(ABC):
     """Abstract base class for MD engine facades"""
 
     def __repr__(self) -> str:
-
         return (
             "<{0}\n"
             " {{MD_engine: {MD_engine},\n"

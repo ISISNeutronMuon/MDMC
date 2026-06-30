@@ -162,7 +162,6 @@ class RegisterFactory(Factory, ABC, Generic[T]):
         """
 
         def class_wrapper(wrapped_class: type) -> Callable[..., T]:
-
             if isinstance(names, str):
                 cls.registry[names] = wrapped_class
             else:

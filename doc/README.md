@@ -21,26 +21,16 @@ virtualenv mdmc-doc
 .\mdmc-doc\Scripts\activate.bat
 ```
 
-Install the needed Sphinx-related Python modules:
-
-```
-pip3 install sphinx nbsphinx sphinx_rtd_theme
-```
-
-Where you haven't done this already, clone the MDMC repository:
+Where you haven't done this already, clone and install the MDMC repository
+with the docs optional dependencies:
 
 ```
 git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
 cd MDMCv0.2_pilot
+pip install ".[docs]"
 ```
 
-and install the remaining Python modules that are required:
-
-```
-pip3 install -r requirements.txt
-```
-
-Now navigate into the `doc` subfolder and create the documentation by running
+Now navigate into the `doc` subfolder and create the documentation by running 
 the make.bat with the relevant argument:
 
 ```bash
@@ -66,13 +56,11 @@ module add mpi/openmpi-x86_64
 sudo pip3 install virtualenv
 python3 -m virtualenv ~/mdmc-doc/
 source ~/mdmc-doc/bin/activate
-#install needed python modules for sphinx
-pip3 install sphinx nbsphinx sphinx_rtd_theme
 #clone the MDMC repository
 git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
 #install remaining python modules needed
 cd MDMCv0.2_pilot/
-pip3 install -r requirements.txt
+pip install ".[docs]"
 #navigate to documentation directory
 cd doc/
 #compile the documentation. NB: if the sphinx-build command is not found it

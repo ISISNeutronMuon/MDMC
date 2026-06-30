@@ -139,7 +139,6 @@ class Unit(str):
     """
 
     def __new__(cls, string: str, components: defaultdict[list] = None) -> Unit:
-
         if string is None:
             return None
         if isinstance(string, Unit):
@@ -679,7 +678,6 @@ class UnitFloat(float):
     """
 
     def __new__(cls, value: float, unit: Unit | str):
-
         if value is None:
             return None
         if isinstance(value, Series):
@@ -689,7 +687,6 @@ class UnitFloat(float):
         return float.__new__(cls, value)
 
     def __init__(self, value: float, unit: Unit | str):
-
         float.__init__(value)
         self.unit = unit
 
@@ -710,7 +707,6 @@ class UnitFloat(float):
 
     @unit.setter
     def unit(self, value: float) -> None:
-
         if not (isinstance(value, str) or value is None):
             raise TypeError("unit must be a string")
         self._unit = Unit(value)
@@ -747,11 +743,9 @@ class UnitFloat(float):
         return unit_float
 
     def __repr__(self):
-
         return repr(self.real) + " " + self.unit
 
     def __str__(self):
-
         return self.__repr__()
 
 
@@ -804,7 +798,6 @@ class UnitNDArray(np.ndarray):
 
     @unit.setter
     def unit(self, value: float):
-
         if not (isinstance(value, str) or value is None):
             raise TypeError("unit must be a string")
         self._unit = Unit(value)

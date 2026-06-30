@@ -67,7 +67,6 @@ class GPR(Minimizer):
         previous_history: Path | str | None = None,
         **settings: Any,
     ):
-
         super().__init__(control, parameters, previous_history)
         np.random.seed(0)  # This should mean results are reproducible in tests
 

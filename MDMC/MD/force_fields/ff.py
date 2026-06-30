@@ -134,7 +134,6 @@ class FileForceField(ForceField):
     """
 
     def __init__(self):
-
         self.data = {}
         self._interaction_dictionary = None
         with open(self.absolute_path, encoding="UTF-8") as file:
@@ -280,7 +279,6 @@ class FileForceField(ForceField):
 
     @property
     def interaction_dictionary(self):
-
         # Cache interaction dictionary
         try:
             return self._interaction_dictionary

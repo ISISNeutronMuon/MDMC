@@ -66,7 +66,6 @@ class AtomCollection:
 
     @universe.setter
     def universe(self, universe: Universe) -> None:
-
         # Create a weakref of the universe for _universe. If the use of weakref
         # causes issues with prematurely garbage collecting the universe,
         # revert this change to not use weakref.
@@ -117,7 +116,6 @@ class Configuration(AtomCollection):
     __slots__ = ("_data", "element_set", "_structure_list")
 
     def __init__(self, *structures: Structure, **settings: Any):
-
         if "universe" in settings:
             self.universe = settings["universe"]
         elif structures:
@@ -442,7 +440,6 @@ class TemporalConfiguration(Configuration):
     __slots__ = ("time",)
 
     def __init__(self, time: float, *structures: Structure, **settings: Any) -> None:
-
         super().__init__(*structures, **settings)
         self.time = time
 

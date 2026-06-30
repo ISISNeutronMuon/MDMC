@@ -102,7 +102,6 @@ class DLPOLYAttribute:
         rdf: str = None,
         workdir: str = None,
     ):
-
         if dlpoly:
             self.dlpoly = dlpoly
         else:
@@ -174,7 +173,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         rdf: str = None,
         workdir: str = None,
     ):
-
         super().__init__(dlpoly, control, config, field, statis, output, dest_config, rdf, workdir)
 
         self.universe = None
@@ -211,7 +209,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self.dlpoly_simulation.temperature = value
 
     @property
@@ -230,7 +227,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float) -> None:
-
         self.dlpoly_simulation.pressure = value
 
     @property
@@ -266,7 +262,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @thermostat.setter
     def thermostat(self, value: str) -> None:
-
         self.ensemble.thermostat = value
 
     @property
@@ -284,7 +279,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     @barostat.setter
     def barostat(self, value: str) -> None:
-
         self.ensemble.barostat = value
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
@@ -639,7 +633,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
     """
 
     def __init__(self, universe: Universe, dlpoly: DLPoly = None, **settings: Any):
-
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
 
@@ -1031,7 +1024,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
         dlpoly=None,
         **settings: Any,
     ):
-
         super().__init__(dlpoly=dlpoly)
 
         self.universe = universe
@@ -1056,7 +1048,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value) -> None:
-
         self._time_step = value
         self.dlpoly.control["timestep"] = (convert_unit(self._time_step), str(SYSTEM["TIME"]))
 
@@ -1076,7 +1067,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self.ensemble.temperature = value
 
     @property
@@ -1095,7 +1085,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float) -> None:
-
         self.ensemble.pressure = value
 
     @property
@@ -1113,7 +1102,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
 
     @thermostat.setter
     def thermostat(self, value: str) -> None:
-
         self.ensemble.thermostat = value
 
     @property
@@ -1131,7 +1119,6 @@ class DLPOLYSimulation(DLPOLYAttribute):
 
     @barostat.setter
     def barostat(self, value: str) -> None:
-
         self.ensemble.barostat = value
 
 
@@ -1180,7 +1167,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         barostat: str = None,
         **settings: Any,
     ):
-
         # Requires a ``dlpoly-py`` object as thermostats
         # cannot be applied before configuration is defined
         super().__init__(dlpoly)
@@ -1209,7 +1195,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float) -> None:
-
         self._temperature = value
         # Set the temperature in the DL_POLY wrapper
         if value is not None:
@@ -1226,7 +1211,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float) -> None:
-
         self._pressure = value
 
     @property
@@ -1244,7 +1228,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
     @thermostat.setter
     def thermostat(self, value: str) -> None:
-
         if value and not self.temperature:
             raise AttributeError("all ensembles with a thermostat must have a temperature")
         self._thermostat = value
@@ -1263,7 +1246,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
     @barostat.setter
     def barostat(self, value: str) -> None:
-
         if value and not self.pressure:
             raise AttributeError("all ensembles with a barostat must have a pressure")
 

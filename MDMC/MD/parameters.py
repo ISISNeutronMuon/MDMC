@@ -81,7 +81,6 @@ class Parameter:
     _ID_generator = count(start=1, step=1)
 
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
-
         self.ID = self._generate_ID()
         self.name = name + f" (#{self.ID})"
         self.type = name
@@ -125,7 +124,6 @@ class Parameter:
     @value.setter
     @unit_decorator(unit=None)
     def value(self, value: float) -> None:
-
         if hasattr(self, "fixed") and self.fixed:
             warnings.warn("Unable to change fixed parameter")
         elif self.tied:
@@ -156,7 +154,6 @@ class Parameter:
 
     @constraints.setter
     def constraints(self, constraints: tuple) -> None:
-
         # Checks if constraints are a 2 element tuple of floats, that the
         # zeroeth element is less than or equal to the first, and that
         # self.value is within them, if it exists
@@ -192,7 +189,6 @@ class Parameter:
 
     @interactions.setter
     def interactions(self, interaction: Interaction) -> None:
-
         # Test if interaction is of the same type as any interactions already
         # stored
         if self.interactions_name:
@@ -271,7 +267,6 @@ class Parameter:
         return next(cls._ID_generator)
 
     def __str__(self) -> str:
-
         condition = (
             "Fixed "
             if self.fixed
@@ -285,11 +280,9 @@ class Parameter:
         return "{0}{_value} {1}{name}".format(condition, function, **self.__dict__)
 
     def __getitem__(self, key):
-
         return self.__getattribute__(key)
 
     def __setitem__(self, key, value):
-
         self.__setattr__(key, value)
 
     @staticmethod
