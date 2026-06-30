@@ -180,44 +180,52 @@ def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom):
         sets are found for the same number of wildcard atom groups used.
 
     """
-    atm_types = [int(atm.atom_type) for atm in args]
-    atm_types_rev = list(reversed(atm_types))
-    orders = [atm_types] if atm_types == atm_types_rev else [atm_types, atm_types_rev]
+    atm_types = [int(atm.name) for atm in args]
+    switches = sorted(it.product([0, 1], repeat=len(args)), key=sum, reverse=True)
+    switches = [list(group) for _, group in it.groupby(switches, key=sum)]
 
-    switches = list(it.product([0, 1], repeat=len(args)))
-    switches.sort(key=lambda x: sum(x), reverse=True)
+    # Switch to change the atoms type to a wildcard type. We first check
+    # with the most specific first, if that is not found we change
+    # one of them to a wildcard atom type and check again.
+    for switch_grp in switches:
 
-    rows = []
-    atm_grps = []
-    prev_n_wild_cards = 0
-    for switch in switches:
-        n_wild_cards = len(args) - sum(switch)
-        if n_wild_cards > prev_n_wild_cards:
-            if len(rows) == 1:
-                return rows[0], "OPLS-" + "-".join(atm_grps[0])
-            raise ValueError(
-                f"Multiple parameter sets found for atom types {atm_types} "
-                f"with groups {atm_grps}, when {n_wild_cards} wildcard atom "
-                f"groups are used."
-            )
-        prev_n_wild_cards = n_wild_cards
-
-        for order in orders:
-            grps = []
-            selections = []
-            for i, atm_type in enumerate(order):
+        # build up a list of atm groups ids that we need to check for
+        # all combinations with the same number of wildcard atom types
+        atm_grps = []
+        for switch in switch_grp:
+            atm_grps_sublist = []
+            for i, atm_type in enumerate(atm_types):
                 s_i = atoms_df["atom_type"] == atm_type
                 grp_i = int(atoms_df[s_i].iloc[0]["atom_group"] * switch[i])
-                grps.append(grp_i)
-                selections.append(params_df[f"atom_group{i + 1}"] == grp_i)
+                atm_grps_sublist.append(grp_i)
+            atm_grps.append(atm_grps_sublist)
+            atm_grps.append(list(reversed(atm_grps_sublist)))
+        atm_grps = [list(x) for x in {tuple(y) for y in atm_grps}]
 
+        # get all matches in the dataframe
+        rows_result = []
+        grp_result = []
+        for atm_grps_sublist in atm_grps:
+            selections = []
+            for i, grp_i in enumerate(atm_grps_sublist):
+                selections.append(params_df[f"atom_group{i + 1}"] == grp_i)
             try:
                 new_df = params_df
                 for s in selections:
                     new_df = new_df[s]
-                rows.append(new_df.iloc[0])
-                atm_grps.append([str(grp) for grp in grps])
+                rows_result.append(new_df.iloc[0])
+                grp_result.append([str(grp) for grp in atm_grps_sublist])
             except IndexError:
                 pass
+
+        # return result if there is only one match
+        if len(rows_result) == 1:
+            return rows_result[0], "OPLS-" + "-".join(grp_result[0])
+        elif len(rows_result) > 1:
+            raise ValueError(
+                f"Multiple parameter sets found for atom types {atm_types} "
+                f"with groups {grp_result}, when {sum(switch_grp[0])} wildcard atom "
+                f"groups are used."
+            )
 
     raise ValueError(f"Unable to find parameters set for atom types: {atm_types}")
