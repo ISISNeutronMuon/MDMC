@@ -189,7 +189,6 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
             atm_i, atm_j = interaction.atoms[0]
             if sorted((atm_i.atom_type, atm_j.atom_type)) == [f"{model_name}-H", f"{model_name}-O"]:
                 interaction.function = harmonicbond
-                break
         elif isinstance(interaction, BondAngle):
             atm_i, atm_j, atm_k = interaction.atoms[0]
             if sorted((atm_i.atom_type, atm_j.atom_type, atm_k.atom_type)) == [
