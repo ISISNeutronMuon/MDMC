@@ -51,13 +51,15 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
 
     atom_types = set()
     for atom in universe.atoms:
-        atom_types.add(atom.atom_type)
+        atom_types.add(atom.atom_type)  # mdmc atom type
 
+    type_to_name = {atom.atom_type: atom.name for atom in universe.atoms}
     atoms_df = opls_aa_file.atoms
     disp_df = opls_aa_file.dispersions
     for atom_type in atom_types:
-        charge = atoms_df[atoms_df["atom_type"] == int(atom_type)].iloc[0]["charge"]
-        disp_row = disp_df[disp_df["atom_type"] == int(atom_type)].iloc[0]
+        name = type_to_name[atom_type]  # name = OPLS atom type
+        charge = atoms_df[atoms_df["atom_type"] == int(name)].iloc[0]["charge"]
+        disp_row = disp_df[disp_df["atom_type"] == int(name)].iloc[0]
         nonbonded = NonBondedForce(
             universe,
             atom_type,
@@ -65,9 +67,9 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
             ewald=ewald,
             function=NonBonded(charge=charge, epsilon=disp_row["epsilon"], sigma=disp_row["sigma"]),
         )
-        nonbonded.function.charge.parameter_name = f"OPLS-{atom_type}-nonbonded_charge"
-        nonbonded.function.epsilon.parameter_name = f"OPLS-{atom_type}-nonbonded_epsilon"
-        nonbonded.function.sigma.parameter_name = f"OPLS-{atom_type}-nonbonded_sigma"
+        nonbonded.function.charge.parameter_name = f"OPLS-{name}-nonbonded_charge"
+        nonbonded.function.epsilon.parameter_name = f"OPLS-{name}-nonbonded_epsilon"
+        nonbonded.function.sigma.parameter_name = f"OPLS-{name}-nonbonded_sigma"
 
     bonds_df = opls_aa_file.bonds
     angles_df = opls_aa_file.bond_angles
@@ -112,7 +114,8 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
 
             if interaction.improper:
                 dihedral_row, opls_str = find_row(
-                    atoms_df, impropers_df, atm_i, atm_j, atm_k, atm_l
+                    atoms_df, impropers_df, atm_i, atm_j, atm_k, atm_l,
+                    check_reverse=False
                 )
 
                 dihedral = Periodic(
@@ -137,10 +140,11 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
                     dihedral_row["d1"],
                     dihedral_row["K2"] / 2,
                     int(dihedral_row["n2"]),
-                    # in opls the second and fourth terms have a minus in front
-                    # of the cosine. MDMC Periodic function does, we need to
-                    # remove this by moving the function forward by 180 degrees
-                    dihedral_row["d2"] - 180.0,
+                    # in opls the second terms have a minus in front of
+                    # the cosine. in openmm the torsion force has a positive
+                    # sign in front, the parameter files should take account
+                    # of this
+                    dihedral_row["d2"],
                     dihedral_row["K3"] / 2,
                     int(dihedral_row["n3"]),
                     dihedral_row["d3"],
@@ -158,7 +162,7 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
             interaction.function = dihedral
 
 
-def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom):
+def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom, check_reverse=True):
     """From the OPLS parameter data frame get the data frame row for the
     inputted atoms. Uses wildcards atom groups if required. A parameter
     set which uses a fewer number of wildcard atom groups are given
@@ -172,6 +176,8 @@ def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom):
         Data frame of OPLS force field parameters.
     *args : Atom
         The atoms to find OPLS parameters for.
+    check_reverse : bool
+        Check the reversed order atoms.
 
     Raises
     ------
@@ -199,7 +205,8 @@ def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom):
                 grp_i = int(atoms_df[s_i].iloc[0]["atom_group"] * switch[i])
                 atm_grps_sublist.append(grp_i)
             atm_grps.append(atm_grps_sublist)
-            atm_grps.append(list(reversed(atm_grps_sublist)))
+            if check_reverse:
+                atm_grps.append(list(reversed(atm_grps_sublist)))
         atm_grps = [list(x) for x in {tuple(y) for y in atm_grps}]
 
         # get all matches in the dataframe
