@@ -85,10 +85,12 @@ class CMAES(Minimizer):
         self.state_changed = False
         opt_bounds = (
             [
-                [par.constraints[0] for par in self.parameters.values()],
-                [par.constraints[1] for par in self.parameters.values()],
+                [par.constraints[0] if par.constraints is not None else None
+                 for par in self.parameters.values()],
+                [par.constraints[1] if par.constraints is not None else None
+                 for par in self.parameters.values()],
             ]
-            if all(par.constraints is not None for par in self.parameters.values())
+            if any(par.constraints is not None for par in self.parameters.values())
             else None
         )
         # This change is necessary just to avoid re-writing most of the Control tests:
