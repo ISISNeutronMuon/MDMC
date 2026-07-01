@@ -217,7 +217,7 @@ class CMAES(Minimizer):
         history = self.history
 
         last_param_row = history.iloc[-1]
-        last_FoM_value = last_param_row[0]
+        last_FoM_value = last_param_row.iloc[0]
 
         # Find lowest parameters & FoM
         lowest_FoM_id = history["FoM"].idxmin()
