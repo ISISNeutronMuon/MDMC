@@ -16,11 +16,15 @@
 
 """Factory class for generating MD engine facades"""
 
+import logging
 from importlib import import_module
 from inspect import getmembers, isabstract, isclass
 from types import ModuleType
 
 from MDMC.MD.engine_facades.facade import MDEngine
+
+LOGGER = logging.getLogger(__name__)
+
 
 ENGINES = {
     "lammps_engine": "LAMMPSEngine",
@@ -52,7 +56,11 @@ class MDEngineFacadeFactory:
             The specified ``MDEngine``, as determined by the ``module_name``
         """
         module_name = MDEngineFacadeFactory.standardise_alias(module_name)
-        module = import_module("." + module_name, __package__)
+        try:
+            module = import_module("." + module_name, __package__)
+        except ModuleNotFoundError as err:
+            LOGGER.info("Failed to load engine module: %s", module_name)
+            raise ModuleNotFoundError(f"Failed to load engine module: {module_name}") from err
 
         classes = getmembers(
             module,

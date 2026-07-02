@@ -9,12 +9,12 @@ os.environ["OMP_NUM_THREADS"] = "4"
 
 # Define the unique atoms using the ForceField atom_type
 # These can be seen in the oplsaa.dat file (MDMC/MD/force_fields/data/oplsaa.dat)
-HC1 = Atom("H", position=[-0.7006,  0.3636,  0.8900], name="98", atom_type="98")
-HC2 = Atom("H", position=[-0.7006,  0.3636, -0.8900], name="98", atom_type="98")
-HC3 = Atom("H", position=[-0.7076, -1.1754,  0.0000], name="98", atom_type="98")
-C = Atom("C", position=[-0.3366, -0.1504,  0.0000], name="99", atom_type="99")
-O = Atom("O", position=[ 1.0849, -0.1713,  0.0000], name="96", atom_type="96")
-HO = Atom("H", position=[ 1.3606,  0.7699,  0.0000], name="97", atom_type="97")
+HC1 = Atom("H", position=[-0.7006,  0.3636,  0.8900], name="98")
+HC2 = Atom("H", position=[-0.7006,  0.3636, -0.8900], name="98")
+HC3 = Atom("H", position=[-0.7076, -1.1754,  0.0000], name="98")
+C = Atom("C", position=[-0.3366, -0.1504,  0.0000], name="99")
+O = Atom("O", position=[ 1.0849, -0.1713,  0.0000], name="96")
+HO = Atom("H", position=[ 1.3606,  0.7699,  0.0000], name="97")
 
 # Create the methanol Molecule
 methanol = Molecule(
