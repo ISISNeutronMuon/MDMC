@@ -16,18 +16,9 @@ pytestmark = pytest.mark.lammps
 
 NUMBER_OF_STEPS = 2000
 
-
 @pytest.fixture(scope='module')
-def water_trajectory():
-    """Runs a short simulation of water using LAMMPS.
-    The main features of the simulation are:
-    - it has a finite number of steps
-    - it has a finite number of atoms
-    - it has 3 atom types, but only 2 chemical elements
-
-    Yields:
-        a CompactTrajectory produced by LAMMPSEngine.
-    """
+def universe():
+    """Universe containing 512 water molecules for use in testing."""
     # Build universe
     # Cubic universe of side:
     # 24.83602653 is 512 water molecules
@@ -52,6 +43,17 @@ def water_trajectory():
                             vdw_tail_correction=True)
     universe.add_force_field('SPCE')
 
+@pytest.fixture(scope='module')
+def water_trajectory(universe):
+    """Runs a short simulation of water using LAMMPS.
+    The main features of the simulation are:
+    - it has a finite number of steps
+    - it has a finite number of atoms
+    - it has 3 atom types, but only 2 chemical elements
+
+    Yields:
+        a CompactTrajectory produced by LAMMPSEngine.
+    """
     simulation = Simulation(universe,
                             engine="lammps",
                             time_step=0.5,
@@ -67,6 +69,23 @@ def water_trajectory():
     yield traj
     simulation.engine.lmp.close()
 
+def test_water_trajectory_scaled(tmp_path, universe, water_trajectory):
+    simulation = Simulation(universe,
+                            engine="lammps",
+                            time_step=0.5,
+                            temperature=280.,
+                            traj_step=1)
+    out_test = tmp_path / "test.md"
+    simulation.minimize(n_steps=2000)
+    simulation.run(n_steps=2000, equilibration=True)
+    simulation.engine.lmp.dump('traj2', 'all', 'custom', 1,
+                               str(out_test), 'id', 'type',
+                               'xs', 'ys', 'zs')
+    simulation.run(n_steps=10)
+    simulation.engine.lmp.undump("traj2")
+    simulation.engine.trajectory_file = out_test
+    traj = simulation.engine.convert_trajectory(scaled_positions=True)
+    np.testing.assert_allclose(traj.position, water_trajectory[:10].position)
 
 def test_empty_trajectory():
     """Test that we can create an empty trajectory,
