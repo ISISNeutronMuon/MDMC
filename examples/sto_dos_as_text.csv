@@ -1,5 +1,9 @@
-# Axis: 1; Line: DOS_STO_macelarge_50K_2fs.mda:/dos/isotropic/total
-# romega (meV),value
+# Dataset name: /dos/isotropic/total
+# from file sto_dos_mace.mda
+# Contains axes: dos/axes/romega
+# data unit is au
+# units of x axis here: meV
+# col1:dos/axes/romega:meV col2:data:au
 0.0,-1.8704467416263496e-08
 0.3445815453100227,2.260771623567142e-07
 0.6891630906200454,5.413304400181048e-09
@@ -381,4 +385,3 @@
 130.25182412718857,-8.459702172578378e-08
 130.5964056724986,1.0494083597152852e-07
 130.9409872178086,-8.360611470521708e-08
-

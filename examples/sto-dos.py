@@ -19,19 +19,18 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
     get_default_mdanse_settings,
 )
 
-universe = Universe(dimensions=39.05)
+universe = Universe(dimensions=3.905*6)
 O1 = Atom("O", position=np.array((0.5, 0.5, 0.0)) * 3.905, charge = -0.4)
 O2 = Atom("O", position=np.array((0.5, 0.0, 0.5)) * 3.905, charge = -0.4)
 O3 = Atom("O", position=np.array((0.0, 0.5, 0.5)) * 3.905, charge = -0.4)
 Ti = Atom("Ti", position=np.array((0.5, 0.5, 0.5)) * 3.905, charge = 0.1)
 Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 1.1)
 # Calculating number of Ar atoms needed to obtain density
-n_all_atoms = 5000
 sto_unit = Molecule(position=(0, 0, 0),
                      velocity=(0, 0, 0),
                      atoms=[O1, O2, O3, Ti, Sr],
                      name='SrTiO3')
-universe.fill(sto_unit, num_struc_units=1000)
+universe.fill(sto_unit, num_struc_units=6*6*6)
 
 # Above an universe of non-interacting argon atoms was created. Below
 # specify how these atoms will interact
@@ -63,9 +62,9 @@ NonBondedForce(
 simulation = Simulation(
     universe,
     engine="openmm",
-    time_step=4.0,
+    time_step=1.0,
     temperature=150.0,
-    traj_step=5,
+    traj_step=4,
     openmm_platform="OpenCL",
 )
 
@@ -86,7 +85,7 @@ exp_datasets = [
 
 start_params = get_default_mdanse_settings("DensityOfStates")
 
-data_parser = csv_reader("argon_dos_as_text.csv")
+data_parser = csv_reader("sto_dos_as_text.csv")
 data_parser.parse()
 
 exp_observable = MDANSEObservable(mdanse_job_type="DensityOfStates")
@@ -118,15 +117,13 @@ control = Control(
     file_dump_extent="all",
     file_dump_timestamped=False,
     MD_steps=4000,
-    equilibration_steps=12000,
+    equilibration_steps=20000,
     cont_slicing=True,
+    sigma0=10.0,
     CMA_tolx=1e-6,
     conv_tol=1e-9,
 )
 
-# Energy Minimization and equilibration
-control.minimize(n_steps=1500)
-control.equilibrate(n_steps=6000)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
