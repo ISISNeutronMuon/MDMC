@@ -116,6 +116,7 @@ control = Control(
     file_dump_frequency="best",
     file_dump_extent="all",
     file_dump_timestamped=False,
+    reset_config=True,
     MD_steps=4000,
     equilibration_steps=20000,
     cont_slicing=True,

@@ -749,6 +749,9 @@ class Control:
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(4, verbose=self.verbose)
 
+        if self.reset_config and not self.minimizer.state_changed:
+            self.simulation.engine.save_config()
+
         if self.first_loaded_step:
             fom = self.minimizer.FoM_old
             self.first_loaded_step = False
@@ -773,13 +776,8 @@ class Control:
         self._update_engine_parameters()
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
-        if self.reset_config:
-            if self.minimizer.state_changed:
-                # Set MD engine to remember new config
-                self.simulation.engine.save_config()
-            else:
-                # Set MD engine to reset to old config
-                self.simulation.engine.reset_config()
+        if self.reset_config and self.minimizer.state_changed:
+            self.simulation.engine.reset_config()
 
         self.minimizer.write_history(self.results_filename)
 
