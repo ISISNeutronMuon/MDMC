@@ -98,7 +98,7 @@ class csv_reader(ObservableReader):
         self._dependent_variables[self.labels.get(self.data_index, self.data_index)] = data_array[
             :,
             self.data_index,
-        ]
+        ] * settings.get("scale_factor", 1.0)
         if self.error_index is not None:
             self._errors[self.labels.get(self.data_index, self.data_index)] = data_array[
                 :,
