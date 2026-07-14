@@ -39,21 +39,21 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=-0.4, epsilon=5.0, sigma=2.0),
+    function=NonBonded(charge=-0.4, epsilon=5.0, sigma=1.15, elements=["O"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Ti.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.1, epsilon=5.0, sigma=3.0),
+    function=NonBonded(charge=0.1, epsilon=15.0, sigma=3.86, elements=["Ti"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=1.1, epsilon=5.0, sigma=3.0),
+    function=NonBonded(charge=1.1, epsilon=2.0, sigma=3.86, elements=["Sr"], molecules = ["SrTiO3"]),
 )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
@@ -86,7 +86,7 @@ exp_datasets = [
 start_params = get_default_mdanse_settings("DensityOfStates")
 
 data_parser = csv_reader("sto_dos_as_text.csv")
-data_parser.parse()
+data_parser.parse(scale_factor=1e5)
 
 exp_observable = MDANSEObservable(mdanse_job_type="DensityOfStates")
 exp_observable.read_from_file(data_parser)
@@ -100,12 +100,19 @@ observable_pair = ObservablePair(
 
 fit_parameters = universe.parameters
 for par_name in fit_parameters:
+    par = fit_parameters[par_name]
+    print(par.name, par.value, par.molecules)
     if "sigma" in par_name:
         fit_parameters[par_name].constraints = [0.5, 4.5]
     if "epsilon" in par_name:
         fit_parameters[par_name].constraints = [2.0, 80.0]
     if "charge" in par_name:
-        fit_parameters[par_name].fixed = True
+        if fit_parameters[par_name].value < 0.0:
+            fit_parameters[par_name].constraints = [-1.2, 0.0]
+        elif fit_parameters[par_name].value < 1.0:
+            fit_parameters[par_name].constraints = [0.0, 1.2]
+        else:
+            fit_parameters[par_name].fixed = True
 
 # Specify how the refinement is going to be controlled
 control = Control(
@@ -116,13 +123,15 @@ control = Control(
     file_dump_frequency="best",
     file_dump_extent="all",
     file_dump_timestamped=False,
+    file_dump_prefix="SrTiO3_MDMC_fitToDOS",
+    FoM_options={"error": "none"},
     reset_config=True,
     MD_steps=4000,
     equilibration_steps=20000,
     cont_slicing=True,
-    sigma0=10.0,
-    CMA_tolx=1e-6,
-    conv_tol=1e-9,
+    sigma0=1.0,
+    CMA_tolx=1e-4,
+    conv_tol=1e-4,
 )
 
 
