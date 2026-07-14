@@ -130,6 +130,7 @@ control = Control(
     equilibration_steps=20000,
     cont_slicing=True,
     sigma0=1.0,
+    CMA_popsize=20,
     CMA_tolx=1e-4,
     conv_tol=1e-4,
 )
