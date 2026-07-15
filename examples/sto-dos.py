@@ -39,21 +39,21 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=-0.4, epsilon=5.0, sigma=1.15, elements=["O"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=-0.4, epsilon=5.0, sigma=1.35, elements=["O"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Ti.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.1, epsilon=15.0, sigma=3.86, elements=["Ti"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=0.1, epsilon=15.0, sigma=1.9, elements=["Ti"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=1.1, epsilon=2.0, sigma=3.86, elements=["Sr"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=1.1, epsilon=2.0, sigma=1.9, elements=["Sr"], molecules = ["SrTiO3"]),
 )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
@@ -95,7 +95,7 @@ md_observable.origin = "MD"
 md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
 
 observable_pair = ObservablePair(
-    exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=False
+    exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
 )
 
 fit_parameters = universe.parameters
@@ -103,9 +103,9 @@ for par_name in fit_parameters:
     par = fit_parameters[par_name]
     print(par.name, par.value, par.molecules)
     if "sigma" in par_name:
-        fit_parameters[par_name].constraints = [0.5, 4.5]
+        fit_parameters[par_name].constraints = [0.3, 5.0]
     if "epsilon" in par_name:
-        fit_parameters[par_name].constraints = [2.0, 80.0]
+        fit_parameters[par_name].constraints = [0.0, 40.0]
     if "charge" in par_name:
         if fit_parameters[par_name].value < 0.0:
             fit_parameters[par_name].constraints = [-1.2, 0.0]
@@ -127,12 +127,12 @@ control = Control(
     FoM_options={"error": "none"},
     reset_config=True,
     MD_steps=4000,
-    equilibration_steps=20000,
+    equilibration_steps=30000,
     cont_slicing=True,
-    sigma0=1.0,
-    CMA_popsize=20,
-    CMA_tolx=1e-4,
-    conv_tol=1e-4,
+    sigma0=2.0,
+    CMA_popsize=16,
+    CMA_tolx=1e-6,
+    conv_tol=1e-6,
 )
 
 

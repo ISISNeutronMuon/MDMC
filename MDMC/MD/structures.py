@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import logging
 import re
-import warnings
 import weakref
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
@@ -43,7 +42,6 @@ from scipy.spatial.transform import Rotation
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 from MDMC.MD.container import AtomContainer
-from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.interactions import BondedInteraction, Coulombic
 
 if TYPE_CHECKING:
@@ -1339,7 +1337,7 @@ class Molecule(CompositeStructure):
             if atom.element.symbol in set_charges:
                 atom.charge = set_charges[atom.element.symbol]
             else:
-                atom.charge = atom.charge + per_element_change
+                atom.charge = rescaled_charges[atom.element.symbol] + per_element_change
 
     def is_equivalent(self, structure: Structure) -> bool:
         return isinstance(structure, type(self)) and all(

@@ -1026,8 +1026,8 @@ class Universe(AtomContainer):
         all_indices = set(range(1, 1 + len(self.atoms)))
         for molecule in self.molecule_list:
             temp_parameters = charge_parameters.filter_molecule(molecule.name).values()
-            new_values = [par.value for par in temp_parameters]
             fixed_status = [par.fixed for par in temp_parameters]
+            new_values = [float(par.original_value) if par.fixed else par.value for par in temp_parameters]
             element_names = [par.elements[0] for par in temp_parameters]
             molecule.update_charges(new_values, fixed_status, element_names)
             all_indices -= molecule.indices

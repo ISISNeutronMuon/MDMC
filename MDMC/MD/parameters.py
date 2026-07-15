@@ -105,6 +105,7 @@ class Parameter:
         self.unit = settings.get("unit", getattr(value, "unit", None))
         self.constraints = constraints
         self.value = value
+        self.original_value = value
         self.fixed = fixed
         self.parameter_name = None
         self.interactions_name = None
