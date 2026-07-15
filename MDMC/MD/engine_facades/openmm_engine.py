@@ -540,7 +540,6 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
     def eval(self, variable: str) -> Any:
-
         match variable:
             case "pe":
                 state = self.openmm_simulation.context.getState(getEnergy=True)
