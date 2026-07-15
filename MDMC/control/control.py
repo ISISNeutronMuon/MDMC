@@ -820,25 +820,25 @@ class Control:
             File format for writing the observables.
         """
         if ObsFormat.MDA in data_format:
-            for obs_pair in self.observable_pairs:
+            for obs_index, obs_pair in enumerate(self.observable_pairs):
                 if DumpExtent.RAW_MD in dump_extent:
                     write_MDA(
                         obs_pair.MD_obs,
-                        filename=self.file_dump_prefix,
+                        filename=f"{self.file_dump_prefix}_obs{obs_index + 1}",
                         file_loc=self.file_dump_loc,
                         timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
                     )
                 if DumpExtent.EXP in dump_extent:
                     write_MDA(
                         obs_pair.exp_obs,
-                        filename=f"{self.file_dump_prefix}_exp",
+                        filename=f"{self.file_dump_prefix}_obs{obs_index + 1}_exp",
                         file_loc=self.file_dump_loc,
                         timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
                     )
                 if DumpExtent.MD in dump_extent and obs_pair.matching_obs is not None:
                     write_MDA(
                         obs_pair.matching_obs,
-                        filename=f"{self.file_dump_prefix}_matched",
+                        filename=f"{self.file_dump_prefix}_obs{obs_index + 1}_matched",
                         file_loc=self.file_dump_loc,
                         timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
                         rescale_factor=1.0 / obs_pair.last_rescale_factor,
@@ -850,7 +850,7 @@ class Control:
                 ):
                     write_MDA(
                         obs_pair.exp_obs,
-                        filename=f"{self.file_dump_prefix}_FoM_contributions",
+                        filename=f"{self.file_dump_prefix}_obs{obs_index + 1}_FoM_contributions",
                         file_loc=self.file_dump_loc,
                         timestamp=timestamp_now(self.use_timestamp, self.file_dump_frequency),
                         override_data=obs_pair.fom_contribution,

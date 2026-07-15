@@ -23,8 +23,8 @@ universe = Universe(dimensions=3.905*6)
 O1 = Atom("O", position=np.array((0.5, 0.5, 0.0)) * 3.905, charge = -0.4)
 O2 = Atom("O", position=np.array((0.5, 0.0, 0.5)) * 3.905, charge = -0.4)
 O3 = Atom("O", position=np.array((0.0, 0.5, 0.5)) * 3.905, charge = -0.4)
-Ti = Atom("Ti", position=np.array((0.5, 0.5, 0.5)) * 3.905, charge = 0.1)
-Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 1.1)
+Ti = Atom("Ti", position=np.array((0.5, 0.5, 0.5)) * 3.905, charge = 0.5)
+Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 0.7)
 # Calculating number of Ar atoms needed to obtain density
 sto_unit = Molecule(position=(0, 0, 0),
                      velocity=(0, 0, 0),
@@ -39,21 +39,21 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=-0.4, epsilon=5.0, sigma=1.35, elements=["O"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=-0.4, epsilon=15.0, sigma=1.35, elements=["O"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Ti.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.1, epsilon=15.0, sigma=1.9, elements=["Ti"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=0.5, epsilon=18.0, sigma=2.35, elements=["Ti"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=1.1, epsilon=2.0, sigma=1.9, elements=["Sr"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=0.7, epsilon=6.0, sigma=3.6, elements=["Sr"], molecules = ["SrTiO3"]),
 )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
@@ -94,23 +94,42 @@ md_observable = MDANSEObservable(mdanse_job_type="DensityOfStates")
 md_observable.origin = "MD"
 md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
 
-observable_pair = ObservablePair(
+observable_pair_dos = ObservablePair(
     exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
 )
+
+start_params_pdf = get_default_mdanse_settings("PairDistributionFunction")
+
+data_parser_pdf = csv_reader("sto_pdf_as_text.csv")
+data_parser_pdf.parse()
+
+exp_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
+exp_observable_pdf.read_from_file(data_parser_pdf)
+md_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
+md_observable_pdf.origin = "MD"
+md_observable_pdf.independent_variables = copy.deepcopy(exp_observable_pdf.independent_variables)
+
+observable_pair_pdf = ObservablePair(
+    exp_obs=exp_observable_pdf, MD_obs=md_observable_pdf, weight=1.0, rescale_factor=1.0, auto_scale=False
+)
+print(start_params_pdf)
+
+md_observable_pdf.set_parameters({"r_values":[0.0,1.1,0.01],
+                                  "frames":[50,1000,100]})
 
 fit_parameters = universe.parameters
 for par_name in fit_parameters:
     par = fit_parameters[par_name]
     print(par.name, par.value, par.molecules)
     if "sigma" in par_name:
-        fit_parameters[par_name].constraints = [0.3, 5.0]
+        fit_parameters[par_name].constraints = [1.0, 4.0]
     if "epsilon" in par_name:
-        fit_parameters[par_name].constraints = [0.0, 40.0]
+        fit_parameters[par_name].constraints = [3.0, 30.0]
     if "charge" in par_name:
         if fit_parameters[par_name].value < 0.0:
-            fit_parameters[par_name].constraints = [-1.2, 0.0]
-        elif fit_parameters[par_name].value < 1.0:
-            fit_parameters[par_name].constraints = [0.0, 1.2]
+            fit_parameters[par_name].constraints = [-0.7, -0.2]
+        elif fit_parameters[par_name].value < 0.6:
+            fit_parameters[par_name].constraints = [0.0, 0.8]
         else:
             fit_parameters[par_name].fixed = True
 
@@ -119,7 +138,7 @@ control = Control(
     simulation=simulation,
     exp_datasets=exp_datasets,
     fit_parameters=fit_parameters,
-    observable_pairs=[observable_pair],
+    observable_pairs=[observable_pair_dos, observable_pair_pdf],
     file_dump_frequency="best",
     file_dump_extent="all",
     file_dump_timestamped=False,
@@ -138,4 +157,4 @@ control = Control(
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=3000)
+control.refine(n_steps=1500)

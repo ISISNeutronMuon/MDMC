@@ -281,8 +281,18 @@ class MDANSEObservable(Observable):
         self.job_instance.run(settings, status=True)
         results = self.job_instance.results
         main_name, axes_names = find_main_result(results)
+        independent_variables = {name.split("/")[-1]: results[name][:] for name in axes_names}
+        for axis_name in independent_variables:
+            if "omega" in axis_name:
+                independent_variables[axis_name] *= ENERGY_MDANSE_TO_MDMC
+            elif "q" in axis_name:
+                independent_variables[axis_name] *= Q_MDANSE_TO_MDMC
+            elif "r" in axis_name:
+                independent_variables[axis_name] *= R_MDANSE_TO_MDMC
+            elif "time" in axis_name:
+                independent_variables[axis_name] *= TIME_MDANSE_TO_MDMC
         self._dependent_variables = {self.job_type: results[main_name][:]}
-        self._independent_variables = {name.split("/")[-1]: results[name][:] for name in axes_names}
+        self._independent_variables = independent_variables
         self._errors = {self.job_type: [np.sqrt(self._dependent_variables[self.job_type][0])]}
 
     def initial_parameters(self):
