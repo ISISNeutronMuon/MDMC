@@ -20,11 +20,11 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
 )
 
 universe = Universe(dimensions=3.905*6)
-O1 = Atom("O", position=np.array((0.5, 0.5, 0.0)) * 3.905, charge = -0.4)
-O2 = Atom("O", position=np.array((0.5, 0.0, 0.5)) * 3.905, charge = -0.4)
-O3 = Atom("O", position=np.array((0.0, 0.5, 0.5)) * 3.905, charge = -0.4)
-Ti = Atom("Ti", position=np.array((0.5, 0.5, 0.5)) * 3.905, charge = 0.5)
-Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 0.7)
+O1 = Atom("O", position=np.array((0.5, 0.5, 0.0)) * 3.905, charge = -0.292)
+O2 = Atom("O", position=np.array((0.5, 0.0, 0.5)) * 3.905, charge = -0.292)
+O3 = Atom("O", position=np.array((0.0, 0.5, 0.5)) * 3.905, charge = -0.292)
+Ti = Atom("Ti", position=np.array((0.5, 0.5, 0.5)) * 3.905, charge = -0.079)
+Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 0.955)
 # Calculating number of Ar atoms needed to obtain density
 sto_unit = Molecule(position=(0, 0, 0),
                      velocity=(0, 0, 0),
@@ -39,21 +39,21 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=-0.4, epsilon=15.0, sigma=1.35, elements=["O"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=-0.292, epsilon=24.483, sigma=1.0136, elements=["O"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Ti.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.5, epsilon=18.0, sigma=2.35, elements=["Ti"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=-0.079, epsilon=19.676, sigma=3.05, elements=["Ti"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.7, epsilon=6.0, sigma=3.6, elements=["Sr"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=0.955, epsilon=10.195, sigma=3.295, elements=["Sr"], molecules = ["SrTiO3"]),
 )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
@@ -122,14 +122,12 @@ for par_name in fit_parameters:
     par = fit_parameters[par_name]
     print(par.name, par.value, par.molecules)
     if "sigma" in par_name:
-        fit_parameters[par_name].constraints = [1.0, 4.0]
+        fit_parameters[par_name].constraints = [0.1, 5.0]
     if "epsilon" in par_name:
-        fit_parameters[par_name].constraints = [3.0, 30.0]
+        fit_parameters[par_name].constraints = [0.01, 45.0]
     if "charge" in par_name:
-        if fit_parameters[par_name].value < 0.0:
-            fit_parameters[par_name].constraints = [-0.7, -0.2]
-        elif fit_parameters[par_name].value < 0.6:
-            fit_parameters[par_name].constraints = [0.0, 0.8]
+        if fit_parameters[par_name].value < 0.6:
+            fit_parameters[par_name].constraints = [-2.0, 2.0]
         else:
             fit_parameters[par_name].fixed = True
 
@@ -148,13 +146,14 @@ control = Control(
     MD_steps=4000,
     equilibration_steps=30000,
     cont_slicing=True,
-    sigma0=2.0,
+    sigma0=0.2,
     CMA_popsize=16,
     CMA_tolx=1e-6,
     conv_tol=1e-6,
+    old_result_files = ["sto_dos_pdf_run1_results.csv"],
 )
 
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=1500)
+control.refine(n_steps=100)

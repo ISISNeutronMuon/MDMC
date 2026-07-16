@@ -470,7 +470,9 @@ class FigureOfMerit(ABC):
         """
 
         total_weight = sum(obs_pair.weight for obs_pair in self.obs_pairs)
-        value_unreduced = sum(self.calculate_single_FoM(obs_pair) for obs_pair in self.obs_pairs)
+        separate_values = [self.calculate_single_FoM(obs_pair) for obs_pair in self.obs_pairs]
+        print(f"Partial FoM values: {separate_values}")
+        value_unreduced = sum(separate_values)
         self.value = value_unreduced / total_weight
 
         if self.value < 0.0:

@@ -33,6 +33,19 @@ if TYPE_CHECKING:
     from MDMC.MD import Parameters
 
 
+def read_results(fname: str, *, delimiter=","):
+    array = []
+    first_line = None
+    with open(fname, "r") as source:
+        for line in source:
+            toks = line.strip().split(delimiter)
+            if first_line is None:
+                first_line = toks
+                continue
+            array.append([float(x) for x in toks])
+    return array, first_line
+
+
 class CMAES(Minimizer):
     """
     Minimiser using CMA-ES, but using it sequentially.
@@ -83,6 +96,7 @@ class CMAES(Minimizer):
 
         self.previous_history = previous_history
         self.state_changed = False
+        self.param_names = [par.name for par in self.parameters.values()]
         opt_bounds = (
             [
                 [
@@ -111,6 +125,7 @@ class CMAES(Minimizer):
                 "tolfunhist": self.conv_tol * 10,
             },
         )
+        self.feed_previous_results(settings.get("old_result_files", []))
         self.new_parameters = self.optimiser.ask()
         self.used_parameters, self.used_values = [], []
 
@@ -244,6 +259,23 @@ class CMAES(Minimizer):
         ]
 
         return output_data
+
+    def feed_previous_results(self, filenames: list[str]):
+        print(f"Current param names: {self.param_names}")
+        current_popsize = self.optimiser.popsize
+        for filename in filenames:
+            nums, header = read_results(filename)
+            num_array = np.array(nums)
+            cutoff_index = int((len(num_array) // current_popsize) * current_popsize)
+            foms = num_array[:cutoff_index, 1]
+            params = num_array[:cutoff_index, 3:]
+            names_in_file = list(header[3:])
+            print(f"{filename} param names: {names_in_file}")
+            sorted_params = np.empty_like(params)
+            for cmaes_index, name in enumerate(self.param_names):
+                col_index = names_in_file.index(name)
+                sorted_params[:, cmaes_index] = params[:, col_index]
+            self.optimiser.feed_for_resume(sorted_params, foms)
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
