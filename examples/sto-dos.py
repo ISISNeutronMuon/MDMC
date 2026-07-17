@@ -20,11 +20,11 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
 )
 
 universe = Universe(dimensions=3.905*6)
-O1 = Atom("O", position=np.array((0.5, 0.5, 0.0)) * 3.905, charge = -0.292)
-O2 = Atom("O", position=np.array((0.5, 0.0, 0.5)) * 3.905, charge = -0.292)
-O3 = Atom("O", position=np.array((0.0, 0.5, 0.5)) * 3.905, charge = -0.292)
+O1 = Atom("O", position=np.array((0.5, 0.5, 0.0)) * 3.905, charge = -0.492)
+O2 = Atom("O", position=np.array((0.5, 0.0, 0.5)) * 3.905, charge = -0.492)
+O3 = Atom("O", position=np.array((0.0, 0.5, 0.5)) * 3.905, charge = -0.492)
 Ti = Atom("Ti", position=np.array((0.5, 0.5, 0.5)) * 3.905, charge = -0.079)
-Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 0.955)
+Sr = Atom("Sr", position=np.array((0.0, 0.0, 0.0)) * 3.905, charge = 1.555)
 # Calculating number of Ar atoms needed to obtain density
 sto_unit = Molecule(position=(0, 0, 0),
                      velocity=(0, 0, 0),
@@ -39,7 +39,7 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=-0.292, epsilon=24.483, sigma=1.0136, elements=["O"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=-0.492, epsilon=24.483, sigma=1.0136, elements=["O"], molecules = ["SrTiO3"]),
 )
 NonBondedForce(
     universe,
@@ -53,7 +53,7 @@ NonBondedForce(
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.955, epsilon=10.195, sigma=3.295, elements=["Sr"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=1.555, epsilon=10.195, sigma=3.295, elements=["Sr"], molecules = ["SrTiO3"]),
 )
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
@@ -63,7 +63,7 @@ simulation = Simulation(
     universe,
     engine="openmm",
     time_step=1.0,
-    temperature=150.0,
+    temperature=80.0,
     traj_step=4,
     openmm_platform="OpenCL",
 )
@@ -85,7 +85,7 @@ exp_datasets = [
 
 start_params = get_default_mdanse_settings("DensityOfStates")
 
-data_parser = csv_reader("sto_dos_as_text.csv")
+data_parser = csv_reader("sto_dft_dos_80K.csv")
 data_parser.parse(scale_factor=1e5)
 
 exp_observable = MDANSEObservable(mdanse_job_type="DensityOfStates")
@@ -100,7 +100,7 @@ observable_pair_dos = ObservablePair(
 
 start_params_pdf = get_default_mdanse_settings("PairDistributionFunction")
 
-data_parser_pdf = csv_reader("sto_pdf_as_text.csv")
+data_parser_pdf = csv_reader("sto_dft_pdf_80K.csv")
 data_parser_pdf.parse()
 
 exp_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
@@ -110,12 +110,12 @@ md_observable_pdf.origin = "MD"
 md_observable_pdf.independent_variables = copy.deepcopy(exp_observable_pdf.independent_variables)
 
 observable_pair_pdf = ObservablePair(
-    exp_obs=exp_observable_pdf, MD_obs=md_observable_pdf, weight=1.0, rescale_factor=1.0, auto_scale=False
+    exp_obs=exp_observable_pdf, MD_obs=md_observable_pdf, weight=4.0, rescale_factor=1.0, auto_scale=False
 )
 print(start_params_pdf)
 
-md_observable_pdf.set_parameters({"r_values":[0.0,1.1,0.01],
-                                  "frames":[50,1000,100]})
+md_observable_pdf.set_parameters({"r_values":[0.0,0.77,0.01],
+                                  "frames":[50,1000,30]})
 
 fit_parameters = universe.parameters
 for par_name in fit_parameters:
@@ -126,8 +126,10 @@ for par_name in fit_parameters:
     if "epsilon" in par_name:
         fit_parameters[par_name].constraints = [0.01, 45.0]
     if "charge" in par_name:
-        if fit_parameters[par_name].value < 0.6:
-            fit_parameters[par_name].constraints = [-2.0, 2.0]
+        if fit_parameters[par_name].value < -0.1:
+            fit_parameters[par_name].constraints = [-2.0, 0.05]
+        elif fit_parameters[par_name].value < 0.6:
+            fit_parameters[par_name].constraints = [-1.0, 1.2]
         else:
             fit_parameters[par_name].fixed = True
 
@@ -140,20 +142,19 @@ control = Control(
     file_dump_frequency="best",
     file_dump_extent="all",
     file_dump_timestamped=False,
-    file_dump_prefix="SrTiO3_MDMC_fitToDOS",
+    file_dump_prefix="SrTiO3_MDMC_DOS_PDF_fromVASP",
     FoM_options={"error": "none"},
     reset_config=True,
     MD_steps=4000,
     equilibration_steps=30000,
     cont_slicing=True,
-    sigma0=0.2,
+    sigma0=0.04,
     CMA_popsize=16,
     CMA_tolx=1e-6,
-    conv_tol=1e-6,
-    old_result_files = ["sto_dos_pdf_run1_results.csv"],
+    conv_tol=1e-4,
 )
 
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=100)
+control.refine(n_steps=2400)
