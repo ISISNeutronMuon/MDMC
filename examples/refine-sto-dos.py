@@ -78,91 +78,83 @@ simulation = Simulation(
 
 # Setup refinement of the force field parameters
 
-# exp_datasets is a list of dictionaries with one dictionary per experimental
-# dataset
-exp_datasets = [
-    {
-        "file_name": "sto_dos_as_text.csv",
-        "type": "MDANSE",
-        "reader": "csv_reader",
-        "weight": 1.0,
-        "auto_scale": True,
-        "resolution": None,
-    }
-]
-
 start_params = get_default_mdanse_settings("DensityOfStates")
 
 data_parser = csv_reader("sto_dft_dos_80K.csv")
 data_parser.parse(scale_factor=1e5)
 
-exp_observable = MDANSEObservable(mdanse_job_type="DensityOfStates")
+exp_observable = MDANSEObservable(mdanse_job_type="DensityOfStates", opt_suffix="_obs1")
 exp_observable.read_from_file(data_parser)
-md_observable = MDANSEObservable(mdanse_job_type="DensityOfStates")
+md_observable = MDANSEObservable(mdanse_job_type="DensityOfStates", opt_suffix="_obs1")
 md_observable.origin = "MD"
 md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
+md_observable.set_parameters({
+    "instrument_resolution": ['gaussian', {'mu': 0.0, 'sigma': 0.6452}],
+})
 
 observable_pair_dos = ObservablePair(
     exp_obs=exp_observable, MD_obs=md_observable, weight=1.0, rescale_factor=1.0, auto_scale=True
 )
 
-
-start_params_OO = get_default_mdanse_settings("DensityOfStates")
-
 data_parser_OO = csv_reader("sto_dft_dos_80K_OO.csv")
 data_parser_OO.parse(scale_factor=1e5)
 
-exp_observable_OO = MDANSEObservable(mdanse_job_type="DensityOfStates")
-exp_observable_OO.read_from_file(data_parser)
-md_observable_OO = MDANSEObservable(mdanse_job_type="DensityOfStates")
+exp_observable_OO = MDANSEObservable(mdanse_job_type="DensityOfStates", opt_suffix="_obs2")
+exp_observable_OO.read_from_file(data_parser_OO)
+md_observable_OO = MDANSEObservable(mdanse_job_type="DensityOfStates", opt_suffix="_obs2")
 md_observable_OO.origin = "MD"
-md_observable_OO.independent_variables = copy.deepcopy(exp_observable.independent_variables)
+md_observable_OO.independent_variables = copy.deepcopy(exp_observable_OO.independent_variables)
 
 md_observable_OO.set_parameters({
     "instrument_resolution": ['gaussian', {'mu': 0.0, 'sigma': 0.6452}],
-    "atom_selection": """{"0": {"function_name": "select_all", "operation_type": "union"}, "1": {"function_name": "select_dummy", "operation_type": "difference"}, "2": {"function_name": "select_atoms", "atom_types": ["O"], "operation_type": "intersection"}}"""
+    "atom_selection": """{
+    "0": {"function_name": "select_all", "operation_type": "union"},
+    "1": {"function_name": "select_dummy", "operation_type": "difference"},
+    "2": {"function_name": "select_atoms", "atom_types": ["O"], "operation_type": "intersection"}
+    }"""
 })
 
 observable_pair_dos_OO = ObservablePair(
     exp_obs=exp_observable_OO, MD_obs=md_observable_OO, weight=1.0, rescale_factor=1.0, auto_scale=True
 )
 
-start_params_pdf = get_default_mdanse_settings("PairDistributionFunction")
-
 data_parser_pdf = csv_reader("sto_dft_pdf_80K_fine.csv")
 data_parser_pdf.parse()
 
-exp_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
+exp_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction", opt_suffix="_obs3")
 exp_observable_pdf.read_from_file(data_parser_pdf)
-md_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
+md_observable_pdf = MDANSEObservable(mdanse_job_type="PairDistributionFunction", opt_suffix="_obs3")
 md_observable_pdf.origin = "MD"
 md_observable_pdf.independent_variables = copy.deepcopy(exp_observable_pdf.independent_variables)
+md_observable_pdf.set_parameters({"r_values":[0.0,0.77,0.002],
+                                  "frames":[5,1000,10]})
 
 observable_pair_pdf = ObservablePair(
     exp_obs=exp_observable_pdf, MD_obs=md_observable_pdf, weight=2.0, rescale_factor=1.0, auto_scale=False
 )
-
-md_observable_pdf.set_parameters({"r_values":[0.0,0.77,0.002],
-                                  "frames":[5,1000,10]})
 
 start_params_pdf_OO = get_default_mdanse_settings("PairDistributionFunction")
 
 data_parser_pdf_OO = csv_reader("sto_dft_pdf_80K_OO_fine.csv")
 data_parser_pdf_OO.parse()
 
-exp_observable_pdf_OO = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
-exp_observable_pdf_OO.read_from_file(data_parser_pdf)
-md_observable_pdf_OO = MDANSEObservable(mdanse_job_type="PairDistributionFunction")
+exp_observable_pdf_OO = MDANSEObservable(mdanse_job_type="PairDistributionFunction", opt_suffix="_obs4")
+exp_observable_pdf_OO.read_from_file(data_parser_pdf_OO)
+md_observable_pdf_OO = MDANSEObservable(mdanse_job_type="PairDistributionFunction", opt_suffix="_obs4")
 md_observable_pdf_OO.origin = "MD"
-md_observable_pdf_OO.independent_variables = copy.deepcopy(exp_observable_pdf.independent_variables)
+md_observable_pdf_OO.independent_variables = copy.deepcopy(exp_observable_pdf_OO.independent_variables)
+md_observable_pdf_OO.set_parameters({"r_values":[0.0,0.77,0.002],
+                                  "frames":[5,1000,10],
+                                  "atom_selection": """{
+                                  "0": {"function_name": "select_all", "operation_type": "union"},
+                                  "1": {"function_name": "select_dummy", "operation_type": "difference"},
+                                  "2": {"function_name": "select_atoms", "atom_types": ["O"], "operation_type": "intersection"}
+                                  }"""})
 
 observable_pair_pdf_OO = ObservablePair(
     exp_obs=exp_observable_pdf_OO, MD_obs=md_observable_pdf_OO, weight=2.0, rescale_factor=1.0, auto_scale=False
 )
 
-md_observable_pdf_OO.set_parameters({"r_values":[0.0,0.77,0.002],
-                                  "frames":[5,1000,10],
-                                  "atom_selection": """{"0": {"function_name": "select_all", "operation_type": "union"}, "1": {"function_name": "select_dummy", "operation_type": "difference"}, "2": {"function_name": "select_atoms", "atom_types": ["O"], "operation_type": "intersection"}}"""})
 
 fit_parameters = universe.parameters
 for par_name in fit_parameters:
@@ -183,9 +175,9 @@ for par_name in fit_parameters:
 # Specify how the refinement is going to be controlled
 control = Control(
     simulation=simulation,
-    exp_datasets=exp_datasets,
+    exp_datasets={},
     fit_parameters=fit_parameters,
-    observable_pairs=[observable_pair_dos, observable_pair_dos_OO, observable_pair_pdf, observable_pair_pdf_OO],
+    observable_pairs=[observable_pair_dos, observable_pair_pdf, observable_pair_dos_OO, observable_pair_pdf_OO],
     file_dump_frequency="best",
     file_dump_extent="all",
     file_dump_timestamped=False,

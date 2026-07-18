@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -179,10 +180,12 @@ def create_mock_trajectory(time_step: float, n_steps: int, universe: Universe | 
 
 
 def check_if_main(name: str, hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
-    if "tags" in hdf5_node.attrs and "main" in hdf5_node.attrs["tags"].split(","):
-        main_result = hdf5_node.name
-        axes = hdf5_node.attrs["axis"].split("|")
-        return main_result, axes
+    if "tags" in hdf5_node.attrs:
+        tags = hdf5_node.attrs["tags"].split(",")
+        if "main" in tags and "partial" not in tags:
+            main_result = hdf5_node.name
+            axes = hdf5_node.attrs["axis"].split("|")
+            return main_result, axes
     return None
 
 
@@ -194,12 +197,13 @@ def find_main_result(data_structure: h5py.File) -> tuple[str, list[str]]:
 class MDANSEObservable(Observable):
     """Runs a specific MDANSE analysis on the input trajectory."""
 
-    def __init__(self, mdanse_job_type: str):
+    def __init__(self, mdanse_job_type: str, opt_suffix = ""):
         super().__init__()
-        self._name = "MDANSE"
+        self._name = f"MDANSE_{mdanse_job_type}{opt_suffix}"
         self.job_type = job_aliases.get(mdanse_job_type, mdanse_job_type)
         self.job_settings = {}
         self.job_instance = None
+        self.opt_suffix = opt_suffix
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
@@ -323,7 +327,7 @@ class MDANSEObservable(Observable):
         settings["instrument_resolution"] = ("ideal", {})
         for key, value in self.job_settings.items():
             settings[key] = value
-        settings["output_files"] = ["dummy_name", ["FileInMemory"], "no logs"]
+        settings["output_files"] = [f"dummy_name{self.opt_suffix}", ["FileInMemory"], "no logs"]
         return job_instance, settings
 
     def predict_output(
@@ -386,9 +390,9 @@ class MDANSEObservable(Observable):
         if not reader._dependent_variables:
             with reader:
                 reader.parse()
-        self._dependent_variables = reader.dependent_variables
-        self._independent_variables = reader.independent_variables
-        self._errors = reader.errors
+        self._dependent_variables = copy.deepcopy(reader.dependent_variables)
+        self._independent_variables = copy.deepcopy(reader.independent_variables)
+        self._errors = copy.deepcopy(reader.errors)
 
     @property
     def uniformity_requirements(self):
