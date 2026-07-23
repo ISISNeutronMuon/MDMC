@@ -179,10 +179,12 @@ def create_mock_trajectory(time_step: float, n_steps: int, universe: Universe | 
 
 
 def check_if_main(name: str, hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
-    if "tags" in hdf5_node.attrs and "main" in hdf5_node.attrs["tags"].split(","):
-        main_result = hdf5_node.name
-        axes = hdf5_node.attrs["axis"].split("|")
-        return main_result, axes
+    if "tags" in hdf5_node.attrs:
+        tags = hdf5_node.attrs["tags"].split(",")
+        if "main" in tags and "partial" not in tags:
+            main_result = hdf5_node.name
+            axes = hdf5_node.attrs["axis"].split("|")
+            return main_result, axes
     return None
 
 
