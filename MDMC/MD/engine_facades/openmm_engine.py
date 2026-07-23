@@ -171,6 +171,7 @@ class OpenMMEngine(MDEngine):
         # add harmonic bond forces
         bond_dists = {}
         bond_force = mm.HarmonicBondForce()
+        bond_force.setUsesPeriodicBoundaryConditions(True)
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
             if isinstance(mdmc_bond.function, DummyInteractionFunction):
