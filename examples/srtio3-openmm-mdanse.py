@@ -27,7 +27,7 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import (
 BOX_EDGE = 3.905*6
 
 O_charge = -1.3
-Ti_charge = 1.9
+Ti_charge = 0.9
 Sr_charge = -1*(Ti_charge + 3* O_charge)
 O_epsilon = 15
 O_sigma = 1.05
@@ -151,7 +151,6 @@ observable_pair_pdf = ObservablePair(
 fit_parameters = universe.parameters
 for par_name in fit_parameters:
     par = fit_parameters[par_name]
-    print(par.name, par.value, par.molecules)
     if "sigma" in par_name:
         fit_parameters[par_name].constraints = [0.1, 5.0]
     if "epsilon" in par_name:
@@ -159,7 +158,7 @@ for par_name in fit_parameters:
     if "charge" in par_name:
         if fit_parameters[par_name].value < -0.5:
             fit_parameters[par_name].constraints = [-2.0, -0.1]
-        elif fit_parameters[par_name].value < 1.95:
+        elif fit_parameters[par_name].value < 1.0:
             fit_parameters[par_name].constraints = [0.4, 4.0]
         else:
             fit_parameters[par_name].fixed = True
