@@ -635,7 +635,9 @@ class OpenMMEngine(MDEngine):
         else:
             raise MDEngineError(f"Failed to auto-equilibrate in under {max_steps} steps")
 
-        print(f"{ensemble} ensemble auto-equilibration has detected stability after {len(reporter.volumes)} equilibration steps.")
+        print(
+            f"{ensemble} ensemble auto-equilibration has detected stability after {len(reporter.volumes)} equilibration steps."
+        )
         self.openmm_simulation.reporters.clear()
 
     def convert_trajectory(
@@ -709,10 +711,16 @@ class PropertyReporter:
         c = c.value_in_unit(unit.angstrom)[2]
         self.volumes.append(a * b * c)
 
-        temperature = (2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))).value_in_unit(unit.kelvin)
+        temperature = (
+            2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))
+        ).value_in_unit(unit.kelvin)
         self.temperatures.append(temperature)
 
-        self.total_energies.append((state.getKineticEnergy() + state.getPotentialEnergy()).value_in_unit(unit.kilojoules_per_mole))
+        self.total_energies.append(
+            (state.getKineticEnergy() + state.getPotentialEnergy()).value_in_unit(
+                unit.kilojoules_per_mole
+            )
+        )
 
     def describeNextReport(self, simulation):
         return 1, False, False, False, True
