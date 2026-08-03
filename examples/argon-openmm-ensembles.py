@@ -86,7 +86,7 @@ simulation = Simulation(
             "n_step": 10000
         },
         # production NVE, n_steps not specified here since this is
-        # determined by MDMC from the expt data
+        # determined by MDMC using the expt data
         {
             "integrator": "Verlet",
         },

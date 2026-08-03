@@ -61,6 +61,8 @@ class OpenMMEngine(MDEngine):
         ]
         self.nonbonded_combining = CombiningRules.LORENTZBERTHLOT
         self.real_atom = []
+        # the default openmm engine equilibration and production
+        # integrators and options
         self.openmm_ensembles = [
             {
                 "integrator": "LangevinMiddle",
