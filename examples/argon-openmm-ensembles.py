@@ -54,6 +54,7 @@ simulation = Simulation(
     temperature=120.0,
     traj_step=15,
     openmm_platform="OpenCL",
+    openmm_properties={"Precision": "mixed"},
     openmm_ensembles=[
         # equilibration stage 1 equilibrate the cell volume and temperature
         # with high friction and frequent monte carlo pressure changes
