@@ -61,6 +61,22 @@ class OpenMMEngine(MDEngine):
         ]
         self.nonbonded_combining = CombiningRules.LORENTZBERTHLOT
         self.real_atom = []
+        self.openmm_ensembles = [
+            {
+                "integrator": "LangevinMiddle",
+                "frictionCoeff": 10.0 / unit.picoseconds,
+            },
+            {
+                "integrator": "LangevinMiddle",
+                "frictionCoeff": 1.0 / unit.picoseconds,
+            },
+            {
+                "integrator": "Verlet",
+            },
+            {
+                "integrator": "Verlet",
+            },
+        ]
 
     @property
     def saved_config(self) -> np.ndarray:
@@ -356,22 +372,14 @@ class OpenMMEngine(MDEngine):
             simulation object.
         """
         self.temperature = float(settings.get("temperature"))
-        time_step = float(self.time_step)
+        self.openmm_ensembles = settings.get("openmm_ensembles", self.openmm_ensembles)
+        if len(self.openmm_ensembles) < 2:
+            raise ValueError(
+                "openmm_equilibration needs at least two ensemble "
+                "settings one for equilibration and one for production."
+            )
 
-        compound_integrator = mm.CompoundIntegrator()
-        lang_int_1 = mm.LangevinMiddleIntegrator(
-            self.temperature * unit.kelvin,
-            10.0 / unit.picoseconds,
-            time_step * unit.femtoseconds,
-        )
-        compound_integrator.addIntegrator(lang_int_1)
-        lang_int_2 = mm.LangevinMiddleIntegrator(
-            self.temperature * unit.kelvin,
-            1.0 / unit.picoseconds,
-            time_step * unit.femtoseconds,
-        )
-        compound_integrator.addIntegrator(lang_int_2)
-        compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
+        compound_integrator = self.create_compound_integrator()
 
         if openmm_platform is not None:
             openmm_platform = mm.Platform.getPlatform(openmm_platform)
@@ -410,6 +418,100 @@ class OpenMMEngine(MDEngine):
         """
         self.openmm_simulation.minimizeEnergy(maxIterations=n_steps)
 
+    def create_compound_integrator(self) -> mm.Integrator:
+        """Create an OpenMM CompoundIntegrator for the equilibration
+        and production. The last integrator in the compound integrator
+        will be used for in the production stage.
+
+        Returns
+        -------
+        mm.CompoundIntegrator
+            The OpenMM CompoundIntegrator.
+        """
+        temperature = self.temperature * unit.kelvin
+        time_step = float(self.time_step) * unit.femtoseconds
+        compound_integrator = mm.CompoundIntegrator()
+
+        for settings in self.openmm_ensembles:
+            integrator = settings["integrator"].lower()
+            if integrator == "verlet":
+                compound_integrator.addIntegrator(mm.VerletIntegrator(time_step))
+            elif integrator == "langevin":
+                compound_integrator.addIntegrator(
+                    mm.LangevinIntegrator(temperature, settings["frictionCoeff"], time_step)
+                )
+            elif integrator == "langevinmiddle":
+                compound_integrator.addIntegrator(
+                    mm.LangevinMiddleIntegrator(temperature, settings["frictionCoeff"], time_step)
+                )
+            elif integrator == "nosehoover":
+                compound_integrator.addIntegrator(
+                    mm.NoseHooverIntegrator(
+                        temperature,
+                        settings["collisionFrequency"],
+                        time_step,
+                        settings.get("chainLength", 3),
+                        settings.get("numMTS", 3),
+                        settings.get("numYoshidaSuzuki", 7),
+                    )
+                )
+            else:
+                raise ValueError(f"Integrator {integrator} not recognised or not implemented.")
+
+        return compound_integrator
+
+    def add_barostat(self, settings: dict):
+        """Add a barostat.
+
+        Parameters
+        ----------
+        settings : dict
+            A dictionary of barostat settings.
+
+        """
+        name = settings["barostat"].lower()
+        if name == "montecarloflexible":
+            barostat = mm.MonteCarloFlexibleBarostat(
+                settings["defaultPressure"],
+                self.temperature * unit.kelvin,
+                settings.get("frequency", 25),
+                settings.get("scaleMoleculesAsRigid", True),
+            )
+        elif name == "montecarlo":
+            barostat = mm.MonteCarloBarostat(
+                settings["defaultPressure"],
+                self.temperature * unit.kelvin,
+                settings.get("frequency", 25),
+            )
+        elif name == "montecarloanisotropic":
+            barostat = mm.MonteCarloAnisotropicBarostat(
+                settings["defaultPressure"],
+                self.temperature * unit.kelvin,
+                settings.get("scaleX", True),
+                settings.get("scaleY", True),
+                settings.get("scaleZ", True),
+                settings.get("frequency", 25),
+            )
+        else:
+            raise ValueError(f"Barostat {name} not recognised or not implemented.")
+        self.openmm_system.addForce(barostat)
+        self.openmm_simulation.context.reinitialize(preserveState=True)
+
+    def remove_barostat(self):
+        """Remove all barostats."""
+        for i in reversed(range(self.openmm_system.getNumForces())):
+            force = self.openmm_system.getForce(i)
+            if isinstance(
+                force,
+                (
+                    mm.MonteCarloFlexibleBarostat,
+                    mm.MonteCarloBarostat,
+                    mm.MonteCarloAnisotropicBarostat,
+                ),
+            ):
+                self.openmm_system.removeForce(i)
+        self.openmm_simulation.context.reinitialize(preserveState=True)
+
     def run(
         self,
         n_steps: int,
@@ -440,16 +542,22 @@ class OpenMMEngine(MDEngine):
                 self.openmm_simulation.context.setVelocitiesToTemperature(
                     self.temperature * unit.kelvin,
                 )
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
-                self.openmm_simulation.step(n_steps // 3)
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
-                self.openmm_simulation.step(n_steps // 3)
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
-                self.openmm_simulation.step(n_steps // 3)
+                for i, settings in enumerate(self.openmm_ensembles[:-1]):
+                    self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(i)
+                    if "barostat" in settings:
+                        self.add_barostat(settings["barostat"])
+                    else:
+                        self.remove_barostat()
+                    self.openmm_simulation.step(settings.get("n_steps", n_steps))
             except mm.OpenMMException as e:
                 LOGGER.warning(f"OpenMM exception during equilibration: {e}")
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
         else:
+            settings = self.openmm_ensembles[-1]
+            if "barostat" in settings:
+                self.add_barostat(settings["barostat"])
+            else:
+                self.remove_barostat()
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
             reporter = CompactTrajectoryReporter(
@@ -459,7 +567,9 @@ class OpenMMEngine(MDEngine):
                 np.array(self.real_atom),
             )
             self.openmm_simulation.reporters.append(reporter)
-            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
+            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(
+                len(self.openmm_ensembles) - 1
+            )
             self.openmm_simulation.currentStep = 0
             self.openmm_simulation.context.setTime(0.0)
             state = self.openmm_simulation.context.getState(
@@ -614,4 +724,4 @@ class CompactTrajectoryReporter:
         if simulation.currentStep + steps >= self.n_steps:
             return steps, False, False, False, False
 
-        return steps, True, True, True, True
+        return steps, True, False, False, False
