@@ -22,6 +22,7 @@ from typing import Any
 
 import networkx as nx
 import numpy as np
+from statsmodels.tsa.stattools import kpss
 import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
@@ -550,10 +551,19 @@ class OpenMMEngine(MDEngine):
                         self.add_barostat(settings["barostat"])
                     else:
                         self.remove_barostat()
-                    self.openmm_simulation.step(settings.get("n_steps", n_steps))
+
+                    n_steps = settings.get("n_steps", n_steps)
+                    if isinstance(n_steps, int):
+                        self.openmm_simulation.step(n_steps)
+                    elif isinstance(n_steps, tuple) and len(n_steps) == 5:
+                        self.autoequilibrate(*n_steps)
+                    else:
+                        raise ValueError(f"n_steps setting {n_steps} is not valid")
+
             except mm.OpenMMException as e:
                 LOGGER.warning(f"OpenMM exception during equilibration: {e}")
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
+
         else:
             settings = self.openmm_ensembles[-1]
             if "barostat" in settings:
@@ -586,6 +596,47 @@ class OpenMMEngine(MDEngine):
                 raise MDEngineError(f"OpenMM exception during production run: {e}") from e
             finally:
                 self.openmm_simulation.reporters.clear()
+
+    def autoequilibrate(
+        self,
+        ensemble,
+        max_steps,
+        eq_steps,
+        window_size,
+        tolerance,
+    ):
+
+        def property_is_stationary(values) -> bool:
+            results = kpss(values[-window_size:], regression="c")
+            # results[1] is the p-value from the test
+            # we base our tolerance on the p-value, where the alternative hypothesis
+            # for KPSS is "NOT stationary" - statsmodels also never gives a p above
+            # 0.1 as it doesn't hold critical values above that point. so for 0.05
+            # tolerance, we are asking that p be greater than 0.95
+            return results[1] > 0.1 - tolerance
+
+        reporter = PropertyReporter()
+        self.openmm_simulation.reporters.append(reporter)
+        self.openmm_simulation.step(window_size)
+        for _ in range(eq_steps, max_steps + 1, eq_steps):
+            self.openmm_simulation.step(eq_steps)
+            volumes = reporter.volumes
+            temperatures = reporter.temperatures
+            energies = reporter.total_energies
+            if ensemble == "NPT":
+                if all(property_is_stationary(values) for values in [volumes, temperatures]):
+                    break
+            elif ensemble == "NVT" and property_is_stationary(temperatures):
+                break
+            elif ensemble == "NVE" and property_is_stationary(energies):
+                break
+            else:
+                ValueError(f"Ensemble {ensemble} not recognised or not supported.")
+        else:
+            raise MDEngineError(f"Failed to auto-equilibrate in under {max_steps} steps")
+
+        print(f"{ensemble} ensemble auto-equilibration has detected stability after {len(reporter.volumes)} equilibration steps.")
+        self.openmm_simulation.reporters.clear()
 
     def convert_trajectory(
         self,
@@ -640,24 +691,31 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
         self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
 
-    def eval(self, variable: str) -> Any:
-
-        match variable:
-            case "pe":
-                state = self.openmm_simulation.context.getState(getEnergy=True)
-                return state.getPotentialEnergy().value_in_unit(unit.kilojoule_per_mole)
-            case "temp":
-                integrator = self.openmm_simulation.context.getIntegrator()
-                if hasattr(integrator, "computeSystemTemperature"):
-                    return integrator.computeSystemTemperature().value_in_unit(unit.kelvin)
-
-                state = self.openmm_simulation.context.getState(getEnergy=True)
-                temp = (
-                    2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))
-                ).value_in_unit(unit.kelvin)
-                return temp
-
+    def eval(self, variable: str):
         raise NotImplementedError
+
+
+class PropertyReporter:
+    def __init__(self):
+        self.volumes = []
+        self.temperatures = []
+        self.total_energies = []
+
+    def report(self, simulation: Simulation, state: mm.State):
+        # currently MDMC can only deal with orthorhombic lattices
+        a, b, c = state.getPeriodicBoxVectors()
+        a = a.value_in_unit(unit.angstrom)[0]
+        b = b.value_in_unit(unit.angstrom)[1]
+        c = c.value_in_unit(unit.angstrom)[2]
+        self.volumes.append(a * b * c)
+
+        temperature = (2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))).value_in_unit(unit.kelvin)
+        self.temperatures.append(temperature)
+
+        self.total_energies.append((state.getKineticEnergy() + state.getPotentialEnergy()).value_in_unit(unit.kilojoules_per_mole))
+
+    def describeNextReport(self, simulation):
+        return 1, False, False, False, True
 
 
 class CompactTrajectoryReporter:

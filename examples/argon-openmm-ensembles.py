@@ -55,35 +55,41 @@ simulation = Simulation(
     traj_step=15,
     openmm_platform="OpenCL",
     openmm_ensembles=[
-        # equilibration stage 1 NVT to equilibrate the temperature quickly
-        # using a large friction coefficient
+        # equilibration stage 1 equilibrate the cell volume and temperature
+        # with high friction and frequent monte carlo pressure changes
         {
             "integrator": "LangevinMiddle",
             "frictionCoeff": 10.0 / unit.picoseconds,
-            "n_step": 10000
+            "barostat": {
+                "barostat": "MonteCarlo",
+                # https://journals.aps.org/pra/pdf/10.1103/PhysRevA.31.3391
+                # table 2 measurement (a) 2.01 MPa
+                "defaultPressure": 20.1 * unit.bar,
+                "frequency": 5
+            },
+            "n_steps": ("NPT", 100000, 100, 1000, 0.01)
         },
-        # equilibration stage 2 now equilibrate the cell volume
+        # equilibration stage 2 equilibrate the cell volume and temperature
+        # with more normal friction and monte carlo pressure changes
         {
             "integrator": "LangevinMiddle",
             "frictionCoeff": 1.0 / unit.picoseconds,
             "barostat": {
                 "barostat": "MonteCarlo",
-                # https://journals.aps.org/pra/pdf/10.1103/PhysRevA.31.3391
-                # table 2 measurement (a) 2.01 MPa
-                "defaultPressure": 20.1 * unit.bar
+                "defaultPressure": 20.1 * unit.bar,
             },
-            "n_step": 10000
+            "n_steps": ("NPT", 100000, 100, 1000, 0.01)
         },
-        # equilibration stage 3 NVT again at the now equilibrated cell volume
+        # equilibration stage 3 NVT with the equilibrated cell volume
         {
             "integrator": "LangevinMiddle",
             "frictionCoeff": 1.0 / unit.picoseconds,
-            "n_step": 10000
+            "n_steps": ("NVT", 100000, 100, 1000, 0.01)
         },
         # equilibration stage 4 NVE equilibration to prepare for production
         {
             "integrator": "Verlet",
-            "n_step": 10000
+            "n_steps": ("NVE", 100000, 100, 1000, 0.01)
         },
         # production NVE, n_steps not specified here since this is
         # determined by MDMC using the expt data
