@@ -576,8 +576,6 @@ class OpenMMEngine(MDEngine):
             self.openmm_simulation.context.setTime(0.0)
             state = self.openmm_simulation.context.getState(
                 getPositions=True,
-                getVelocities=True,
-                getEnergy=True,
                 enforcePeriodicBox=True,
             )
             reporter.report(self.openmm_simulation, state)
