@@ -660,7 +660,22 @@ class OpenMMEngine(MDEngine):
             else:
                 ValueError(f"Ensemble {ensemble} not recognised or not supported.")
         else:
-            raise MDEngineError(f"Failed to auto-equilibrate in under {max_steps} steps")
+            # the equilibration failed. Let's continue anyway, if it only
+            # happens once or twice it should be ok since the force
+            # field parameters are probably going to be bad anyway
+            # if this happens often then the user will see the warnings
+            # and will need to adjust the setting e.g. force field parameter
+            # search space
+            print(
+                f"{ensemble} ensemble auto-equilibration has failed after "
+                f"{len(reporter.volumes)} equilibration steps. Continuing to "
+                f"the next stage anyway. Please adjust your equilibration "
+                f"settings so equilibration can be obtained or parameter "
+                f"search space as particular troublesome force field parameters "
+                f"were used."
+            )
+            self.openmm_simulation.reporters.clear()
+            return
 
         print(
             f"{ensemble} ensemble auto-equilibration has detected stability after {len(reporter.volumes)} equilibration steps."
