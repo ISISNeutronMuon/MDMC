@@ -671,7 +671,7 @@ class OpenMMEngine(MDEngine):
                 f"{len(reporter.volumes)} equilibration steps. Continuing to "
                 f"the next stage anyway. Please adjust your equilibration "
                 f"settings so equilibration can be obtained or parameter "
-                f"search space as particular troublesome force field parameters "
+                f"search space as particularly troublesome force field parameters "
                 f"were used."
             )
             self.openmm_simulation.reporters.clear()
