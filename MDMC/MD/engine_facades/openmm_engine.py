@@ -470,7 +470,6 @@ class OpenMMEngine(MDEngine):
         ----------
         settings : dict
             A dictionary of barostat settings.
-
         """
         name = settings["barostat"].lower()
         if name == "montecarloflexible":
@@ -599,14 +598,42 @@ class OpenMMEngine(MDEngine):
 
     def autoequilibrate(
         self,
-        ensemble,
-        max_steps,
-        eq_steps,
-        window_size,
-        tolerance,
+        ensemble: str,
+        max_steps: int,
+        eq_steps: int,
+        window_size: int,
+        tolerance: float,
     ):
+        """Runs MD until certain properties have become stationary
+        defined by the KPSS test.
 
-        def property_is_stationary(values) -> bool:
+
+        Parameters
+        ----------
+        ensemble : str
+            The ensemble of the system we are equilibrating should be
+            either NPT, NVT or NVE. This defines what system properties
+            to monitor for the KPSS test.
+        max_steps : int
+            Max number of MD steps to run before exiting with an error.
+        eq_steps : int
+            Number of MD steps to run per iteration.
+        window_size : int
+            Size of the window used to run the KPSS test on.
+        tolerance : float
+            Tolerance used to define when the property stationary or not.
+        """
+
+        def property_is_stationary(values: list) -> bool:
+            """KPSS test on system properties, see PR #1298.
+
+            Parameters
+            ----------
+            values : array_like, 1d
+                List of floats of the system properties to run the KPSS test
+                on. KPSS test will run on a specific number of values from
+                the end defined by window_size.
+            """
             results = kpss(values[-window_size:], regression="c")
             # results[1] is the p-value from the test
             # we base our tolerance on the p-value, where the alternative hypothesis
@@ -699,11 +726,21 @@ class OpenMMEngine(MDEngine):
 
 class PropertyReporter:
     def __init__(self):
+        """Reporter which saves MD properties"""
         self.volumes = []
         self.temperatures = []
         self.total_energies = []
 
     def report(self, simulation: Simulation, state: mm.State):
+        """Save the simulation properties.
+
+        Parameters
+        ----------
+        simulation : Simulation
+            The openmm simulation object.
+        state : mm.State
+            The openmm state object.
+        """
         # currently MDMC can only deal with orthorhombic lattices
         a, b, c = state.getPeriodicBoxVectors()
         a = a.value_in_unit(unit.angstrom)[0]

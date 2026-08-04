@@ -68,6 +68,13 @@ simulation = Simulation(
                 "defaultPressure": 20.1 * unit.bar,
                 "frequency": 5
             },
+            # runs auto-equilibration using the KPSS test on certain properties
+            # this tuple can be replaced with an int if you prefer to run
+            # a specific number of steps instead.
+            # auto-equilibration parameters are as follows:
+            # (ensemble [NPT runs KPSS test on volume and temperature],
+            # max number of steps, steps per iteration, kpss window,
+            # kpss tolerance)
             "n_steps": ("NPT", 100000, 100, 1000, 0.01)
         },
         # equilibration stage 2 equilibrate the cell volume and temperature
