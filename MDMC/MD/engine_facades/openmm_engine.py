@@ -636,13 +636,16 @@ class OpenMMEngine(MDEngine):
                 on. KPSS test will run on a specific number of values from
                 the end defined by window_size.
             """
-            results = kpss(values[-window_size:], regression="c")
-            # results[1] is the p-value from the test
-            # we base our tolerance on the p-value, where the alternative hypothesis
-            # for KPSS is "NOT stationary" - statsmodels also never gives a p above
-            # 0.1 as it doesn't hold critical values above that point. so for 0.05
-            # tolerance, we are asking that p be greater than 0.95
-            return results[1] > 0.1 - tolerance
+            vals = values[-window_size:]
+            if np.all(np.isfinite(vals)):
+                results = kpss(vals, regression="c")
+                # results[1] is the p-value from the test
+                # we base our tolerance on the p-value, where the alternative hypothesis
+                # for KPSS is "NOT stationary" - statsmodels also never gives a p above
+                # 0.1 as it doesn't hold critical values above that point. so for 0.05
+                # tolerance, we are asking that p be greater than 0.95
+                return results[1] > 0.1 - tolerance
+            return False
 
         reporter = PropertyReporter()
         self.openmm_simulation.reporters.append(reporter)
