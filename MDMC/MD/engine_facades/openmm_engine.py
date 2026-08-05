@@ -546,10 +546,9 @@ class OpenMMEngine(MDEngine):
                 )
                 for i, settings in enumerate(self.openmm_ensembles[:-1]):
                     self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(i)
+
                     if "barostat" in settings:
                         self.add_barostat(settings["barostat"])
-                    else:
-                        self.remove_barostat()
 
                     n_steps = settings.get("n_steps", n_steps)
                     if isinstance(n_steps, int):
@@ -559,7 +558,10 @@ class OpenMMEngine(MDEngine):
                     else:
                         raise ValueError(f"n_steps setting {n_steps} is not valid")
 
+                    self.remove_barostat()
+
             except mm.OpenMMException as e:
+                self.remove_barostat()
                 LOGGER.warning(f"OpenMM exception during equilibration: {e}")
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
 
@@ -567,8 +569,7 @@ class OpenMMEngine(MDEngine):
             settings = self.openmm_ensembles[-1]
             if "barostat" in settings:
                 self.add_barostat(settings["barostat"])
-            else:
-                self.remove_barostat()
+
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
             reporter = CompactTrajectoryReporter(
@@ -594,6 +595,7 @@ class OpenMMEngine(MDEngine):
                 LOGGER.warning(f"OpenMM exception during production run: {e}")
                 raise MDEngineError(f"OpenMM exception during production run: {e}") from e
             finally:
+                self.remove_barostat()
                 self.openmm_simulation.reporters.clear()
 
     def autoequilibrate(
