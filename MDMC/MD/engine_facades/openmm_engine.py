@@ -637,7 +637,7 @@ class OpenMMEngine(MDEngine):
                 the end defined by window_size.
             """
             vals = values[-window_size:]
-            if np.all(np.isfinite(vals)):
+            try:
                 results = kpss(vals, regression="c")
                 # results[1] is the p-value from the test
                 # we base our tolerance on the p-value, where the alternative hypothesis
@@ -645,7 +645,9 @@ class OpenMMEngine(MDEngine):
                 # 0.1 as it doesn't hold critical values above that point. so for 0.05
                 # tolerance, we are asking that p be greater than 0.95
                 return results[1] > 0.1 - tolerance
-            return False
+            except Exception as e:
+                print(f"KPSS calculation failed with error {e}")
+                return False
 
         reporter = PropertyReporter()
         self.openmm_simulation.reporters.append(reporter)
