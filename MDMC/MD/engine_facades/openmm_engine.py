@@ -605,7 +605,7 @@ class OpenMMEngine(MDEngine):
         eq_steps: int,
         window_size: int,
         tolerance: float,
-    ):
+    ) -> tuple[int, dict[str, list]]:
         """Runs MD until certain properties have become stationary
         defined by the KPSS test.
 
@@ -652,6 +652,7 @@ class OpenMMEngine(MDEngine):
         reporter = PropertyReporter()
         self.openmm_simulation.reporters.append(reporter)
         self.openmm_simulation.step(window_size)
+        converged = True
         for _ in range(eq_steps, max_steps + 1, eq_steps):
             self.openmm_simulation.step(eq_steps)
             volumes = reporter.volumes
@@ -667,6 +668,16 @@ class OpenMMEngine(MDEngine):
             else:
                 ValueError(f"Ensemble {ensemble} not recognised or not supported.")
         else:
+            converged = False
+
+        eq_n_steps = len(reporter.volumes)
+
+        if converged:
+            print(
+                f"{ensemble} ensemble auto-equilibration has detected "
+                f"stability after {eq_n_steps} equilibration steps."
+            )
+        else:
             # the equilibration failed. Let's continue anyway, if it only
             # happens once or twice it should be ok since the force
             # field parameters are probably going to be bad anyway
@@ -675,19 +686,19 @@ class OpenMMEngine(MDEngine):
             # search space
             print(
                 f"{ensemble} ensemble auto-equilibration has failed after "
-                f"{len(reporter.volumes)} equilibration steps. Continuing to "
+                f"{eq_n_steps} equilibration steps. Continuing to "
                 f"the next stage anyway. Please adjust your equilibration "
-                f"settings so equilibration can be obtained or parameter "
-                f"search space as particularly troublesome force field parameters "
-                f"were used."
+                f"settings so equilibration can be obtained, system size, or "
+                f"parameter search space as particularly troublesome force "
+                f"field parameters were used."
             )
-            self.openmm_simulation.reporters.clear()
-            return
 
-        print(
-            f"{ensemble} ensemble auto-equilibration has detected stability after {len(reporter.volumes)} equilibration steps."
-        )
         self.openmm_simulation.reporters.clear()
+        return eq_n_steps, {
+            "volumes": reporter.volumes,
+            "temperatures": reporter.temperatures,
+            "total_energies": reporter.total_energies
+        }
 
     def convert_trajectory(
         self,
