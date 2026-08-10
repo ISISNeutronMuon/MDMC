@@ -1,8 +1,9 @@
 """
-An example MDMC script for optimizing Lennard Jones parameters for liquid Ar.
-For info on syntax see the MDMC docs, including the jupyter notebook tutorials.
-A copy of the data fitting against is assumed to be located in
-../doc/tutorials/data/Well_s_q_omega_Ar_data.xml
+A basic example showing how to run MDMC with MDANSEObservable.
+The reference data used here have been generated using MDANSE
+and not taken from an experiment.
+The observable used here is density of states, and the simulated
+system is strontium titanate (SrTiO3).
 """
 
 import copy
@@ -32,8 +33,6 @@ sto_unit = Molecule(position=(0, 0, 0),
                      name='SrTiO3')
 universe.fill(sto_unit, num_struc_units=6*6*6)
 
-# Above an universe of non-interacting argon atoms was created. Below
-# specify how these atoms will interact
 NonBondedForce(
     universe,
     O1.atom_type,
@@ -56,9 +55,6 @@ NonBondedForce(
     function=NonBonded(charge=1.1, epsilon=2.0, sigma=1.9, elements=["Sr"], molecules = ["SrTiO3"]),
 )
 
-# MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
-# If time_step is descreased by a factor consider increasing traj_step by the
-# same factor.
 simulation = Simulation(
     universe,
     engine="openmm",
@@ -68,10 +64,9 @@ simulation = Simulation(
     openmm_platform="OpenCL",
 )
 
-# Setup refinement of the force field parameters
 
-# exp_datasets is a list of dictionaries with one dictionary per experimental
-# dataset
+# This list should not be needed for MDANSEObservable,
+# but is still expected by Control.
 exp_datasets = [
     {
         "file_name": "sto_dos_as_text.csv",
