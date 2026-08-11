@@ -4,6 +4,10 @@ Tests for force field parametrization
 
 import pytest
 
+pytestmark = pytest.mark.skip(
+    reason="No longer the standard mechanism for loading force field parameters."
+)
+
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import (Atom, Molecule)

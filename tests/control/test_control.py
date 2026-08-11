@@ -279,7 +279,7 @@ def exp_datasets() -> callable:
                              "- FoM Options", "  error"],
                             ["-", "CMAES", "RSquared_noneerror", "1", "0", "38", "0", "False", "0", "-",
                              "results_2022-09-20--13-29-45.csv", "-", "-", "SQw", "xml_SQw",
-                             "test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
+                             "Well_s_q_omega_Ar_data.xml",
                              "1.0", "{\'gaussian\': 84}", "-", "none"])
                          ])
 

@@ -6,6 +6,9 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
+pytestmark = pytest.mark.lammps
+pytest.importorskip("lammps")
+
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp_eng
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
@@ -17,7 +20,6 @@ from MDMC.MD.structures import (Atom)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
-pytestmark = [pytest.mark.lammps]
 
 CUTOFF = 3.14
 COUL_CUTOFF = 8.0

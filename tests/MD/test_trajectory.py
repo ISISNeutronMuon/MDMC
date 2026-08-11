@@ -7,12 +7,14 @@ and setting their attributes.
 import numpy as np
 import pytest
 
+pytestmark = [pytest.mark.lammps]
+pytest.importorskip("lammps")
+
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 from MDMC.MD.simulation import Universe, Shake, PPPM, Simulation
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.MD.structures import (Atom, Molecule)
 
-pytestmark = pytest.mark.lammps
 
 NUMBER_OF_STEPS = 2000
 

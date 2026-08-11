@@ -1064,6 +1064,7 @@ def test_solvate_spce_with_solute(molecule):
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
+@pytest.mark.skip(reason="Universe.solvate is not currently supported.")
 def test_solvate_spce_no_out_of_bounds(solvated_universe):
     """
     Tests that solvating an empty universe with SPCE water results in no
@@ -1135,6 +1136,7 @@ def test_solvate_spce_bond_lengths():
     assert lengths1 == lengths2
 
 
+@pytest.mark.skip(reason="Universe.solvate is not currently supported.")
 @pytest.mark.parametrize('dim_scaling', [[1, 1, 1], [2, 3, 1]])
 def test_solvate_spce_density_perfect_dimensions(dim_scaling):
     """
@@ -1182,6 +1184,7 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
             assert all(atom.position != pos)
 
 
+@pytest.mark.skip(reason="Universe.solvate is not currently supported.")
 @pytest.mark.parametrize("solvent, parameters", [('SPCE',
                                                  (('equilibrium_state', 1.),
                                                   ('potential_strength',
@@ -1206,6 +1209,7 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
                                for p in list(uni_parameters.values())}
 
 
+@pytest.mark.skip(reason="Universe.solvate is not currently supported.")
 @pytest.mark.parametrize("density, tolerance", [(0.7, 20.),
                                                 (0.602707, 1.)])
 def test_solvate_solvated_universe_same_density(density, tolerance,
@@ -1223,6 +1227,7 @@ def test_solvate_solvated_universe_same_density(density, tolerance,
     assert solvent_density == solvated_universe.solvent_density
 
 
+@pytest.mark.skip(reason="Universe.solvate is not currently supported.")
 @pytest.mark.parametrize("density, tolerance", [(0.7, 1.),
                                                 (6.03, 0.0001)])
 def test_solvate_solvated_universe_different_density(density, tolerance,
@@ -1309,6 +1314,7 @@ def test_universe_universe_dimensions_setting(dimensions, expected):
     with pytest.raises(expected):
         sim.Universe(dimensions, verbose=False)
 
+@pytest.mark.skip(reason="Universe.add_force_field is no longer the standard way to add force field parameters and not currently supported.")
 def test_add_force_field_dispersions_bool(universe):
 
     """

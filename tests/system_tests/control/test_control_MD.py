@@ -1,17 +1,16 @@
 """System tests for the Control object with a real MD engine plugged in."""
 import logging
-import re
 
 import numpy as np
-import pandas as pd
 import pytest
+
+pytestmark = [pytest.mark.lammps]
+pytest.importorskip("lammps")
 
 from MDMC.control import Control
 from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
 from tests.control.test_control import exp_datasets, simulation
 
-
-pytestmark = [pytest.mark.lammps]
 
 @pytest.fixture()
 def argon_control(exp_datasets) -> callable:

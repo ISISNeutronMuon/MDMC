@@ -10,11 +10,13 @@ difference is whether the LAMMPS simulation was run through MDMC.
 import numpy as np
 import pytest
 
+pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
+pytest.importorskip("lammps")
+
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
-pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
 """ 
 STDEV_FAC is the number of standard deviations within which the calculated
