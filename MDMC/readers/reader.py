@@ -36,6 +36,7 @@ class Reader(ABC):
     def __init__(self, file_name: str):
         self.file: IO = None
         self.file_name = file_name
+        self.parse_has_run = False
 
     def __enter__(self) -> None:
         """

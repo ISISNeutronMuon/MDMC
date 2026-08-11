@@ -106,6 +106,7 @@ class XML_SQw(SQwReader):
                 be what you want to do, consider using a FoM which doesn't need errors i f\
                 this is an issue \n"
             logger.error(msg)
+        self.parse_has_run = True
 
     @staticmethod
     def dict_from_element(element: TextIO) -> dict:

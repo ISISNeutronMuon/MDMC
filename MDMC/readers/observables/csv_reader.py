@@ -113,6 +113,7 @@ class csv_reader(ObservableReader):
                     ],
                 ),
             )
+        self.parse_has_run = True
 
     @property
     def independent_variables(self) -> dict:

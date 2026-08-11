@@ -125,3 +125,4 @@ class LAMPPDF(PDFReader):
             raise AssertionError(msg) from error
         for i, string in enumerate(self.partial_strings):
             self.partial_pdfs[string] = pp_array[:, i]
+        self.parse_has_run = True

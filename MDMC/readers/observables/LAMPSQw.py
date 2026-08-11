@@ -95,6 +95,7 @@ class LAMPSQw(SQwReader):
                 be what you want to do, consider using a FoM which doesn't need errors if\
                 this is an issue"
             logger.warning(msg)
+        self.parse_has_run = True
 
     def parse_indep_var(self, file: IO) -> tuple[np.ndarray, np.ndarray]:
         """
