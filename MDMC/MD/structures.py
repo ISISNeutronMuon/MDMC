@@ -700,8 +700,8 @@ class Atom(Structure):
         temperature. The default is ``(0., 0., 0.)``.
     charge : float
         The charge of the ``Atom`` in units of elementary charge (``e``). The
-        default is `None`, meaning that a ``Coulomb`` interaction is not applied
-        to the ``Atom``.
+        default is 0. If all atoms in the simulation have a 0 charge, the Ewald
+        summation will not be applied by the MD engine.
     **settings
         ``mass`` (`float`)
             The atomic mass in ``amu``. If not provided a lookup table will be
@@ -728,7 +728,7 @@ class Atom(Structure):
         element: str,
         position: ThreeVec = (0.0, 0.0, 0.0),
         velocity: ThreeVec = (0.0, 0.0, 0.0),
-        charge: float | None = None,
+        charge: float = 0.0,
         **settings: Any,
     ):
         self.universe = None

@@ -144,7 +144,7 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(
-            charge=q_O, epsilon=lj_eps_O, sigma=lj_sigma_O, elements=["O"], molecules=["TIP3P"]
+            charge=q_O, epsilon=lj_eps_O, sigma=lj_sigma_O, elements=["O"], molecules=[model_name]
         ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-O-nonbonded_charge"
@@ -158,7 +158,7 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(
-            charge=q_H, epsilon=lj_eps_H, sigma=lj_sigma_H, elements=["H"], molecules=["TIP3P"]
+            charge=q_H, epsilon=lj_eps_H, sigma=lj_sigma_H, elements=["H"], molecules=[model_name]
         ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-H-nonbonded_charge"
@@ -183,7 +183,7 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
         potential_strength=k_HOH,
         interaction_type="angle",
         elements=["O", "H"],
-        molecules=["TIP3P"],
+        molecules=[model_name],
     )
     harmonicangle.equilibrium_state.parameter_name = (
         f"{model_name}-HOH-harmonicangle_equilibrium_state"
