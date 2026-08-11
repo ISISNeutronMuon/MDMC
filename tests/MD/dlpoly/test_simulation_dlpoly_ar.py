@@ -3,6 +3,9 @@
 import numpy as np
 import pytest
 
+pytestmark = pytest.mark.dlpoly
+pytest.importorskip("dlpoly")
+
 from MDMC.control import Control
 from MDMC.MD.interaction_functions import LennardJones
 from MDMC.MD.interactions import Dispersion
@@ -10,8 +13,6 @@ from MDMC.MD.simulation import Simulation, Universe
 from MDMC.MD.structures import Atom
 
 from tests.test_data import data
-
-pytestmark = [pytest.mark.dlpoly]
 
 
 @pytest.fixture

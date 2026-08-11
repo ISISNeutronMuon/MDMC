@@ -5,6 +5,9 @@
 import numpy as np
 import pytest
 
+pytestmark = pytest.mark.dlpoly
+pytest.importorskip("dlpoly")
+
 from MDMC.common import units
 from MDMC.common.units import UnitNDArray
 from MDMC.MD.engine_facades import dlpoly_engine
