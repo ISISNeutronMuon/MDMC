@@ -375,6 +375,7 @@ class OpenMMEngine(MDEngine):
             simulation object.
         """
         self.temperature = float(settings.get("temperature"))
+        print(self.temperature)
         self.openmm_ensembles = settings.get("openmm_ensembles", self.openmm_ensembles)
         if len(self.openmm_ensembles) < 2:
             raise ValueError(
@@ -697,7 +698,7 @@ class OpenMMEngine(MDEngine):
         return eq_n_steps, {
             "volumes": reporter.volumes,
             "temperatures": reporter.temperatures,
-            "total_energies": reporter.total_energies
+            "total_energies": reporter.total_energies,
         }
 
     def convert_trajectory(
@@ -781,9 +782,10 @@ class PropertyReporter:
         c = c.value_in_unit(unit.angstrom)[2]
         self.volumes.append(a * b * c)
 
+        n_atms = simulation.system.getNumParticles()
         temperature = (
             2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))
-        ).value_in_unit(unit.kelvin)
+        ).value_in_unit(unit.kelvin) / n_atms
         self.temperatures.append(temperature)
 
         self.total_energies.append(
