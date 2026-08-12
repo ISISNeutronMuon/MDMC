@@ -375,7 +375,6 @@ class OpenMMEngine(MDEngine):
             simulation object.
         """
         self.temperature = float(settings.get("temperature"))
-        print(self.temperature)
         self.openmm_ensembles = settings.get("openmm_ensembles", self.openmm_ensembles)
         if len(self.openmm_ensembles) < 2:
             raise ValueError(
