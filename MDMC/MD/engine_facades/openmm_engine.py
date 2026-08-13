@@ -725,7 +725,7 @@ class OpenMMEngine(MDEngine):
                 f"{ensemble} ensemble auto-equilibration has failed after "
                 f"{eq_n_steps} equilibration steps. Continuing to "
                 f"the next stage anyway. Please adjust your equilibration "
-                f"settings so equilibration can be obtained, system size, or "
+                f"settings, time step, system size, or "
                 f"parameter search space as particularly troublesome force "
                 f"field parameters were used."
             )
