@@ -50,6 +50,7 @@ class OpenMMEngine(MDEngine):
         self.universe = None
         self.openmm_system = None
         self.openmm_simulation = None
+        self.compound_integrator = None
         self.compact_trajectory = None
         self.temperature = None
         self._saved_config = None
@@ -382,7 +383,7 @@ class OpenMMEngine(MDEngine):
                 "settings one for equilibration and one for production."
             )
 
-        compound_integrator = self.create_compound_integrator()
+        self.compound_integrator = self.create_compound_integrator()
 
         if openmm_platform is not None:
             openmm_platform = mm.Platform.getPlatform(openmm_platform)
@@ -390,7 +391,7 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation = Simulation(
             Topology(),
             self.openmm_system,
-            compound_integrator,
+            self.compound_integrator,
             openmm_platform,
             openmm_properties,
         )
@@ -500,7 +501,10 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation.context.reinitialize(preserveState=True)
 
     def remove_barostat(self):
-        """Remove all barostats."""
+        """Remove all barostats and reinitialize but ensure that the
+        context parameters are not copied over.
+        """
+        removed = False
         for i in reversed(range(self.openmm_system.getNumForces())):
             force = self.openmm_system.getForce(i)
             if isinstance(
@@ -512,7 +516,32 @@ class OpenMMEngine(MDEngine):
                 ),
             ):
                 self.openmm_system.removeForce(i)
-        self.openmm_simulation.context.reinitialize(preserveState=True)
+                removed = True
+
+        if removed:
+            state = self.openmm_simulation.context.getState(getPositions=True, getVelocities=True)
+            self.openmm_simulation.context.reinitialize(preserveState=False)
+            self.openmm_simulation.context.setPeriodicBoxVectors(*state.getPeriodicBoxVectors())
+            self.openmm_simulation.context.setPositions(state.getPositions())
+            self.openmm_simulation.context.setVelocities(state.getVelocities())
+
+    def update_time_step(self):
+        """MDMC might change the self.parent_simulation.time_step
+        variable for some reason we need to check and update the time
+        step if it was changed.
+        """
+
+        # all integrators should have the same time step
+        integrator = self.compound_integrator.getIntegrator(0)
+        current_time_step = integrator.getStepSize().value_in_unit(unit.femtoseconds)
+
+        if float(self.time_step) == current_time_step:
+            return
+
+        for i in range(self.compound_integrator.getNumIntegrators()):
+            self.compound_integrator.getIntegrator(i).setStepSize(
+                float(self.time_step) * unit.femtoseconds
+            )
 
     def run(
         self,
@@ -538,6 +567,11 @@ class OpenMMEngine(MDEngine):
         **settings
             Not used.
         """
+
+        # MDMC might change the time step in self.parent_simulation.time_step
+        # lets check and update the time step if necessary
+        self.update_time_step()
+
         if equilibration:
             try:
                 self.openmm_simulation.minimizeEnergy()

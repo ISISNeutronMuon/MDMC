@@ -1386,6 +1386,7 @@ class Control:
         -------
         None
         """
+        self.production_time_step = self.simulation.time_step
 
         counter = 0
         equil_works = False
