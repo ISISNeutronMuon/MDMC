@@ -163,9 +163,9 @@ class OpenMMEngine(MDEngine):
                 self.bond_graph.add_edge(i, j)
 
         # add force field
-        self.change_openmm_force_field_and_constraints()
+        self.change_force_field_and_constraints()
 
-    def change_openmm_force_field_and_constraints(self):
+    def change_force_field_and_constraints(self):
         """Change the OpenMM force fields and constraints."""
 
         # add harmonic bond forces
@@ -776,7 +776,7 @@ class OpenMMEngine(MDEngine):
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters."""
         self.clear_forces_and_constraints()
-        self.change_openmm_force_field_and_constraints()
+        self.change_force_field_and_constraints()
         self.openmm_simulation.context.reinitialize(preserveState=True)
 
     def save_config(self) -> None:
