@@ -689,18 +689,21 @@ class OpenMMEngine(MDEngine):
         converged = True
         for _ in range(eq_steps, max_steps + 1, eq_steps):
             self.openmm_simulation.step(eq_steps)
-            volumes = reporter.volumes
-            temperatures = reporter.temperatures
-            energies = reporter.total_energies
+            vols = reporter.volumes
+            k_e = reporter.kinetic_energies
+            p_e = reporter.potential_energies
+            tot_e = reporter.total_energies
             if ensemble == "NPT":
-                if all(property_is_stationary(values) for values in [volumes, temperatures]):
+                if all(property_is_stationary(values) for values in [vols, k_e, p_e]):
                     break
-            elif ensemble == "NVT" and property_is_stationary(temperatures):
-                break
-            elif ensemble == "NVE" and property_is_stationary(energies):
-                break
+            elif ensemble == "NVT":
+                if all(property_is_stationary(values) for values in [k_e, p_e]):
+                    break
+            elif ensemble == "NVE":
+                if all(property_is_stationary(values) for values in [tot_e, k_e]):
+                    break
             else:
-                ValueError(f"Ensemble {ensemble} not recognised or not supported.")
+                raise ValueError(f"Ensemble {ensemble} not recognised or not supported.")
         else:
             converged = False
 
@@ -796,6 +799,8 @@ class PropertyReporter:
         """Reporter which saves MD properties"""
         self.volumes = []
         self.temperatures = []
+        self.kinetic_energies = []
+        self.potential_energies = []
         self.total_energies = []
 
     def report(self, simulation: Simulation, state: mm.State):
@@ -815,17 +820,18 @@ class PropertyReporter:
         c = c.value_in_unit(unit.angstrom)[2]
         self.volumes.append(a * b * c)
 
+        k_e = state.getKineticEnergy()
+        p_e = state.getPotentialEnergy()
+
         n_atms = simulation.system.getNumParticles()
-        temperature = (
-            2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))
-        ).value_in_unit(unit.kelvin) / n_atms
+        temperature = (2 * (k_e / (3 * unit.MOLAR_GAS_CONSTANT_R))).value_in_unit(
+            unit.kelvin
+        ) / n_atms
         self.temperatures.append(temperature)
 
-        self.total_energies.append(
-            (state.getKineticEnergy() + state.getPotentialEnergy()).value_in_unit(
-                unit.kilojoules_per_mole
-            )
-        )
+        self.kinetic_energies.append(k_e.value_in_unit(unit.kilojoules_per_mole))
+        self.potential_energies.append(p_e.value_in_unit(unit.kilojoules_per_mole))
+        self.total_energies.append((k_e + p_e).value_in_unit(unit.kilojoules_per_mole))
 
     def describeNextReport(self, simulation):
         return 1, False, False, False, True
