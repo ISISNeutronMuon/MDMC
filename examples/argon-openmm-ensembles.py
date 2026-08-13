@@ -57,7 +57,7 @@ simulation = Simulation(
     openmm_properties={"Precision": "mixed"},
     openmm_ensembles=[
         # equilibration stage 1 equilibrate the cell volume and temperature
-        # with high friction and frequent monte carlo pressure changes
+        # with high friction
         {
             "integrator": "LangevinMiddle",
             "frictionCoeff": 10.0 / unit.picoseconds,
@@ -66,7 +66,6 @@ simulation = Simulation(
                 # https://journals.aps.org/pra/pdf/10.1103/PhysRevA.31.3391
                 # table 2 measurement (a) 2.01 MPa
                 "defaultPressure": 20.1 * unit.bar,
-                "frequency": 5
             },
             # runs auto-equilibration using the KPSS test on certain properties
             # this tuple can be replaced with an int if you prefer to run

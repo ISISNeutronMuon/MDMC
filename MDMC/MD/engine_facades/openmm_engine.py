@@ -92,7 +92,7 @@ class OpenMMEngine(MDEngine):
             The atomic positions.
         """
         if self._saved_config is None:
-            raise TypeError("OpenMMEngine has not been run.")
+            raise TypeError("No saved config.")
         return self._saved_config
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
@@ -409,6 +409,8 @@ class OpenMMEngine(MDEngine):
             self.openmm_simulation.context.setVelocitiesToTemperature(
                 self.temperature * unit.kelvin,
             )
+
+        self.save_config()
 
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
@@ -780,15 +782,16 @@ class OpenMMEngine(MDEngine):
     def save_config(self) -> None:
         """Sets ``self._saved_config`` to the current set of positions."""
         state = self.openmm_simulation.context.getState(getPositions=True)
-        self._saved_config = np.array(state.getPositions().value_in_unit(unit.angstrom))
+        self._saved_config = (state.getPeriodicBoxVectors(), state.getPositions())
 
     def clear(self) -> None:
         pass
 
     def reset_config(self) -> None:
         """Resets the atomic positions of the simulation to that in ``saved_config``."""
-        self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
+        self.openmm_simulation.context.reinitialize(preserveState=False)
+        self.openmm_simulation.context.setPeriodicBoxVectors(*self.saved_config[0])
+        self.openmm_simulation.context.setPositions(self.saved_config[1])
 
     def eval(self, variable: str):
         raise NotImplementedError
