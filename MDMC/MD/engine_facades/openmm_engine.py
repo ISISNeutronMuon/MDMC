@@ -83,16 +83,16 @@ class OpenMMEngine(MDEngine):
         ]
 
     @property
-    def saved_config(self) -> np.ndarray:
-        """Get the saved configuration of the atomic positions.
+    def saved_config(self) -> tuple:
+        """Get the saved configuration of the box vectors and positions.
 
         Returns
         -------
-        np.ndarray
-            The atomic positions.
+        tuple
+            A tuple of openmm box vectors and positions.
         """
         if self._saved_config is None:
-            raise TypeError("No saved config.")
+            raise RuntimeError("No saved config.")
         return self._saved_config
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
@@ -266,7 +266,7 @@ class OpenMMEngine(MDEngine):
                 if isinstance(force.function, NonBonded)
             ]
             if len(mdmc_nonbonded) != 1:
-                raise Exception("Unexpected number of non-bonded interactions.")
+                raise ValueError("Unexpected number of non-bonded interactions.")
             mdmc_nonbonded = mdmc_nonbonded[0]
             charge = float(mdmc_nonbonded.charge.value) * unit.elementary_charge
             sigma = float(mdmc_nonbonded.sigma.value) * unit.angstrom
