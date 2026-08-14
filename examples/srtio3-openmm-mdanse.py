@@ -109,6 +109,8 @@ simulation = Simulation(
         [0.5, 1.0, 0.5],
         [1.0, 1.0, 1.0],
     ],
+    openmm_bonds_use_pbc=True,
+    openmm_exceptions_use_pbc=True,
 )
 
 # Setup refinement of the force field parameters

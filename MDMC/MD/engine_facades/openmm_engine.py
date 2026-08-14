@@ -22,10 +22,10 @@ from typing import Any
 
 import networkx as nx
 import numpy as np
-from statsmodels.tsa.stattools import kpss
 import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
+from statsmodels.tsa.stattools import kpss
 
 from MDMC.MD import NonBonded
 from MDMC.MD.engine_facades.facade import MDEngine, MDEngineError
@@ -109,6 +109,8 @@ class OpenMMEngine(MDEngine):
         self.universe = universe
         self.openmm_system = mm.System()
         self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)
+        self.periodic_bonds = settings.get("openmm_bonds_use_pbc", False)
+        self.periodic_exceptions = settings.get("openmm_exceptions_use_pbc", False)
         combining_rule = settings.get("openmm_nonbonded_combining", "LORENTZBERTHLOT")
         if combining_rule.upper() not in CombiningRules.__members__:
             raise ValueError(
@@ -171,7 +173,7 @@ class OpenMMEngine(MDEngine):
         # add harmonic bond forces
         bond_dists = {}
         bond_force = mm.HarmonicBondForce()
-        bond_force.setUsesPeriodicBoundaryConditions(True)
+        bond_force.setUsesPeriodicBoundaryConditions(self.periodic_bonds)
         mdmc_bonds = [force for force in set(self.universe.interactions) if isinstance(force, Bond)]
         for mdmc_bond in mdmc_bonds:
             if isinstance(mdmc_bond.function, DummyInteractionFunction):
@@ -197,7 +199,7 @@ class OpenMMEngine(MDEngine):
 
         # add harmonic angle forces
         angle_force = mm.HarmonicAngleForce()
-        angle_force.setUsesPeriodicBoundaryConditions(True)
+        angle_force.setUsesPeriodicBoundaryConditions(self.periodic_bonds)
         mdmc_bondangles = [
             force for force in set(self.universe.interactions) if isinstance(force, BondAngle)
         ]
@@ -235,7 +237,7 @@ class OpenMMEngine(MDEngine):
 
         # add periodic torsion forces
         dihedral = mm.PeriodicTorsionForce()
-        dihedral.setUsesPeriodicBoundaryConditions(True)
+        dihedral.setUsesPeriodicBoundaryConditions(self.periodic_bonds)
         mdmc_dihedrals = [
             force for force in set(self.universe.interactions) if isinstance(force, DihedralAngle)
         ]
@@ -289,7 +291,7 @@ class OpenMMEngine(MDEngine):
         else:
             nonbonded.setNonbondedMethod(mm.NonbondedForce.CutoffPeriodic)
         nonbonded.setCutoffDistance(cutoff * unit.angstrom)
-        nonbonded.setExceptionsUsePeriodicBoundaryConditions(True)
+        nonbonded.setExceptionsUsePeriodicBoundaryConditions(self.periodic_exceptions)
         nonbonded.setUseSwitchingFunction(False)
         nonbonded.setUseDispersionCorrection(False)
         self.openmm_system.addForce(nonbonded)
