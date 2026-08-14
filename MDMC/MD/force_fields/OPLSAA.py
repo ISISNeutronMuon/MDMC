@@ -114,8 +114,7 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
 
             if interaction.improper:
                 dihedral_row, opls_str = find_row(
-                    atoms_df, impropers_df, atm_i, atm_j, atm_k, atm_l,
-                    check_reverse=False
+                    atoms_df, impropers_df, atm_i, atm_j, atm_k, atm_l, check_reverse=False
                 )
 
                 dihedral = Periodic(
@@ -194,7 +193,6 @@ def find_row(atoms_df: pd.DataFrame, params_df: pd.DataFrame, *args: Atom, check
     # with the most specific first, if that is not found we change
     # one of them to a wildcard atom type and check again.
     for switch_grp in switches:
-
         # build up a list of atm groups ids that we need to check for
         # all combinations with the same number of wildcard atom types
         atm_grps = []

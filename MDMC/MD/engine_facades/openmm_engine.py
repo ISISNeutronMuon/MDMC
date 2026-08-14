@@ -22,6 +22,7 @@ from typing import Any
 
 import networkx as nx
 import numpy as np
+from statsmodels.tsa.stattools import kpss
 import openmm as mm
 from openmm import unit
 from openmm.app import Simulation, Topology
@@ -49,6 +50,7 @@ class OpenMMEngine(MDEngine):
         self.universe = None
         self.openmm_system = None
         self.openmm_simulation = None
+        self.compound_integrator = None
         self.compact_trajectory = None
         self.temperature = None
         self._saved_config = None
@@ -61,18 +63,36 @@ class OpenMMEngine(MDEngine):
         ]
         self.nonbonded_combining = CombiningRules.LORENTZBERTHLOT
         self.real_atom = []
+        # the default openmm engine equilibration and production
+        # integrators and options
+        self.openmm_ensembles = [
+            {
+                "integrator": "LangevinMiddle",
+                "frictionCoeff": 10.0 / unit.picoseconds,
+            },
+            {
+                "integrator": "LangevinMiddle",
+                "frictionCoeff": 1.0 / unit.picoseconds,
+            },
+            {
+                "integrator": "Verlet",
+            },
+            {
+                "integrator": "Verlet",
+            },
+        ]
 
     @property
-    def saved_config(self) -> np.ndarray:
-        """Get the saved configuration of the atomic positions.
+    def saved_config(self) -> tuple:
+        """Get the saved configuration of the box vectors and positions.
 
         Returns
         -------
-        np.ndarray
-            The atomic positions.
+        tuple
+            A tuple of openmm box vectors and positions.
         """
         if self._saved_config is None:
-            raise TypeError("OpenMMEngine has not been run.")
+            raise RuntimeError("No saved config.")
         return self._saved_config
 
     def setup_universe(self, universe: Universe, **settings: Any) -> None:
@@ -143,9 +163,9 @@ class OpenMMEngine(MDEngine):
                 self.bond_graph.add_edge(i, j)
 
         # add force field
-        self.change_openmm_force_field_and_constraints()
+        self.change_force_field_and_constraints()
 
-    def change_openmm_force_field_and_constraints(self):
+    def change_force_field_and_constraints(self):
         """Change the OpenMM force fields and constraints."""
 
         # add harmonic bond forces
@@ -246,7 +266,7 @@ class OpenMMEngine(MDEngine):
                 if isinstance(force.function, NonBonded)
             ]
             if len(mdmc_nonbonded) != 1:
-                raise Exception("Unexpected number of non-bonded interactions.")
+                raise ValueError("Unexpected number of non-bonded interactions.")
             mdmc_nonbonded = mdmc_nonbonded[0]
             charge = float(mdmc_nonbonded.charge.value) * unit.elementary_charge
             sigma = float(mdmc_nonbonded.sigma.value) * unit.angstrom
@@ -356,22 +376,14 @@ class OpenMMEngine(MDEngine):
             simulation object.
         """
         self.temperature = float(settings.get("temperature"))
-        time_step = float(self.time_step)
+        self.openmm_ensembles = settings.get("openmm_ensembles", self.openmm_ensembles)
+        if len(self.openmm_ensembles) < 2:
+            raise ValueError(
+                "openmm_equilibration needs at least two ensemble "
+                "settings one for equilibration and one for production."
+            )
 
-        compound_integrator = mm.CompoundIntegrator()
-        lang_int_1 = mm.LangevinMiddleIntegrator(
-            self.temperature * unit.kelvin,
-            10.0 / unit.picoseconds,
-            time_step * unit.femtoseconds,
-        )
-        compound_integrator.addIntegrator(lang_int_1)
-        lang_int_2 = mm.LangevinMiddleIntegrator(
-            self.temperature * unit.kelvin,
-            1.0 / unit.picoseconds,
-            time_step * unit.femtoseconds,
-        )
-        compound_integrator.addIntegrator(lang_int_2)
-        compound_integrator.addIntegrator(mm.VerletIntegrator(time_step * unit.femtoseconds))
+        self.compound_integrator = self.create_compound_integrator()
 
         if openmm_platform is not None:
             openmm_platform = mm.Platform.getPlatform(openmm_platform)
@@ -379,7 +391,7 @@ class OpenMMEngine(MDEngine):
         self.openmm_simulation = Simulation(
             Topology(),
             self.openmm_system,
-            compound_integrator,
+            self.compound_integrator,
             openmm_platform,
             openmm_properties,
         )
@@ -398,6 +410,8 @@ class OpenMMEngine(MDEngine):
                 self.temperature * unit.kelvin,
             )
 
+        self.save_config()
+
     def minimize(self, n_steps: int, minimize_every: int = 10, **settings: Any) -> None:
         """Minimizes the simulation energy.
 
@@ -409,6 +423,127 @@ class OpenMMEngine(MDEngine):
             Not used.
         """
         self.openmm_simulation.minimizeEnergy(maxIterations=n_steps)
+
+    def create_compound_integrator(self) -> mm.Integrator:
+        """Create an OpenMM CompoundIntegrator for the equilibration
+        and production. The last integrator in the compound integrator
+        will be used for in the production stage.
+
+        Returns
+        -------
+        mm.CompoundIntegrator
+            The OpenMM CompoundIntegrator.
+        """
+        temperature = self.temperature * unit.kelvin
+        time_step = float(self.time_step) * unit.femtoseconds
+        compound_integrator = mm.CompoundIntegrator()
+
+        for settings in self.openmm_ensembles:
+            integrator = settings["integrator"].lower()
+            if integrator == "verlet":
+                compound_integrator.addIntegrator(mm.VerletIntegrator(time_step))
+            elif integrator == "langevin":
+                compound_integrator.addIntegrator(
+                    mm.LangevinIntegrator(temperature, settings["frictionCoeff"], time_step)
+                )
+            elif integrator == "langevinmiddle":
+                compound_integrator.addIntegrator(
+                    mm.LangevinMiddleIntegrator(temperature, settings["frictionCoeff"], time_step)
+                )
+            elif integrator == "nosehoover":
+                compound_integrator.addIntegrator(
+                    mm.NoseHooverIntegrator(
+                        temperature,
+                        settings["collisionFrequency"],
+                        time_step,
+                        settings.get("chainLength", 3),
+                        settings.get("numMTS", 3),
+                        settings.get("numYoshidaSuzuki", 7),
+                    )
+                )
+            else:
+                raise ValueError(f"Integrator {integrator} not recognised or not implemented.")
+
+        return compound_integrator
+
+    def add_barostat(self, settings: dict):
+        """Add a barostat.
+
+        Parameters
+        ----------
+        settings : dict
+            A dictionary of barostat settings.
+        """
+        name = settings["barostat"].lower()
+        if name == "montecarloflexible":
+            barostat = mm.MonteCarloFlexibleBarostat(
+                settings["defaultPressure"],
+                self.temperature * unit.kelvin,
+                settings.get("frequency", 25),
+                settings.get("scaleMoleculesAsRigid", True),
+            )
+        elif name == "montecarlo":
+            barostat = mm.MonteCarloBarostat(
+                settings["defaultPressure"],
+                self.temperature * unit.kelvin,
+                settings.get("frequency", 25),
+            )
+        elif name == "montecarloanisotropic":
+            barostat = mm.MonteCarloAnisotropicBarostat(
+                settings["defaultPressure"],
+                self.temperature * unit.kelvin,
+                settings.get("scaleX", True),
+                settings.get("scaleY", True),
+                settings.get("scaleZ", True),
+                settings.get("frequency", 25),
+            )
+        else:
+            raise ValueError(f"Barostat {name} not recognised or not implemented.")
+        self.openmm_system.addForce(barostat)
+        self.openmm_simulation.context.reinitialize(preserveState=True)
+
+    def remove_barostat(self):
+        """Remove all barostats and reinitialize but ensure that the
+        context parameters are not copied over.
+        """
+        removed = False
+        for i in reversed(range(self.openmm_system.getNumForces())):
+            force = self.openmm_system.getForce(i)
+            if isinstance(
+                force,
+                (
+                    mm.MonteCarloFlexibleBarostat,
+                    mm.MonteCarloBarostat,
+                    mm.MonteCarloAnisotropicBarostat,
+                ),
+            ):
+                self.openmm_system.removeForce(i)
+                removed = True
+
+        if removed:
+            state = self.openmm_simulation.context.getState(getPositions=True, getVelocities=True)
+            self.openmm_simulation.context.reinitialize(preserveState=False)
+            self.openmm_simulation.context.setPeriodicBoxVectors(*state.getPeriodicBoxVectors())
+            self.openmm_simulation.context.setPositions(state.getPositions())
+            self.openmm_simulation.context.setVelocities(state.getVelocities())
+
+    def update_time_step(self):
+        """MDMC might change the self.parent_simulation.time_step
+        variable for some reason we need to check and update the time
+        step if it was changed.
+        """
+
+        # all integrators should have the same time step
+        integrator = self.compound_integrator.getIntegrator(0)
+        current_time_step = integrator.getStepSize().value_in_unit(unit.femtoseconds)
+
+        if float(self.time_step) == current_time_step:
+            return
+
+        for i in range(self.compound_integrator.getNumIntegrators()):
+            self.compound_integrator.getIntegrator(i).setStepSize(
+                float(self.time_step) * unit.femtoseconds
+            )
 
     def run(
         self,
@@ -434,22 +569,43 @@ class OpenMMEngine(MDEngine):
         **settings
             Not used.
         """
+
+        # MDMC might change the time step in self.parent_simulation.time_step
+        # lets check and update the time step if necessary
+        self.update_time_step()
+
         if equilibration:
             try:
                 self.openmm_simulation.minimizeEnergy()
                 self.openmm_simulation.context.setVelocitiesToTemperature(
                     self.temperature * unit.kelvin,
                 )
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(0)
-                self.openmm_simulation.step(n_steps // 3)
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(1)
-                self.openmm_simulation.step(n_steps // 3)
-                self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
-                self.openmm_simulation.step(n_steps // 3)
+                for i, settings in enumerate(self.openmm_ensembles[:-1]):
+                    self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(i)
+
+                    if "barostat" in settings:
+                        self.add_barostat(settings["barostat"])
+
+                    n_steps = settings.get("n_steps", n_steps)
+                    if isinstance(n_steps, int):
+                        self.openmm_simulation.step(n_steps)
+                    elif isinstance(n_steps, tuple) and len(n_steps) == 5:
+                        self.autoequilibrate(*n_steps)
+                    else:
+                        raise ValueError(f"n_steps setting {n_steps} is not valid")
+
+                    self.remove_barostat()
+
             except mm.OpenMMException as e:
+                self.remove_barostat()
                 LOGGER.warning(f"OpenMM exception during equilibration: {e}")
                 raise MDEngineError(f"OpenMM exception during equilibration: {e}") from e
+
         else:
+            settings = self.openmm_ensembles[-1]
+            if "barostat" in settings:
+                self.add_barostat(settings["barostat"])
+
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
             reporter = CompactTrajectoryReporter(
@@ -459,13 +615,13 @@ class OpenMMEngine(MDEngine):
                 np.array(self.real_atom),
             )
             self.openmm_simulation.reporters.append(reporter)
-            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(2)
+            self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(
+                len(self.openmm_ensembles) - 1
+            )
             self.openmm_simulation.currentStep = 0
             self.openmm_simulation.context.setTime(0.0)
             state = self.openmm_simulation.context.getState(
                 getPositions=True,
-                getVelocities=True,
-                getEnergy=True,
                 enforcePeriodicBox=True,
             )
             reporter.report(self.openmm_simulation, state)
@@ -475,7 +631,113 @@ class OpenMMEngine(MDEngine):
                 LOGGER.warning(f"OpenMM exception during production run: {e}")
                 raise MDEngineError(f"OpenMM exception during production run: {e}") from e
             finally:
+                self.remove_barostat()
                 self.openmm_simulation.reporters.clear()
+
+    def autoequilibrate(
+        self,
+        ensemble: str,
+        max_steps: int,
+        eq_steps: int,
+        window_size: int,
+        tolerance: float,
+    ) -> tuple[int, dict[str, list]]:
+        """Runs MD until certain properties have become stationary
+        defined by the KPSS test.
+
+
+        Parameters
+        ----------
+        ensemble : str
+            The ensemble of the system we are equilibrating should be
+            either NPT, NVT or NVE. This defines what system properties
+            to monitor for the KPSS test.
+        max_steps : int
+            Max number of MD steps to run before exiting with an error.
+        eq_steps : int
+            Number of MD steps to run per iteration.
+        window_size : int
+            Size of the window used to run the KPSS test on.
+        tolerance : float
+            Tolerance used to define when the property stationary or not.
+        """
+
+        def property_is_stationary(values: list) -> bool:
+            """KPSS test on system properties, see PR #1298.
+
+            Parameters
+            ----------
+            values : array_like, 1d
+                List of floats of the system properties to run the KPSS test
+                on. KPSS test will run on a specific number of values from
+                the end defined by window_size.
+            """
+            vals = values[-window_size:]
+            try:
+                results = kpss(vals, regression="c")
+                # results[1] is the p-value from the test
+                # we base our tolerance on the p-value, where the alternative hypothesis
+                # for KPSS is "NOT stationary" - statsmodels also never gives a p above
+                # 0.1 as it doesn't hold critical values above that point. so for 0.05
+                # tolerance, we are asking that p be greater than 0.95
+                return results[1] > 0.1 - tolerance
+            except Exception as e:
+                print(f"KPSS calculation failed with error {e}")
+                return False
+
+        reporter = PropertyReporter()
+        self.openmm_simulation.reporters.append(reporter)
+        self.openmm_simulation.step(window_size)
+        converged = True
+        for _ in range(eq_steps, max_steps + 1, eq_steps):
+            self.openmm_simulation.step(eq_steps)
+            vols = reporter.volumes
+            k_e = reporter.kinetic_energies
+            p_e = reporter.potential_energies
+            tot_e = reporter.total_energies
+            if ensemble == "NPT":
+                if all(property_is_stationary(values) for values in [vols, k_e, p_e]):
+                    break
+            elif ensemble == "NVT":
+                if all(property_is_stationary(values) for values in [k_e, p_e]):
+                    break
+            elif ensemble == "NVE":
+                if all(property_is_stationary(values) for values in [tot_e, k_e]):
+                    break
+            else:
+                raise ValueError(f"Ensemble {ensemble} not recognised or not supported.")
+        else:
+            converged = False
+
+        eq_n_steps = len(reporter.volumes)
+
+        if converged:
+            print(
+                f"{ensemble} ensemble auto-equilibration has detected "
+                f"stability after {eq_n_steps} equilibration steps."
+            )
+        else:
+            # the equilibration failed. Let's continue anyway, if it only
+            # happens once or twice it should be ok since the force
+            # field parameters are probably going to be bad anyway
+            # if this happens often then the user will see the warnings
+            # and will need to adjust the setting e.g. force field parameter
+            # search space
+            print(
+                f"{ensemble} ensemble auto-equilibration has failed after "
+                f"{eq_n_steps} equilibration steps. Continuing to "
+                f"the next stage anyway. Please adjust your equilibration "
+                f"settings, time step, system size, or "
+                f"parameter search space as particularly troublesome force "
+                f"field parameters were used."
+            )
+
+        self.openmm_simulation.reporters.clear()
+        return eq_n_steps, {
+            "volumes": reporter.volumes,
+            "temperatures": reporter.temperatures,
+            "total_energies": reporter.total_energies,
+        }
 
     def convert_trajectory(
         self,
@@ -514,40 +776,68 @@ class OpenMMEngine(MDEngine):
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters."""
         self.clear_forces_and_constraints()
-        self.change_openmm_force_field_and_constraints()
+        self.change_force_field_and_constraints()
         self.openmm_simulation.context.reinitialize(preserveState=True)
 
     def save_config(self) -> None:
         """Sets ``self._saved_config`` to the current set of positions."""
         state = self.openmm_simulation.context.getState(getPositions=True)
-        self._saved_config = np.array(state.getPositions().value_in_unit(unit.angstrom))
+        self._saved_config = (state.getPeriodicBoxVectors(), state.getPositions())
 
     def clear(self) -> None:
         pass
 
     def reset_config(self) -> None:
         """Resets the atomic positions of the simulation to that in ``saved_config``."""
-        self.openmm_simulation.context.setPositions(self.saved_config * unit.angstrom)
-        self.openmm_simulation.context.setVelocitiesToTemperature(self.temperature * unit.kelvin)
+        self.openmm_simulation.context.reinitialize(preserveState=False)
+        self.openmm_simulation.context.setPeriodicBoxVectors(*self.saved_config[0])
+        self.openmm_simulation.context.setPositions(self.saved_config[1])
 
-    def eval(self, variable: str) -> Any:
-
-        match variable:
-            case "pe":
-                state = self.openmm_simulation.context.getState(getEnergy=True)
-                return state.getPotentialEnergy().value_in_unit(unit.kilojoule_per_mole)
-            case "temp":
-                integrator = self.openmm_simulation.context.getIntegrator()
-                if hasattr(integrator, "computeSystemTemperature"):
-                    return integrator.computeSystemTemperature().value_in_unit(unit.kelvin)
-
-                state = self.openmm_simulation.context.getState(getEnergy=True)
-                temp = (
-                    2 * (state.getKineticEnergy() / (3 * unit.MOLAR_GAS_CONSTANT_R))
-                ).value_in_unit(unit.kelvin)
-                return temp
-
+    def eval(self, variable: str):
         raise NotImplementedError
+
+
+class PropertyReporter:
+    def __init__(self):
+        """Reporter which saves MD properties"""
+        self.volumes = []
+        self.temperatures = []
+        self.kinetic_energies = []
+        self.potential_energies = []
+        self.total_energies = []
+
+    def report(self, simulation: Simulation, state: mm.State):
+        """Save the simulation properties.
+
+        Parameters
+        ----------
+        simulation : Simulation
+            The openmm simulation object.
+        state : mm.State
+            The openmm state object.
+        """
+        # currently MDMC can only deal with orthorhombic lattices
+        a, b, c = state.getPeriodicBoxVectors()
+        a = a.value_in_unit(unit.angstrom)[0]
+        b = b.value_in_unit(unit.angstrom)[1]
+        c = c.value_in_unit(unit.angstrom)[2]
+        self.volumes.append(a * b * c)
+
+        k_e = state.getKineticEnergy()
+        p_e = state.getPotentialEnergy()
+
+        n_atms = simulation.system.getNumParticles()
+        temperature = (2 * (k_e / (3 * unit.MOLAR_GAS_CONSTANT_R))).value_in_unit(
+            unit.kelvin
+        ) / n_atms
+        self.temperatures.append(temperature)
+
+        self.kinetic_energies.append(k_e.value_in_unit(unit.kilojoules_per_mole))
+        self.potential_energies.append(p_e.value_in_unit(unit.kilojoules_per_mole))
+        self.total_energies.append((k_e + p_e).value_in_unit(unit.kilojoules_per_mole))
+
+    def describeNextReport(self, simulation):
+        return 1, False, False, False, True
 
 
 class CompactTrajectoryReporter:
@@ -614,4 +904,4 @@ class CompactTrajectoryReporter:
         if simulation.currentStep + steps >= self.n_steps:
             return steps, False, False, False, False
 
-        return steps, True, True, True, True
+        return steps, True, False, False, False

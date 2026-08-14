@@ -774,12 +774,7 @@ class Control:
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
-            if self.minimizer.state_changed:
-                # Set MD engine to remember new config
-                self.simulation.engine.save_config()
-            else:
-                # Set MD engine to reset to old config
-                self.simulation.engine.reset_config()
+            self.simulation.engine.reset_config()
 
         self.minimizer.write_history(self.results_filename)
 
@@ -1386,6 +1381,7 @@ class Control:
         -------
         None
         """
+        self.production_time_step = self.simulation.time_step
 
         counter = 0
         equil_works = False
