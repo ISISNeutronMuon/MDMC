@@ -42,7 +42,7 @@ def argon_control(exp_datasets) -> callable:
                                 function=LennardJones(epsilon=values[1], sigma=values[0]))
 
         simulation = Simulation(universe,
-                                engine="lammps",
+                                engine="openmm",
                                 time_step=10.18893,
                                 temperature=120.,
                                 traj_step=15)

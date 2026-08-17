@@ -11,31 +11,17 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11.2'
+        architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v4
-    - name: Build Docker container
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        BRANCH="${BRANCH//\//-}"
-        docker build -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile.mdmc . || exit 1
+    - name: Install MDMC
+      run: pip install .[test,docs]
     - name: Run tests
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        BRANCH="${BRANCH//\//-}"
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+      working-directory: tests
+      run: pytest
     - name: Try to build documentation
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        BRANCH="${BRANCH//\//-}"
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c  "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
-    - name: Push image
-      env:
-        BRANCH: ${{ github.head_ref }}
-        DOCKER_PASSWORD: ${{ secrets.DEPENDABOT_DOCKER }}
-      run: |
-        BRANCH="${BRANCH//\//-}"
-        echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
-        docker push mdmc/mdmc:ci-$BRANCH
+      run: apt-get install pandoc -y && make -d -C doc html

@@ -53,7 +53,7 @@ def water_trajectory():
     universe.add_force_field('SPCE')
 
     simulation = Simulation(universe,
-                            engine="lammps",
+                            engine="openmm",
                             time_step=0.5,
                             temperature=280.,
                             traj_step=1)
@@ -65,7 +65,6 @@ def water_trajectory():
     traj = simulation.trajectory
 
     yield traj
-    simulation.engine.lmp.close()
 
 
 def test_empty_trajectory():

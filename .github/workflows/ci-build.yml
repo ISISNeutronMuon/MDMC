@@ -7,26 +7,9 @@ env:
   ruff_version: 0.15.5
 
 jobs:
-  build:
-    name: Build docker container
-    runs-on: ubuntu-22.04
-    # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-      - name: fetch  # grabs master to compare if Docker build files changed
-        run: git fetch origin master
-
-      - name: Check and build container
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          BRANCH: ${{ github.head_ref }}
-        run: source .github/scripts/build_container.sh
 
   tests:
-    name: Docker tests
-    needs: build # so it can use new docker image if docker image has changed
+    name: Tests
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: true
@@ -40,29 +23,11 @@ jobs:
           architecture: x64
       - name: Checkout repo
         uses: actions/checkout@v3
-      - name: Pull Docker Image
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          BRANCH="${BRANCH//\//-}"
-          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Install MDMC
+        run: pip install .[test]
       - name: Run tests
-        env:
-          TESTSET: ${{ matrix.testset }}
-        run: |
-          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
-          exit 0
-
-      - name: Copy coverage
-        run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
-        continue-on-error: true
-
-      - name: Upload code coverage report
-        uses: codecov/codecov-action@v6
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-        continue-on-error: true
+        working-directory: tests
+        run: pytest
 
   linting:
     name: Lint - ${{ matrix.type }}
@@ -97,7 +62,6 @@ jobs:
   notebooks:
     name: Notebooks
     runs-on: ubuntu-22.04
-    needs: build
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v6
@@ -106,22 +70,14 @@ jobs:
         with:
           python-version: '3.11.2'
           architecture: x64
-      - name: Pull Docker Image
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          BRANCH="${BRANCH//\//-}"
-          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
-      - name: Create Docker Container
-        run: |
-          echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
       - name: Install Requirements
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "apt-get install pandoc -y && pip install .[docs]"
+        run: apt-get install pandoc -y
+      - name: Install MDMC
+        run: pip install --group .[docs]
       - name: Convert Notebooks
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/notebook-test-config.py"
+        run: jupyter nbconvert --config doc/notebook-test-config.py
       - name: Test Notebooks
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "pytest --nbmake --nbmake-timeout=2000 -k '.nbconvert.ipynb'"
+        run: pytest --nbmake --nbmake-timeout=2000 -k '.nbconvert.ipynb'
 
   type-checking:
     name: Mypy
