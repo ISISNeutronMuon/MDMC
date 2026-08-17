@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  docker_tests:
+  full_tests:
     name: Tests including MD
     runs-on: ubuntu-22.04
     steps:
@@ -19,7 +19,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Install MDMC
-        run: pip install .[test]
+        run: |
+          sudo apt-get install libgfortran5
+          pip install .[all] && pip install packmol
       - name: Run tests
         working-directory: test
         run: pytest

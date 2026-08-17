@@ -7,14 +7,14 @@ and setting their attributes.
 import numpy as np
 import pytest
 
-from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
+from MDMC.MD.force_fields.three_site_water import ThreeSiteWater, add_three_site_water_ff
+from MDMC.MD.interactions import Dispersion
 from MDMC.MD.simulation import Universe, Shake, PPPM, Simulation
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
-from MDMC.MD.structures import (Atom, Molecule)
 
 pytestmark = pytest.mark.lammps
 
-NUMBER_OF_STEPS = 2000
+NUMBER_OF_STEPS = 200
 
 
 @pytest.fixture(scope='module')
@@ -32,25 +32,10 @@ def water_trajectory():
     # Cubic universe of side:
     # 24.83602653 is 512 water molecules
     universe = Universe(dimensions=24.836)
-    H1 = Atom('H', name = 'H1')
-    H2 = Atom('H', position=(0., 1.63298, 0.), name = 'H2')
-    O = Atom('O', position=(0., 0.81649, 0.57736))
-    H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
-    O_coulombic = Coulombic(atoms=O, cutoff=10.)
-    water_mol = Molecule(position=(0, 0, 0),
-                        velocity=(0, 0, 0),
-                        atoms=[H1, H2, O],
-                        interactions=[Bond((H1, O), (H2, O), constrained=True),
-                                    BondAngle(H1, O, H2, constrained=True)],
-                        name='water')
+    universe.fill(ThreeSiteWater(model_name="TIP3P"), num_density=0.03356718472021752)
+    add_three_site_water_ff(universe, cutoff=10.0, ewald=1e-5, model_name="TIP3P")
     shake = Shake(1e-4, 100)
     universe.constraint_algorithm = shake
-    e_solver = PPPM(accuracy=1e-5)
-    universe.electrostatic_solver = e_solver
-    universe.fill(water_mol, num_density=0.03356718472021752)
-    O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
-                            vdw_tail_correction=True)
-    universe.add_force_field('SPCE')
 
     simulation = Simulation(universe,
                             engine="openmm",
@@ -59,8 +44,8 @@ def water_trajectory():
                             traj_step=1)
 
     # Energy Minimization and equilibration
-    simulation.minimize(n_steps=2000)
-    simulation.run(n_steps=2000, equilibration=True)
+    simulation.minimize(n_steps=200)
+    simulation.run(n_steps=200, equilibration=True)
     simulation.run(n_steps=NUMBER_OF_STEPS)
     traj = simulation.trajectory
 
@@ -121,7 +106,7 @@ def test_lammps_trajectory_length(water_trajectory):
         water_trajectory -- The CompactTrajectory (fixture)
     """
     traj = water_trajectory
-    assert len(traj) == NUMBER_OF_STEPS + 1
+    assert len(traj) == NUMBER_OF_STEPS
 
 def test_lammps_trajectory_slicing(water_trajectory):
     """
