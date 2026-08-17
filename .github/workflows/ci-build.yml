@@ -73,7 +73,7 @@ jobs:
       - name: Install Requirements
         run: sudo apt-get install pandoc -y
       - name: Install MDMC
-        run: pip install --group .[test,docs]
+        run: pip install .[test,docs]
       - name: Convert Notebooks
         run: jupyter nbconvert --config doc/notebook-test-config.py
       - name: Test Notebooks
