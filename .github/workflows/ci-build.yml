@@ -24,7 +24,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
       - name: Install MDMC
-        run: pip install .[test]
+        run: pip install .[test,docs]
       - name: Run tests
         working-directory: tests
         run: pytest
@@ -71,9 +71,9 @@ jobs:
           python-version: '3.11.2'
           architecture: x64
       - name: Install Requirements
-        run: apt-get install pandoc -y
+        run: sudo apt-get install pandoc -y
       - name: Install MDMC
-        run: pip install --group .[docs]
+        run: pip install --group .[test,docs]
       - name: Convert Notebooks
         run: jupyter nbconvert --config doc/notebook-test-config.py
       - name: Test Notebooks
