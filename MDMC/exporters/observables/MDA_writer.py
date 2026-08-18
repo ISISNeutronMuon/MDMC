@@ -33,16 +33,16 @@ LOGGER = logging.getLogger(__name__)
 
 def guess_unit(axis_label: str) -> str:
     """Return the physical unit of a dataset based on its text label."""
-    match axis_label:
-        case "Q":
-            unit_string = units.SYSTEM["LENGTH"] ** (-1)
-        case "E":
-            unit_string = units.SYSTEM["ENERGY_TRANSFER"]
-        case "r":
-            unit_string = units.SYSTEM["LENGTH"]
-        case _:
-            unit_string = "au"
-            LOGGER.warning("MDA writer could not determine the unit of variable %s", axis_label)
+    real_label = axis_label.split("/")[-1]
+    if real_label in {"Q", "q"}:
+        unit_string = units.SYSTEM["LENGTH"] ** (-1)
+    elif real_label in {"E", "energy", "omega", "romega"}:
+        unit_string = units.SYSTEM["ENERGY_TRANSFER"]
+    elif real_label in {"r", "R", "dist", "distance"}:
+        unit_string = units.SYSTEM["LENGTH"]
+    else:
+        unit_string = "au"
+        LOGGER.warning("MDA writer could not determine the unit of variable %s", axis_label)
     return unit_string.replace(" ", "")
 
 
