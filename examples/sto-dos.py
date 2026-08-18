@@ -62,6 +62,8 @@ simulation = Simulation(
     temperature=150.0,
     traj_step=4,
     openmm_platform="OpenCL",
+    openmm_bonds_use_pbc=True,
+    openmm_exceptions_use_pbc=True,
 )
 
 

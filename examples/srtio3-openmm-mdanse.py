@@ -189,4 +189,5 @@ control = Control(
     conv_tol=1e-4,
 )
 
+control.equilibrate(n_steps=40000)
 control.refine(n_steps=2400)
