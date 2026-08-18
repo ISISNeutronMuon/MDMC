@@ -74,8 +74,9 @@ LOGGER = logging.getLogger(__name__)
 
 try:
     from lammps import PyLammps
-except (ModuleNotFoundError, ImportError) as err:
+except (ModuleNotFoundError, ImportError):
     LOGGER.warning("LAMMPS engine is not available")
+
 
 class PyLammpsAttribute:
     """

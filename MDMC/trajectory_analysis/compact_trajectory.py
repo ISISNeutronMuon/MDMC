@@ -910,7 +910,7 @@ class CompactTrajectory:
         index = np.sort(index)
         return self.subtrajectory(0, len(self), step=1, atom_filter=index)
 
-    def filter_by_type(self, types: list[int|str]) -> "CompactTrajectory":
+    def filter_by_type(self, types: list[int | str]) -> "CompactTrajectory":
         """
         Filter subtrajectory by atom ID.
 

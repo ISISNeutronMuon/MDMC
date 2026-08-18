@@ -55,7 +55,7 @@ try:
     from dlpoly.new_control import NewControl as DLPControl
     from dlpoly.species import Species
     from dlpoly.utility import next_file
-except (ModuleNotFoundError, ImportError) as err:
+except (ModuleNotFoundError, ImportError):
     LOGGER.warning("DL_POLY engine is not available")
 
 # mapping from the MDMC class names to names within DLPOLY
