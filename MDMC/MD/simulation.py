@@ -28,6 +28,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import numpy.typing as npt
+from ase.io import read as ase_read
+from MDANSE.Framework.Parsers.pdb import PDBFile
 from statsmodels.tsa.stattools import kpss
 from verbosemanager import VerboseManager
 
@@ -41,12 +43,15 @@ from MDMC.common.decorators import (
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
-from MDMC.MD.interactions import Coulombic, Dispersion
+from MDMC.MD.interactions import Bond, BondAngle, Coulombic, DihedralAngle, Dispersion
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_config, get_solvent_names
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from MDMC.MD.interactions import Interaction
     from MDMC.MD.structures import Atom, Molecule, Structure
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -212,6 +217,153 @@ class Universe(AtomContainer):
         return False
 
     # Unit decorator on getter due to operations in setter
+
+    @classmethod
+    def from_file(self, file_path: str | Path, file_format: str | None = None) -> Universe:
+        init_struct = ase_read(file_path, format=file_format)
+        new_instance = Universe(np.diag(init_struct.get_cell()))
+        for atom in init_struct:
+            new_instance.add_structure(
+                Atom(atom.symbol, position=atom.position, charge=atom.charge)
+            )
+        return new_instance
+
+    @classmethod
+    def from_pdb_file(
+        self,
+        file_path: str | Path,
+        atom_type_mapping: dict[str, Any] | None = None,
+        bonds_per_molecule: dict[str, tuple[str, str]] | None = None,
+        angles_per_molecule: dict[str, tuple[str, str, str]] | None = None,
+        dihedrals_per_molecule: dict[str, tuple[str, str, str, str]] | None = None,
+    ) -> Universe:
+        """Build a Universe instance with atoms and positions from the input file.
+
+        Requires the user to specify which atoms form bonds, angles and dihedrals
+        in each molecule type.
+
+        Parameters
+        ----------
+        file_path : str | Path
+            Path to a PDB file.
+        atom_type_mapping : dict[str, Any] | None, optional
+            Dictionary translating the PDB atom names to the types used by the force field,
+            e.g. {"H1" : {"name":"98", "atom_type":"98"}} for OPLS, by default None
+        bonds_per_molecule : dict[str, tuple[str, str]] | None, optional
+            List of atom pairs forming a bond in a specific molecule type,
+            e.g. {"SOL": [("HW1", "OW"), ("HW2", "OW")]} for water, by default None
+        angles_per_molecule : dict[str, tuple[str, str, str]] | None, optional
+            List of atom triplets forming an angle in a molecule,
+            e.g. {"SOL": [("HW1", "OW", "HW2")]}, by default None
+        dihedrals_per_molecule : dict[str, tuple[str, str, str, str]] | None, optional
+            List of atom quadruplets forming a dihedral angle in a molecule
+            e.g. {"MET": [("H1", "C", "O", "H4"), ...]}, by default None
+
+        Returns
+        -------
+        Universe
+            A Universe instance containing the same atoms as the input PDB file.
+
+        """
+        if dihedrals_per_molecule is None:
+            dihedrals_per_molecule = {}
+        if angles_per_molecule is None:
+            angles_per_molecule = {}
+        if bonds_per_molecule is None:
+            bonds_per_molecule = {}
+        if atom_type_mapping is None:
+            atom_type_mapping = {}
+        init_struct = ase_read(file_path)
+        atom_aliases = {atom.symbol: atom.symbol for atom in init_struct}
+        mdanse_parser = PDBFile(file_path)
+        mdanse_parser.parse()
+        topology = mdanse_parser.build_chemical_system(atom_aliases)
+        all_indices = topology.all_indices
+        atom_types = topology.atom_list
+        molecules = topology._clusters
+        all_names = topology.name_list
+        index_to_label = {
+            index: label for label, value in topology._labels.items() for index in value
+        }
+
+        if atom_type_mapping is None:
+            atom_type_mapping = {name_string: {} for name_string in all_names}
+
+        bond_pairs = {}
+        for mol_label, pair_list in bonds_per_molecule.items():
+            for pair in pair_list:
+                bond_pairs[(mol_label, pair)] = []
+        angle_triplets = {}
+        for mol_label, triplet_list in angles_per_molecule.items():
+            for triplet in triplet_list:
+                angle_triplets[(mol_label, triplet)] = []
+        dihedral_quadruplets = {}
+        for mol_label, quadruplet_list in dihedrals_per_molecule.items():
+            for quadruplet in quadruplet_list:
+                dihedral_quadruplets[(mol_label, quadruplet)] = []
+        unique_atoms = {}
+
+        new_instance = Universe(np.diag(init_struct.get_cell()))
+        for molecule_type, mol_list in molecules.items():
+            for atom_list in mol_list:
+                mol_type = set(index_to_label[index] for index in atom_list)
+                if len(mol_type) > 1:
+                    raise ValueError(
+                        f"Atoms {atom_list} in molecule {molecule_type} "
+                        f"have multiple PDB labels {mol_type}"
+                    )
+                mol_type = mol_type.pop()
+                bond_list = bonds_per_molecule.get(mol_type, [])
+                angle_list = angles_per_molecule.get(mol_type, [])
+                dihedral_list = dihedrals_per_molecule.get(mol_type, [])
+                atom_dict = {}
+                for ind in atom_list:
+                    if (mol_type, all_names[ind]) not in unique_atoms:
+                        atom_instance = Atom(
+                            atom_types[ind],
+                            position=init_struct[ind].position,
+                            charge=init_struct[ind].charge,
+                            **atom_type_mapping[all_names[ind]],
+                        )
+                        unique_atoms[(mol_type, all_names[ind])] = atom_instance
+                    else:
+                        atom_instance = unique_atoms[(mol_type, all_names[ind])].copy(
+                            position=init_struct[ind].position,
+                        )
+                    atom_dict[all_names[ind]] = atom_instance
+                mol_settings = {
+                    "atoms": list(atom_dict.values()),
+                    "name": molecule_type,
+                }
+                new_instance.add_structure(Molecule(**mol_settings))
+                for at_pair in bond_list:
+                    bond_pairs[(mol_type, at_pair)].append(
+                        tuple(atom_dict[at_key] for at_key in at_pair)
+                    )
+                for at_triplets in angle_list:
+                    angle_triplets[(mol_type, at_triplets)].append(
+                        tuple(atom_dict[at_key] for at_key in at_triplets)
+                    )
+                for at_quadruplets in dihedral_list:
+                    dihedral_quadruplets[(mol_type, at_quadruplets)].append(
+                        tuple(atom_dict[at_key] for at_key in at_quadruplets)
+                    )
+                all_indices -= set(atom_list)
+        for tuple_list in bond_pairs.values():
+            Bond(*tuple_list)
+        for triplet_list in angle_triplets.values():
+            BondAngle(*triplet_list)
+        for quadruplet_list in dihedral_quadruplets.values():
+            DihedralAngle(*quadruplet_list)
+        for atom_index in all_indices:
+            atom = init_struct[atom_index]
+            if atom.symbol not in unique_atoms:
+                atom_instance = Atom(atom.symbol, position=atom.position, charge=atom.charge)
+                unique_atoms[atom.symbol] = atom_instance
+            else:
+                atom_instance = unique_atoms[atom.symbol].copy(position=atom.position)
+            new_instance.add_structure(atom_instance)
+        return new_instance
 
     @property
     @unit_decorator_getter(unit=units.LENGTH)
@@ -861,6 +1013,46 @@ class Universe(AtomContainer):
             new_unit = structures.copy(position)
             self.add_structure(new_unit)
 
+    def set_atom_charge(self, atom_name: str = "", charge=0.0):
+        if not atom_name:
+            for atom in self.atoms:
+                atom.charge = charge
+            return
+        for atom in self.atoms:
+            if atom.name == atom_name:
+                atom.charge = charge
+
+    def update_charges(self, charge_parameters: Parameters):
+        all_indices = set(range(1, 1 + len(self.atoms)))
+        for molecule in self.molecule_list:
+            temp_parameters = charge_parameters.filter_molecule(molecule.name).values()
+            fixed_status = [par.fixed for par in temp_parameters]
+            new_values = [
+                float(par.original_value) if par.fixed else par.value for par in temp_parameters
+            ]
+            element_names = [par.elements[0] for par in temp_parameters]
+            molecule.update_charges(new_values, fixed_status, element_names)
+            all_indices -= molecule.indices
+        for atom in self.atoms:
+            if atom.ID not in all_indices:
+                continue
+            temp_parameters = charge_parameters.filter_element(atom.element).values()
+            if len(temp_parameters) > 1:
+                for par in temp_parameters:
+                    if par.molecules:
+                        continue
+                    else:
+                        real_par = par
+                        break
+            elif len(temp_parameters) == 0:
+                continue
+            else:
+                real_par = temp_parameters[0]
+            new_value = real_par.value
+            fixed_status = real_par.fixed
+            if not fixed_status:
+                atom.charge = new_value
+
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(
         self,
@@ -1019,6 +1211,16 @@ class Universe(AtomContainer):
         """
 
         return any(position > self.dimensions) or any(position < [0, 0, 0])
+
+    @property
+    def unique_atom_types(self):
+        """Set of unique atom types in the system"""
+        return set(atom.atom_type for atom in self)
+
+    @property
+    def unique_molecule_types(self):
+        """Set of unique atom types in the system"""
+        return set(molecule.name for molecule in self.molecule_list)
 
     @mod_docstring({"DYNAMIC_SOLVENT_LIST": ", ".join(get_solvent_names())})
     def solvate(

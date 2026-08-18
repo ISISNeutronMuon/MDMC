@@ -294,7 +294,9 @@ def write_H5MD(
             ]
 
         for grp_name, data in simulation_data.items():
-            create_simulation_data(file, grp_name, *data, chunk_limit=chunk_size)
+            create_simulation_data(
+                file, grp_name, *data, chunk_limit=min(chunk_size, trajectory.n_atoms)
+            )
 
         create_box_data(file, trajectory)
         atom_symbols_data = np.array(symbol_list, dtype=object)

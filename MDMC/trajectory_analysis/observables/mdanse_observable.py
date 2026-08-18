@@ -375,8 +375,9 @@ class MDANSEObservable(Observable):
     def read_from_file(self, reader: csv_reader):
         """Load the data from a file."""
         self._origin = "experiment"
-        with reader:
-            reader.parse()
+        if not reader.parse_has_run:
+            with reader:
+                reader.parse()
         self._dependent_variables = reader.dependent_variables
         self._independent_variables = reader.independent_variables
         self._errors = reader.errors

@@ -124,7 +124,6 @@ def run_everything():
         conv_tol=1e-6,
     )
     # Energy Minimization and equilibration
-    control.minimize(n_steps=15000)
     control.equilibrate(n_steps=15000)
 
     # Run the refinement, i.e. refine the FF parameters against the data.

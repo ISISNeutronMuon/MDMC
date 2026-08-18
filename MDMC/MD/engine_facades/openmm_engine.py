@@ -273,11 +273,11 @@ class OpenMMEngine(MDEngine):
             if len(mdmc_nonbonded) != 1:
                 raise ValueError("Unexpected number of non-bonded interactions.")
             mdmc_nonbonded = mdmc_nonbonded[0]
-            charge = float(mdmc_nonbonded.charge.value) * unit.elementary_charge
+            charge = float(atom.charge) * unit.elementary_charge
             sigma = float(mdmc_nonbonded.sigma.value) * unit.angstrom
             epsilon = float(mdmc_nonbonded.epsilon.value) * unit.kilojoules_per_mole
             nonbonded.addParticle(charge, sigma, epsilon)
-            if mdmc_nonbonded.charge.value != 0.0:
+            if atom.charge != 0.0:
                 use_ewald = True
 
         mdmc_nonbonded = [
@@ -358,6 +358,14 @@ class OpenMMEngine(MDEngine):
             for i in range(self.universe.n_atoms):
                 charge, sigma, epsilon = nonbonded.getParticleParameters(i)
                 nonbonded.setParticleParameters(i, charge, sigma, 0.0)
+
+    def update_charges(self):
+        # identify the charges that are being refined
+        all_charge_parameters = self.universe.parameters.filter_role("charge")
+        # set the charges on molecules
+        self.universe.update_charges(all_charge_parameters)
+        # have molecules rescale the remaining charges
+        return
 
     def clear_forces_and_constraints(self):
         """Clear the OpenMM force fields and constraints from the OpenMM system."""
@@ -782,6 +790,7 @@ class OpenMMEngine(MDEngine):
     def update_parameters(self) -> None:
         """Updates the ``OpenMMEngine`` force field parameters."""
         self.clear_forces_and_constraints()
+        self.update_charges()
         self.change_force_field_and_constraints()
         self.openmm_simulation.context.reinitialize(preserveState=True)
 

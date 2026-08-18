@@ -173,3 +173,4 @@ class MDANSESQw(SQwReader):
                 be what you want to do, consider using a FoM which doesn't need errors if\
                 this is an issue"
             logger.warning(msg)
+        self.parse_has_run = True

@@ -179,33 +179,42 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
         f"{model_name}-O",
         cutoff=cutoff,
         ewald=ewald,
-        function=NonBonded(charge=0.0, epsilon=lj_eps_O, sigma=lj_sigma_O),
+        function=NonBonded(
+            charge=0.0, epsilon=lj_eps_O, sigma=lj_sigma_O, elements=["O"], molecules=[model_name]
+        ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-O-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-O-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-O-nonbonded_sigma"
+    universe.set_atom_charge(atom_name="O", charge=0, elements=["O"], molecules=[model_name])
 
     nonbonded = NonBondedForce(
         universe,
         f"{model_name}-H",
         cutoff=cutoff,
         ewald=ewald,
-        function=NonBonded(charge=q_H, epsilon=lj_eps_H, sigma=lj_sigma_H),
+        function=NonBonded(
+            charge=q_H, epsilon=lj_eps_H, sigma=lj_sigma_H, elements=["H"], molecules=[model_name]
+        ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-H-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-H-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-H-nonbonded_sigma"
+    universe.set_atom_charge(atom_name="H", charge=q_H, elements=["H"], molecules=[model_name])
 
     nonbonded = NonBondedForce(
         universe,
         f"{model_name}-M",
         cutoff=cutoff,
         ewald=ewald,
-        function=NonBonded(charge=q_M, epsilon=0.0, sigma=1.0),
+        function=NonBonded(
+            charge=q_M, epsilon=0.0, sigma=1.0, elements=["M"], molecules=[model_name]
+        ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-M-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-M-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-M-nonbonded_sigma"
+    universe.set_atom_charge(atom_name="M", charge=q_M, elements=["M"], molecules=[model_name])
 
     harmonicbond = HarmonicPotential(
         equilibrium_state=r_OH,

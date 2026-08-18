@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import logging
 import re
-import warnings
 import weakref
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
@@ -43,7 +42,6 @@ from scipy.spatial.transform import Rotation
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 from MDMC.MD.container import AtomContainer
-from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.interactions import BondedInteraction, Coulombic
 
 if TYPE_CHECKING:
@@ -680,7 +678,7 @@ class CompositeStructure(Structure, AtomContainer):
             atom.position = CoM + rotation.apply(self._CoM_frame_positions[atom])
 
 
-@repr_decorator("name", "ID", "element", "position", "velocity")
+@repr_decorator("name", "ID", "element", "charge")
 class Atom(Structure):
     """
     A single atom
@@ -702,8 +700,8 @@ class Atom(Structure):
         temperature. The default is ``(0., 0., 0.)``.
     charge : float
         The charge of the ``Atom`` in units of elementary charge (``e``). The
-        default is `None`, meaning that a ``Coulomb`` interaction is not applied
-        to the ``Atom``.
+        default is 0. If all atoms in the simulation have a 0 charge, the Ewald
+        summation will not be applied by the MD engine.
     **settings
         ``mass`` (`float`)
             The atomic mass in ``amu``. If not provided a lookup table will be
@@ -730,7 +728,7 @@ class Atom(Structure):
         element: str,
         position: ThreeVec = (0.0, 0.0, 0.0),
         velocity: ThreeVec = (0.0, 0.0, 0.0),
-        charge: float | None = None,
+        charge: float = 0.0,
         **settings: Any,
     ):
         self.universe = None
@@ -877,83 +875,6 @@ class Atom(Structure):
                     inter.universe = value
         except TypeError:
             self._universe = None
-
-    @property
-    def charge(self) -> float | None:
-        """
-        Get or set the charge in ``e`` if one has been applied to the ``Atom``
-
-        If the ``Atom`` does not have a ``Coulombic`` interaction, setting a
-        value of the ``charge`` will create one, and a default ``cutoff`` of
-        ``10. Ang`` will be applied
-
-        Returns
-        -------
-        float
-            The charge in units of ``e``, or `None` if no charge has been set
-
-        Raises
-        ------
-        ValueError
-            When the ``Atom`` has more than one ``Coulombic`` interaction
-        ValueError
-            When the ``Atom`` has more than one parameter; i.e. should only
-            have charge as a parameter
-        ValueError
-            When setting charge to `None` when a ``Coulombic`` interaction
-            already exists.
-        """
-        try:
-            num_coul = 0
-            value = None
-            for interaction in self.interactions:
-                if isinstance(interaction, Coulombic):
-                    # Check that only one Coulombic interaction exists.
-                    num_coul += 1
-                    if num_coul > 1:
-                        raise ValueError("Atom should not have more than one Coulombic interaction")
-                    # Check that a charge parameter exists.
-                    try:
-                        value = interaction.parameters["charge"].value
-                    except KeyError as error:
-                        raise ValueError(
-                            'Coulombic interaction does not have a parameter "charge".',
-                        ) from error
-            return value
-        except AttributeError:
-            return None
-
-    @charge.setter
-    @unit_decorator(unit=units.CHARGE)
-    def charge(self, value: float) -> None:
-        for inter in self.interactions:
-            if isinstance(inter, Coulombic):
-                if value is not None:
-                    try:
-                        inter.parameters["charge"].value = value
-                    except KeyError as error:
-                        raise ValueError(
-                            'Coulombic interaction does not have a parameter "charge".',
-                        ) from error
-                    except AttributeError:
-                        # creates an interaction function if the Atom's
-                        # Coulomb interaction doesn't have one
-                        inter.function = Coulomb(value)
-                    return
-                # else if the charge has value None
-                raise ValueError("Can't set charge to None when a Coulombic interaction exists.")
-        # Executes if Coulombic interaction doesn't currently exist.
-        # Initialises an interaction unless the charge passed is None.
-        if value is not None:
-            if self.cutoff is None:
-                warnings.warn(
-                    "No cutoff was set for the Coulombic interaction of this atom."
-                    " The default cutoff of 10 Angstrom will be used. To set a cutoff,"
-                    " provide the argument cutoff=[value]"
-                    " when initialising the Atom object.",
-                )
-                self.cutoff = 10.0
-            Coulombic(atoms=self, charge=value, cutoff=self.cutoff)
 
     @property
     def mass(self) -> float:
@@ -1266,9 +1187,14 @@ class Molecule(CompositeStructure):
         position: ThreeVec | None = None,
         velocity: ThreeVec = (0, 0, 0),
         name: str | None = None,
+        target_charge: float = 0.0,
         **settings: Any,
     ):
         self._structure_list = settings["atoms"]
+        self._target_charge = target_charge
+        self._stoichiometry = Counter([atom.element.symbol for atom in self._structure_list])
+        self._initial_charge = [None for _ in self._structure_list]
+        self._fixed_charge_mask = [True for _ in self._structure_list]
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
@@ -1380,6 +1306,39 @@ class Molecule(CompositeStructure):
 
         return sum(atom.charge for atom in self.atoms if atom.charge is not None)
 
+    def set_charge(self, atom_charge_dict: dict[str, float]):
+        for at_index, atom in enumerate(self._structure_list):
+            atom.charge = atom_charge_dict[atom.name]
+            if self._initial_charge[at_index] is None:
+                self._initial_charge[at_index] = float(atom.charge)
+            else:
+                self._fixed_charge_mask = np.isclose(self._initial_charge[at_index], atom.charge)
+
+    def update_charges(
+        self, par_values: list[float], par_fixed: list[bool], element_names: list[str]
+    ):
+        rescaled_charges = {}
+        set_charges = {}
+        for par_ind, element_name in enumerate(element_names):
+            if par_fixed[par_ind]:
+                rescaled_charges[element_name] = par_values[par_ind]
+            else:
+                set_charges[element_name] = par_values[par_ind]
+        all_charges = {}
+        all_charges.update(rescaled_charges)
+        all_charges.update(set_charges)
+        total_charge = sum(
+            self._stoichiometry[element] * all_charges[element] for element in all_charges
+        )
+        difference = self._target_charge - total_charge
+        count = sum(self._stoichiometry[element] for element in rescaled_charges)
+        per_element_change = difference / count
+        for atom in self.atoms:
+            if atom.element.symbol in set_charges:
+                atom.charge = set_charges[atom.element.symbol]
+            else:
+                atom.charge = rescaled_charges[atom.element.symbol] + per_element_change
+
     def is_equivalent(self, structure: Structure) -> bool:
         return isinstance(structure, type(self)) and all(
             [
@@ -1398,6 +1357,10 @@ class Molecule(CompositeStructure):
                 ),
             ],
         )
+
+    @property
+    def indices(self) -> set[int]:
+        return set(atom.ID for atom in self.atoms)
 
 
 @repr_decorator("min", "max", "volume")

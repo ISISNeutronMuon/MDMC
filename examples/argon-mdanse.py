@@ -106,7 +106,6 @@ control = Control(
 )
 
 # Energy Minimization and equilibration
-control.minimize(n_steps=15000)
 control.equilibrate(n_steps=15000)
 
 # Run the refinement, i.e. refine the FF parameters against the data.

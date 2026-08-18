@@ -59,6 +59,7 @@ class netCDFPDF(PDFReader):
         self.extract_partial_pdf()
         # No errors detailed in nMOLDYN netCDF PDF file - replacing with zeroes
         self.PDF_err = np.zeros(len(self.file.variables["r"]))
+        self.parse_has_run = True
 
     def extract_partial_pdf(self) -> None:
         """
