@@ -12,12 +12,12 @@ jobs:
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
     - name: Setup Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.11.2'
         architecture: x64
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Install MDMC
       run: pip install .[test,docs]
     - name: Run tests

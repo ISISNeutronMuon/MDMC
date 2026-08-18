@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11.2'
           architecture: x64
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install MDMC
         run: |
           sudo apt-get install libgfortran5 -y
@@ -36,38 +36,37 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
-  basic_tests:
-    name: Non-container and not inc MD tests
+  notebooks:
+    name: Notebook test
     runs-on: ubuntu-22.04
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11.2'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v4
-    - name: pip install
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install .[all]
-    - name: Run tests
-      #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
-      run: python3 -m pytest -s $(pwd)/tests/ --ignore tests/MD/packmol --ignore=tests/system_tests --ignore=tests/test_imports.py --ignore=tests/MD/test_trajectory.py
-    - name: Uninstall
-      run: pip3 uninstall -y MDMC
+      - name: Checkout Repo
+        uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11.2'
+          architecture: x64
+      - name: Install Requirements
+        run: sudo apt-get install pandoc -y
+      - name: Install MDMC
+        run: pip install .[test,docs]
+      - name: Convert Notebooks
+        run: jupyter nbconvert --config doc/notebook-test-config.py
+      - name: Test Notebooks
+        run: pytest --nbmake --nbmake-timeout=2000 -k '.nbconvert.ipynb'
 
   documentation:
     name: Documentation
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11.2'
           architecture: x64
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Requirements
         run: apt-get update && apt-get install pandoc -y
       - name: Install MDMC
