@@ -17,11 +17,11 @@ from MDMC.resolution.resolution import Resolution
 
 from tests.test_data import data
 from tests.trajectory_analysis.test_histogram import trajectory
-from tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
+from tests.MD.test_simulation import water_OPLSAA_universe, water_molecule, \
     atom, universe
 
 @pytest.fixture
-def altered_trajectory(water_SPCE_universe):
+def altered_trajectory(water_OPLSAA_universe):
 
     """
     A list of identical configurations with different times is produced. This
@@ -32,7 +32,7 @@ def altered_trajectory(water_SPCE_universe):
     times = np.arange(0., 10., 1.)
     for time in times:
         configurations.append(trj.TemporalConfiguration(
-            time, *water_SPCE_universe.configuration.atoms))
+            time, *water_OPLSAA_universe.configuration.atoms))
     temp = ctrj.CompactTrajectory()
     temp.fromConfigs(*configurations)
     return temp

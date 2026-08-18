@@ -160,18 +160,18 @@ def test_trajectory_filter_by_type(water_trajectory):
     Arguments:
         water_trajectory -- The CompactTrajectory (fixture)
     """
-    subtraj = water_trajectory.filter_by_type([1])
+    subtraj = water_trajectory.filter_by_type(['TIP3P-O'])
     assert subtraj.n_atoms == 512
     assert len(subtraj.element_set) == 1
 
 def test_trajectory_identity_two_filters(water_trajectory):
-    """Test that filtering by atom types 1 and 2 (H1, H2),
+    """Test that filtering by atom type TIP3P-H
     and by chemical element H produces the same subtrajectory.
 
     Arguments:
         water_trajectory -- The CompactTrajectory (fixture)
     """
-    subtraj1 = water_trajectory.filter_by_type([1, 2])
+    subtraj1 = water_trajectory.filter_by_type(['TIP3P-H'])
     subtraj2 = water_trajectory.filter_by_element(['H'])
     assert subtraj1 == subtraj2
 

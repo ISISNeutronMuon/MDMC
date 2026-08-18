@@ -123,7 +123,7 @@ class CompactTrajectory:
         # and so we define them as header data, and not separately for every frame:
         self.n_atoms = n_atoms
         self.n_steps = n_steps
-        self.atom_types = []  # atom types defined as numbers, following the MD engine definition
+        self.atom_types = []  # atom types defined following the MD engine naming
         self.atom_masses = []  # atom masses, floating point numbers, one for each atom
         self.atom_charges = []  # atom charges, floating point numbers, one for each atom
         # The initial value of self.dimensions is set to a number too low to be physical,
@@ -910,13 +910,13 @@ class CompactTrajectory:
         index = np.sort(index)
         return self.subtrajectory(0, len(self), step=1, atom_filter=index)
 
-    def filter_by_type(self, types: list[int]) -> "CompactTrajectory":
+    def filter_by_type(self, types: list[int|str]) -> "CompactTrajectory":
         """
         Filter subtrajectory by atom ID.
 
         Parameters
         ----------
-        types : list[int]
+        types : list[int|str]
             A list of atom IDs.
 
         Returns

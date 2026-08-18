@@ -3,11 +3,11 @@
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
-from MDMC.MD.interaction_functions import Coulomb, LennardJones
+from MDMC.MD.interaction_functions import LennardJones
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import Atom, Molecule
-from MDMC.MD.interactions import Bond, Dispersion, Coulombic
+from MDMC.MD.interactions import Bond, Dispersion
 
 NAME = 'length'
 UNIT = Unit('Ang')
@@ -37,40 +37,6 @@ def scaled_parameter():
 
     return Parameter(UnitFloat(5 * VALUE, UNIT), NAME)
 
-@pytest.fixture
-def coulomb():
-    """
-    Returns
-    -------
-    Coulomb
-        A Coulomb InteractionFunction initialized with a charge parameter.
-    """
-
-    return Coulomb(COULOMB_CHARGE)
-
-@pytest.fixture
-def coulombic(coulomb):
-    """
-    Returns
-    -------
-    Coulombic
-        A Coulombic Interaction object, initialized with a Coulomb
-        InteractionFunction object, an empty universe, and one atom.
-    """
-
-    return Coulombic(atom_types=[1], universe=Universe(1.0, verbose=False), function=coulomb)
-
-@pytest.fixture
-def parameter_inter(parameter, coulombic):
-    """
-    Returns
-    -------
-    Parameter
-        A Parameter with a value, a name, and an interaction
-    """
-
-    parameter.interactions = coulombic
-    return parameter
 
 @pytest.fixture
 def parameters():
@@ -183,30 +149,6 @@ def test_value_setting_outside_constraints(constraints, value, parameter):
     assert parameter.value == VALUE
 
 
-def test_interaction_setting_name(parameter_inter, coulomb):
-    """
-    Tests that an error is raised when setting an interaction with a different
-    name to interactions already in Parameter.interaction
-    """
-
-    with pytest.raises(ValueError):
-        parameter_inter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
-                                              function=coulomb)
-
-
-def test_interaction_setting_function_name(parameter_inter):
-    """
-    Tests that an error is raised when setting an interaction with an
-    interaction function with a different name to the interaction functions of
-    interactions already in Parameter.interaction
-    """
-
-    with pytest.raises(ValueError):
-        parameter_inter.interactions = Coulombic(Universe(1.0, verbose=False), atom_types=[1],
-                                             function=LennardJones((1., 'arb'),
-                                                                   (1., 'arb')))
-
-
 @pytest.mark.parametrize('expression, expected', [('*2.', VALUE * 2.),
                                                   ('/2.', VALUE / 2.),
                                                   ('+2.', VALUE + 2.),
@@ -286,58 +228,6 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
 
     assert parameters.filter_value(comp, value) == expected_parameters
-
-
-@pytest.mark.parametrize('int_name, expected_slice', [('Dispersion',
-                                                       [0, None, 2]),
-                                                      ('Coulombic',
-                                                       [1, None, 2]),
-                                                      ('Bond',
-                                                       [-1, -2])])
-def test_filter_parameters_interaction(int_name, expected_slice, parameters,
-                                       coulombic):
-    """
-    Tests that filtering parameters by interaction results in the correct
-    parameters being returned
-    """
-
-    for index, parameter in enumerate(parameters.values()):
-        if index % 2:
-            parameter.interactions = coulombic
-        else:
-            parameter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
-                                            function=LennardJones((1., 'arb'),
-                                                                  (1., 'arb')))
-
-    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
-
-    assert parameters.filter_interaction(int_name) == expected_parameters
-
-
-@pytest.mark.parametrize('function_name, expected_slice', [('Coulomb',
-                                                            [0, None, 2]),
-                                                           ('LennardJones',
-                                                            [1, None, 2]),
-                                                           ('HarmonicPotential',
-                                                            [-1, -2])])
-def test_filter_parameters_function(function_name, expected_slice, parameters,
-                                    coulomb):
-    """
-    Tests that filtering parameters by interaction function results in the
-    correct number of parameters which have the correct interaction function
-    """
-
-    for index, parameter in enumerate(parameters.values()):
-        if index % 2:
-            function = LennardJones((1., 'arb'), (1., 'arb'))
-        else:
-            function = coulomb
-        parameter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
-                                        function=function)
-
-    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
-
-    assert parameters.filter_function(function_name) == expected_parameters
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")

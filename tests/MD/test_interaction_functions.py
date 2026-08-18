@@ -7,13 +7,12 @@ import pytest
 from pytest_cases import parametrize, fixture_ref
 
 from MDMC.common.units import Unit, UnitFloat
-from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
+from MDMC.MD.interaction_functions import (Buckingham,
                                            HarmonicPotential,
                                            InteractionFunction, LennardJones,
                                            Periodic)
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
-from MDMC.MD.interactions import Coulombic
 
 BUCK_A, BUCK_B, BUCK_C = 1., 2., 3.
 BUCK_A_UNIT = Unit('kJ') / Unit('mol')
@@ -79,28 +78,6 @@ def buckingham():
 
     return Buckingham(BUCK_A, BUCK_B, BUCK_C)
 
-@pytest.fixture
-def coulomb():
-    """
-    Returns
-    -------
-    Coulomb
-        A Coulomb InteractionFunction initialized with a charge parameter.
-    """
-
-    return Coulomb(COULOMB_CHARGE)
-
-@pytest.fixture
-def coulombic(coulomb):
-    """
-    Returns
-    -------
-    Coulombic
-        A Coulombic Interaction object, initialized with a Coulomb
-        InteractionFunction object, an empty universe, and one atom.
-    """
-
-    return Coulombic(atom_types=[1], universe=Universe(1.0, verbose=False), function=coulomb)
 
 @pytest.fixture
 def harmonic():
@@ -179,23 +156,9 @@ def test_interaction_function_name(interaction_func):
     assert interaction_func.name == 'InteractionFunction'
 
 
-@pytest.mark.filterwarnings("ignore: Coulombic")
-def test_interaction_function_set_parameters_inters(interaction_func, coulombic):
-    """
-    Tests that the parent interaction for all Parameters of the
-    InteractionFunction object can be set to a Coulombic Interaction object.
-    """
-
-    interaction_func.set_parameters_interactions(coulombic)
-    for parameter in interaction_func.parameters.as_array:
-        for inter in parameter.interactions:
-            assert isinstance(inter, Coulombic)
-
-
 @parametrize("obj, values, names",
                          [(fixture_ref(buckingham), [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
-                          (fixture_ref(coulomb), [COULOMB_CHARGE], ['charge']),
                           (fixture_ref(harmonic), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
                            ['equilibrium_state', 'potential_strength']),
                           (fixture_ref(lennardjones), [LJ_EPSILON, LJ_SIGMA],
@@ -217,7 +180,6 @@ def test_interaction_function_subclass_parameters(obj, values, names):
 
 @parametrize("inter_func, parameters",
                          [(fixture_ref(buckingham), ['A', 'B', 'C']),
-                          (fixture_ref(coulomb), ['charge']),
                           (fixture_ref(harmonic), ['equilibrium_state',
                                         'potential_strength']),
                           (fixture_ref(lennardjones), ['epsilon', 'sigma']),
@@ -256,10 +218,6 @@ def test_interaction_function_attributes(inter_func, parameters, request):
                            {'A':BUCK_A_UNIT,
                             'B':BUCK_B_UNIT,
                             'C':BUCK_C_UNIT}),
-                          (Coulomb(COULOMB_CHARGE),
-                           {'charge':COULOMB_CHARGE_UNIT}),
-                          (Coulomb(charge=COULOMB_CHARGE),
-                           {'charge':COULOMB_CHARGE_UNIT}),
                           (LennardJones(LJ_EPSILON, LJ_SIGMA),
                            {'epsilon':LJ_EPSILON_UNIT,
                             'sigma':LJ_SIGMA_UNIT}),

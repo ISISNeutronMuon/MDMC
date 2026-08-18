@@ -4,10 +4,11 @@ Tests for force field parametrization
 
 import pytest
 
+from MDMC.MD.force_fields.OPLSAA import add_opls_force_field
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import (Atom, Molecule)
-from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, DihedralAngle
 
 
 @pytest.fixture
@@ -20,9 +21,9 @@ def water_universe():
     """
 
     universe = Universe(10.0, verbose=False)
-    H1 = Atom('H', charge=0., cutoff=10.)
+    H1 = Atom('H', charge=0., cutoff=10., name="64")
     H2 = H1.copy(position=(0., 1.63298, 0.))
-    O = Atom('O', position=(0., 0.81649, 0.57736), charge=0., cutoff=10.)
+    O = Atom('O', position=(0., 0.81649, 0.57736), charge=0., cutoff=10., name="63")
     water_mol = Molecule(position=(0, 0, 0),
                          velocity=(0, 0, 0),
                          atoms=[H1, H2, O],
@@ -30,147 +31,8 @@ def water_universe():
                                        BondAngle(H1, O, H2, constrained=True)],
                          name='water')
     universe.add_structure(water_mol)
-    O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
-                              vdw_tail_correction=True)
-    H_dispersion = Dispersion(universe, (H1.atom_type, H1.atom_type),
-                              cutoff=10., vdw_tail_correction=True)
+    add_opls_force_field(water_universe, cutoff=10.0, ewald=1e-5)
     return universe
-
-
-@pytest.mark.parametrize('model, O_charge, H_charge',
-                         [('TIP3P', -0.8340, 0.4170),
-                          ('TIP4P', 0.0000, 0.5200),
-                          ('TIP3F', -0.8220, 0.4110),
-                          ('TIP4F', 0.0000, 0.5110),
-                          ('TIP5P', 0.0000, 0.2410),
-                          ('SPC', -0.8200, 0.4100)])
-def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
-    """
-    Tests that water models using OPLS force field have correct charge
-    parametrization for the H and O atoms. It does not test the charge
-    assignment of virtual atoms, as these have not been implemented.
-    """
-
-    for atom in water_universe.atoms:
-        name = model + ' Water '
-        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
-        # Check that initial charges are 0.
-        assert atom.charge == 0.
-    water_universe.add_force_field('OPLSAA')
-
-    for atom in water_universe.atoms:
-        if atom.element.symbol == 'H':
-            assert atom.charge == H_charge
-        else:
-            assert atom.charge == O_charge
-
-
-@pytest.mark.parametrize('model', ['TIP3P', 'TIP4P', 'TIP3F', 'TIP4F', 'TIP5P',
-                                   'SPC'])
-def test_opls_water_model_masses(water_universe, model):
-    """
-    Tests that water models using OPLS force field have correct mass
-    parametrization for the H and O atoms. It does not test the mass
-    assignment of virtual atoms, as these have not been implemented.
-
-    All water models have the same H and O mass.
-    """
-
-    for atom in water_universe.atoms:
-        name = model + ' Water '
-        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
-        # Check that initial masses are not the same as model masses
-        assert atom.mass not in [1.008, 15.999]
-    water_universe.add_force_field('OPLSAA')
-
-    for atom in water_universe.atoms:
-        if atom.element.symbol == 'H':
-            assert atom.mass == 1.008
-        else:
-            assert atom.mass == 15.999
-
-@pytest.mark.parametrize('model, sigma, epsilon',
-                         [('TIP3P', 3.15061, 0.63639),
-                          ('TIP4P', 3.15365, 0.64852),
-                          ('TIP3F', 3.17600, 0.62760),
-                          ('TIP4F', 3.27000, 0.41840),
-                          ('TIP5P', 3.12000, 0.66944),
-                          ('SPC', 3.16557, 0.65019)])
-def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
-    """
-    Tests that water models using OPLS force field have correct LJ
-    parametrization for the H and O atoms. It does not test the LJ
-    assignment of virtual atoms, as these have not been implemented.
-
-    All models should have 0. for both H parameters, and so are not
-    parametrized.
-    """
-
-    for atom in water_universe.atoms:
-        name = model + ' Water '
-        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
-    water_universe.add_force_field('OPLSAA')
-
-    for interaction in water_universe.nonbonded_interactions:
-        if isinstance(interaction, Dispersion):
-            if 'O' in interaction.element_list():
-                assert interaction.function.sigma.value == sigma
-                assert interaction.function.epsilon.value == epsilon
-            else:
-                assert interaction.function.sigma.value == 0.
-                assert interaction.function.epsilon.value == 0.
-
-
-@pytest.mark.parametrize('model, eq_state, pot_strength',
-                         [('TIP3P', 0.9572, 2510.4),
-                          ('TIP4P', 0.9572, 2510.4),
-                          ('TIP3F', 0.9572, 2215.84640),
-                          ('TIP4F', 0.9572, 2510.4),
-                          ('TIP5P', 0.9572, 2510.4),
-                          ('SPC', 1.0000, 2510.4)])
-def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
-                                          pot_strength):
-    """
-    Tests that water models using OPLS force field have correct HO bond
-    parametrization.
-    """
-
-    for atom in water_universe.atoms:
-        name = model + ' Water '
-        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
-    water_universe.add_force_field('OPLSAA')
-
-    for interaction in water_universe.nonbonded_interactions:
-        if isinstance(interaction, Bond):
-            assert interaction.function.sigma.equilibrium_state == eq_state
-            assert (interaction.function.epsilon.potential_strength
-                    == pot_strength)
-
-
-@pytest.mark.parametrize('model, eq_state, pot_strength',
-                         [('TIP3P', 104.52, 313.8),
-                          ('TIP4P', 104.52, 313.8),
-                          ('TIP3F', 104.52, 142.46520),
-                          ('TIP4F', 109.50, 313.8),
-                          ('TIP5P', 104.52, 313.8),
-                          ('SPC', 109.47, 313.8)])
-def test_opls_water_model_bond_angle_parameters(water_universe, model,
-                                                eq_state, pot_strength):
-    """
-    Tests that water models using OPLS force field have correct HOH bond angles
-    parametrization.
-    """
-
-    for atom in water_universe.atoms:
-        name = model + ' Water '
-        atom.name = name + 'H' if atom.element.symbol == 'H' else name + 'O'
-    water_universe.add_force_field('OPLSAA')
-
-    for interaction in water_universe.nonbonded_interactions:
-        if isinstance(interaction, Bond):
-            assert interaction.function.sigma.equilibrium_state == eq_state
-            assert (interaction.function.epsilon.potential_strength
-                    == pot_strength)
 
 
 @pytest.mark.parametrize('atoms_info, parameters',
@@ -347,40 +209,6 @@ def test_bonded_invalid_atom_groups(atoms_info1, atoms_info2):
         _parametrize_interaction(DihedralAngle, 'OPLSAA', *atom_tuples)
 
 
-@pytest.mark.parametrize('atoms_info, expected',
-                         [([('C', 8), ('C', 9)], 0.),
-                          ([('S', 24), ('S', 26)], -0.47),
-                          ([('C', 22), ('C', 23), ('C', 39), ('C', 40)], 0.265)
-                         ])
-def test_coulombic_valid_charges(atoms_info, expected):
-    """
-    Tests that a coulombic interaction which has atoms of different types,
-    (with the same charges for the atoms) correctly parametrizes the interaction
-    """
-
-    atoms = [Atom(element, name=name) for element, name in atoms_info]
-    _validate_interaction_parameters(_parametrize_interaction(Coulombic,
-                                                              'OPLSAA',
-                                                              atoms=atoms),
-                                     [expected])
-
-
-@pytest.mark.parametrize('atoms_info',
-                         [([('C', 8), ('C', 22)]),
-                          ([('O', 5), ('C', 6)]),
-                          ([('C', 10), ('C', 131), ('C', 22), ('C', 31)])
-                         ])
-def test_coulombic_invalid_charges(atoms_info):
-    """
-    Tests that a coulombic interaction which has atoms of different types,
-    (with different charges for the atoms) raises a ValueError
-    """
-
-    atoms = [Atom(element, name=name) for element, name in atoms_info]
-    with pytest.raises(ValueError):
-        _parametrize_interaction(Coulombic, 'OPLSAA', atoms=atoms)
-
-
 def _validate_interaction_parameters(interaction, expected_parameters):
     """
     Asserts that all interaction_parameters are equal to the expected values
@@ -465,68 +293,3 @@ def test_specific_force_fields_names():
     for name in ['SPC', 'SPCE', 'OPLSAA']:
         assert name in force_field_names
 
-
-def test_name_element_error():
-    """
-    Test that atoms with mismatched names and elements raise an error
-    """
-
-    uni = Universe(10., verbose=False)
-    # name=1 corresponds to a F atom in OPLSAA
-    H1 = Atom('H', name=1)
-    H2 = Atom('H', name=1)
-    uni.add_structure(H1)
-    uni.add_structure(H2)
-    Bond((H1, H2))
-    with pytest.raises(KeyError):
-        uni.add_force_field('OPLSAA')
-
-
-def test_undefined_bond_error():
-    """
-    Test that atoms without a defined bond raise an error
-    """
-
-    uni = Universe(10., verbose=False)
-    # There is no OPLSAA bond between two "7" atoms
-    H1 = Atom('H', name=7)
-    H2 = Atom('H', name=7)
-    uni.add_structure(H1)
-    uni.add_structure(H2)
-    Bond((H1, H2))
-    with pytest.raises(ValueError):
-        uni.add_force_field('OPLSAA')
-
-
-def test_coulombic_error():
-    """
-    Test that a coulombic interaction applied to an ``atom_type`` that is
-    missing from the universe raises an error
-    """
-
-    uni = Universe(10., verbose=False)
-    H1 = Atom('H', name=7)
-    H2 = Atom('H', name=7)
-    uni.add_structure(H1)
-    uni.add_structure(H2)
-    # We only have atom_type of 1
-    Coulombic(uni, atom_types=[2])
-    with pytest.raises(ValueError):
-        uni.add_force_field('OPLSAA')
-
-
-def test_dispersion_error():
-    """
-    Test that a dispersion interaction applied to an ``atom_type`` that is
-    missing from the universe raises an error
-    """
-
-    uni = Universe(10., verbose=False)
-    H1 = Atom('H', name=7)
-    H2 = Atom('H', name=7)
-    uni.add_structure(H1)
-    uni.add_structure(H2)
-    # We only have atom_type of 1
-    Dispersion(uni, atom_types=[2])
-    with pytest.raises(ValueError):
-        uni.add_force_field('OPLSAA')

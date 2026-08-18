@@ -88,8 +88,7 @@ def modified_docstring():
         Returns
         -------
         str
-            Replace this description with a much much much much much longer
-            description
+            Replace this description with a much much much much much longer description
         """)
 
     return mod

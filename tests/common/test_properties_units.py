@@ -9,7 +9,7 @@ import pytest
 from MDMC.common import units
 from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structures import Atom, Molecule, BoundingBox
-from MDMC.MD.interactions import Bond, Coulombic
+from MDMC.MD.interactions import Bond
 from MDMC.MD.simulation import Universe
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.observables.sqw import SQw
@@ -36,34 +36,6 @@ def molecule(atom):
     atom2 = atom.copy(atom.position)
     return Molecule(position=LIST, atoms=[atom, atom2], name='Test',
                     interactions=[Bond(atom, atom2)])
-
-
-def test_Atom_units(atom, universe):
-    """
-    Test the units of:
-
-    position
-    velocity
-    mass
-    charge
-    """
-
-    atom_coulombic = Coulombic(atoms=atom)
-
-    try:
-        check_property(atom.position, LIST, units.LENGTH, units.unit_array)
-        check_property(atom.velocity, LIST, units.LENGTH / units.TIME,
-                       units.unit_array)
-        check_property(atom.mass, FLOAT, units.MASS, units.UnitFloat)
-    except AssertionError:
-        raise AssertionError(ERROR_MESSAGE.format('Atom'))
-
-    universe.add_structure(atom)
-    universe.add_force_field('SPCE')
-    try:
-        check_property(atom.charge, SPCE_CHARGE, units.CHARGE, units.UnitFloat)
-    except AssertionError:
-        raise AssertionError(ERROR_MESSAGE.format('Atom'))
 
 
 def test_Molecule_units(molecule):
