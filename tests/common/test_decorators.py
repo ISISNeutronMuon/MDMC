@@ -73,7 +73,7 @@ def modified_docstring():
     mod['replacements'] = {'int':'float',
                            'An ':'A ',
                            'Arguments':'Parameters',
-                           'longer':'much much much much much longer'}
+                           'longer':'much much much much much much longer'}
     mod['after'] = (
         """
         This is a docstring with parts to be replaced
@@ -88,7 +88,8 @@ def modified_docstring():
         Returns
         -------
         str
-            Replace this description with a much much much much much longer description
+            Replace this description with a much much much much much much longer
+            description
         """)
 
     return mod

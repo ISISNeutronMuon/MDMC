@@ -761,7 +761,7 @@ class Control:
             if self.file_dump_frequency is DumpFreq.EVERY or (
                 self.file_dump_frequency is DumpFreq.BEST and self.minimizer.is_best_FoM()
             ):
-                if DumpExtent.TRAJ in self.file_dump_extent:
+                if DumpExtent.TRAJ in self.file_dump_extent and trj is not None:
                     self.dump_h5md(trj)
                 self.dump_observables(ObsFormat.MDA, self.file_dump_extent)
         else:
@@ -892,7 +892,7 @@ class Control:
 
         return cornerplot
 
-    def _generate_FoM(self) -> float:
+    def _generate_FoM(self) -> tuple[float, CompactTrajectory | None]:
         """
         Run the MD for an iteration/step, calculate observable, compare with
         observed and return the FoM
@@ -909,6 +909,7 @@ class Control:
             FoM_value = self.FoM_calculator.calculate()
         except MDEngineError:
             FoM_value = self.max_FoM
+            trj = None
 
         return FoM_value, trj
 
@@ -930,7 +931,7 @@ class Control:
         self,
         simulation: Simulation,
         observable_pairs: list[ObservablePair],
-    ) -> None:
+    ) -> CompactTrajectory:
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
