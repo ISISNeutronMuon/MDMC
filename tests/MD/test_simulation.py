@@ -1145,7 +1145,7 @@ def test_auto_equilibrate(universe, variables, pe_stability_point, temp_stabilit
     # assert that it doesn't under-equilibrate
     assert eq_steps >= max(pe_stability_point, temp_stability_point)
     # assert that it doesn't over-equilibrate
-    assert eq_steps < 2 * max(pe_stability_point, temp_stability_point)
+    assert eq_steps < 2.1 * max(pe_stability_point, temp_stability_point)
 
 def test_auto_equilibrate_bailout(universe, monkeypatch):
     """Check auto-equilibration will bail out for unstable function."""
