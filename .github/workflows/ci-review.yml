@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Install MDMC
         run: |
-          sudo apt-get install libgfortran5
+          sudo apt-get install libgfortran5 -y
           pip install .[all] && pip install packmol
       - name: Run tests
         working-directory: test
@@ -54,27 +54,6 @@ jobs:
     - name: Run tests
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
       run: python3 -m pytest -s $(pwd)/tests/ --ignore tests/MD/packmol --ignore=tests/system_tests --ignore=tests/test_imports.py --ignore=tests/MD/test_trajectory.py
-    - name: Uninstall
-      run: pip3 uninstall -y MDMC
-
-  windows:
-    name: Python 3.10.11 on Windows (installation check only)
-    runs-on: windows-latest
-    steps:
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10.11'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v3
-
-    - name: Install
-      run: |
-        pip3 install --upgrade pip
-        pip3 install wheel
-        pip3 install .
-
     - name: Uninstall
       run: pip3 uninstall -y MDMC
 

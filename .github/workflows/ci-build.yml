@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Install MDMC
         run: pip install .[test,docs]
+      - name: Install packmol
+        run: sudo apt-get install libgfortran5 -y && pip install packmol
       - name: Run tests
         working-directory: tests
         run: pytest

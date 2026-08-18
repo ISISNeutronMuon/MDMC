@@ -1,14 +1,82 @@
 """System tests for the Control object with a real MD engine plugged in."""
+import copy
 import logging
 import re
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from MDMC.control import Control
-from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
-from tests.control.test_control import exp_datasets, simulation
+from MDMC.MD import Atom, NonBondedForce, NonBonded, Simulation, Universe
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.trajectory_analysis.observables.sqw import SQw
+from tests.test_data import data
+
+
+@pytest.fixture(scope="module")
+def exp_datasets() -> callable:
+    """
+    Returns
+    -------
+    callable
+        A function which optionally accepts ``rescale_factor`` and
+        ``auto_scale`` of types `float` and `bool` that default to `None`, and
+        returns a `list` of `dict` that represent experimental data. Also
+        accepts ``file_name`` as a `str` which will only return datasets with
+        that file, or all datasets if not specified.
+    """
+
+    def _exp_datasets(rescale_factor: float = None,
+                      auto_scale: bool = None,
+                      use_FFT: bool = None,
+                      file_name: str = None,
+                      resolution: dict = None,
+                      abs_threshold: float = None,
+                      rel_threshold: float = None,
+                      absolute: bool = None) -> list[dict]:
+
+        datasets = []
+        for k, v in data.READER_DATA.items():
+            # 'XML_SQw' is the reader Class, but we want the module 'xml_SQw'
+            if k in ('XML_SQw','xml_SQw_2'):
+                k = 'xml_SQw'
+
+            if (file_name is not None
+                    and not re.search('{}$'.format(file_name), v)):
+                # If we have a file_name but it does not match the dataset,
+                # continue
+                continue
+
+            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.,
+                       'resolution': {'gaussian': 84}}
+            if rescale_factor:
+                dataset['rescale_factor'] = rescale_factor
+            if auto_scale is not None:
+                dataset['auto_scale'] = auto_scale
+            dataset['use_FFT'] = use_FFT is not None
+            if any(key is not None for key in (rel_threshold, abs_threshold, absolute)):
+                dataset.setdefault("filter", {})
+                # Always print removed %
+                dataset["filter"]["warn_threshold"] = -1.
+
+                if rel_threshold is not None:
+                    dataset["filter"]["rel"] = rel_threshold
+                if abs_threshold is not None:
+                    dataset["filter"]["abs"] = abs_threshold
+                if absolute is not None:
+                    dataset["filter"]["use_magnitude"] = absolute
+
+            for resolution_v in data.RESOLUTION_DATA.values():
+                if (resolution is not None
+                        and re.search('{}$'.format(resolution), resolution_v)):
+                    dataset['resolution'] = {'file': resolution_v}
+
+            datasets.append(dataset)
+
+        return datasets
+
+    return _exp_datasets
+
 
 
 pytestmark = [pytest.mark.lammps]
@@ -36,10 +104,13 @@ def argon_control(exp_datasets) -> callable:
         print(f'Number of argon atoms = {n_ar_atoms}')
         universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
-        Ar_dispersion = Dispersion(universe,
-                                (Ar.atom_type, Ar.atom_type),
-                                cutoff=8.,
-                                function=LennardJones(epsilon=values[1], sigma=values[0]))
+        NonBondedForce(
+                universe,
+                Ar.atom_type,
+                cutoff=8.0,
+                ewald=1e-6,
+                function=NonBonded(charge=0.0, epsilon=values[1], sigma=values[0])
+            )
 
         simulation = Simulation(universe,
                                 engine="openmm",
@@ -47,16 +118,37 @@ def argon_control(exp_datasets) -> callable:
                                 temperature=120.,
                                 traj_step=15)
 
-        dataset = exp_datasets(file_name=file_name)
+        datasets = exp_datasets(file_name=file_name)
+
+        obs_pairs = []
+        for dataset in datasets:
+            exp_observable = SQw()
+            exp_observable.read_from_file("xml_SQw", data._EXP_DATA_PATH / file_name)
+            md_observable = SQw()
+            md_observable.origin = "MD"
+            for obs in {exp_observable, md_observable}:
+                obs.name = "SQw"
+            md_observable.independent_variables = copy.deepcopy(exp_observable.independent_variables)
+            md_observable.use_FFT = dataset['use_FFT']
+
+            observable_pair = ObservablePair(
+                exp_obs=exp_observable,
+                MD_obs=md_observable,
+                weight=dataset["weight"],
+                rescale_factor=dataset.get("rescale_factor", 1), auto_scale=True
+            )
+            obs_pairs.append(observable_pair)
+
         fit_parameters = universe.parameters
 
         fit_parameters['sigma'].constraints = constraints[0]
         fit_parameters['epsilon'].constraints = constraints[1]
 
         control = Control(simulation=simulation,
-                    exp_datasets=dataset,
+                    exp_datasets=datasets,
                     fit_parameters=fit_parameters,
-                    minimizer_type="GPO",
+                    observable_pairs=obs_pairs,
+                    minimizer_type="CMAES",
                     reset_config=True,
                     MD_steps=4000,
                     equilibration_steps=4000,
@@ -109,7 +201,7 @@ def test_control_q_value_trimming_warning(argon_control, caplog):
                                 (2.0, 3.0),
                                 (3.0,4.0),
                                 (4.0,5.0),])
-def test_control_bad_params(argon_control, simulation, eps, sig):
+def test_control_bad_params(argon_control, eps, sig):
     """
     Tests that given a set of bad parameters (which crash the refinement), the equilibration
     and production runs handle this.

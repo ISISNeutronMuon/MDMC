@@ -8,58 +8,6 @@ on:
 
 # note that the workflow will be triggered whenever a PR is closed, but the "if:" line of the job means the job will only run if it is closed due to merge
 jobs:
-  changes:
-    name: Check for Docker changes
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
-    # Required permissions
-    permissions:
-      pull-requests: read
-    # Set job outputs to values from filter step
-    outputs:
-      docker_change: ${{ steps.filter.outputs.docker }}
-    steps:
-    - uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          docker:
-            - 'build/Docker/Dockerfile.engines'
-            - 'build/Docker/Dockerfile.mdmc'
-            - 'pyproject.toml'
-
-  update-latest-image:
-    name: Update Docker image
-    needs: changes
-    if: ${{ github.event.pull_request.merged == true && needs.changes.outputs.docker_change == 'true' }}
-    # just need an env that include docker, here picked:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Login to Docker
-      env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      run: echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
-
-    - name: Update frontend image for Python modules
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        BRANCH="${BRANCH//\//-}"
-        # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
-        docker pull mdmc/mdmc:ci-$BRANCH || exit 0
-        docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
-        docker push mdmc/mdmc:latest
-
-    - name: Update backend image for MD engines
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        BRANCH="${BRANCH//\//-}"
-        # If no image (mdmc/engines:ci-$BRANCH) was created for this PR, just exit as a success
-        docker pull mdmc/engines:ci-$BRANCH || exit 0
-        docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest
-        docker push mdmc/engines:latest
-
   update-master-profiling:
     name: Update master profiling data
     if: github.event.pull_request.merged == true
@@ -84,13 +32,17 @@ jobs:
 
   doc-deploy:
     name: Documentation-deploy
-    needs: update-latest-image
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
     - name: Build documentation
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install .[docs] && sphinx-apidoc $(pwd)/MDMC -o $(pwd)/doc/reference/api/ && make -d -C $(pwd)/doc html"
+      run: |
+        sudo apt-get update
+        sudo apt-get install pandoc -y
+        pip3 install .[docs]
+        sphinx-apidoc MDMC -o doc/reference/api/
+        make -d -C doc html
     - name: Deploy
       env:
         token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
@@ -103,14 +55,3 @@ jobs:
         git commit -a -m "CI deployment"
         git merge -X ours master
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
-
-  prune-images:
-    name: Prune Old Docker Hub Images
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Prune images
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: source .github/scripts/prune_docker_hub.sh
