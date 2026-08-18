@@ -139,7 +139,6 @@ def run_everything():
         conv_tol=1e-6,
     )
 
-    control.minimize(n_steps=15000)
     control.equilibrate(n_steps=45000)
 
     # Run refinement
