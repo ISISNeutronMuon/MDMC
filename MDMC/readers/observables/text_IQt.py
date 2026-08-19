@@ -138,7 +138,7 @@ class text_IQt:
             self._errors[self.variable_name] = error_array
         else:
             self._errors[self.variable_name] = np.sqrt(data_array)
-        self.finished_reading = True
+        self.parse_has_run = True
 
     @property
     def independent_variables(self) -> dict:
