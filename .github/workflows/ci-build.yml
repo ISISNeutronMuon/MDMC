@@ -31,6 +31,26 @@ jobs:
         working-directory: tests
         run: pytest
 
+  notebooks:
+    name: Notebook test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11.2'
+          architecture: x64
+      - name: Install Requirements
+        run: sudo apt-get install pandoc -y
+      - name: Install MDMC
+        run: pip install .[test,docs]
+      - name: Convert Notebooks
+        run: jupyter nbconvert --config doc/notebook-test-config.py
+      - name: Test Notebooks
+        run: pytest --nbmake --nbmake-timeout=300 -k '.nbconvert.ipynb'
+
   linting:
     name: Lint - ${{ matrix.type }}
     strategy:
