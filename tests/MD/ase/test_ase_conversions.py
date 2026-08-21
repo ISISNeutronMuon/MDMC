@@ -8,7 +8,7 @@ from pytest_cases import parametrize, fixture_ref
 
 from MDMC.MD.ase import convert
 from MDMC.MD.structures import Atom, Molecule
-from MDMC.MD.interactions import Coulombic, Bond, BondAngle, DihedralAngle
+from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle
 
 
 FORMULA = 'C8H4O2'
@@ -21,8 +21,6 @@ def water():
     H1 = Atom('H')
     H2 = Atom('H', position=(0., 1.63298, 0.))
     O = Atom('O', position=(0., 0.81649, 0.57736))
-    H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
-    O_coulombic = Coulombic(atoms=O, cutoff=10.)
     water_mol = Molecule(position=(0, 0, 0),
                          velocity=(0, 0, 0),
                          atoms=[H1, H2, O],

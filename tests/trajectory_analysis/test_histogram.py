@@ -8,7 +8,7 @@ import MDMC.trajectory_analysis.trajectory as trj
 import MDMC.trajectory_analysis.compact_trajectory as ctrj
 
 from tests.MD.test_simulation import universe, atom, water_molecule, \
-    water_SPCE_universe, UNIVERSE_DIMENSIONS
+    water_OPLSAA_universe, UNIVERSE_DIMENSIONS
 
 R_AXIS = [0., 20., 0.5]
 T_AXIS = [0., 5., 1.0]
@@ -19,20 +19,20 @@ TRAJ_TIME_STEP = 0.5
 TIMES = np.arange(TRAJ_TIME_START, TRAJ_TIME_END, TRAJ_TIME_STEP)
 
 @pytest.fixture
-def configuration(water_SPCE_universe):
-    return trj.TemporalConfiguration(0., *water_SPCE_universe.atoms)
+def configuration(water_OPLSAA_universe):
+    return trj.TemporalConfiguration(0., *water_OPLSAA_universe.atoms)
 
 @pytest.fixture
-def trajectory(water_SPCE_universe):
+def trajectory(water_OPLSAA_universe):
 
     """
     A list of identical configurations with different times is produced. This
     is passed to Trajectory.
     """
     
-    n_atoms = len(water_SPCE_universe.configuration.atoms)
+    n_atoms = len(water_OPLSAA_universe.configuration.atoms)
     n_steps = len(TIMES)
-    temp_traj = ctrj.configurations_as_compact_trajectory(*[water_SPCE_universe.configuration])
+    temp_traj = ctrj.configurations_as_compact_trajectory(*[water_OPLSAA_universe.configuration])
     traj = ctrj.CompactTrajectory(n_steps, n_atoms)
     for step_num, time in enumerate(TIMES):
         traj.writeOneStep(step_num= step_num,

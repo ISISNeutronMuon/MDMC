@@ -28,16 +28,9 @@ from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import dlpoly.control
 import numpy as np
 from ase import Atom, Atoms
 from ase.io import write
-from dlpoly import DLPoly
-from dlpoly.config import Config
-from dlpoly.field import Bond, Field, Molecule, Potential
-from dlpoly.new_control import NewControl as DLPControl
-from dlpoly.species import Species
-from dlpoly.utility import next_file
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
@@ -54,6 +47,16 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
+try:
+    import dlpoly.control
+    from dlpoly import DLPoly
+    from dlpoly.config import Config
+    from dlpoly.field import Bond, Field, Molecule, Potential
+    from dlpoly.new_control import NewControl as DLPControl
+    from dlpoly.species import Species
+    from dlpoly.utility import next_file
+except (ModuleNotFoundError, ImportError):
+    LOGGER.warning("DL_POLY engine is not available")
 
 # mapping from the MDMC class names to names within DLPOLY
 POTENTIAL_REF = {

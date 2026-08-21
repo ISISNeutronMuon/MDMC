@@ -52,15 +52,6 @@ from typing import Any
 
 import numpy as np
 
-try:
-    from lammps import PyLammps
-except ModuleNotFoundError as err:
-    raise ModuleNotFoundError(
-        "The Python interface for LAMMPS (lammps.py) is"
-        " not in the PYTHONPATH. See LAMMPS documentation"
-        " on Python to rectify this.",
-    ) from err
-
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator, unit_decorator_getter
 from MDMC.common.units import Unit
@@ -80,6 +71,11 @@ from MDMC.utilities.partitioning import partition, partition_interactions
 LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=too-many-lines,possibly-used-before-assignment
+
+try:
+    from lammps import PyLammps
+except (ModuleNotFoundError, ImportError):
+    LOGGER.warning("LAMMPS engine is not available")
 
 
 class PyLammpsAttribute:

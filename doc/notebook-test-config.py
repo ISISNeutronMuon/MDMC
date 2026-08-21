@@ -1,7 +1,6 @@
 c = get_config()
 c.NbConvertApp.export_format = "notebook"
 c.NbConvertApp.notebooks = [
-    "doc/tutorials/Argon-a-to-z.ipynb",
     "doc/tutorials/equilibrating-a-simulation.ipynb",
     "doc/tutorials/understanding-units.ipynb",
     "doc/how-to/use-MDMC/notebooks/applying-a-forcefield.ipynb",

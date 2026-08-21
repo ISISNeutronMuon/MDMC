@@ -106,6 +106,7 @@ class OpenMMEngine(MDEngine):
         **settings
             Some settings which are used to set up the openmm engine.
         """
+        self.real_atom = []
         self.universe = universe
         self.openmm_system = mm.System()
         self.nonbonded_scaling = settings.get("openmm_nonbonded_scaling", self.nonbonded_scaling)

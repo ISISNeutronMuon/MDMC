@@ -123,7 +123,7 @@ class CompactTrajectory:
         # and so we define them as header data, and not separately for every frame:
         self.n_atoms = n_atoms
         self.n_steps = n_steps
-        self.atom_types = []  # atom types defined as numbers, following the MD engine definition
+        self.atom_types = []  # atom types defined following the MD engine naming
         self.atom_masses = []  # atom masses, floating point numbers, one for each atom
         self.atom_charges = []  # atom charges, floating point numbers, one for each atom
         # The initial value of self.dimensions is set to a number too low to be physical,
@@ -826,7 +826,7 @@ class CompactTrajectory:
             temp.changing_dimensions = self.changing_dimensions[start:stop:step, :]
             if self.velocity is not None:
                 temp.velocity = self.velocity[start:stop:step, atom_filter, :]
-            temp.atom_types = self.atom_types[atom_filter]
+            temp.atom_types = [self.atom_types[x] for x in atom_filter]
             temp.n_atoms = len(temp.atom_types)
             temp.atom_charges = self.atom_charges[atom_filter]
             temp.atom_masses = self.atom_masses[atom_filter]
@@ -910,13 +910,13 @@ class CompactTrajectory:
         index = np.sort(index)
         return self.subtrajectory(0, len(self), step=1, atom_filter=index)
 
-    def filter_by_type(self, types: list[int]) -> "CompactTrajectory":
+    def filter_by_type(self, types: list[int | str]) -> "CompactTrajectory":
         """
         Filter subtrajectory by atom ID.
 
         Parameters
         ----------
-        types : list[int]
+        types : list[int|str]
             A list of atom IDs.
 
         Returns
@@ -925,14 +925,9 @@ class CompactTrajectory:
             A ``CompactTrajectory`` containing only the atoms of
             the specified type.
         """
-        indices = []
-        for atom_type in types:
-            if atom_type in self.atom_types:
-                index = np.where(self.atom_types == atom_type)[0].ravel()
-                indices.append(index)
-        index = np.concatenate(indices)
-        index = np.sort(index)
-        return self.subtrajectory(0, len(self), step=1, atom_filter=index)
+        type_set = {x for x in types}
+        indices = [ind for ind, at_type in enumerate(self.atom_types) if at_type in type_set]
+        return self.subtrajectory(0, len(self), step=1, atom_filter=indices)
 
     def exportAtom(self, step_number: int = 0, atom_number: int = 0):
         """
