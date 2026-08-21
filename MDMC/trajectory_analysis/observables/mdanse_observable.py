@@ -59,7 +59,13 @@ else:
     MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.available_classes()
 
 
-def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, **parameters):
+def run_ndtsf_special_case(
+    MD_input,
+    file_path: Path | None = None,
+    verbose=0,
+    override_dataset: str | None = None,
+    **parameters,
+):
     """Evaluate the function using the current parameter values.
 
     Gets the current values of parameters from trajectory attributes.
@@ -110,7 +116,11 @@ def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, *
     job_instance.setup(settings)
     job_instance.run(settings, status=True)
     results = job_instance.results
-    main_name, axes_names = find_main_result(results)
+    if override_dataset is None:
+        main_name, axes_names = find_main_result(results)
+    else:
+        main_name = override_dataset
+        axes_names = results[main_name].attrs["axis"].split("|")
     dependent_variables = {"SQw": results[main_name][:]}
     independent_variables = {name.split("/")[-1]: results[name][:] for name in axes_names}
     for axis_name in independent_variables:
@@ -196,7 +206,7 @@ def find_main_result(data_structure: h5py.File) -> tuple[str, list[str]]:
 class MDANSEObservable(Observable):
     """Runs a specific MDANSE analysis on the input trajectory."""
 
-    def __init__(self, mdanse_job_type: str):
+    def __init__(self, mdanse_job_type: str, pick_dataset: str | None = None):
         super().__init__()
         self._name = "MDANSE"
         self.job_type = job_aliases.get(mdanse_job_type, mdanse_job_type)
@@ -206,6 +216,7 @@ class MDANSEObservable(Observable):
         self._dependent_variables = None
         self._errors = None
         self._q_shells = []
+        self._override_dataset = pick_dataset
 
     @property
     def independent_variables(self):
@@ -263,6 +274,7 @@ class MDANSEObservable(Observable):
                 MD_input,
                 file_path=file_path,
                 verbose=verbose,
+                override_dataset=self._override_dataset,
                 q_shells=self._q_shells,
                 **self.job_settings,
             )
@@ -282,7 +294,11 @@ class MDANSEObservable(Observable):
         self.job_instance.setup(settings)
         self.job_instance.run(settings, status=True)
         results = self.job_instance.results
-        main_name, axes_names = find_main_result(results)
+        if self._override_dataset is None:
+            main_name, axes_names = find_main_result(results)
+        else:
+            main_name = self._override_dataset
+            axes_names = results[main_name].attrs["axis"].split("|")
         self._dependent_variables = {self.job_type: results[main_name][:]}
         self._independent_variables = {name.split("/")[-1]: results[name][:] for name in axes_names}
         self._errors = {self.job_type: [np.sqrt(self._dependent_variables[self.job_type][0])]}

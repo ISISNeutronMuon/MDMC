@@ -4,3 +4,4 @@ Citations to data in this directory:
 * Well_s_q_omega_Ar_data : van Well et al. (1985). Physical Review A, 31(5), 3391-3414
 * iris70429_graphite002_red : TODO cite data once published, the Mantid data file was provided by Jeff Armstrong
 * IRIS_26176_water_data.dat : water data measured on IRIS spectrometer at ISIS @280K , provided by S Howells
+* irs409XX_fqt__spec_X.asc : di-propylene glycol methylether in water, one spectrum per Q, provided by Jan Swenson (from https://doi.org/10.1063/1.3515958)
