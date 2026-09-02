@@ -914,7 +914,9 @@ class CompactTrajectoryReporter:
             time=time,
             positions=np.array(positions)[self.real_atom],
         )
-        self.compact_trajectory.setDimensions(np.array([a, b, c]), step_num=step)
+        self.compact_trajectory.setDimensions(
+            np.array([a, b, c]), step_num=step // self.report_interval
+        )
 
     def describeNextReport(self, simulation: Simulation):
         steps = self.report_interval - simulation.currentStep % self.report_interval

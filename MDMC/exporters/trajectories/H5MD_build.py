@@ -159,10 +159,9 @@ def create_box_data(open_file: h5py.File, trajectory: CompactTrajectory):
         A pre-opened file that the data is being written into
     """
     box_group = open_file[f"{ROOT_TRAJECTORY}/box"]
-    box_group.attrs["dimensions"] = len(trajectory.dimensions)
-    if trajectory.is_fixedbox:
-        boundary = ["periodic" for _ in trajectory.dimensions]  # MDMC assumes periodic
-        box_group.attrs["boundary"] = boundary
+    box_group.attrs["dimension"] = len(trajectory.dimensions)
+    boundary = ["periodic" for _ in trajectory.dimensions]  # MDMC assumes periodic
+    box_group.attrs["boundary"] = boundary
 
 
 def create_parameter_data(open_file: h5py.File, data: np.ndarray):
@@ -274,15 +273,26 @@ def write_H5MD(
                 time_offset,
                 step_offset,
             ],
-            "box/edges": [
+        }
+        if trajectory.is_fixedbox:
+            simulation_data["box/edges"] = [
                 trajectory.dimensions,
                 trajectory.position_unit,
                 time_increment,
                 step_increment,
                 time_offset,
                 step_offset,
-            ],
-        }
+            ]
+        else:
+            simulation_data["box/edges"] = [
+                trajectory.changing_dimensions,
+                trajectory.position_unit,
+                time_increment,
+                step_increment,
+                time_offset,
+                step_offset,
+            ]
+
         if trajectory.has_velocity:
             simulation_data["velocity"] = [
                 trajectory.velocity,

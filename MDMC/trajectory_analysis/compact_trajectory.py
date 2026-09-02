@@ -531,20 +531,10 @@ class CompactTrajectory:
         if np.all(np.abs(self.dimensions - 0.1) < 1e-5):
             self.dimensions = frame_dimensions
             self.changing_dimensions[0] = frame_dimensions
-        elif np.allclose(frame_dimensions, self.dimensions, rtol=1e-6, atol=1e-4):
-            # If the new dimensions are the same as the current ones, we do nothing.
-            pass
         else:
-            self.is_fixedbox = False  # the dimensions of the box DO change in this trajectory!
             # we save the dimensions
             self.changing_dimensions[step_num] = frame_dimensions
             # per simulation step now.
-            self.dimensions = self.changing_dimensions[self.first_index : self.last_index + 1].mean(
-                0,
-            )
-            # ^^^^^^^^^^^^^
-            # now that we have discovered that the dimensions change,
-            # we use the mean value over time as the dimensions parameter.
 
     def writeOneStep(
         self,
@@ -750,6 +740,16 @@ class CompactTrajectory:
             ]
             self.first_index = 0
             self.last_index = len(self.position) - 1
+            dim_spread = np.std(self.changing_dimensions, axis=0)
+            if np.allclose(dim_spread, 0.0):
+                self.is_fixedbox = True
+            else:
+                self.is_fixedbox = False
+                self.dimensions = self.changing_dimensions[
+                    self.first_index : self.last_index + 1
+                ].mean(
+                    0,
+                )
             self.is_populated = True
 
     def subtrajectory(
