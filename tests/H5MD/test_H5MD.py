@@ -115,7 +115,7 @@ def test_read_n_steps(open_file, trajectory):
 def test_read_dimensions(open_file, trajectory):
     """Tests that the box dimensions stored in the H5MD file are the same as the trajectory."""
     expected_dimensions = len(trajectory.dimensions)
-    h5md_dimensions = H5MD_reader.read_box_property(open_file, "dimensions")
+    h5md_dimensions = H5MD_reader.read_box_property(open_file, "dimension")
     assert np.array_equal(expected_dimensions, h5md_dimensions)
 
 def test_read_time(open_file, trajectory):

@@ -202,7 +202,7 @@ def read_all_data(filename: str) -> dict:
             "mass": read_dataset(file, "mass"),
             "species": read_dataset(file, "species"),
             "no_steps": read_number_steps(file),
-            "box_dimension": read_box_property(file, "dimensions"),
+            "box_dimension": read_box_property(file, "dimension"),
             "box_boundary": read_box_property(file, "boundary"),
             "charge": read_dataset(file, "charge"),
             "atom_symbol": read_dataset(file, "atom_symbols"),
