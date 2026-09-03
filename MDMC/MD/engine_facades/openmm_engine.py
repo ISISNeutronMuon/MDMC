@@ -449,26 +449,26 @@ class OpenMMEngine(MDEngine):
         mm.CompoundIntegrator
             The OpenMM CompoundIntegrator.
         """
-        temperature = self.temperature * unit.kelvin
         time_step = float(self.time_step) * unit.femtoseconds
         compound_integrator = mm.CompoundIntegrator()
 
         for settings in self.openmm_ensembles:
+            temp = settings.get("temperature", self.temperature) * unit.kelvin
             integrator = settings["integrator"].lower()
             if integrator == "verlet":
                 compound_integrator.addIntegrator(mm.VerletIntegrator(time_step))
             elif integrator == "langevin":
                 compound_integrator.addIntegrator(
-                    mm.LangevinIntegrator(temperature, settings["frictionCoeff"], time_step)
+                    mm.LangevinIntegrator(temp, settings["frictionCoeff"], time_step)
                 )
             elif integrator == "langevinmiddle":
                 compound_integrator.addIntegrator(
-                    mm.LangevinMiddleIntegrator(temperature, settings["frictionCoeff"], time_step)
+                    mm.LangevinMiddleIntegrator(temp, settings["frictionCoeff"], time_step)
                 )
             elif integrator == "nosehoover":
                 compound_integrator.addIntegrator(
                     mm.NoseHooverIntegrator(
-                        temperature,
+                        temp,
                         settings["collisionFrequency"],
                         time_step,
                         settings.get("chainLength", 3),
@@ -481,32 +481,35 @@ class OpenMMEngine(MDEngine):
 
         return compound_integrator
 
-    def add_barostat(self, settings: dict):
+    def add_barostat(self, settings: dict, temperature: float | None = None):
         """Add a barostat.
 
         Parameters
         ----------
         settings : dict
             A dictionary of barostat settings.
+        temperature : float | None
+            Barostat temperature (Kelvin). If None, use the simulation settings.
         """
         name = settings["barostat"].lower()
+        temp = temperature if temperature is not None else self.temperature
         if name == "montecarloflexible":
             barostat = mm.MonteCarloFlexibleBarostat(
                 settings["defaultPressure"],
-                self.temperature * unit.kelvin,
+                temp * unit.kelvin,
                 settings.get("frequency", 25),
                 settings.get("scaleMoleculesAsRigid", True),
             )
         elif name == "montecarlo":
             barostat = mm.MonteCarloBarostat(
                 settings["defaultPressure"],
-                self.temperature * unit.kelvin,
+                temp * unit.kelvin,
                 settings.get("frequency", 25),
             )
         elif name == "montecarloanisotropic":
             barostat = mm.MonteCarloAnisotropicBarostat(
                 settings["defaultPressure"],
-                self.temperature * unit.kelvin,
+                temp * unit.kelvin,
                 settings.get("scaleX", True),
                 settings.get("scaleY", True),
                 settings.get("scaleZ", True),
@@ -599,7 +602,9 @@ class OpenMMEngine(MDEngine):
                     self.openmm_simulation.context.getIntegrator().setCurrentIntegrator(i)
 
                     if "barostat" in settings:
-                        self.add_barostat(settings["barostat"])
+                        self.add_barostat(
+                            settings["barostat"], temperature=settings.get("temperature")
+                        )
 
                     n_steps = settings.get("n_steps", n_steps)
                     if isinstance(n_steps, int):
@@ -619,7 +624,7 @@ class OpenMMEngine(MDEngine):
         else:
             settings = self.openmm_ensembles[-1]
             if "barostat" in settings:
-                self.add_barostat(settings["barostat"])
+                self.add_barostat(settings["barostat"], temperature=settings.get("temperature"))
 
             self.compact_trajectory = CompactTrajectory()
             self.compact_trajectory.preAllocate(n_steps=n_steps, n_atoms=sum(self.real_atom))
@@ -912,7 +917,9 @@ class CompactTrajectoryReporter:
             time=time,
             positions=np.array(positions)[self.real_atom],
         )
-        self.compact_trajectory.setDimensions(np.array([a, b, c]), step_num=step)
+        self.compact_trajectory.setDimensions(
+            np.array([a, b, c]), step_num=step // self.report_interval
+        )
 
     def describeNextReport(self, simulation: Simulation):
         steps = self.report_interval - simulation.currentStep % self.report_interval
