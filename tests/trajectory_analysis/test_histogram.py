@@ -38,6 +38,7 @@ def trajectory(water_SPCE_universe):
         traj.writeOneStep(step_num= step_num,
                           time= time,
                           positions= temp_traj.position[0])
+        traj.setDimensions(temp_traj.dimensions, step_num=step_num)
     return traj
 
 def test_configuration(configuration):
