@@ -480,13 +480,15 @@ class OpenMMEngine(MDEngine):
 
         return compound_integrator
 
-    def add_barostat(self, settings: dict, temperature=None):
+    def add_barostat(self, settings: dict, temperature: float | None = None):
         """Add a barostat.
 
         Parameters
         ----------
         settings : dict
             A dictionary of barostat settings.
+        temperature : float | None
+            Barostat temperature (Kelvin). If None, use the simulation settings.
         """
         name = settings["barostat"].lower()
         temp = temperature if temperature is not None else self.temperature
