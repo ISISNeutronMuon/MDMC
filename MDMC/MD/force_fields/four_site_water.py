@@ -111,9 +111,18 @@ class FourSiteWater(Molecule):
         hoh = PARAMETERS[model_name]["HOH"]
         x = oh * np.cos(np.deg2rad(90 - hoh / 2))
         y = oh * np.sin(np.deg2rad(90 - hoh / 2))
-        H1 = Atom(elements[0], position=(x, y, 0.0), atom_type=f"{model_name}-H")
-        H2 = Atom(elements[0], position=(-x, y, 0.0), atom_type=f"{model_name}-H")
-        O1 = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type=f"{model_name}-O")
+        H1 = Atom(
+            elements[0], position=(x, y, 0.0), atom_type=f"{model_name}-H", name=f"{model_name}-H"
+        )
+        H2 = Atom(
+            elements[0], position=(-x, y, 0.0), atom_type=f"{model_name}-H", name=f"{model_name}-H"
+        )
+        O1 = Atom(
+            elements[1],
+            position=(0.0, 0.0, 0.0),
+            atom_type=f"{model_name}-O",
+            name=f"{model_name}-O",
+        )
 
         om = PARAMETERS[model_name]["OM"]
         w_H = om / (2 * y)
@@ -122,6 +131,7 @@ class FourSiteWater(Molecule):
             particles=(O1, H1, H2),
             weights=[w_O, w_H, w_H],
             atom_type=f"{model_name}-M",
+            name=f"{model_name}-M",
         )
         settings = {
             "position": (0, 0, 0),
@@ -186,7 +196,7 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
     nonbonded.function.charge.parameter_name = f"{model_name}-O-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-O-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-O-nonbonded_sigma"
-    universe.set_atom_charge(atom_name="O", charge=0, elements=["O"], molecules=[model_name])
+    universe.set_atom_charge(atom_name=f"{model_name}-O", charge=0)
 
     nonbonded = NonBondedForce(
         universe,
@@ -200,7 +210,7 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
     nonbonded.function.charge.parameter_name = f"{model_name}-H-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-H-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-H-nonbonded_sigma"
-    universe.set_atom_charge(atom_name="H", charge=q_H, elements=["H"], molecules=[model_name])
+    universe.set_atom_charge(atom_name=f"{model_name}-H", charge=q_H)
 
     nonbonded = NonBondedForce(
         universe,
@@ -214,7 +224,7 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
     nonbonded.function.charge.parameter_name = f"{model_name}-M-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-M-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-M-nonbonded_sigma"
-    universe.set_atom_charge(atom_name="M", charge=q_M, elements=["M"], molecules=[model_name])
+    universe.set_atom_charge(atom_name=f"{model_name}-M", charge=q_M)
 
     harmonicbond = HarmonicPotential(
         equilibrium_state=r_OH,
@@ -243,7 +253,7 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
     for interaction in universe.interactions:
         if isinstance(interaction, Bond):
             atm_i, atm_j = interaction.atoms[0]
-            atm_types = sorted((atm_i.atom_type, atm_j.atom_type))
+            atm_types = sorted((atm_i.name, atm_j.name))
             if atm_types == [f"{model_name}-H", f"{model_name}-O"]:
                 interaction.function = harmonicbond
             elif atm_types == [f"{model_name}-H", f"{model_name}-M"] or atm_types == [
@@ -254,7 +264,7 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
                 interaction.function = DummyInteractionFunction()
         elif isinstance(interaction, BondAngle):
             atm_i, atm_j, atm_k = interaction.atoms[0]
-            if sorted((atm_i.atom_type, atm_j.atom_type, atm_k.atom_type)) == [
+            if sorted((atm_i.name, atm_j.name, atm_k.name)) == [
                 f"{model_name}-H",
                 f"{model_name}-H",
                 f"{model_name}-O",
