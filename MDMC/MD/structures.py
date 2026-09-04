@@ -1105,7 +1105,7 @@ class Atom(Structure):
 
 class DummyElement:
     mass = 0.0
-    symbol = "X"
+    symbol = "M"
 
 
 class AverageSite3P(Atom):
