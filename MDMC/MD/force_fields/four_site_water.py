@@ -96,7 +96,7 @@ class FourSiteWater(Molecule):
 
     def __init__(
         self,
-        elements: tuple[str, str, str] = ("H", "O", "X"),
+        elements: tuple[str, str, str] = ("H", "O", "M"),
         model_name: str = "TIP4P",
         **settings: Any,
     ):

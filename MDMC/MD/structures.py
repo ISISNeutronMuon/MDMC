@@ -1138,7 +1138,7 @@ class AverageSite3P(Atom):
     ):
         self.universe = None
 
-        Structure.__init__(self, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), name=settings.get("name", "X"))
+        Structure.__init__(self, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), name=settings.get("name", "M"))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
 
