@@ -1104,7 +1104,6 @@ class Atom(Structure):
 
 
 class DummyElement:
-
     def __init__(self, mass=0.0, symbol="M"):
         """Dummy element object.
 
