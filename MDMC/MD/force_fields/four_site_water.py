@@ -128,6 +128,7 @@ class FourSiteWater(Molecule):
         w_H = om / (2 * y)
         w_O = 1 - 2 * w_H
         M = AverageSite3P(
+            elements[2],
             particles=(O1, H1, H2),
             weights=[w_O, w_H, w_H],
             atom_type=f"{model_name}-M",
