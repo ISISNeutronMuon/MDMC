@@ -1347,10 +1347,10 @@ class Molecule(CompositeStructure):
         count = sum(self._stoichiometry[element] for element in rescaled_charges)
         per_element_change = difference / count
         for atom in self.atoms:
-            if atom.element.symbol in set_charges:
-                atom.charge = set_charges[atom.element.symbol]
+            if atom.name in set_charges:
+                atom.charge = set_charges[atom.name]
             else:
-                atom.charge = rescaled_charges[atom.element.symbol] + per_element_change
+                atom.charge = rescaled_charges[atom.name] + per_element_change
 
     def is_equivalent(self, structure: Structure) -> bool:
         return isinstance(structure, type(self)) and all(

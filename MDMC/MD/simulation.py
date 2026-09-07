@@ -1030,13 +1030,13 @@ class Universe(AtomContainer):
             new_values = [
                 float(par.original_value) if par.fixed else par.value for par in temp_parameters
             ]
-            element_names = [par.elements[0] for par in temp_parameters]
-            molecule.update_charges(new_values, fixed_status, element_names)
+            atom_names = [par.atom_names[0] for par in temp_parameters]
+            molecule.update_charges(new_values, fixed_status, atom_names)
             all_indices -= molecule.indices
         for atom in self.atoms:
             if atom.ID not in all_indices:
                 continue
-            temp_parameters = charge_parameters.filter_element(atom.element).values()
+            temp_parameters = charge_parameters.filter_name(atom.name).values()
             if len(temp_parameters) > 1:
                 for par in temp_parameters:
                     if par.molecules:

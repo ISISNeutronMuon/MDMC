@@ -78,11 +78,13 @@ class InteractionFunction:
         parameters = Parameters()
         elements = val_dict.get("elements", [])
         molecules = val_dict.get("molecules", [])
+        atom_names = val_dict.get("atom_names", [])
         for name, value in val_dict.items():
             if name not in excluded:
                 parameter = Parameter(value, name, role=guess_parameter_role(name))
                 parameter.elements = elements
                 parameter.molecules = molecules
+                parameter.atom_names = atom_names
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
                 setattr(self, parameter.type, parameter)
