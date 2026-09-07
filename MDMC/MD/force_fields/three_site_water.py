@@ -83,9 +83,18 @@ class ThreeSiteWater(Molecule):
         hoh = PARAMETERS[model_name]["HOH"]
         x = oh * np.cos(np.deg2rad(90 - hoh / 2))
         y = oh * np.sin(np.deg2rad(90 - hoh / 2))
-        H1 = Atom(elements[0], position=(x, y, 0.0), atom_type=f"{model_name}-H")
-        H2 = Atom(elements[0], position=(-x, y, 0.0), atom_type=f"{model_name}-H")
-        O1 = Atom(elements[1], position=(0.0, 0.0, 0.0), atom_type=f"{model_name}-O")
+        H1 = Atom(
+            elements[0], position=(x, y, 0.0), atom_type=f"{model_name}-H", name=f"{model_name}-H"
+        )
+        H2 = Atom(
+            elements[0], position=(-x, y, 0.0), atom_type=f"{model_name}-H", name=f"{model_name}-H"
+        )
+        O1 = Atom(
+            elements[1],
+            position=(0.0, 0.0, 0.0),
+            atom_type=f"{model_name}-O",
+            name=f"{model_name}-O",
+        )
         settings = {
             "position": (0, 0, 0),
             "atoms": [H1, H2, O1],
@@ -195,11 +204,11 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
     for interaction in universe.interactions:
         if isinstance(interaction, Bond):
             atm_i, atm_j = interaction.atoms[0]
-            if sorted((atm_i.atom_type, atm_j.atom_type)) == [f"{model_name}-H", f"{model_name}-O"]:
+            if sorted((atm_i.name, atm_j.name)) == [f"{model_name}-H", f"{model_name}-O"]:
                 interaction.function = harmonicbond
         elif isinstance(interaction, BondAngle):
             atm_i, atm_j, atm_k = interaction.atoms[0]
-            if sorted((atm_i.atom_type, atm_j.atom_type, atm_k.atom_type)) == [
+            if sorted((atm_i.name, atm_j.name, atm_k.name)) == [
                 f"{model_name}-H",
                 f"{model_name}-H",
                 f"{model_name}-O",

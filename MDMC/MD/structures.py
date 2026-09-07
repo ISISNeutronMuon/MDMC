@@ -1104,8 +1104,18 @@ class Atom(Structure):
 
 
 class DummyElement:
-    mass = 0.0
-    symbol = "X"
+    def __init__(self, mass=0.0, symbol="M"):
+        """Dummy element object.
+
+        Parameters
+        ----------
+        mass : float
+            The mass of the dummy element.
+        symbol : str
+            The symbol of the dummy atom.
+        """
+        self.mass = mass
+        self.symbol = symbol
 
 
 class AverageSite3P(Atom):
@@ -1115,6 +1125,8 @@ class AverageSite3P(Atom):
 
     Parameters
     ----------
+    element : str
+        The symbol of the dummy atom.
     particles : list[Atom]
         The of atoms that the position of this dummy atom will be
         derived from.
@@ -1131,6 +1143,7 @@ class AverageSite3P(Atom):
 
     def __init__(
         self,
+        element: str,
         particles: list[Atom],
         weights: list[float],
         charge: float | None = None,
@@ -1138,11 +1151,11 @@ class AverageSite3P(Atom):
     ):
         self.universe = None
 
-        Structure.__init__(self, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), name=settings.get("name", "X"))
+        Structure.__init__(self, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), name=settings.get("name", "M"))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
 
-        self.element = DummyElement()
+        self.element = DummyElement(symbol=element)
         self.mass = self.element.mass
 
         self._atom_type = settings.get("atom_type")
