@@ -74,7 +74,7 @@ class InteractionFunction:
 
     def __init__(self, val_dict: dict):
         # locals which are excluded from Parameter creation
-        excluded = ["self", "settings", "__class__", "elements", "molecules"]
+        excluded = ["self", "settings", "__class__", "elements", "molecules", "atom_names"]
         parameters = Parameters()
         elements = val_dict.get("elements", [])
         molecules = val_dict.get("molecules", [])
