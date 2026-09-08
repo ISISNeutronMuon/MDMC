@@ -68,8 +68,6 @@ which is a subfield of optimisation that avoids needing gradient information. De
 is also known as 'black-box optimisation'; the objective function is a 'black-box', where we do not
 have some mathematical formula for it.
 
-We will now detail the minimizers available in MDMC.
-
 Covariance Matrix Adaptation Evolution Strategy
 -----------------------------------------------
 
@@ -78,57 +76,3 @@ algorithm which generates the parameters within a given standard deviation aroun
 and determines their covariance matrix based on the calculated values at each point. This approach
 requires a larger number of function evaluations before convergence is reached. At the same time,
 it can handle noisy data and functions with local minima.
-
-Gaussian Process Regression
----------------------------
-The `Gaussian Process Regression <https://scikit-learn.org/stable/modules/gaussian_process.html>`_ (GPR)
-algorithm aims not to minimize, but to 'map out' parameter space. It first creates a grid of values
-in parameter space and calculates the objective function at each of these points.
-It uses these values to 'fit' an approximate topography to the space, and then predicts the values
-between by interpolation via a defined kernel function to find where the lowest point is.
-
-The MDMC GPR algorithm creates the grid of values via `'Latin hypercube sampling' <https://en.wikipedia.org/wiki/Latin_hypercube>`_.
-If we wanted to take a sample size of 4 from a 2D space, a 'Latin square sample' would
-divide the space into a grid of 4 rows and 4 columns, and then take 4 samples
-such that none of the samples are on the same row or column; see the diagram below.
-This ensures our samples are random, but still more-or-less evenly distributed. A *hypercube* is
-the term for the equivalent of a cube in any number of dimensions (e.g. 2D hypercube is a square,
-3D hypercube is a cube, so on), so a *Latin* hypercube is the same concept in any number of dimensions
-(for MDMC, as many dimensions as there are parameters).
-
-.. figure:: ./_static/images/latinsquare.png
-
-   An example of a 4-by-4 Latin square sample.
-
-This method can be extremely effective, as it quickly produces an accurate prediction without needing an initial 'guess',
-only parameter bounds. It is more computationally expensive than Metropolis-Hastings for choosing points as it
-maps out the whole space - but this is very small compared to the time for the MD simulation.
-Since it is not strictly a minimizer, we intentionally explore all of the parameter space,
-giving us a much better idea of where the global minimum lies, at the expense of the accuracy
-of the minimum position. One of the benefits of using Gaussian processes is that as well as
-interpolating between points, the algorithm has an estimation of the uncertainty of every point
-in the space too. We can build intrinsic uncertainty into the MD simulated points, essentially meaning
-that our interpolation does not need to exactly “fit” the point. As well as this uncertainty,
-we have uncertainty related to how close we are to a measured point,
-i.e. the further we have to interpolate, the greater our uncertainty about that value.
-
-Gaussian Process Optimisation
------------------------------
-`Gaussian Process Optimisation <https://scikit-optimize.github.io/stable/auto_examples/bayesian-optimization.html#bayesian-optimization-with-skopt>`_ (GPO)
-combines the 'exploration' of the space from the Gaussian Process Regression algorithm with
-the 'exploitation' of Metropolis-Hastings.
-
-It starts by defining a Latin hypercube in the same way as GPR, to get an initial model
-of the figure of merit 'surface' on the parameter space.
-
-It then proceeds via an 'ask/tell architecture' with an acquisition function.
-The acquisition function is 'asked' to determine what the next best point to measure at is, generally
-to both minimize uncertainty over the entire space as well as trying to determine the exact
-position of the global minimum. It is then 'told' what the result was, updating the model of the
-entire figure of merit surface.
-
-The updating of this model adds to the computational cost of figure of merit calculation; furthermore,
-due to the potential large jumps between the points, a reasonable amount of equlibration
-of the MD simulation is likely required. That said, for noisy data where the gradient is not obtainable
-and the cost of obtaining the data points is large, this approach is likely to be the most efficient possible.
-`This link to the relevant scikit docs page has more information (and some nice graphs!) on this method. <https://scikit-optimize.github.io/stable/auto_examples/bayesian-optimization.html#bayesian-optimization-with-skopt>`_

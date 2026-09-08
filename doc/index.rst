@@ -7,7 +7,7 @@ MDMC Documentation
 MDMC is a Python package for optimising classical molecular dynamics (MD)
 potential parameters by refining against experimental data, particularly
 dynamical data such as the dynamic structure factor. The refinement uses
-derivative free optimisation algorithms, e.g. Monte Carlo (MC).  See
+derivative-free optimisation algorithms (currently CMA-ES).  See
 :ref:`introduction-label` and :ref:`installation-label` to start using MDMC.
 
 MDMC was originally developed at the ISIS Neutron and Muon Source,
