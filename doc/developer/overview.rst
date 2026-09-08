@@ -3,7 +3,7 @@
 Developer Documentation
 =======================
 MDMC is open source software. Code contributions to MDMC are welcomed; please
-visit the `MDMC GitHub <https://github.com/MDMCproject/MDMCv0.2_pilot>`_ in
+visit the `MDMC GitHub <https://github.com/ISISNeutronMuon/MDMC>`_ in
 order to contribute.
 
 The process by which to contribute code is:

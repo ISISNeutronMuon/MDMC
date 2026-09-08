@@ -8,16 +8,19 @@ MDMC in a Python virtual environment, create a virtual environment
 named mdmc_env by typing
 
 .. code-block:: bash
+
   python3 -m venv mdmc_env
 
 To activate your virtual environment, type
 
 .. code-block:: bash
+
   source mdmc_env/bin/activate
 
 in a bash console, or
 
 .. code-block:: doscon
+  
   mdmc_env\Scripts\activate.bat
 
 if you are using cmd.exe on Windows.
@@ -67,12 +70,3 @@ were correctly installed. If any of these tests fails, additional details will
 be given in the log file. Please note that all MDMC install components may not
 be required for your intended usage of MDMC or your operating system
 environment.
-
-.. rubric:: Source Code
-
-Source code is available from https://github.com/MDMCproject/MDMCv0.2_pilot and
-can be obtained using git with:
-
-.. code-block:: bash
-
-    git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git

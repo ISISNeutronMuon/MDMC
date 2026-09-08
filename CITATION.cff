@@ -77,7 +77,7 @@ authors:
 - affiliation: STFC
   family-names: Wilkins
   given-names: Jacob S.
-repository-code: 'https://github.com/MDMCproject/MDMCv0.2_pilot'
+repository-code: 'https://github.com/ISISNeutronMuon/MDMC'
 url: 'https://mdmcproject.org'
 abstract: >-
   A package for optimising classical molecular dynamics

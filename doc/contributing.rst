@@ -6,7 +6,7 @@ Contributing to MDMC
 Reporting Bugs and Requesting Features
 --------------------------------------
 The recommended method for bug reports and feature requests is through the
-`MDMC GitHub repository <https://github.com/MDMCproject/MDMCv0.2_pilot>`_. To do
+`MDMC GitHub repository <https://github.com/ISISNeutronMuon/MDMC>`_. To do
 this you will require a `GitHub <https://github.com>`_ account.
 
 Please create a new issue of the relevant type (i.e. Bug report or Feature
