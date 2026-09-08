@@ -41,7 +41,6 @@ Please note that, at a bare minimum, any pull request must do the following:
    :caption: Explanation
 
    explanation/coding_standards
-   explanation/containers
    explanation/diataxis
    explanation/management
 
@@ -50,6 +49,4 @@ Please note that, at a bare minimum, any pull request must do the following:
    :hidden:
    :caption: How-to
 
-   how-to/build-containers
    how-to/units
-   how-to/vscode
