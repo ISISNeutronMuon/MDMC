@@ -28,6 +28,14 @@ from MDMC.trajectory_analysis.observables.mdanse_observable import MDANSEObserva
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
+def null_postprocess(md_data: np.typing.NDArray[np.floating]) -> np.typing.NDArray[np.floating]:
+    """Apply changes to MD observable.
+
+    This specific function does nothing.
+    """
+    return md_data
+
+
 @repr_decorator("weight", "exp_obs", "MD_obs", "rescale_factor", "auto_scale")
 class ObservablePair:
     """
@@ -68,6 +76,7 @@ class ObservablePair:
         self.rescale_factor = rescale_factor
         self.last_rescale_factor = 1.0
         self.auto_scale = auto_scale
+        self.postprocessing_function = null_postprocess
         if isinstance(self.MD_obs, MDANSEObservable):
             self.matching_obs = MDANSEObservable(mdanse_job_type=self.MD_obs.job_type)
             self.matching_obs.origin = "MD"
@@ -328,6 +337,7 @@ class ObservablePair:
             md_x = first(self.MD_obs.independent_variables.values())
             md_y = first(self.MD_obs.dependent_variables.values())
             md_y_matching = np.interp(exp_x, md_x, md_y)
+            md_y_matching = self.postprocessing_function(md_y_matching)
             self.matching_obs.dependent_variables = {
                 first(self.exp_obs.dependent_variables): md_y_matching,
             }
@@ -338,13 +348,12 @@ class ObservablePair:
             md_part = np.squeeze(np.array(*self.MD_obs.dependent_variables.values()))
             exp_axes = list(self.exp_obs.independent_variables.values())
             md_axes = list(self.MD_obs.independent_variables.values())
-            # exp_part = np.squeeze(np.array(*self.exp_obs.dependent_variables.values()))
-            # for key, arr in self.exp_obs.independent_variables.items():
-            #     print(f"experiment: {key}, {arr}")
-            # print(f"experiment data shape: {exp_part.shape}")
-            # for key, arr in self.MD_obs.independent_variables.items():
-            #     print(f"MD: {key}, {arr}")
-            # print(f"MD data shape: {md_part.shape}")
+            # Check if data array needs flipping
+            exp_axis_keys = [str(x).lower() for x in self.exp_obs.independent_variables]
+            md_axis_keys = [str(x).lower() for x in self.MD_obs.independent_variables]
+            if md_axis_keys[0] == exp_axis_keys[1]:
+                md_axes = md_axes[::-1]
+                md_part = np.swapaxes(md_part, 1, 0)
             positions, values = [], []
             for nx, x in enumerate(md_axes[0]):
                 for ny, y in enumerate(md_axes[1]):
@@ -357,10 +366,10 @@ class ObservablePair:
             interpolator = LinearNDInterpolator(positions, values)
             newX, newY = np.meshgrid(exp_axes[0], exp_axes[1])
             matching_vals = interpolator(newX, newY).T
+            matching_vals = self.postprocessing_function(matching_vals)
             self.matching_obs.dependent_variables = {
                 first(self.exp_obs.dependent_variables): matching_vals,
             }
-
             return matching_vals
 
         else:

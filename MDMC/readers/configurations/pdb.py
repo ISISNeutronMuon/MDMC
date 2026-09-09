@@ -84,6 +84,7 @@ class ProteinDataBankReader(ConfigurationReader):
                 # pylint: disable=no-member
                 for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
                     self.create_bond(molecule[int(atom1_id)], molecule[int(atom2_id)])
+        self.finished_reading = True
 
     def create_bond(self, atom1: Atom, atom2: Atom) -> None:
         """
