@@ -856,12 +856,7 @@ class Control:
                         override_data=obs_pair.fom_contribution,
                     )
 
-    def plot_results(
-        self,
-        filename: str = None,
-        points: int = 100000,
-        MH_norm: float = 20.0,
-    ) -> None:
+    def plot_results(self, output_filename: str | None = None) -> None:
         """
         Instantiates an insstance of the PlotResults class and generates a cornerplot
         from the data in self.results_filename
@@ -873,19 +868,19 @@ class Control:
             then uses self.results_filename
         points : int, optional
             The number of samples to initially generate, defaults to 100,000
-        MH_norm : float, optional
-            The denominator of the exponent, controlling how likley points are to be kept,
-            defaults to 20.0
 
         Returns
         -------
         corner plot : Matplotlib.figure.Figure
             A plot displaying every parameter combination with their variances and covariances
         """
-        if filename is None:
-            filename = self.results_filename
-        plotter = PlotResults(filename, MH_norm=MH_norm, points=points, quantiles=[0.34, 0.5, 0.68])
+        plotter = PlotResults(
+            self.results_filename,
+            quantiles=[0.34, 0.5, 0.68],
+            output_filename=output_filename,
+        )
         cornerplot, means, stds = plotter.create_cornerplot()
+        plotter.create_parameter_plots()
 
         if self.verbose != -1:
             print(f"Parameter means = {means}, Parameter errors = {stds}")
