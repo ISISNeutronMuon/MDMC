@@ -58,21 +58,36 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=O_charge, epsilon=O_epsilon, sigma=O_sigma, elements=["O"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=O_charge,
+                       epsilon=O_epsilon,
+                       sigma=O_sigma,
+                       elements=["O"],
+                       molecules = ["SrTiO3"],
+                       atom_names=["O"]),
 )
 NonBondedForce(
     universe,
     Ti.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=Ti_charge, epsilon=Ti_epsilon, sigma=Ti_sigma, elements=["Ti"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=Ti_charge,
+                       epsilon=Ti_epsilon,
+                       sigma=Ti_sigma,
+                       elements=["Ti"],
+                       molecules = ["SrTiO3"],
+                       atom_names=["Ti"]),
 )
 NonBondedForce(
     universe,
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=Sr_charge, epsilon=Sr_epsilon, sigma=Sr_sigma, elements=["Sr"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=Sr_charge,
+                       epsilon=Sr_epsilon,
+                       sigma=Sr_sigma,
+                       elements=["Sr"],
+                       molecules = ["SrTiO3"],
+                       atom_names=["Sr"]),
 )
 
 # A custom-made section which creates bonds that span across the MDMC "molecules"

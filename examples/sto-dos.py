@@ -38,21 +38,39 @@ NonBondedForce(
     O1.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=-0.4, epsilon=5.0, sigma=1.35, elements=["O"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=-0.4,
+                       epsilon=5.0,
+                       sigma=1.35,
+                       elements=["O"],
+                       molecules=["SrTiO3"],
+                       atom_names=["O"],
+    )
 )
 NonBondedForce(
     universe,
     Ti.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=0.1, epsilon=15.0, sigma=1.9, elements=["Ti"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=0.1,
+                       epsilon=15.0,
+                       sigma=1.9,
+                       elements=["Ti"],
+                       molecules = ["SrTiO3"],
+                       atom_names=["Ti"],
+    )
 )
 NonBondedForce(
     universe,
     Sr.atom_type,
     cutoff=10.0,
     ewald=1e-6,
-    function=NonBonded(charge=1.1, epsilon=2.0, sigma=1.9, elements=["Sr"], molecules = ["SrTiO3"]),
+    function=NonBonded(charge=1.1,
+                       epsilon=2.0,
+                       sigma=1.9,
+                       elements=["Sr"],
+                       molecules = ["SrTiO3"],
+                       atom_names=["Sr"],
+    )
 )
 
 simulation = Simulation(
@@ -98,7 +116,7 @@ observable_pair = ObservablePair(
 fit_parameters = universe.parameters
 for par_name in fit_parameters:
     par = fit_parameters[par_name]
-    print(par.name, par.value, par.molecules)
+    print(par.name, par.value, par.molecules, par.atom_names)
     if "sigma" in par_name:
         fit_parameters[par_name].constraints = [0.3, 5.0]
     if "epsilon" in par_name:

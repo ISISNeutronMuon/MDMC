@@ -1205,7 +1205,7 @@ class Molecule(CompositeStructure):
     ):
         self._structure_list = settings["atoms"]
         self._target_charge = target_charge
-        self._stoichiometry = Counter([atom.element.symbol for atom in self._structure_list])
+        self._atom_counter = Counter([atom.name for atom in self._structure_list])
         self._initial_charge = [None for _ in self._structure_list]
         self._fixed_charge_mask = [True for _ in self._structure_list]
         for structure in self._structure_list:
@@ -1341,16 +1341,16 @@ class Molecule(CompositeStructure):
         all_charges.update(rescaled_charges)
         all_charges.update(set_charges)
         total_charge = sum(
-            self._stoichiometry[element] * all_charges[element] for element in all_charges
+            self._atom_counter[at_name] * all_charges[at_name] for at_name in all_charges
         )
         difference = self._target_charge - total_charge
-        count = sum(self._stoichiometry[element] for element in rescaled_charges)
+        count = sum(self._atom_counter[at_name] for at_name in rescaled_charges)
         per_element_change = difference / count
         for atom in self.atoms:
-            if atom.element.symbol in set_charges:
-                atom.charge = set_charges[atom.element.symbol]
+            if atom.name in set_charges:
+                atom.charge = set_charges[atom.name]
             else:
-                atom.charge = rescaled_charges[atom.element.symbol] + per_element_change
+                atom.charge = rescaled_charges[atom.name] + per_element_change
 
     def is_equivalent(self, structure: Structure) -> bool:
         return isinstance(structure, type(self)) and all(

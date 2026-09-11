@@ -59,13 +59,21 @@ def add_opls_force_field(universe, cutoff: float, ewald: float):
     for atom_type in atom_types:
         name = type_to_name[atom_type]  # name = OPLS atom type
         charge = atoms_df[atoms_df["atom_type"] == int(name)].iloc[0]["charge"]
+        group_name = atoms_df[atoms_df["atom_type"] == int(name)].iloc[0]["name"]
         disp_row = disp_df[disp_df["atom_type"] == int(name)].iloc[0]
         nonbonded = NonBondedForce(
             universe,
             atom_type,
             cutoff=cutoff,
             ewald=ewald,
-            function=NonBonded(charge=charge, epsilon=disp_row["epsilon"], sigma=disp_row["sigma"]),
+            function=NonBonded(
+                charge=charge,
+                epsilon=disp_row["epsilon"],
+                sigma=disp_row["sigma"],
+                elements=["O"],
+                molecules=[group_name],  # do we have any molecule name information?
+                atom_names=[atom_type],
+            ),
         )
         nonbonded.function.charge.parameter_name = f"OPLS-{name}-nonbonded_charge"
         nonbonded.function.epsilon.parameter_name = f"OPLS-{name}-nonbonded_epsilon"

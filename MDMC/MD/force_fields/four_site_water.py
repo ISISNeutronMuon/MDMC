@@ -191,7 +191,12 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(
-            charge=0.0, epsilon=lj_eps_O, sigma=lj_sigma_O, elements=["O"], molecules=[model_name]
+            charge=0.0,
+            epsilon=lj_eps_O,
+            sigma=lj_sigma_O,
+            elements=["O"],
+            molecules=[model_name],
+            atom_names=[f"{model_name}-O"],
         ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-O-nonbonded_charge"
@@ -205,7 +210,12 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(
-            charge=q_H, epsilon=lj_eps_H, sigma=lj_sigma_H, elements=["H"], molecules=[model_name]
+            charge=q_H,
+            epsilon=lj_eps_H,
+            sigma=lj_sigma_H,
+            elements=["H"],
+            molecules=[model_name],
+            atom_names=[f"{model_name}-H"],
         ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-H-nonbonded_charge"
@@ -219,7 +229,12 @@ def add_four_site_water_ff(universe, cutoff: float, ewald: float, model_name: st
         cutoff=cutoff,
         ewald=ewald,
         function=NonBonded(
-            charge=q_M, epsilon=0.0, sigma=1.0, elements=["M"], molecules=[model_name]
+            charge=q_M,
+            epsilon=0.0,
+            sigma=1.0,
+            elements=["M"],
+            molecules=[model_name],
+            atom_names=[f"{model_name}-M"],
         ),
     )
     nonbonded.function.charge.parameter_name = f"{model_name}-M-nonbonded_charge"

@@ -111,6 +111,7 @@ class Parameter:
         self.interactions_name = None
         self.functions_name = None
         self.elements = []
+        self.atom_names = []
         self.molecules = []
         self._interactions = []
         self._tie = None
