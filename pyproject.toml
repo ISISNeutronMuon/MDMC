@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "MDMC"
-version = "0.2"
+version = "0.2.0a1"
 description = "A package for optimising classical molecular dynamics parameters by refining against experimental data."
 authors = [{name = "MDMC developers", email = "support@mdmcproject.org"}]
 requires-python = ">=3.10"
@@ -37,7 +37,7 @@ dependencies = [
 ]
 keywords = ["neutron scattering", "molecular dynamics"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Alpha",
   "Programming Language :: Python :: 3",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering :: Physics",
@@ -47,15 +47,9 @@ license = {file = "LICENSE"}
 
 [project.urls]
 Homepage = "https://mdmcproject.org/"
-Repository = "https://github.com/MDMCproject/MDMCv0.2_pilot.git"
+Repository = "https://github.com/ISISNeutronMuon/MDMC"
 
 [project.optional-dependencies]
-
-### Note that these optional dependencies do not install the requisite molecular
-# dynamics engine.
-LAMMPS = ["pylammps"]
-DLPOLY = ["dlpoly-py @ git+https://gitlab.com/ccp5/dlpoly-py.git"]
-###
 
 test = ["pytest==9.0.3",
         "pytest-cov==6.2.1",
@@ -73,7 +67,7 @@ docs = ["sphinx==8.1.3",
         "nbmake==1.5.5",
         "nbconvert==7.17.1",
         "lxml[html_clean]"]
-all = ["MDMC[LAMMPS,DLPOLY,test,lint,typecheck,docs]"]
+all = ["MDMC[test,lint,typecheck,docs]"]
 
 [project.scripts]
 MDMC = "MDMC.utilities.cli:main"

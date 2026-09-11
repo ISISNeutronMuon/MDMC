@@ -3,9 +3,12 @@
 Introduction
 ============
 
-MDMC broadly provides two main functions, the MD (Molecular Dynamics)
-simulation and the MC (Monte Carlo or similar) refinement of force-field
-parameters:
+MDMC performs molecular dynamics (MD) simulations and calculates the
+corresponding observables (typically neutron scattering results.)
+Additionally, it uses a minimiser (currently CMA-ES) to generate
+new force field parameters, aiming to minimise the difference
+between the calculated observables and the matching experimental
+results.
 
 Simulation
 ----------

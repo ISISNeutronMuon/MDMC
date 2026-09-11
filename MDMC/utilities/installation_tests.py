@@ -271,57 +271,6 @@ class InstlTestLAMMPS(InstlTestBase):
             lmp.close()
 
 
-@InstlTestFactory.register("X11 forwarding")
-class InstlTestX11Forwarding(InstlTestBase):
-    """
-    Class to test if tkinter can access the display.
-
-    This is used to determine if X11 forwarding is working
-    in Docker/Singularity containers.
-    """
-
-    LOG_ERROR_MSG: str = (
-        "Due to this, GUI elements requiring tkinter, such as"
-        " the ASE viewer, will not be available. Other viewer"
-        " options, such as the X3DOM viewer, can still be"
-        " used."
-    )
-
-    def run(self) -> None:
-        try:
-            from tkinter import TclError, Tk
-        except ImportError:
-            self._success = False
-            LOGGER.error(
-                "%s %s installation test failed because tkinter could not be imported. %s",
-                self.__class__,
-                self.name,
-                self.LOG_ERROR_MSG,
-                exc_info=True,
-            )
-        try:
-            Tk()
-        except TclError:
-            LOGGER.error(
-                "%s %s installation test failed because tkinter.Tk"
-                " could not be initialized. This is probably because"
-                " the DISPLAY cannot be accessed, which will occur if"
-                " X11 forwarding has not been enabled. If MDMC is"
-                " being run within Docker, please see the MDMC"
-                " installation instructions for how to enable X11"
-                " forwarding. %s",
-                self.__class__,
-                self.name,
-                self.LOG_ERROR_MSG,
-                exc_info=True,
-            )
-            self._success = False
-
-        if self._success is None:
-            self._success = True
-            self.log_test_passed()
-
-
 @InstlTestFactory.register("Dynamic plotting dependencies")
 class InstlTestDynamicPlottingDependencies(InstlTestBase):
     """

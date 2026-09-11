@@ -91,4 +91,4 @@ the following questions:
 
 - Who is this aimed at? (e.g. new users, 'power users', developers)
 - What do I want them to learn? (e.g. familiarity with this framework, how to use this class to do X)
-- What do I assume they know? (familiarity with MD, optimisation, ``matplotlib``, Docker)
+- What do I assume they know? (familiarity with MD, optimisation, ``matplotlib``)

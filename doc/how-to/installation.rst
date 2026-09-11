@@ -3,37 +3,41 @@
 Installation
 ============
 
-You can install MDMC in broadly two ways.  For non-expert users, it is strongly
-recommended that you use containers to run MDMC (option 1), as you will not have
-to separately install a supported molecular dynamics package (e.g. LAMMPS).
+You can install MDMC using pip. To install
+MDMC in a Python virtual environment, create a virtual environment
+named mdmc_env by typing
 
-1. Container option: run MDMC in a container that already has all relevant
-   external dependencies pre-installed, including molecular dynamics engines.
+.. code-block:: bash
 
- * Two container technologies are supported: Docker and Singularity. Docker has
-   more widespread usage, but Singularity is targeted for HPC hardware. These
-   two container technologies are similar to operate, and once you are familiar
-   with one, switching to the other should be relatively straightforward.
+  python3 -m venv mdmc_env
 
-   :ref:`docker-label`
+To activate your virtual environment, type
 
-   :ref:`singularity-label`
+.. code-block:: bash
 
-2. Containerless option: directly onto your favourite hardware and OS, e.g. Mac
-   or Linux laptop or HPC hardware.
+  source mdmc_env/bin/activate
 
- * **However** this requires that one or more molecular dynamics engines
-   (e.g. `LAMMPS <https://lammps.sandia.gov>`_) are already installed.
+in a bash console, or
 
-   :ref:`containerless-label`
+.. code-block:: doscon
+  
+  mdmc_env\Scripts\activate.bat
 
-.. toctree::
-   :maxdepth: 2
-   :hidden:
+if you are using cmd.exe on Windows.
 
-   installation/docker
-   installation/singularity
-   installation/nocontainerlinux
+Additonally, you will need to clone the MDMC repository:
+
+.. code-block:: bash
+
+  git clone https://github.com/ISISNeutronMuon/MDMC
+
+After activating the environment and cloning the repository,
+you can install MDMC:
+
+.. code-block:: bash
+
+  cd MDMC
+  pip install .
 
 
 Installation Tests
@@ -66,12 +70,3 @@ were correctly installed. If any of these tests fails, additional details will
 be given in the log file. Please note that all MDMC install components may not
 be required for your intended usage of MDMC or your operating system
 environment.
-
-.. rubric:: Source Code
-
-Source code is available from https://github.com/MDMCproject/MDMCv0.2_pilot and
-can be obtained using git with:
-
-.. code-block:: bash
-
-    git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git

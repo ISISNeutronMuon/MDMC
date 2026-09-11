@@ -3,7 +3,7 @@
 Developer Documentation
 =======================
 MDMC is open source software. Code contributions to MDMC are welcomed; please
-visit the `MDMC GitHub <https://github.com/MDMCproject/MDMCv0.2_pilot>`_ in
+visit the `MDMC GitHub <https://github.com/ISISNeutronMuon/MDMC>`_ in
 order to contribute.
 
 The process by which to contribute code is:
@@ -41,7 +41,6 @@ Please note that, at a bare minimum, any pull request must do the following:
    :caption: Explanation
 
    explanation/coding_standards
-   explanation/containers
    explanation/diataxis
    explanation/management
 
@@ -50,6 +49,4 @@ Please note that, at a bare minimum, any pull request must do the following:
    :hidden:
    :caption: How-to
 
-   how-to/build-containers
    how-to/units
-   how-to/vscode

@@ -25,7 +25,7 @@ Where you haven't done this already, clone and install the MDMC repository
 with the docs optional dependencies:
 
 ```
-git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
+git clone https://github.com/ISISNeutronMuon/MDMC
 cd MDMCv0.2_pilot
 pip install ".[docs]"
 ```
@@ -57,7 +57,7 @@ sudo pip3 install virtualenv
 python3 -m virtualenv ~/mdmc-doc/
 source ~/mdmc-doc/bin/activate
 #clone the MDMC repository
-git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
+git clone https://github.com/ISISNeutronMuon/MDMC
 #install remaining python modules needed
 cd MDMCv0.2_pilot/
 pip install ".[docs]"
