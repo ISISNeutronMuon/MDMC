@@ -22,6 +22,7 @@ import corner
 import IPython.display
 import matplotlib.pyplot as mpl
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from matplotlib.figure import Figure
 
@@ -41,6 +42,8 @@ class PlotResults:
     output_filename : str | None
         Name stem to be included in output plot file names. Set to None if figures
         are not saved to file, e.g. when running in Jupyter Notebooks.
+    cutoff_fraction : float
+        Fraction of the data points to keep, 1.0 means all, by default0.5
     """
 
     def __init__(
@@ -48,10 +51,12 @@ class PlotResults:
         filename,
         quantiles: list[float] = None,
         output_filename: str | None = None,
+        cutoff_fraction: float = 0.5,
     ):
         self.filename = filename
         self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
         self.output_filename = output_filename
+        self.cutoff_fraction = cutoff_fraction
 
         self.parameter_names, self.parameter_coords, self.minmax_coords, self.FoMs = (
             self.get_measured_points()
@@ -81,6 +86,31 @@ class PlotResults:
         ]
         return names, coordinates, minmax_coordinates, FoMs
 
+    def _trim_results(
+        self, cutoff_fraction: float | None = None
+    ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+        """Return only a specified fraction of the results with the best FoM.
+
+        Parameters and FoM values are sorted based on FoM values, and
+        all the results above the specified fraction are not included in the output.
+
+        Parameters
+        ----------
+        cutoff_fraction : float | None, optional
+            Fraction of the data points to keep, 1.0 means all, by default None
+
+        Returns
+        -------
+        tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]
+            Parameter array and FoM array, both trimmed and sorted by FoM
+        """
+        cutoff = cutoff_fraction if cutoff_fraction else self.cutoff_fraction
+        sorting = np.argsort(self.FoMs)
+        sorted_FoM = np.array(self.FoMs)[sorting]
+        param_vals = np.array(self.parameter_coords)[sorting]
+        cutoff_index = np.ceil(len(self.FoMs) * cutoff).astype(int)
+        return param_vals[:cutoff_index], sorted_FoM[:cutoff_index]
+
     def _create_figure(self, nrows: int = 1) -> Figure | None:
         """Create a temporary figure which can be used for plotting results.
 
@@ -106,24 +136,17 @@ class PlotResults:
             return None
 
     def create_cornerplot(self) -> None:
-        """
-        Performs a random sample across the coordinate space giving a predicted figure of merit at
-        every point. Then removes points with poor figures of merit, according to a
-        Metropolis-Hastings type rule, where the likelihood of keeping a point is dependant on the
-        exponent of the difference between its figure of merit, and that of the best one found,
-        divided by MC_norm. A corner plot is then returned (a matplotlib figure object), which can
-        be displayed or exported.
+        """Plot parameters as a function of other parameters.
+
+        This compares the parameters pairwise and provides a visual estimate
+        of correlation between refinement parameters.
 
         Returns
         -------
         corner plot : Matplotlib.figure.Figure
             A plot displaying every parameter combination with their variances and covariances
         """
-
-        index_best_objective = np.argmin(self.FoMs)
-        min_x = self.parameter_coords[index_best_objective]
-
-        param_array = np.array(self.parameter_coords)
+        param_array, _ = self._trim_results()
 
         labels = [str(name) for name in self.parameter_names]
 
@@ -132,7 +155,7 @@ class PlotResults:
         cornerplot = corner.corner(
             param_array,
             labels=labels,
-            quantiles=[0.34, 0.5, 0.68],
+            quantiles=self.quantiles,
             range=self.minmax_coords,
             fig=target_figure,
         )
@@ -158,21 +181,45 @@ class PlotResults:
         """
         if self.output_filename is None:
             return
-        sorting = np.argsort(self.FoMs)
-        sorted_FoM = np.array(self.FoMs)[sorting]
-        param_vals = np.array(self.parameter_coords).T
-        nrows = len(param_vals)
+        param_vals, sorted_FoM = self._trim_results()
+        nrows = len(self.parameter_names)
         temp_fig = self._create_figure(nrows=nrows)
-        cutoff_index = np.ceil(len(self.FoMs) * cutoff_fraction).astype(int)
-        for pindex, name, param in zip(range(nrows), self.parameter_names, param_vals, strict=True):
-            splot = temp_fig.add_subplot(nrows, 1, pindex + 1)
-            # sharex="all")
-            par_data = np.array(param)[sorting]
-            splot.plot(sorted_FoM[:cutoff_index], par_data[:cutoff_index], "o")
-            splot.set_title(name)
+        x_axis = None
+        for pindex, name, param in zip(
+            range(nrows), self.parameter_names, param_vals.T, strict=True
+        ):
+            if x_axis is None:
+                splot = temp_fig.add_subplot(nrows, 1, pindex + 1)
+                x_axis = splot
+            else:
+                splot = temp_fig.add_subplot(nrows, 1, pindex + 1, sharex=x_axis)
+            splot.plot(sorted_FoM, param, "o")
             splot.set_xlabel("FoM")
             splot.set_ylabel(name)
         temp_fig.savefig(f"{self.output_filename}_parameters.png")
+
+    def create_FoM_plot(self, use_logscale: bool = True):
+        """Show the FoM values over the entire refinement.
+
+        By default the plot will use logarithmic scale for the FoM values.
+
+        Parameters
+        ----------
+        use_logscale : bool, optional
+            Apply logarithmic scale to the plotted results, by default True
+        """
+        if self.output_filename is None:
+            return
+        unsorted_FoM = np.array(self.FoMs)
+        temp_fig = self._create_figure()
+        splot = temp_fig.add_subplot(1, 1, 1)
+        splot.plot(unsorted_FoM, "o")
+        splot.set_title("Refinement FoM evolution")
+        splot.set_xlabel("step #")
+        splot.set_ylabel("FoM")
+        if use_logscale:
+            splot.set_yscale("log")
+        temp_fig.savefig(f"{self.output_filename}_FoM.png")
 
 
 class DataPrinter(ABC):

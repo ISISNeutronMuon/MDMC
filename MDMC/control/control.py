@@ -881,6 +881,7 @@ class Control:
         )
         cornerplot, means, stds = plotter.create_cornerplot()
         plotter.create_parameter_plots()
+        plotter.create_FoM_plot()
 
         if self.verbose != -1:
             print(f"Parameter means = {means}, Parameter errors = {stds}")
