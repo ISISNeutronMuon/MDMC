@@ -16,15 +16,15 @@
 
 """A module for plotting data and results of a minimization."""
 
-import logging
-import os
 from abc import ABC, abstractmethod
 
 import corner
 import IPython.display
+import matplotlib.pyplot as mpl
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from skopt import Optimizer
+from matplotlib.figure import Figure
 
 
 class PlotResults:
@@ -35,61 +35,32 @@ class PlotResults:
     Parameters:
     -----------
     filename : str
-        path to the file to load in the refinement history
+        Path to the file to load in the refinement history.
     quantiles : list, optional
-        optional, list of the quantiles to be plotted on the corner plot, defaults
-        to [0.34, 0.5, 0.68], e.g. 1-sigma
-    MH_norm : float, optional
-        The Metropolis-Hastings normalising factor to determine if points should be
-        kept or not, defaults to 20
-    points : int, optional
-        Number of points to plot on the corner plot, defaults to 100,000
+        Optional, list of the quantiles to be plotted on the corner plot, defaults
+        to [0.34, 0.5, 0.68], e.g. 1-sigma.
+    output_filename : str | None
+        Name stem to be included in output plot file names. Set to None if figures
+        are not saved to file, e.g. when running in Jupyter Notebooks.
+    cutoff_fraction : float
+        Fraction of the data points to keep, 1.0 means all, by default0.5
     """
 
     def __init__(
         self,
-        filename: str,
+        filename,
         quantiles: list[float] = None,
-        MH_norm: float = 20,
-        points: int = 100000,
+        output_filename: str | None = None,
+        cutoff_fraction: float = 0.5,
     ):
         self.filename = filename
         self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
-        self.MH_norm = MH_norm
-        self.points = points
+        self.output_filename = output_filename
+        self.cutoff_fraction = cutoff_fraction
 
         self.parameter_names, self.parameter_coords, self.minmax_coords, self.FoMs = (
             self.get_measured_points()
         )
-
-        # Create the optimizer
-        try:
-            # The optimizer had a default minimum of 10 points which has since been changed to 2.
-            # We are still using this '10' value here because we are assuming it is a good minimum
-            # for 'meaningful' plots, but technically anything with 2 points can be minimised and
-            # shouldn't cause an error.
-            old_optimizer_min = 10
-            self.optimizer = Optimizer(
-                self.minmax_coords,
-                "GP",
-                n_initial_points=min(old_optimizer_min, len(self.FoMs)),
-                acq_func="gp_hedge",
-                acq_optimizer="sampling",
-                model_queue_size=1,
-            )
-            if len(self.FoMs) < old_optimizer_min:
-                logging.warning(
-                    "You have only used %d refinement steps,"
-                    " use a larger number for more meaningful plots.",
-                    len(self.FoMs),
-                )
-        except ValueError as error:
-            raise ValueError(
-                "Insufficient number of refinement steps, please use at least 10.",
-            ) from error
-
-        # Train the optimizer
-        self.optimizer.tell(self.parameter_coords, self.FoMs)
 
     def get_measured_points(self) -> tuple:
         """Opens the dataframe in `filename` and extracts the measured parameters names, values
@@ -103,7 +74,9 @@ class PlotResults:
         # Convert to float where possible (i.e. not a string)
 
         FoMs = records["FoM"].to_list()
-        records = records.drop(columns=["Unnamed: 0", "FoM", "Change state"], errors="ignore")
+        records = records.drop(
+            columns=["Unnamed: 0", "FoM", "Change state", "CMA iteration"], errors="ignore"
+        )
         # TODO this is hard coded to creation of history, may want to change
 
         coordinates = records.values.tolist()
@@ -113,104 +86,140 @@ class PlotResults:
         ]
         return names, coordinates, minmax_coordinates, FoMs
 
-    def _expected_minimum_random_sampling(self) -> tuple[list, float, list, list[list]]:
-        """
-        This is almost verbatim a copy of code from scikit-optimize but with the samples as
-        an additional output:
-        https://github.com/scikit-optimize/scikit-optimize/blob/de32b5fd2205a1e58526f3cacd0422a26d315d0f/skopt/utils.py#L259
+    def _trim_results(
+        self, cutoff_fraction: float | None = None
+    ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+        """Return only a specified fraction of the results with the best FoM.
 
-        Returns
-        -------
-        min_x : list
-            location of the minimum.
-        y_random[index_best_objective] : float
-            the surrogate function value at the minimum.
-        y_random : np.ndarray
-            An array of length "self.points" containing surrogate function values at each point
-        random_samples : list[list]
-            A list of length "self.points" containing the coordinates of each prediction
-        """
-
-        # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
-        random_samples = self.optimizer.space.rvs(self.points, random_state=7)
-
-        # make estimations with surrogate
-        model = self.optimizer.models[-1]
-        y_random = model.predict(self.optimizer.space.transform(random_samples))
-        index_best_objective = np.argmin(y_random)
-        min_x = random_samples[index_best_objective]
-
-        return min_x, y_random[index_best_objective], y_random, random_samples
-
-    def _remove_points(self, chi_squared: list[float], coords: list[list]) -> tuple[list, list]:
-        """
-        Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
-        where the likelihood of keeping a point is dependent on the exponent of the difference
-        between its figure of merit, and that of the best one found, divided by MH_norm.
+        Parameters and FoM values are sorted based on FoM values, and
+        all the results above the specified fraction are not included in the output.
 
         Parameters
         ----------
-        chi_squared : list[float]
-            A list of the predicted chi-squared value at each coordinate
-        coords : list[list]
-            A list of the coordinates at which all of the chi-squared predictions are made
+        cutoff_fraction : float | None, optional
+            Fraction of the data points to keep, 1.0 means all, by default None
 
         Returns
         -------
-        reduced_chi : list
-            A list of the remaining chi-squared points
-        reduced_coords : list[list]
-            A list of the remaining coordinates
+        tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]
+            Parameter array and FoM array, both trimmed and sorted by FoM
         """
-        np.random.seed(16)  # Set for reproducible output - will always retain same points
-        lowest_chi = min(chi_squared)
+        cutoff = cutoff_fraction if cutoff_fraction else self.cutoff_fraction
+        sorting = np.argsort(self.FoMs)
+        sorted_FoM = np.array(self.FoMs)[sorting]
+        param_vals = np.array(self.parameter_coords)[sorting]
+        cutoff_index = np.ceil(len(self.FoMs) * cutoff).astype(int)
+        return param_vals[:cutoff_index], sorted_FoM[:cutoff_index]
 
-        points_to_keep = np.random.random(size=chi_squared.shape) < np.exp(
-            (lowest_chi - chi_squared) / (lowest_chi / self.MH_norm),
-        )
-        reduced_chi = chi_squared[points_to_keep]
-        reduced_coords = np.array(coords)[points_to_keep]
+    def _create_figure(self, nrows: int = 1) -> Figure | None:
+        """Create a temporary figure which can be used for plotting results.
 
-        return reduced_chi, reduced_coords
+        If no output filename has been given to PlotResults, the plotters
+        will create their own figures, which should be the standard approach
+        in Jupyter Notebooks, allowing the figure to be displayed by the
+        notebook plugins. Otherwise, the plots will be saved to file, which
+        should be the approach in Python scripts.
+
+        Parameters
+        ----------
+        nrows : int, optional
+            Planned number of rows in the figure, by default 1
+
+        Returns
+        -------
+        Figure | None
+            Empty matplotlib figure, or None if not saving to a file.
+        """
+        if self.output_filename is not None:
+            return mpl.figure(figsize=(12.0, 4.0 * (nrows + 1)), dpi=192)
+        else:
+            return None
 
     def create_cornerplot(self) -> None:
-        """
-        Performs a random sample across the coordinate space giving a predicted figure of merit at
-        every point. Then removes points with poor figures of merit, according to a
-        Metropolis-Hastings type rule, where the likelihood of keeping a point is dependant on the
-        exponent of the difference between its figure of merit, and that of the best one found,
-        divided by MC_norm. A corner plot is then returned (a matplotlib figure object), which can
-        be displayed or exported.
+        """Plot parameters as a function of other parameters.
+
+        This compares the parameters pairwise and provides a visual estimate
+        of correlation between refinement parameters.
 
         Returns
         -------
         corner plot : Matplotlib.figure.Figure
             A plot displaying every parameter combination with their variances and covariances
         """
-
-        try:
-            _, _, y_random, coords = self._expected_minimum_random_sampling()
-        except IndexError:
-            msg = (
-                f"\n \n Your data file, {os.path.abspath(f'{self.filename}')},"
-                " appears not to have any points in, please check you have"
-                " run the refinement and it saved correctly. \n"
-            )
-            print(msg)
-            return None
-
-        _, reduced_coordinate_list = self._remove_points(y_random, coords)
-
-        data = np.empty(shape=np.array(reduced_coordinate_list).shape)
-        for i in range(np.array(reduced_coordinate_list).shape[1]):
-            data[:, i] = np.array(reduced_coordinate_list)[:, i]
+        param_array, _ = self._trim_results()
 
         labels = [str(name) for name in self.parameter_names]
-        cornerplot = corner.corner(data, labels=labels, quantiles=[0.34, 0.5, 0.68])
 
-        mean, std = np.mean(data, axis=0), np.std(data, axis=0)
+        target_figure = self._create_figure()
+
+        cornerplot = corner.corner(
+            param_array,
+            labels=labels,
+            quantiles=self.quantiles,
+            range=self.minmax_coords,
+            fig=target_figure,
+        )
+
+        if target_figure is not None:
+            target_figure.savefig(f"{self.output_filename}_cornerplot.png")
+
+        mean, std = np.mean(param_array, axis=0), np.std(param_array, axis=0)
 
         return cornerplot, mean, std
+
+    def create_parameter_plots(self, cutoff_fraction: float = 0.3):
+        """Show the force field parameters plotted against the FoM.
+
+        The results are sorted by FoM. The cutoff_fraction argument
+        determines how many data points out of the total amount will
+        be included in the plot.
+
+        Parameters
+        ----------
+        cutoff_fraction : float, optional
+            The fraction of best points to be included, 1.0 for all, by default 0.3
+        """
+        if self.output_filename is None:
+            return
+        param_vals, sorted_FoM = self._trim_results()
+        nrows = len(self.parameter_names)
+        temp_fig = self._create_figure(nrows=nrows)
+        x_axis = None
+        for pindex, name, param in zip(
+            range(nrows), self.parameter_names, param_vals.T, strict=True
+        ):
+            if x_axis is None:
+                splot = temp_fig.add_subplot(nrows, 1, pindex + 1)
+                x_axis = splot
+            else:
+                splot = temp_fig.add_subplot(nrows, 1, pindex + 1, sharex=x_axis)
+            splot.plot(sorted_FoM, param, "o")
+            splot.set_xlabel("FoM")
+            splot.set_ylabel(name)
+        temp_fig.savefig(f"{self.output_filename}_parameters.png")
+
+    def create_FoM_plot(self, use_logscale: bool = True):
+        """Show the FoM values over the entire refinement.
+
+        By default the plot will use logarithmic scale for the FoM values.
+
+        Parameters
+        ----------
+        use_logscale : bool, optional
+            Apply logarithmic scale to the plotted results, by default True
+        """
+        if self.output_filename is None:
+            return
+        unsorted_FoM = np.array(self.FoMs)
+        temp_fig = self._create_figure()
+        splot = temp_fig.add_subplot(1, 1, 1)
+        splot.plot(unsorted_FoM, "o")
+        splot.set_title("Refinement FoM evolution")
+        splot.set_xlabel("step #")
+        splot.set_ylabel("FoM")
+        if use_logscale:
+            splot.set_yscale("log")
+        temp_fig.savefig(f"{self.output_filename}_FoM.png")
 
 
 class DataPrinter(ABC):
