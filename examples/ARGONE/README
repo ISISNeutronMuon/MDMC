@@ -1,0 +1,25 @@
+************ SIMULATIONS WITH ARGON ******************
+
+Simulations contained the following numbers of atoms: 343, 512, 729, 1000
+
+###########################################################################
+Time-step was equal to 2 fs
+Cut-off was 6 Å
+Integrator was leapfrog
+Temperature was 120 K with the coupling constant equal to 0.5 ps
+The algorithm for thermostat was Velocity Rescale
+Barostat was Berendsen with the coupling constant 10 ps
+Pressure was 1 atm
+Pressure coupling scheme was isotropic (equal in all 3 directions)
+
+###########################################################################
+Values for SANS profiles were computed on the interval of 2.5-3 ns.
+The total duration of each simulation was 3 ns.
+
+###########################################################################
+Files with sq are for S(q), pr are for G(r). Numbers stand for simulations with the same settings.
+
+###########################################################################
+FIles named as CONV_*.dat are values to analyze the convergence of each simulations. 
+The first column is the time in ps, the second one is the E_tot - total energy during the whole simulation in kJ/mol,
+the second column is the temperature in K, and the last one is the size of the box in X-direction in nm.
