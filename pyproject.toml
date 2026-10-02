@@ -30,6 +30,7 @@ dependencies = [
   "statsmodels==0.14.5",
   "cma==4.4.4",
   "h5py==3.16.0",
+  "packmol==21.2.3",
   "openmm==8.4.0",
   "networkx==3.4",
   "mdanse==2.0.1",
