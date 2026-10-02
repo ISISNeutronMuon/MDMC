@@ -34,18 +34,19 @@ jobs:
     name: Documentation-deploy
     runs-on: ubuntu-22.04
     steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v7
     - name: Setup Python
       uses: actions/setup-python@v7
       with:
         python-version: '3.11.2'
         architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v7
+    - name: Install MDMC
+      run: pip install .[test,docs]
     - name: Build documentation
       run: |
         sudo apt-get update
         sudo apt-get install pandoc -y
-        pip3 install .[docs]
         sphinx-apidoc MDMC -o doc/reference/api/
         make -d -C doc html
     - name: Deploy
