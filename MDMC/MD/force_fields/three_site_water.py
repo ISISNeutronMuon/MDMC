@@ -164,7 +164,7 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
     nonbonded.function.charge.parameter_name = f"{model_name}-O-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-O-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-O-nonbonded_sigma"
-    universe.set_atom_charge(atom_name=f"{model_name}-O", charge=q_O)
+    universe.set_atom_charge(atom_type=f"{model_name}-O", charge=q_O)
 
     nonbonded = NonBondedForce(
         universe,
@@ -183,7 +183,7 @@ def add_three_site_water_ff(universe, cutoff: float, ewald: float, model_name: s
     nonbonded.function.charge.parameter_name = f"{model_name}-H-nonbonded_charge"
     nonbonded.function.epsilon.parameter_name = f"{model_name}-H-nonbonded_epsilon"
     nonbonded.function.sigma.parameter_name = f"{model_name}-H-nonbonded_sigma"
-    universe.set_atom_charge(atom_name=f"{model_name}-H", charge=q_H)
+    universe.set_atom_charge(atom_type=f"{model_name}-H", charge=q_H)
 
     harmonicbond = HarmonicPotential(
         equilibrium_state=r_OH,

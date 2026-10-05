@@ -37,18 +37,17 @@ paracetamol = Molecule(atoms=atoms)
     H817  # Phenol -OH H
 ) = atoms
 
-# MDMC does not add improper dihedrals interactions for us, we need to
+# MDMC did not add improper dihedrals interactions for us, we need to
 # add them in manually
-impropers = [
-    DihedralAngle((C807, O808, C809, C806), improper=True),
-    DihedralAngle((C804, C810, N803, C805), improper=True),
-    DihedralAngle((N803, C801, C804, H814), improper=True),
-    DihedralAngle((C805, C804, C806, H815), improper=True),
-    DihedralAngle((C806, H816, C805, C807), improper=True),
-    DihedralAngle((C809, H818, C810, C807), improper=True),
-    DihedralAngle((C810, C809, H819, C804), improper=True),
-    DihedralAngle((C801, N803, C800, O802), improper=True),
-]
+DihedralAngle((C807, O808, C809, C806), improper=True)
+DihedralAngle((C804, C810, N803, C805), improper=True)
+DihedralAngle((N803, C801, C804, H814), improper=True)
+DihedralAngle((C805, C804, C806, H815), improper=True)
+DihedralAngle((C806, H816, C805, C807), improper=True)
+DihedralAngle((C809, H818, C810, C807), improper=True)
+DihedralAngle((C810, C809, H819, C804), improper=True)
+DihedralAngle((C801, N803, C800, O802), improper=True)
+
 
 
 # Create a universe and add the paracetamol molecules

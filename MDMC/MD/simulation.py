@@ -1013,13 +1013,13 @@ class Universe(AtomContainer):
             new_unit = structures.copy(position)
             self.add_structure(new_unit)
 
-    def set_atom_charge(self, atom_name: str = "", charge=0.0):
-        if not atom_name:
+    def set_atom_charge(self, atom_type: str = "", charge=0.0):
+        if not atom_type:
             for atom in self.atoms:
                 atom.charge = charge
             return
         for atom in self.atoms:
-            if atom.name == atom_name:
+            if atom.atom_type == atom_type:
                 atom.charge = charge
 
     def update_charges(self, charge_parameters: Parameters):
