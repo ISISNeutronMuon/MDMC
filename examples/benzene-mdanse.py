@@ -89,16 +89,16 @@ def run_everything():
     DihedralAngle((C805, C804, C801, H807), improper=True)
 
     # Create a universe and add the benzene molecules
-    universe = Universe(dimensions=20.0)
-    universe.fill(benzene, num_struc_units=55)
+    universe = Universe(dimensions=20.0)  # needs adjusting
+    universe.fill(benzene, num_struc_units=55)  # needs adjusting
     add_opls_force_field(universe, cutoff=6.0, ewald=1e-4)  # needs adjusting
 
     simulation = Simulation(
         universe,
         engine="openmm",
-        time_step=1.0,
+        time_step=1.0,  # needs adjusting
         temperature=300,
-        traj_step=10,
+        traj_step=10,  # needs adjusting
         openmm_platform="OpenCL",
         # default precision on CUDA and OpenCL is single
         openmm_properties={"Precision": "mixed"},
@@ -126,7 +126,7 @@ def run_everything():
                 # (ensemble [NPT runs KPSS test on volume and temperature],
                 # max number of steps, steps per iteration, kpss window,
                 # kpss tolerance)
-                "n_steps": ("NPT", 100000, 100, 1000, 0.01) # probably need to change all these parameters
+                "n_steps": ("NPT", 100000, 100, 1000, 0.01) # needs adjusting
             },
             # equilibration stage 2 equilibrate the cell volume and temperature
             # with more normal friction and monte carlo pressure changes
@@ -137,18 +137,18 @@ def run_everything():
                     "barostat": "MonteCarlo",
                     "defaultPressure": 20.1 * unit.bar,
                 },
-                "n_steps": ("NPT", 100000, 100, 1000, 0.01) # probably need to change all these parameters
+                "n_steps": ("NPT", 100000, 100, 1000, 0.01) # needs adjusting
             },
             # equilibration stage 3 NVT with the equilibrated cell volume
             {
                 "integrator": "LangevinMiddle",
                 "frictionCoeff": 0.25 / unit.picoseconds,
-                "n_steps": ("NVT", 100000, 100, 1000, 0.01) # probably need to change all these parameters
+                "n_steps": ("NVT", 100000, 100, 1000, 0.01) # needs adjusting
             },
             # equilibration stage 4 NVE equilibration to prepare for production
             {
                 "integrator": "Verlet",
-                "n_steps": ("NVE", 100000, 100, 1000, 0.01) # probably need to change all these parameters
+                "n_steps": ("NVE", 100000, 100, 1000, 0.01) # needs adjusting
             },
             # production NVE, n_steps not specified here since this is
             # determined by MDMC using the expt data
@@ -157,8 +157,6 @@ def run_everything():
             },
         ]
     )
-
-    simulation.run(n_steps=30000, equilibration=True)
 
     # exp_datasets is a list of dictionaries with one dictionary per experimental
     # dataset
@@ -213,7 +211,7 @@ def run_everything():
             p.fixed = True
 
     new_settings = {
-        "running_mode": ("multicore", 8),
+        "running_mode": ("multicore", 8),  # needs adjusting
         "instrument_resolution": mdanse_resolution,
     }
     md_observable.set_parameters(new_settings)
@@ -224,16 +222,16 @@ def run_everything():
         exp_datasets=exp_datasets,
         fit_parameters=universe.parameters,
         observable_pairs=[observable_pair],
-        equilibration_steps=9000,  # needs adjusting for system size and experimental data
-        MD_steps=4800,  # needs adjusting for system size and experimental data
+        equilibration_steps=9000,  # needs adjusting
+        MD_steps=4800,  # needs adjusting
         cont_slicing=True,
         file_dump_extent="all",
-        file_dump_frequency="best",
+        file_dump_frequency="every",
         FoM_options={"error": "none"},
         conv_tol=1e-6,
     )
     # Energy Minimization and equilibration
-    control.equilibrate(n_steps=15000)
+    control.equilibrate(n_steps=15000)  # needs adjusting
 
     # Run the refinement, i.e. refine the FF parameters against the data.
     control.refine(n_steps=200)
