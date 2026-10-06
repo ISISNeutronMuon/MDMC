@@ -1337,6 +1337,11 @@ class Molecule(CompositeStructure):
                 rescaled_charges[element_name] = par_values[par_ind]
             else:
                 set_charges[element_name] = par_values[par_ind]
+
+        if not rescaled_charges:
+            # all charges are fixed
+            return
+
         all_charges = {}
         all_charges.update(rescaled_charges)
         all_charges.update(set_charges)
