@@ -29,34 +29,3 @@ jobs:
       with:
         name: master-profiling
         path: master-profiling.csv
-
-  doc-deploy:
-    name: Documentation-deploy
-    runs-on: ubuntu-22.04
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v7
-    - name: Setup Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.11.2'
-        architecture: x64
-    - name: Build documentation
-      run: |
-        sudo apt-get update
-        sudo apt-get install pandoc -y
-        pip3 install .[docs]
-        sphinx-apidoc MDMC -o doc/reference/api/
-        make -d -C doc html
-    - name: Deploy
-      env:
-        token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
-      run: |
-        git clone https://github.com/MDMCproject/MDMCproject.github.io
-        cd ./MDMCproject.github.io
-        cp -r  ../doc/_build/html/* ../MDMCproject.github.io/
-        git config --global user.name "Github Actions"
-        git add *
-        git commit -a -m "CI deployment"
-        git merge -X ours master
-        git push https://$token@github.com/MDMCproject/MDMCproject.github.io
