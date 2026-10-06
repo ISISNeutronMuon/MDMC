@@ -135,7 +135,7 @@ def run_everything():
                 "frictionCoeff": 0.25 / unit.picoseconds,
                 "barostat": {
                     "barostat": "MonteCarlo",
-                    "defaultPressure": 20.1 * unit.bar,
+                    "defaultPressure": 1.01 * unit.bar,
                 },
                 "n_steps": ("NPT", 100000, 100, 1000, 0.01) # needs adjusting
             },
