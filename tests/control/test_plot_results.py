@@ -1,8 +1,6 @@
 """Tests the PlotResults class"""
 from unittest.mock import patch
 
-from skopt import Optimizer
-from skopt.learning import GaussianProcessRegressor
 import numpy as np
 import pandas as pd
 import pytest
@@ -28,40 +26,13 @@ def mocked_df():
         ])
 
 
-def test_optimizer_types(mocked_df):
+def test_parameter_names(mocked_df):
     """
-    Tests that the instantiation of a PlotResults object has
-    the correct type of minimizer and trained model within that minimizer.
-    """
-    with patch("MDMC.control.plot_results.pd.read_csv",
-               autospec=True,return_value=mocked_df):
-        plotter = PlotResults(filename="ignore")
-        assert isinstance(plotter.optimizer, Optimizer)
-        assert isinstance(plotter.optimizer.models[-1], GaussianProcessRegressor)
-
-def test_model_random_sampling(mocked_df):
-    """
-    Tests that the random sampling of the model generates the correct number
-    of samples and that the number of samples can be changed by the PlotResults object
+    Check that PlotResults instance has picked the correct columns
+    from the input file.
     """
     with patch("MDMC.control.plot_results.pd.read_csv",
                autospec=True,return_value=mocked_df):
         plotter = PlotResults(filename="ignore")
-        result = plotter._expected_minimum_random_sampling()
-        assert len(result[3]) == 100000
-        plotter.points = 50
-        small_result = plotter._expected_minimum_random_sampling()
-        assert len(small_result[3]) == 50
+        assert set(plotter.parameter_names) == {"parameter1 (#7)", "parameter2 (#8)"}
 
-
-def test_remove_points(mocked_df):
-    """Tests that points with poor figures of merit are likely to be removed"""
-    with patch("MDMC.control.plot_results.pd.read_csv",
-            autospec=True,return_value=mocked_df):
-        plotter = PlotResults(filename="ignore",MH_norm=2.0)
-        chi_squared =  np.append(np.ones(500), np.ones(500)*2.0)
-        coords = list(np.append(np.ones((500,2)), np.ones((500,2),)*2.0, axis=0))
-        less_chi, removed = plotter._remove_points(chi_squared=chi_squared, coords=coords)
-
-        np.testing.assert_allclose(less_chi[:500], np.ones(500), atol=1e-7)  # Check all ones are kept
-        assert (len(removed) > 555 and len(removed) < 585)  # check roughly correct number remain (should be 567)

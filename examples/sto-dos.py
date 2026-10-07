@@ -154,4 +154,5 @@ control.equilibrate(n_steps=40000)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=3000)
+control.refine(n_steps=300)
+control.plot_results(output_filename="summary_sto_dos")
