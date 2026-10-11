@@ -1,0 +1,15 @@
+; Include forcefield parameters
+#include "./forcefield.ff/forcefield.itp"
+
+; Include water topology
+#include "PGM.itp"
+#include "oplsaa.ff/spce.itp"
+
+[ system ]
+; Name
+PGM in water
+
+[ molecules ]
+; Compound        #mols
+PGM               125
+SOL               1028

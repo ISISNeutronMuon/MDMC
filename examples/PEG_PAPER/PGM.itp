@@ -1,0 +1,240 @@
+;
+;	File 'topol.top' was generated
+;	By user: inna (1000)
+;	On host: inna-ThinkPad-T14-Gen-5
+;	At date: Sun Sep  6 20:48:21 2026
+;
+;	This is a standalone topology file
+;
+;	Created by:
+;	                    :-) GROMACS - gmx pdb2gmx, 2022.6 (-:
+;	
+;	Executable:   /usr/local/gromacs/bin/gmx
+;	Data prefix:  /usr/local/gromacs
+;	Working dir:  /home/inna/MDMC_TESTS_PEG/sim1
+;	Command line:
+;	  gmx pdb2gmx -f PGME.pdb -o PGME.gro
+;	Force field was read from current directory or a relative path - path added.
+;
+
+; Include forcefield parameters
+;#include "./forcefield.ff/forcefield.itp"
+
+[ moleculetype ]
+; Name            nrexcl
+PGM               3
+
+[ atoms ]
+;   nr       type  resnr residue  atom   cgnr     charge       mass  typeB    chargeB      massB
+; residue   1 PGM rtp PGM  q  0.0
+     1   opls_181      1    PGM     C1      1       0.25     12.011
+     2   opls_180      1    PGM     O1      2      -0.65    15.9994
+     3   opls_182      1    PGM     C2      3        0.2     12.011
+     4   opls_183      1    PGM     C3      4          0     12.011
+     5   opls_181      1    PGM     C4      5       0.24     12.011
+     6   opls_180      1    PGM     O2      6      -0.65    15.9994
+     7   opls_182      1    PGM     C5      7        0.2     12.011
+     8   opls_183      1    PGM     C6      8       0.23     12.011
+     9   opls_181      1    PGM     C7      9       0.23     12.011
+    10   opls_154      1    PGM     O3     10       -0.8    15.9994
+    11   opls_156      1    PGM     H1     11       0.03      1.008
+    12   opls_156      1    PGM     H2     12       0.03      1.008
+    13   opls_156      1    PGM     H3     13       0.03      1.008
+    14   opls_156      1    PGM     H4     14          0      1.008
+    15   opls_156      1    PGM     H5     15          0      1.008
+    16   opls_156      1    PGM     H6     16       0.04      1.008
+    17   opls_156      1    PGM     H7     17       0.03      1.008
+    18   opls_156      1    PGM     H8     18       0.03      1.008
+    19   opls_156      1    PGM     H9     19       0.03      1.008
+    20   opls_156      1    PGM    H10     20          0      1.008
+    21   opls_156      1    PGM    H11     21          0      1.008
+    22   opls_156      1    PGM    H12     22       0.04      1.008
+    23   opls_156      1    PGM    H13     23       0.03      1.008
+    24   opls_156      1    PGM    H14     24       0.03      1.008
+    25   opls_156      1    PGM    H15     25       0.03      1.008
+    26   opls_155      1    PGM    H16     26        0.4      1.008   ; qtot 0
+
+[ bonds ]
+;  ai    aj funct            c0            c1            c2            c3
+    1     2     1 
+    1    11     1 
+    1    12     1 
+    1    13     1 
+    2     3     1 
+    3     4     1 
+    3    14     1 
+    3    15     1 
+    4     5     1 
+    4     6     1 
+    4    16     1 
+    5    17     1 
+    5    18     1 
+    5    19     1 
+    6     7     1 
+    7     8     1 
+    7    20     1 
+    7    21     1 
+    8     9     1 
+    8    10     1 
+    8    22     1 
+    9    23     1 
+    9    24     1 
+    9    25     1 
+   10    26     1 
+
+[ pairs ]
+;  ai    aj funct            c0            c1            c2            c3
+    1     4     1 
+    1    14     1 
+    1    15     1 
+    2     5     1 
+    2     6     1 
+    2    16     1 
+    3     7     1 
+    3    11     1 
+    3    12     1 
+    3    13     1 
+    3    17     1 
+    3    18     1 
+    3    19     1 
+    4     8     1 
+    4    20     1 
+    4    21     1 
+    5     7     1 
+    5    14     1 
+    5    15     1 
+    6     9     1 
+    6    10     1 
+    6    14     1 
+    6    15     1 
+    6    17     1 
+    6    18     1 
+    6    19     1 
+    6    22     1 
+    7    16     1 
+    7    23     1 
+    7    24     1 
+    7    25     1 
+    7    26     1 
+    9    20     1 
+    9    21     1 
+    9    26     1 
+   10    20     1 
+   10    21     1 
+   10    23     1 
+   10    24     1 
+   10    25     1 
+   14    16     1 
+   15    16     1 
+   16    17     1 
+   16    18     1 
+   16    19     1 
+   20    22     1 
+   21    22     1 
+   22    23     1 
+   22    24     1 
+   22    25     1 
+   22    26     1 
+
+[ angles ]
+;  ai    aj    ak funct            c0            c1            c2            c3
+    2     1    11     1 
+    2     1    12     1 
+    2     1    13     1 
+   11     1    12     1 
+   11     1    13     1 
+   12     1    13     1 
+    1     2     3     1 
+    2     3     4     1 
+    2     3    14     1 
+    2     3    15     1 
+    4     3    14     1 
+    4     3    15     1 
+   14     3    15     1 
+    3     4     5     1 
+    3     4     6     1 
+    3     4    16     1 
+    5     4     6     1 
+    5     4    16     1 
+    6     4    16     1 
+    4     5    17     1 
+    4     5    18     1 
+    4     5    19     1 
+   17     5    18     1 
+   17     5    19     1 
+   18     5    19     1 
+    4     6     7     1 
+    6     7     8     1 
+    6     7    20     1 
+    6     7    21     1 
+    8     7    20     1 
+    8     7    21     1 
+   20     7    21     1 
+    7     8     9     1 
+    7     8    10     1 
+    7     8    22     1 
+    9     8    10     1 
+    9     8    22     1 
+   10     8    22     1 
+    8     9    23     1 
+    8     9    24     1 
+    8     9    25     1 
+   23     9    24     1 
+   23     9    25     1 
+   24     9    25     1 
+    8    10    26     1 
+
+[ dihedrals ]
+;  ai    aj    ak    al funct            c0            c1            c2            c3            c4            c5
+   11     1     2     3     3 
+   12     1     2     3     3 
+   13     1     2     3     3 
+    1     2     3     4     3 
+    1     2     3    14     3 
+    1     2     3    15     3 
+    2     3     4     5     3 
+    2     3     4     6     3 
+    2     3     4    16     3 
+   14     3     4     5     3 
+   14     3     4     6     3 
+   14     3     4    16     3 
+   15     3     4     5     3 
+   15     3     4     6     3 
+   15     3     4    16     3 
+    3     4     5    17     3 
+    3     4     5    18     3 
+    3     4     5    19     3 
+    6     4     5    17     3 
+    6     4     5    18     3 
+    6     4     5    19     3 
+   16     4     5    17     3 
+   16     4     5    18     3 
+   16     4     5    19     3 
+    3     4     6     7     3 
+    5     4     6     7     3 
+   16     4     6     7     3 
+    4     6     7     8     3 
+    4     6     7    20     3 
+    4     6     7    21     3 
+    6     7     8     9     3 
+    6     7     8    10     3 
+    6     7     8    22     3 
+   20     7     8     9     3 
+   20     7     8    10     3 
+   20     7     8    22     3 
+   21     7     8     9     3 
+   21     7     8    10     3 
+   21     7     8    22     3 
+    7     8     9    23     3 
+    7     8     9    24     3 
+    7     8     9    25     3 
+   10     8     9    23     3 
+   10     8     9    24     3 
+   10     8     9    25     3 
+   22     8     9    23     3 
+   22     8     9    24     3 
+   22     8     9    25     3 
+    7     8    10    26     3 
+    9     8    10    26     3 
+   22     8    10    26     3 
+
