@@ -1,0 +1,446 @@
+1 AG; Silver metal (HH et al. 2008)
+2 AL; Aluminiummetal (HH etal. 2008)
+3 ALG1; Aluminum,for ALF4, AlF4-
+4 ALSI; Aluminum Atom;
+5 AU; Gold metal (HH etal. 2008)
+6 BAR; Barium Ion
+7 BRGA1; BRET, bromoethane
+8 BRGA2; DBRE, 1,1-dibromoethane
+9 BRGA3; TBRE, 1,1,1-dibromoethane
+10 BRGR1; BROB, bromobenzene
+11 C; carbonyl C, peptide backbone
+12 C3; cyclopropane carbo
+13 CA; aromatic C
+14 CAD; cadmium (II) cation
+15 CAI; aromatic C next to CPTin trp
+16 CAL; Calcium Ion
+17 CC; carbonyl C, asn,asp,gln,glu,cter,ct2
+18 CC1A; alkene conjugation
+19 CC1B; alkene conjugation
+20 CC2; alkene conjugation
+21 CC2O1; sp2 carbon in amides, aldoses
+22 CC2O2; sp2 carbon in carboxylates
+23 CC2O3; sp2 carbon in acetone,ketoses
+24 CC2O4; c22 CD
+25 CC2O5; carbonyl C on acetyl
+26 CC301; aliphaticC, no H's
+27 CC3051; furan ring carbon; C2 fructose
+28 CC3062; C2on NE5AC
+29 CC30A; -C(sp3)Carbon (eq. CT)
+30 CC311; generic acyclic CH carbon
+31 CC311C; patch C1 in modelcompound
+32 CC311D; patch C1 in modelcompound
+33 CC312; CHcarbonin linear polyols
+34 CC312C; tf2m CH1
+35 CC312D; from CC322C; THF anomeric carbon
+36 CC3151; furan ring carbon
+37 CC3152; furan ring carbon
+38 CC3153; furan ring carbon
+39 CC3161; C2, C3, C4 CH bound toOH
+40 CC3162; C1(anomeric) CH boundto OH
+41 CC3163; C5CH bound to exocylic CH2OH
+42 CC31A; -C(sp3)HCarbon (eq. CT1)
+43 CC321; generic acyclic CH2 carbon (hexopyranoseC6)
+44 CC321C; cyclohexane, thp CH2
+45 CC321D; cyclohexane, thp CH2 model for 1-1 linkage
+46 CC322; CH2 carbon in linear polyols erh
+47 CC322C; cyclopentane, thfCH2
+48 CC3251; furan ring carbon; C2 deoxy
+49 CC325A; -C(sp3)H2Carbon in 5-membered ring
+50 CC325B; -C(sp3)H2Carbon in THF (tetrahydrofuran)
+51 CC3261; C3on NE5AC
+52 CC3263; C5in xylose
+53 CC326A; -C(sp3)H2Carbon in THP (tetrahydropyran)
+54 CC32A; -C(sp3)H2Carbon (eq. CT2)
+55 CC331; generic acyclic CH3 carbon (xyl C6,glcna/galna CT)
+56 CC33A; -C(sp3)H3Carbon (eq. CT3)
+57 CCL; for POPS
+58 CD; carbonyl C, pres aspp,glup,ct1
+59 CE1; for alkene; RHC=CR
+60 CE2; for alkene; H2C=CR
+61 CEL1; for alkene; RHC=CR
+62 CEL2; for alkene; H2C=CR. Currently unused0
+63 CEL3;
+64 CES; Cesium Ion
+65 CG1N1; C for cyano group
+66 CG1T1; internal alkyne R-C#C
+67 CG1T2; terminal alkyne H-C#C
+68 CG251O; same as CG2D1O but in 5-membered ring with exocyclic double bond
+69 CG252O; same as CG2D2O but in 5-membered ring with exocyclic double bond
+70 CG25C1; same as CG2DC1 but in 5-membered ring with exocyclic double bond
+71 CG25C2; same as CG2DC2 but in 5-membered ring with exocyclic double bond
+72 CG2D1; alkene; RHC= ; imine C
+73 CG2D1O; double bond carbon adjacent to heteroatom. In conjugated systems, the atom to which it is double bonded must be CG2DC1.
+74 CG2D2; alkene; H2C=
+75 CG2D2O; double bond carbon adjacent to heteroatom. In conjugated systems, the atom to which it is double bonded must be CG2DC2.
+76 CG2DC1; conjugated alkenes, R2C#REF!
+77 CG2DC2; conjugated alkenes, R2C#REF!
+78 CG2DC3; conjugated alkenes, H2C=
+79 CG2N1; conjugated C in guanidine/guanidinium
+80 CG2N2; conjugated C in amidinium cation
+81 CG2O1; carbonyl C: amides
+82 CG2O2; carbonyl C: esters, [neutral] carboxylicacids
+83 CG2O3; carbonyl C: [negative]carboxylates
+84 CG2O4; carbonyl C: aldehydes
+85 CG2O5; carbonyl C: ketones
+86 CG2O6; carbonyl C: urea,carbonate
+87 CG2O7; CO2 carbon
+88 CG2R51; 5-mem ring, his CG, CD2(0), trp
+89 CG2R52; 5-mem ring, double bound to N, PYRZ, pyrazole
+90 CG2R53; 5-mem ring, double bound to N and adjacent to another heteroatom, purine C8, his CE1 (0,+1), 2PDO, kevo
+91 CG2R57; 5-mem ring, bipyrroles
+92 CG2R61; 6-mem aromatic C
+93 CG2R62; 6-mem aromatic C for protonated pyridine(NIC) and rings containing carbonyls (see CG2R63) (NA)
+94 CG2R63; 6-mem aromatic amide carbon (NA) (and other 6-mem aromatic carbonyls?)
+95 CG2R64; 6-mem aromatic amidineand guanidine carbon (between 2 or 3 Ns and double-bound to one of them), NA, PYRM
+96 CG2R66; 6-mem aromatic carbon bound to F
+97 CG2R67; 6-mem aromatic carbon of biphenyl
+98 CG2R71; 7-mem ring arom C, AZUL, azulene, kevo
+99 CG2RC0; 6/5-mem ring bridging C, guanine C4,C5, trp
+100 CG2RC7; sp2 ring connection with single bond(!),AZUL, azulene, kevo
+101 CG301; aliphaticC, no hydrogens, neopentane
+102 CG302; aliphaticC, no hydrogens, trifluoromethyl
+103 CG311; aliphaticC with 1 H, CH
+104 CG312; aliphaticC with 1 H, difluoromethyl
+105 CG314; aliphaticC with 1 H, adjacent to positive N (PROT NTER) (+)
+106 CG321; aliphaticC for CH2
+107 CG322; aliphaticC for CH2, monofluoromethyl
+108 CG323; aliphaticC for CH2, thiolate carbon
+109 CG324; aliphaticC for CH2, adjacent to positive N (piperidine) (+)
+110 CG331; aliphaticC for methylgroup (-CH3)
+111 CG334; aliphaticC for methylgroup (-CH3), adjacent to positive N (PROT NTER) (+)
+112 CG3AM0; aliphaticC for CH3, NEUTRAL trimethylamine methyl carbon (#)
+113 CG3AM1; aliphaticC for CH3, NEUTRAL dimethylamine methyl carbon (#)
+114 CG3AM2; aliphaticC for CH3, NEUTRAL methylaminemethyl carbon (#)
+115 CG3C31; cyclopropyl carbon
+116 CG3C41; cyclobutyl carbon
+117 CG3C50; 5-mem ring aliphatic quaternary C (cholesterol, bile acids)
+118 CG3C51; 5-mem ring aliphatic CH  (proline CA, furanoses)
+119 CG3C52; 5-mem ring aliphatic CH2 (proline CB/CG/CD, THF, deoxyribose)
+120 CG3C53; 5-mem ring aliphatic CH  adjacent to positive N (proline.H+ CA) (+)
+121 CG3C54; 5-mem ring aliphatic CH2 adjacent to positive N (proline.H+ CD) (+)
+122 CG3RC1; bridgehead in bicyclicsystems containing at least one 5-membered or smaller ring
+123 CL; carbonyl C (acetic acid/methyl acetate)
+124 CLA; Chloride Ion
+125 CLGA1; CLET, DCLE, chloroethane, 1,1-dichloroethane
+126 CLGA3; TCLE, 1,1,1-trichloroethane
+127 CLGR1; CHLB, chlorobenzene
+128 CM; heme CO carbon
+129 CN1; Nucleic acid carbonyl carbon
+130 CN1A; NAD+/NADHamide carbonyl carbon
+131 CN1T; Nucleic acid carbonyl carbon (T/U C2)
+132 CN2; Nucleic acid aromatic carbon to amide
+133 CN3; Nucleic acid aromatic carbon
+134 CN3A; NAD+ aromatic carbon
+135 CN3B; NAD+ aromatic carbon
+136 CN3C; NADH aromatic carbon
+137 CN3D; Nucleic acid aromatic carbon for 5MC
+138 CN3T; Nucleic acid aromatic carbon, Thy C5
+139 CN4; Nucleic acid purine C8and ADE C2
+140 CN5; Nucleic acid purine C4and C5
+141 CN5G; Nucleic acid guanine C5
+142 CN6; carbocylic NA modifications (numbering is correct)
+143 CN7; Nucleic acid carbon (equivalent to protein CT1)
+144 CN7B; Nucleic acid aliphaticcarbon for C1'
+145 CN7E; cabocyclic NA modifications
+146 CN8; Nucleic acid carbon (equivalent to protein CT2)
+147 CN8B; Nucleic acid carbon (equivalent to protein CT2)
+148 CN9; Nucleic acid carbon (equivalent to protein CT3)
+149 CNA; pure aromatic carbon
+150 CNA2; pure aromatic carbon bound to F
+151 CNE1; for alkene; RHC=CR (modified thy patch Sasha)
+152 CNE2; for alkene; H2C=CR (modified thy patch Sasha)
+153 CNG; guanidinium type carbon
+154 CP1; tetrahedral C (prolineCA)
+155 CP2; tetrahedral C (prolineCB/CG)
+156 CP3; tetrahedral C (prolineCD)
+157 CPA; heme alpha-C
+158 CPB; heme beta-C
+159 CPD1; added forD-proline
+160 CPH1; his CG and CD2 carbons
+161 CPH2; his CE1 carbon
+162 CPM; heme meso-C
+163 CPT; trp C between rings
+164 CRL1; sp3 carbon with 1H ona ring  (-CH1-) for sterols
+165 CRL2; carbon ofmethylene group on a ring(-CH2-) for sterols
+166 CS; thiolate carbon
+167 CST; CO2 carbon
+168 CT; aliphaticsp3 C, new LJ params, no hydrogens
+169 CT1; aliphaticsp3 C for CH
+170 CT2; aliphaticsp3 C for CH2
+171 CT2A; from CT2 (asp, glu, hsp chi1/chi2 fitting)
+172 CT2P; (sp3)H2 Carbon inPNA backbone (eq.CT2)
+173 CT3; aliphaticsp3 C for CH3
+174 CTD1; added forD-aminoacids
+175 CTL1; sp3 carbon with 1H  (-CH1-)
+176 CTL2; carbon ofmethylene group (-CH2-)
+177 CTL3; carbon ofmethyl group(-CH3)
+178 CTL5; carbon ofmethyl group(-CH3) for tetramethylammonium
+179 CTO1;
+180 CTO2;
+181 CU; Copper metal (HH et al. 2008)
+182 CY; TRP C in pyrrole ring
+183 DUM; dummy atom
+184 FE; heme iron56
+185 FGA1; aliphaticfluorine, monofluoro
+186 FGA2; aliphaticfluorine, difluoro
+187 FGA3; aliphaticfluorine, trifluoro
+188 FGP1; anionic F, for ALF4 AlF4-
+189 FGR1; aromatic flourine
+190 FNA; Aromatic fluorine
+191 H; polar H
+192 HA; nonpolar H
+193 HA1; alkane, CH, new LJ params (see toppar_all22_prot_aliphatic_c27.str)
+194 HA2; alkane, CH2, new LJ params (see toppar_all22_prot_aliphatic_c27.str)
+195 HA3; alkane, CH3, new LJ params (see toppar_all22_prot_aliphatic_c27.str)
+196 HAL; Sialiphatic hydrogen;
+197 HAL1; alphatic proton
+198 HAL2; alphatic proton
+199 HAL3; alphatic proton
+200 HB1; backbone H
+201 HB2; aliphaticbackbone H, to CT2
+202 HBL; POPS SER backboneH
+203 HC; N-ter H
+204 HCA1; aliphaticproton,CH
+205 HCA1A; Alkane H attachedto C(sp3)H  (eq. HA1)
+206 HCA1C2; tf2m aliphatic proton,CH1
+207 HCA2; aliphaticproton,CH2
+208 HCA25A; Alkane H attachedto C(sp3)H2 in 5-membered ring
+209 HCA2A; Alkane H attachedto C(sp3)H2 (eq. HA2)
+210 HCA2C2; cyclopentane, thpaliphatic proton,CH2
+211 HCA3; aliphaticproton,CH3
+212 HCA3A; Alkane H attachedto C(sp3)H3 (eq. HA3)
+213 HCA3M; alcohol aliphaticproton, CH3
+214 HCL; charged Hfor PE (equivalent to protein HC)
+215 HCP1; polar H
+216 HCP1M; EGLY hydroxyl H
+217 HCR1; c22 HR1
+218 HE1; for alkene; RHC=CR
+219 HE2; for alkene; H2C=CR
+220 HEL1; for alkene; RHC=CR
+221 HEL2; for alkene; H2C=CR. Currently unused0
+222 HGA1; alphatic proton, CH
+223 HGA2; alphatic proton, CH2
+224 HGA3; alphatic proton, CH3
+225 HGA4; alkene proton; RHC=
+226 HGA5; alkene proton; H2C#NAME?
+227 HGA6; aliphaticH on fluorinated C, monofluoro
+228 HGA7; aliphaticH on fluorinated C, difluoro
+229 HGAAM0; aliphaticH, NEUTRAL trimethylamine(#)
+230 HGAAM1; aliphaticH, NEUTRAL dimethylamine (#)
+231 HGAAM2; aliphaticH, NEUTRAL methylamine (#)
+232 HGP1; polar H
+233 HGP2; polar H, +ve charge
+234 HGP3; polar H, thiol
+235 HGP4; polar H, neutral conjugated -NH2 group (NA bases)
+236 HGP5; polar H on quarternaryammonium salt (choline)
+237 HGPAM1; polar H, NEUTRAL dimethylamine (#),terminal alkyne H
+238 HGPAM2; polar H, NEUTRAL methylamine (#)
+239 HGPAM3; polar H, NEUTRAL ammonia (#)
+240 HGR51; nonpolar H, neutral 5-mem planar ring C,LJ based on benzene
+241 HGR52; Aldehyde H, formamide H (RCOH); nonpolarH, neutral 5-mem planar ring C adjacent to heteroatom or + charge
+242 HGR53; nonpolar H, +ve chargeHIS he1(+1)
+243 HGR61; aromatic H
+244 HGR62; nonpolar H, neutral 6-mem planar ring C adjacent to heteroatom
+245 HGR63; nonpolar H, NAD+ nicotineamide all ring CH hydrogens
+246 HGR71; nonpolar H, neutral 7-mem arom ring, AZUL, azulene, kevo
+247 HL; polar H (equivalent toprotein H)
+248 HN1; Nucleic acid amine proton
+249 HN2; Nucleic acid ringnitrogen proton
+250 HN3; Nucleic acid aromatic carbon proton
+251 HN3B; NAD+ aromatic hydrogen
+252 HN4; Nucleic acid phosphatehydroxyl proton
+253 HN5; Nucleic acid ribose hydroxyl proton
+254 HN6; Nucleic acid ribose aliphatic proton
+255 HN7; Nucleic acid proton (equivalent to protein HA)
+256 HN8; Bound to CN8 in nucleic acids/modelcompounds
+257 HN9; Bound to CN9 in nucleic acids/modelcompounds
+258 HNE1; for alkene; RHC=CR (modified thy patch Sasha)
+259 HNE2; for alkene; H2C=CR (modified thy patch Sasha)
+260 HNP; pure aromatic H
+261 HOL; Nucleic acid phosphatehydroxyl proton
+262 HP; aromatic H
+263 HR1; his he1, (+) his HG,HD2
+264 HR2; (+) his HE1
+265 HR3; neutral his HG, HD2
+266 HS; thiol hydrogen
+267 HSIA; Sialiphatic hydrogen;
+268 HSIO; Sihydroxyl hydrogen;
+269 HT; TIPS3P WATER HYDROGEN
+270 HX; hydroxidehydrogen
+271 IGR1; IODB, iodobenzene
+272 LIT; Lithium ion
+273 LPH; Lone pairfor halogens
+274 MG; MagnesiumIon
+275 N; proline N
+276 NC2; guanidinium nitrogen
+277 NC2D1; peptide, NMA, IPAA nitrogen (C=NHR)
+278 NC311; Sulfamatenitrogen
+279 NG1T1; N for cyano group
+280 NG2D1; N for neutral imine/Schiff's base (CErr:509 acyclic amidine, gunaidine)
+281 NG2O1; NITB, nitrobenzene
+282 NG2P1; N for protonated imine/Schiff's base (C=N(+)H-R, acyclic amidinium, guanidinium)
+283 NG2R43; amide in 4-memebered ring (planar),AZDO, lsk
+284 NG2R50; double bound neutral 5-mem planar ring, purine N7
+285 NG2R51; single bound neutral 5-mem planar (all atom types sp2) ring, his, trp pyrrole (fused)
+286 NG2R52; protonated schiffbase, amidinium, guanidinium in 5-membered ring, HIS, 2HPP, kevo
+287 NG2R53; amide in 5-memebered NON-SP2 ring (slightly pyramidized), 2PDO, kevo
+288 NG2R57; 5-mem ring, bipyrroles
+289 NG2R60; double bound neutral 6-mem planar ring, pyr1, pyzn
+290 NG2R61; single bound neutral 6-mem planar ring imino nitrogen; glycosyl linkage
+291 NG2R62; double bound 6-mem planar ring withheteroatoms in o or m, pyrd, pyrm
+292 NG2R67; 6-mem planar ringsubstituted with 6-memplanar ring (N-phenyl pyridinones etc.)
+293 NG2RC0; 6/5-mem ring bridging N, indolizine, INDZ, kevo
+294 NG2S0; N,N-disubstitutedamide, proline N (CO=NRR')
+295 NG2S1; peptide nitrogen (CO=NHR)
+296 NG2S2; terminal amide nitrogen (CO=NH2)
+297 NG2S3; external amine ring nitrogen (planar/aniline), phosphoramidate
+298 NG301; neutral trimethylaminenitrogen
+299 NG311; neutral dimethylamine nitrogen
+300 NG321; neutral methylamine nitrogen
+301 NG331; neutral ammonia nitrogen
+302 NG3C51; secondarysp3 amine in5-membered ring
+303 NG3N1; N in hydrazine, HDZN
+304 NG3P0; quarternary N+, choline
+305 NG3P1; tertiary NH+ (PIP)
+306 NG3P2; secondaryNH2+ (proline)
+307 NG3P3; primary NH3+, phosphatidylethanolamine
+308 NH1; peptide nitrogen
+309 NH2; amide nitrogen
+310 NH3; ammonium nitrogen
+311 NH3L; nitrogen phosphatidylethanolamine
+312 NHL;
+313 NI; Nickel metal (HH et al. 2008)
+314 NN1; Nucleic acid amide nitrogen
+315 NN1C; Nucleic acid imino nitrogen (cyt taut Sasha)
+316 NN2; Nucleic acid protonated ring nitrogen
+317 NN2B; From NN2,for N9 in GUA different from ADE
+318 NN2C; Nucleic acid protonated ring nitrogen (cyt taut Sasha)
+319 NN2G; Nucleic acid protonated ring nitrogen, gua N1
+320 NN2U; Nucleic acid protonated ring nitrogen, ura N3
+321 NN3; Nucleic acid unprotonated ring nitrogen
+322 NN3A; Nucleic acid unprotonated ring nitrogen,ade N1 and N3
+323 NN3G; Nucleic acid unprotonated ring nitrogen,gua N3
+324 NN3I; Nucleic acid unprotonated ring nitrogen,inosine N3
+325 NN4; Nucleic acid purine N7
+326 NN6; Nucleic acid sp3 aminenitrogen (equiv to protein nh3)
+327 NNG; guanidinium type nitrogen
+328 NP; Proline ring NH2+(N-terminal)
+329 NPH; heme pyrrole N
+330 NR1; neutral his protonatedring nitrogen
+331 NR2; neutral his unprotonated ring nitrogen
+332 NR3; charged his ring nitrogen
+333 NS1; N for deprotonated Schiff's base
+334 NS2; N for protonated Schiff's base
+335 NTL; ammonium nitrogen
+336 NY; TRP N in pyrrole ring
+337 O; carbonyl oxygen
+338 O2L; Nucleic acid =O in phosphate or sulfate
+339 OAL; SiHydroxyl Oxygen;
+340 OB; carbonyl oxygen in acetic acid
+341 OBL; acetic acid carboxyl oxygen (e. to protein OB)
+342 OC; carboxylate oxygen
+343 OC2D1; sp2 oxygen in amides, aldoses
+344 OC2D2; sp2 oxygen in carboxylates
+345 OC2D3; sp2 oxygen in acetone,ketoses
+346 OC2D4; par22 O
+347 OC2DP; =0in P03H (phosphate)|| O2L in top_all27_lipid.rtf
+348 OC301; generic linear ether
+349 OC302; linear ether in 1-1 glycosidic linkage
+350 OC303; from OC301; linear ether in P1->F3 pyranose-furanose glycosidic linkage
+351 OC305A; Ether Oxygen in THF
+352 OC30A; Ether Oxygen
+353 OC30P; ester O in PO3H (phosphate) || OSL in top_all27_lipid.rtf
+354 OC311; hydroxyl oxygen
+355 OC311M; MEOH, ETOH, PRO2,EGLYhydroxyl O
+356 OC312; OHin PO3H (phosphate)|| OHL in top_all27_lipid.rtf
+357 OC3C51; furan ring oxygen
+358 OC3C5M; thf ring oxygen
+359 OC3C61; ether in six membered ring
+360 OCL; acetate oxygen
+361 OG2D1; carbonyl O: amides, esters, [neutral] carboxylic acids, aldehydes, uera
+362 OG2D2; carbonyl O: negative groups: carboxylates, carbonate
+363 OG2D3; carbonyl O: ketones
+364 OG2D4; 6-mem aromatic carbonyl oxygen (nucleic bases)
+365 OG2D5; CO2 oxygen
+366 OG2N1; NITB, nitrobenzene
+367 OG2P1; =Oin phosphate or sulfate
+368 OG2R50; FURA, furan
+369 OG2S1; mono-thioS-P bond modulated oxygen
+370 OG301; ether -O-!SHOULDWE HAVE A SEPARATE ENOL ETHER??? IF YES, SHOULD WE MERGE IT WITH OG3R60???
+371 OG302; ester -O-
+372 OG303; phosphate/sulfateester oxygen
+373 OG304; linkage oxygen inpyrophosphate/pyrosulphate
+374 OG311; hydroxyl oxygen
+375 OG312; ionized alcohol oxygen
+376 OG3C31; epoxide oxygen, 1EOX, 1BOX, sc
+377 OG3C51; 5-mem furanose ring oxygen (ether)
+378 OG3C61; DIOX, dioxane, ether in 6-membered ring !SHOULD WE MERGE THIS WITH OG3R60???
+379 OG3R60; O in 6-mem cyclicenolether (PY01,PY02) or ester
+380 OH1; hydroxyl oxygen
+381 OHL; Nucleic acid phosphatehydroxyl oxygen
+382 OM; heme CO/O2 oxygen
+383 ON1; Nucleic acid carbonyl oxygen
+384 ON1C; Nucleic acid carbonyl oxygen, cyt O2
+385 ON2; Nucleic acid phosphateester oxygen
+386 ON2M; ether oxygen for methylated C2' of ribose
+387 ON3; Nucleic acid =O in phosphate
+388 ON4; Nucleic acid phosphatehydroxyl oxygen
+389 ON5; Nucleic acid ribose hydroxyl oxygen
+390 ON6; Nucleic acid deoxyribose ring oxygen
+391 ON6B; Nucleic acid ribose ring oxygen
+392 OS; ester oxygen
+393 OSIA; SiEster Oxygen;
+394 OSIE; SiEster Oxygen;
+395 OSIH; SiHydroxyl Oxygen;
+396 OSL; ester oxygen
+397 OSLP; Phosphateoxygen,to avoid conflictwithmethylacetate type O
+398 OST; CO2 oxygen
+399 OT; TIPS3P WATER OXYGEN
+400 OX; hydroxideoxygen
+401 P; phosphorus
+402 P2; phosphorus, adm, 2011 DNA update
+403 P3; pyrophosphate phosphorus
+404 P4; protonated pyrophosphate phosphorus
+405 PB; Lead metal (HH etal. 2008)
+406 PC; phosphorus || PL in top_all27_lipid.rtf
+407 PD; Palladiummetal (HH etal. 2008)
+408 PG0; neutral phosphate
+409 PG1; phosphate-1
+410 PG2; phosphate-2
+411 PL; phosphorus
+412 POT; PotassiumIon
+413 PT; Platinum metal (HH et al. 2008)
+414 RUB; Rubidium Ion
+415 S; sulphur
+416 SC; Sulfate sulfur
+417 SEGD1; selenocarbonyl Se
+418 SG2D1; thiocarbonyl S
+419 SG2P1; mono-thioS-P bond
+420 SG2P2; di-thio S-P bond
+421 SG2R50; THIP, thiophene
+422 SG301; sulfur C-S-S-C type
+423 SG302; thiolate sulfur (-1)
+424 SG311; sulphur, SH, -S-
+425 SG3O1; sulfate -1 sulfur
+426 SG3O2; neutral sulfone/sulfonamide sulfur
+427 SG3O3; neutral sulfoxidesulfur
+428 SI; SiAtom;
+429 SIH3; SiAtom;
+430 SL; Sulfate sulfur
+431 SM; sulfur C-S-S-C type
+432 SOD; Sodium Ion
+433 SS; thiolate sulfur
+434 ZN; zinc (II)cation
+435 MGA; Updated Mg2+
+436 HT01; TIP3P WATER HYDROGEN
+437 OWT4 ; TIP4P
+438 HWT4; TIP4P
+439 MWT4; TIP4P
+440 MNH3; vsite (rigid tetrahedricalNH3 group)
+441 MNH2; vsite
+442 MCH3 ; vsite (rigid CH3 group)
+443 MCH3S; vsite
+444 MW; vsite
+445 ON2B ; forphospho residues
+446 SP; for S-adenosyl methionine
