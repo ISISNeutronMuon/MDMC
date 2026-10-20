@@ -1,0 +1,6 @@
+This folder contains sample boxes with buthanol.
+
+Every box is saved in pdb-format and contains different amount of molecules: 27, 64, 125, 343, 512, 1000.
+All molecules are placed randomly and, threfore, boxes have different sizes.
+
+None of systems was equilibrated.
