@@ -1,0 +1,19 @@
+This folder contains simulation boxes in pdb-format for systems with sucrose and water.
+Water is described by SPCE-model. Sucrose is made for OPLS-AA force field
+
+Files with structures are named in a following way:
+- SUC100PERC_178SUCROSE.pdb
+  For 100% (mass) of sucrose with 178 molecules.
+  
+- SUC50PERC_89SUCROSE_1688WATER.pdb
+  For 50% (mass) of water with 89 molecules of sucrose and 1688 molecules of water.
+  
+- SUC30PERC_124SUCROSE_1013WATER.pdb
+  For 30% (mass) of water with 124 molecules of sucrose and 1013 molecules of water.  
+  
+File SUCROSE.pdb contains the structure for a single molecule of sucrose.
+
+File SUCROSE_oplsaaff.py contains the descriptions of bonds, angles, dihedrals, charges and dispersions of a single 
+molecule of sucrose. Coordinates are the same as in file SUCROSE.pdb
+
+Boxes are suitable for simulations in the interval 310-290 K. 
