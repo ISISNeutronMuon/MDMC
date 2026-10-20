@@ -1,0 +1,10 @@
+In this folder boxes for simulating and refning water can be found.
+Boxes were done using SPCE water-model but can be suitable even for other water-models with 3 sites, 
+like TIP3p, for example, SPC.
+
+There are 3 PDB-files:
+- 27WATERS.pdb
+- 64WATERS.pdb
+- 125WATERS.pdb
+
+Files are named after the number of water molecules in them.
