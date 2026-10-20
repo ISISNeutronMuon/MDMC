@@ -1,0 +1,14 @@
+NOTE! This folder doesn't contain anyfile for METHANOL because it was done in one of other tutorials. 
+
+You can find here files for the following alcohols: ETHANOL, PROPANOL, BUTANOL, PENTANOL, HEXANOL, HEPTANOL, OCTANOL, PHENOL.
+
+These files are the corresponding ones for earlier uplodaded structures. All structures were, of course, optimised. 
+
+The assigned force field was OPLSAA-FF.
+
+Every file contains following descriptions for each molecule of an alcohol:
+- Partial atomic charges & coordinates
+- Bonds
+- Angles
+- Dihedrals 
+- Dispersions
