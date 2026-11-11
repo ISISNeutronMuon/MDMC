@@ -73,8 +73,8 @@ class XML_SQw(SQwReader):
                 # Account for 'no data' in SQw
                 SQw = child_dict["S"]
                 if SQw == "no data":
-                    self.SQw.append(0.0)
-                    self.SQw_err.append(0.0)
+                    self.SQw.append(np.nan)
+                    self.SQw_err.append(np.nan)
                 else:
                     self.SQw.append(float(SQw))
                     self.SQw_err.append(float(child_dict["error"]))
