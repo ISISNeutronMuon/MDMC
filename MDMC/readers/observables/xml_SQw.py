@@ -86,8 +86,6 @@ class XML_SQw(SQwReader):
         self.w = np.sort(np.array(list(w)))
         self.w *= w_unit.conversion_factor / self.w.unit.conversion_factor
 
-        self.E = self.w * 1e15 * h_bar
-
         # the way the Wells Ar data is structured and read in,
         # we need to reshape the self.SQw list with w points
         # in the outer index and Q points in the inner index.
@@ -96,6 +94,19 @@ class XML_SQw(SQwReader):
         # np.shape(SQw) == (np.size(Q), np.size(E))
         self.SQw = np.transpose(np.reshape(np.array(self.SQw), [n_w, n_Q]))
         self.SQw_err = np.transpose(np.reshape(np.array(self.SQw_err), [n_w, n_Q]))
+
+        # if an entire row or column of q or omega are nan then we can
+        # remove these
+        row_mask = ~np.all(np.isnan(self.SQw), axis=1)
+        self.SQw = self.SQw[row_mask, :]
+        self.SQw_err = self.SQw_err[row_mask, :]
+        col_mask = ~np.all(np.isnan(self.SQw), axis=0)
+        self.SQw = self.SQw[:, col_mask]
+        self.SQw_err = self.SQw_err[:, col_mask]
+
+        self.Q = self.Q[row_mask]
+        self.w = self.w[col_mask]
+        self.E = self.w * 1e15 * h_bar
 
         # Change any zero error points to
         # inf so that error calculations can still be performed on them.
