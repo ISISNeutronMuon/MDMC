@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Any
@@ -57,6 +56,116 @@ if hasattr(IInstrumentResolution, "indirect_subclasses"):
     MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.indirect_subclasses()
 else:
     MDANSE_RESOLUTION_FUNCTIONS = IInstrumentResolution.available_classes()
+
+
+class MockChemSys:
+    """Minimum ChemicalSystem replacement for AtomSelection."""
+
+    def __init__(self):
+        self.all_indices = {0, 1, 2, 3}
+        self.atom_list = ["H", "H", "H", "H"]
+
+
+class MockTrajectoryInstance:
+    """Minimum MDANSE Trajectory replacement for MDANSE configurators."""
+
+    def __init__(self, unit_cell: npt.NDArray[float]):
+        self._unit_cell = unit_cell
+        self.chemical_system = MockChemSys()
+        self.properties = {}
+
+    def unit_cell(self, _):
+        return self._unit_cell
+
+    def get_atom_property(self, a, b) -> int:
+        return 0
+
+
+class MockConfigurator(dict):
+    """MDANSE configurator used only for output prediction.
+
+    It stores information needed by MDANSE configurators to predict the range
+    covered by the calculations."""
+
+    def __init__(self, time_step: float, n_steps: int, unit_cell: npt.NDArray[float]):
+        super().__init__()
+        self.dependents = set()
+        self.default = ""
+        self.valid = True
+        self.optional = False
+        self["length"] = n_steps
+        self["md_time_step"] = time_step
+        self["time_axis"] = np.arange(n_steps) * time_step
+        self["instance"] = MockTrajectoryInstance(unit_cell)
+
+    def configure(self, _):
+        """Ignore all inputs."""
+
+    def check_dependencies(self, _) -> bool:
+        return True
+
+    def set_configured(self, _):
+        pass
+
+
+def configure_without_rebuilding(job_instance: IJob, parameters: dict[str, str]):
+    """Create and attach MDANSE configurators to an MDANSE IJob subclass instance.
+
+    This code is largely copied from MDANSE Configurable.setup, but it does not
+    overwrite the trajectory configurator, allowing to run the output prediction
+    calculation without the need to have an existing trajectory file.
+
+    Parameters
+    ----------
+    job_instance : IJob
+        An MDANSE analysis task.
+    parameters : dict[str, str]
+        Inputs for the MDANSE analysis.
+    """
+    for name, (class_name, kwds) in job_instance.settings.items():
+        if name == "trajectory":
+            continue
+        job_instance._configuration[name] = IConfigurator.create(
+            class_name, name, configurable=job_instance, **kwds
+        )
+
+    for key, value in job_instance._configuration.items():
+        parameters.setdefault(key, value.default)
+
+    toBeConfigured = set(job_instance._configuration.keys())
+    configured = set()
+
+    while toBeConfigured != configured:
+        progress = False
+
+        for name, conf in job_instance._configuration.items():
+            if name in configured:
+                continue
+
+            if not conf.valid:
+                job_instance._configured = False
+                return
+
+            if conf.check_dependencies(configured):
+                if not conf.optional:
+                    conf.configure(parameters[name])
+                elif parameters[name]:
+                    conf.configure(parameters[name])
+                    if not conf.valid:
+                        job_instance._configuration[name] = False
+
+                conf.set_configured(True)
+
+                job_instance._configuration[name] = conf
+
+                configured.add(name)
+
+                progress = True
+
+        if not progress:
+            job_instance._configured = False
+            return
+    job_instance._configured = True
 
 
 def run_ndtsf_special_case(MD_input, file_path: Path | None = None, verbose=0, **parameters):
@@ -161,21 +270,10 @@ def create_mdanse_resolution(
     return (resolution_function, par_dict)
 
 
-def create_mock_trajectory(time_step: float, n_steps: int, universe: Universe | None = None) -> str:
-    input_data = {
-        "parameters": {
-            "box_repetitions": [1, 1, 1],
-            "pbc": True,
-            "time_step": time_step,
-            "number_of_frames": n_steps,
-        },
-        "coordinates": [],
-        "modulations": [],
-    }
-    if universe is not None:
-        unit_cell = universe.dimensions
-        input_data["parameters"]["box_size"] = list(list(line) for line in np.diag(unit_cell))
-    return json.dumps(input_data)
+def create_mock_configurator(
+    time_step: float, n_steps: int, universe: Universe | None = None
+) -> dict[str, Any]:
+    return MockConfigurator(time_step, n_steps, universe.dimensions)
 
 
 def check_if_main(name: str, hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
@@ -332,7 +430,7 @@ class MDANSEObservable(Observable):
                 frames=total_frames,
                 corr_frames=correlation_frames,
                 frame_step=frame_step,
-                trajectory_type="mock",
+                trajectory_type="mdanse",
             )
         else:
             job_instance, job_settings = self.build_job_instance(
@@ -340,17 +438,20 @@ class MDANSEObservable(Observable):
                 frames=total_frames,
                 corr_frames=correlation_frames,
                 frame_step=frame_step,
-                trajectory_type="mock",
+                trajectory_type="mdanse",
             )
-        traj_string = create_mock_trajectory(
+        traj_configurator = create_mock_configurator(
             time_step,
             total_frames,
             universe=universe,
         )
-        job_settings["trajectory"] = traj_string
+        job_instance._configuration["trajectory"] = traj_configurator
+        print(list(job_instance._configuration.keys()))
+        job_settings["trajectory"] = ""
         if self._q_shells is not None and "q_vectors" in job_settings:
             job_settings["q_vectors"][1]["shells"] = self._q_shells
-        job_instance.setup(job_settings)
+        configure_without_rebuilding(job_instance, job_settings)
+        print(list(job_instance._configuration.keys()))
         results = []
         for entry in job_instance.preview_output_axis():
             axis_name = entry[0].lower()
