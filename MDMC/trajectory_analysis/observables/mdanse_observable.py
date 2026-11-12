@@ -69,7 +69,7 @@ class MockChemSys:
 class MockTrajectoryInstance:
     """Minimum MDANSE Trajectory replacement for MDANSE configurators."""
 
-    def __init__(self, unit_cell: npt.NDArray[float]):
+    def __init__(self, unit_cell: npt.NDArray[np.floating]):
         self._unit_cell = unit_cell
         self.chemical_system = MockChemSys()
         self.properties = {}
@@ -87,7 +87,7 @@ class MockConfigurator(dict):
     It stores information needed by MDANSE configurators to predict the range
     covered by the calculations."""
 
-    def __init__(self, time_step: float, n_steps: int, unit_cell: npt.NDArray[float]):
+    def __init__(self, time_step: float, n_steps: int, unit_cell: npt.NDArray[np.floating]):
         super().__init__()
         self.dependents = set()
         self.default = ""
@@ -273,7 +273,7 @@ def create_mdanse_resolution(
 def create_mock_configurator(
     time_step: float, n_steps: int, universe: Universe | None = None
 ) -> dict[str, Any]:
-    return MockConfigurator(time_step, n_steps, universe.dimensions)
+    return MockConfigurator(time_step / 1000, n_steps, universe.dimensions / 10)
 
 
 def check_if_main(name: str, hdf5_node: h5py.Group | h5py.Dataset) -> tuple[str, list[str]] | None:
