@@ -30,6 +30,7 @@ from MDANSE.Framework.InstrumentResolutions.IInstrumentResolution import IInstru
 from MDANSE.Framework.Jobs.IJob import IJob
 from MDANSE.Framework.Units import measure
 from MDANSE.IO.IOUtils import summarise_array
+from MDANSE.MolecularDynamics.UnitCell import UnitCell
 from more_itertools import first
 
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -70,7 +71,7 @@ class MockTrajectoryInstance:
     """Minimum MDANSE Trajectory replacement for MDANSE configurators."""
 
     def __init__(self, unit_cell: npt.NDArray[np.floating]):
-        self._unit_cell = unit_cell
+        self._unit_cell = UnitCell(np.diag(unit_cell))
         self.chemical_system = MockChemSys()
         self.properties = {}
 
@@ -93,6 +94,8 @@ class MockConfigurator(dict):
         self.default = ""
         self.valid = True
         self.optional = False
+        self.error_status = "OK"
+        self.warning_status = ""
         self["length"] = n_steps
         self["md_time_step"] = time_step
         self["time_axis"] = np.arange(n_steps) * time_step
@@ -450,6 +453,11 @@ class MDANSEObservable(Observable):
         if self._q_shells is not None and "q_vectors" in job_settings:
             job_settings["q_vectors"][1]["shells"] = self._q_shells
         configure_without_rebuilding(job_instance, job_settings)
+        for name, conf in job_instance.configuration.items():
+            if conf.error_status != "OK":
+                print(f"ERROR in {name}: {conf.error_status}")
+            if conf.warning_status:
+                print(f"WARNING in {name}: {conf.warning_status}")
         results = []
         for entry in job_instance.preview_output_axis():
             axis_name = entry[0].lower()
