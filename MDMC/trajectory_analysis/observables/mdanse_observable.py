@@ -446,12 +446,10 @@ class MDANSEObservable(Observable):
             universe=universe,
         )
         job_instance._configuration["trajectory"] = traj_configurator
-        print(list(job_instance._configuration.keys()))
         job_settings["trajectory"] = ""
         if self._q_shells is not None and "q_vectors" in job_settings:
             job_settings["q_vectors"][1]["shells"] = self._q_shells
         configure_without_rebuilding(job_instance, job_settings)
-        print(list(job_instance._configuration.keys()))
         results = []
         for entry in job_instance.preview_output_axis():
             axis_name = entry[0].lower()
