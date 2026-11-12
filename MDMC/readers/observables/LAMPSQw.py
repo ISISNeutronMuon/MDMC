@@ -85,16 +85,21 @@ class LAMPSQw(SQwReader):
         self.SQw = self.parse_dep_var(self.file_dep)
         self.SQw_err = self.parse_dep_var(self.file_dep_err)
 
-        # LAMP sets errors -1 if the corresponding datum is 0.  Change these to
-        # inf so that error calculations can still be performed on them but
-        # result in inf.
-        if np.any(self.SQw_err <= 0.0):
-            self.SQw_err[np.where(self.SQw_err <= 0.0)] = float("inf")
-            msg = "We have set the error bar to infinity for any zero error values, this allows\
-                us to calculate chi-squared but effectively ignores these points, this may not\
-                be what you want to do, consider using a FoM which doesn't need errors if\
-                this is an issue"
-            logger.warning(msg)
+        # LAMP sets errors -1 if the corresponding datum is 0.
+        no_data = np.where(self.SQw_err <= 0.0)
+        self.SQw[no_data] = np.nan
+        self.SQw_err[no_data] = np.nan
+
+        row_mask = ~np.all(np.isnan(self.SQw), axis=1)
+        self.SQw = self.SQw[row_mask, :]
+        self.SQw_err = self.SQw_err[row_mask, :]
+        col_mask = ~np.all(np.isnan(self.SQw), axis=0)
+        self.SQw = self.SQw[:, col_mask]
+        self.SQw_err = self.SQw_err[:, col_mask]
+
+        self.Q = self.Q[row_mask]
+        self.E = self.E[col_mask]
+
         self.parse_has_run = True
 
     def parse_indep_var(self, file: IO) -> tuple[np.ndarray, np.ndarray]:
