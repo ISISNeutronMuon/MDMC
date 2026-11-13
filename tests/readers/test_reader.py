@@ -95,7 +95,8 @@ def test_parse_all_errors_non_negative(parsed_reader):
     """
     Tests that all parsed error values are non-negative
     """
-    assert np.all(list(parsed_reader.errors.values())[0][0] >= 0)
+    errs = list(parsed_reader.errors.values())[0][0]
+    assert np.all(errs[~np.isnan(errs)] >= 0)
 
 def test_parse_data_is_floats(parsed_reader):
     """

@@ -39,8 +39,6 @@ jobs:
         with:
           python-version: '3.11.2'
           architecture: x64
-      - name: Install Requirements
-        run: sudo apt-get install pandoc -y
       - name: Install MDMC
         run: pip install .[test,docs]
       - name: Convert Notebooks

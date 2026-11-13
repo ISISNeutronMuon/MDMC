@@ -102,7 +102,9 @@ def test_from_data(SQw_from_data):
     # Cannot use assert_allclose as our UnitNDArray fails comparison with a
     # normal numpy array
     for i, Q in enumerate(SQw_from_data.independent_variables['Q']):
-        assert np.isclose(Q, i * 0.05)
+        # Q start from 0.05 as for Q == 0.00 all values of sqw are NaN as
+        # their errors were negative, Q = 0.00 was removed
+        assert np.isclose(Q, (i + 1) * 0.05)
 
 
 def test_from_MD(SQw_from_MD):
